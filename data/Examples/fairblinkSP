@@ -1,0 +1,432 @@
+-- /Users/Padawitz/ExpanderLib/fairblinkSP
+
+0. Derivation of
+
+s = blink | s = (1:blink) ==> GS(FS((=0).head))$s
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING at positions
+[1]
+of the preceding formulas (one step) leads to 
+
+s = blink | s = (1:blink) ==> NU X.(FS((=0).head)/\(X.tail))$s
+
+2. SIMPLIFYING the preceding formulas (one step) leads to    -- coinduction step
+
+All s:(s = blink | s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+3. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((s = blink ==> 
+        (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+       (s = (1:blink) ==> 
+        (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s))
+
+4. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(s = blink ==> (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+5. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+6. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$blink & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+7. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(FS((=0).head)$blink & (rel(s,(s = blink | s = (1:blink))).tail)$blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+8. SIMPLIFYING the preceding formulas (one step) leads to 
+
+FS((=0).head)$blink & (rel(s,(s = blink | s = (1:blink))).tail)$blink & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+9. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & 
+(rel(s,(s = blink | s = (1:blink))).tail)$blink & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+10. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & 
+rel(s,(s = blink | s = (1:blink)))$tail(blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+11. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & 
+(tail(blink) = blink | tail(blink) = (1:blink)) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s)
+
+12. SIMPLIFYING the preceding formulas (one step) leads to 
+
+tail(blink) = blink & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+13. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = blink & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+14. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = blink & 
+All s:((FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$(1:blink)) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+15. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = blink & 
+(FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$(1:blink) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+16. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = blink & 
+(FS((=0).head)$(1:blink) & (rel(s,(s = blink | s = (1:blink))).tail)$(1:blink)) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+17. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = blink & FS((=0).head)$(1:blink) & 
+(rel(s,(s = blink | s = (1:blink))).tail)$(1:blink) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+18. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+(rel(s,(s = blink | s = (1:blink))).tail)$(1:blink) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+19. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+rel(s,(s = blink | s = (1:blink)))$tail(1:blink) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+20. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+(tail(1:blink) = blink | tail(1:blink) = (1:blink)) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+21. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(tail(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+ MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+ tail(1:blink) = (1:blink) & MU X.(((=0).head)\/(X.tail))$blink & 
+ (1:blink) = blink & MU X.(((=0).head)\/(X.tail))$(1:blink)) | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+22. SIMPLIFYING the preceding formulas (one step) leads to 
+
+tail(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(1:blink) = (1:blink) & MU X.(((=0).head)\/(X.tail))$blink & 
+(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+23. SIMPLIFYING the preceding formulas (one step) leads to 
+
+blink = blink & MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(1:blink) = (1:blink) & MU X.(((=0).head)\/(X.tail))$blink & 
+(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+24. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(1:blink) = (1:blink) & MU X.(((=0).head)\/(X.tail))$blink & 
+(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink
+
+25. SIMPLIFYING the preceding formulas (one step) leads to 
+
+tail(blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+26. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(1:blink) = (1:blink) & 
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+27. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(s = (1:blink) ==> 
+       (FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$s) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+28. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$(1:blink)) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+29. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(FS((=0).head)/\(rel(s,(s = blink | s = (1:blink))).tail))$(1:blink) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+30. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(FS((=0).head)$(1:blink) & (rel(s,(s = blink | s = (1:blink))).tail)$(1:blink)) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+31. SIMPLIFYING the preceding formulas (one step) leads to 
+
+FS((=0).head)$(1:blink) & (rel(s,(s = blink | s = (1:blink))).tail)$(1:blink) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+32. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+(rel(s,(s = blink | s = (1:blink))).tail)$(1:blink) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+33. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+rel(s,(s = blink | s = (1:blink)))$tail(1:blink) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+34. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+(tail(1:blink) = blink | tail(1:blink) = (1:blink)) & 
+MU X.(((=0).head)\/(X.tail))$blink | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+35. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(tail(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$blink & 
+ MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+ tail(1:blink) = (1:blink) & MU X.(((=0).head)\/(X.tail))$blink & 
+ MU X.(((=0).head)\/(X.tail))$(1:blink)) | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+36. SIMPLIFYING the preceding formulas (one step) leads to 
+
+tail(1:blink) = blink & MU X.(((=0).head)\/(X.tail))$blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(1:blink) = (1:blink) & MU X.(((=0).head)\/(X.tail))$blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+37. SIMPLIFYING the preceding formulas (one step) leads to 
+
+blink = blink & MU X.(((=0).head)\/(X.tail))$blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(1:blink) = (1:blink) & MU X.(((=0).head)\/(X.tail))$blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+38. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+tail(1:blink) = (1:blink) & MU X.(((=0).head)\/(X.tail))$blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+39. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & (1:blink) = blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+MU X.(((=0).head)\/(X.tail))$blink & MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+40. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+41. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)\/(MU X.(((=0).head)\/(X.tail)).tail))$blink & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+42. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)$blink | (MU X.(((=0).head)\/(X.tail)).tail)$blink) & 
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+43. SIMPLIFYING the preceding formulas (one step) leads to 
+
+((=0).head)$blink & MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+44. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(=0)$head(blink) & MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+45. SIMPLIFYING the preceding formulas (one step) leads to 
+
+head(blink) = 0 & MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+46. SIMPLIFYING the preceding formulas (one step) leads to 
+
+0 = 0 & MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+47. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+48. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$(1:blink)
+
+49. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)\/(MU X.(((=0).head)\/(X.tail)).tail))$(1:blink)
+
+50. SIMPLIFYING the preceding formulas (one step) leads to 
+
+((=0).head)$(1:blink) | (MU X.(((=0).head)\/(X.tail)).tail)$(1:blink)
+
+51. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(=0)$head(1:blink) | (MU X.(((=0).head)\/(X.tail)).tail)$(1:blink)
+
+52. SIMPLIFYING the preceding formulas (one step) leads to 
+
+head(1:blink) = 0 | (MU X.(((=0).head)\/(X.tail)).tail)$(1:blink)
+
+53. SIMPLIFYING the preceding formulas (one step) leads to 
+
+1 = 0 | (MU X.(((=0).head)\/(X.tail)).tail)$(1:blink)
+
+54. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(MU X.(((=0).head)\/(X.tail)).tail)$(1:blink)
+
+55. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$tail(1:blink)
+
+56. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink
+
+57. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)\/(MU X.(((=0).head)\/(X.tail)).tail))$blink
+
+58. SIMPLIFYING the preceding formulas (one step) leads to 
+
+((=0).head)$blink | (MU X.(((=0).head)\/(X.tail)).tail)$blink
+
+59. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(=0)$head(blink) | (MU X.(((=0).head)\/(X.tail)).tail)$blink
+
+60. SIMPLIFYING the preceding formulas (one step) leads to 
+
+head(blink) = 0 | (MU X.(((=0).head)\/(X.tail)).tail)$blink
+
+61. SIMPLIFYING the preceding formulas (one step) leads to 
+
+0 = 0 | (MU X.(((=0).head)\/(X.tail)).tail)$blink
+
+62. SIMPLIFYING the preceding formulas (one step) leads to 
+
+True
+

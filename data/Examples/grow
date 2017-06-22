@@ -1,0 +1,130 @@
+-- grow
+
+defuncts:	wcirc rcirc btria draw draw1 draw2 pytree1 pytree2 pytree3
+		cactus1 cactus3 cactus3 pent shinePY shineHC rainPY 
+		rainHC raint hexa hexar hcirc hextree
+fovars:		t u v
+
+axioms: 
+        PY -> flipV $ PY		
+&	PY -> grow(PY)[skip,PY,PY]	
+&	flipV(flipV(x)) -> x	
+
+&	wcirc == white$circ$55	
+&       rcirc == red$circ$55	
+&       pent == red.grow(PE).replicate(5)
+&    	hcirc == turt[R,chordL(45,45)]
+&	btria == base$tria$89
+&	rainPY == growT(inCenter$rainbow$21,PY)
+&	rainHC == growT(inCenter$rainbow$21,hcirc)
+&	shinePY == growT(inCenter$shine$21,PY)
+&	shineHC == growT(inCenter$shine$21,hcirc)
+&	raint == growT(inCenter(rainbow$11).track(ascF),HE)
+&	hexa == grow(HE)[grow(HE)[skip,skip,HE,skip,
+				  grow(HE)[HE,skip,skip,HE]]]
+&       hexar == raint[raint[skip,skip,raint[],skip,
+		             raint[raint[],skip,skip,raint[]]]]
+&  pytree1 == 
+   grow(PY)[skip,PY,
+          grow(PY)[skip,
+                 grow(PY)[skip,PY,
+                        grow(PY)[skip,PY,
+                               grow(PY)[skip,
+                                      grow(PY)[skip,PY,PY],PY]],
+                        PY]]]		 			
+&   pytree2 == 
+    grow(PY)
+        [PY,PY,         grow(PY)[(fun(x,grow(PY)[skip,skip,grow(PY)[skip,x,PY]])**4)$PY,
+	  PY,grow(PY)[PY,PY,PY],          grow(PY)[skip,PY,(fun(x,grow(PY)[skip,x,PY])**6) $ skip]]] 
+&	pytree3(x)(t) == blue $ (fun(t,grow(PE)[skip,t,t])**(x-1)) $ t 
+&	cactus1(x)(t) == red $ (fun(t,grow(HE)[skip,t,t,t])**(x-1)) $ t 
+&	cactus2(x) == cactus1(x)$PE
+&	cactus3(x) == cactus1(x)$grasA$2
+&	draw(x)(b) == x 
+&	draw(x)(k) == trunk0[x] 		
+&	draw(x)(m) == trunk0[skip,x]		
+&	draw(x)(c) == trunk5[x,skip,x,x] 	
+&	draw(x)(d) == trunk5[skip,x,x,skip,x] 
+&	draw(x)(f(t,u)) == trunk5[skip,draw(x)(t),skip,draw(x)(u)] 	
+&	draw(x)(g(t,u)) == trunk5[x,draw(x)(t),skip,draw(x)(u),x]	
+&	draw(x)(h(t,u)) == trunk5[skip,draw(x)(t),skip,draw(x)(u)] 	
+&	draw(x)(h1(t,u)) == trunk5[skip,draw(x)(t),skip,draw(x)(u),x] 
+&	draw(x)(h2(t,u)) == trunk5[x,draw(x)(t),skip,draw(x)(u)] 	
+&	draw(x)(F(t)) == F(draw(x)(t)) 		
+&	draw1 == draw(PY)		
+&	draw2 == draw(slice(15,180))	
+&	hextree == f(f(g(h1(h(h2(b,h2(b,h(h2(h(b,h1(c,b)),h1(b,b)),b))),
+			 		         h1(b,b)),b),b),m),                   f(k,g(b,h2(b,h(h2(b,b),h1(h1(h(b,h1(h2(b,b),
+					        h(h2(b,d),b))),b),b)))))) 
+
+terms:	
+	red$grow(TR)[TR,TR,TR]
+<+>	red$grow(PY)$replicate(4)$wide$3
+<+>     center$red$grow(base$poly(16,111))$concat$replicate(8)
+	   $[skip,grow(CA)$replicate(5)$turt[J$45,circ$22]]
+<+>     center$red$grow(baseI$poly(16,111))$concat$replicate(8)
+	   $[skip,grow(CA)$replicate(5)$turt[J$45,circ$22]]
+<+>     red$grow(base$polyF(7,44))[PY,skip,PY]
+<+> 	green$grow(PY)[skip,hcirc,hcirc]
+<+>	grow(btria)[grow(PY)[skip,btria,btria]]
+<+>	red$grow(base$scale(0.5)$path((0,0),(44,-111),(160,-111),(140,55), 				      (0,0)))[PE,base$poly(7,33),PY,HE]
+<+>     green$grow(PY)[turt[L,J(16.5),R,tria$33],turt[SC$3,wide$3,C],
+		       turt[SC$3,wide$3,C],turt[L,J$22,circ$22]]
+<+>	draw1(blue$f(b,g(b,b))) 		
+<+>	draw2(blue$f(b,g(b,b)))  		
+<+>	red$rainbow(11,0,8.2)$PY
+<+>	red$rainbow(11,9,8.2)$PY
+<+>	red$(fun(x,grow(PY)[skip,x,x])**5)$PY        -- pytree$6
+<+>     red$(fun(x,grow(PY)[skip,x,x])**3)$hcirc     
+<+>     red$growT(inCenter$rainbow$6,HE)
+                 [inCenter(rainbow$11)$HE,
+                  track(ascF)$HE,
+  		  growT(track$ascF,PE)[skip,skip,track(ascF)$base$poly(8,2)],
+             	  turt[J$45,scale(3)$wide$3],pytree$3,
+		  grow(base$tria$44)[hcirc]]
+<+>     scale(0.5)$red$grow(HE)
+		  $replicate(6)$grow(HE)[skip,grow(HE)[skip,HE]]
+<+>     scale(0.5)$red$grow(HE)[hexa,skip,hexa,skip,hexa]
+<+>     scale(0.5)$red$raint[hexar,skip,hexar,skip,hexar]
+<+>     scale(0.5)$red$raint$replicate(6)
+		            $raint[skip,raint[skip,raint[]]]
+<+>     turn(90)(red$(fun(x,grow(SQ)[skip,x])**11)$SQ)   -- colors in line
+<+>     red$grow(PE)$replicate(5)$grow(PE)[skip,PE,PE]
+<+>     scale(0.5)$red$grow(PE)$replicate(5)$grow(PE)
+                      $skip:replicate(2)$grow(PE)[skip,PE,PE]
+<+>	red$growHE[TR,SQ,PE,PY,CA,HE]
+<+>     blue$grow(PY)
+          [PY,grow(PY)[red$text$PP,skip,grow(PY)[TR,skip,PY],                       grow(PY)[skip,skip,grow(PY)[skip,TR,PY],PY]],           skip,grow(CA)[skip,skip,
+   		         grow(CA)[skip,skip,
+                                  light blue$grow(SQ)[skip,TR]]]]
+<+>	red$smooth$pytree$9
+<+>     red$(fun(x,shinePY[skip,x,x])**3)$shineHC[]
+<+> 	red$(fun(x,rainPY[skip,x,x])**3)$rainHC[]
+<+> 	red$growT(shine(21),PY)
+      	         [skip,pos 0 1 2,
+      		  growT(shine(21),PY)
+ 		       [skip,pos 0 1 2 1 2,
+			growT(shine(21),PY)
+			     [skip,pos 0 1 2 1 2 1 2,
+			      shine(21)$hcirc]]]
+<+> 	fun(x,red$grow(PY)[x,x,x,x,x])$turt[J$45,L,J$45,circ(45)]
+<+> 	scale(3)$red$smooth$grow(PY)$replicate(4)$leafC(15,3)
+<+>     repeat$fadeW$red$scale(4)$smooth$PY	
+<+>	repeat$flash$red$pytree1 	
+<+>	repeat$flash$red$pytree$5	
+<+>	file$pytree1 -- after the pic of pytree1 has been saved to pytree1
+<+>	pent$grow(PE)[skip,grow(PE)[skip,skip,PE],grow(PE)[skip,PE,PE]]
+<+> pent$grow(PE)[skip,grow(PE)[skip,skip,grow(PE)[skip,PE,PE]],
+	          grow(PE)[skip,grow(PE)[skip,skip,PE],
+		           grow(PE)[skip,PE]]]
+<+> pent$fun((x,y),grow(PE)[skip,grow(PE)[skip,skip,grow(PE)[skip,x,y]],
+	                    grow(PE)[skip,grow(PE)[skip,skip,x],y]])
+         (grow(PE)[skip,PE,PE],grow(PE)[skip,PE])
+<+> pent$fun(x,grow(PS)[skip,grow(PS)[skip,skip,grow(PS)[skip,x,x]],
+                        grow(PS)[skip,grow(PS)[skip,skip,x],
+                                 grow(PS)[skip,grow(PS)[skip,skip,PS],x]]])
+         $grow(PS)[skip,PS,PS]
+<+>	repeat$turt[fadeW$rcirc,wcirc,J$110,
+		    fadeB$rcirc,wcirc,R,J$110,
+		    flash$rcirc,wcirc,R,J$110,
+    		    shine(21)$rcirc,wcirc,R,J$110]

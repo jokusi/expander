@@ -1,0 +1,6 @@
+-- polytab
+tabA(5,66,
+     [turt(polyR(7,[33,11])),text("flip horizontally:"),turt(flipH(polyR(7,[33,11]))),
+      text("flip vertically:"),turt(flipV(polyR(7,[33,11]))),turt(polyR(7,[ -33, -11])),
+      text("flip horizontally:"),turt(flipH(polyR(7,[ -33, -11]))),text("flip vertically:"),
+      turt(flipV(polyR(7,[ -33, -11])))])

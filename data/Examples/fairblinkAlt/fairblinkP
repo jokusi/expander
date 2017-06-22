@@ -1,0 +1,67 @@
+-- fairblinkP
+
+
+Derivation of
+
+fair(eq(0))(blink) & fair(eq(0))(1:blink)
+
+Adding
+
+  (fair0(z0)(z1) <=== z0 = eq(0) & z1 = blink | z0 = eq(0) & z1 = 1:blink)
+& (NOTfair0(z0)(z1) ===> 
+   (z0 = eq(0) ==> z1 =/= blink) & (z0 = eq(0) ==> z1 =/= 1:blink))
+
+to the axioms and applying coinduction w.r.t.
+
+  (fair(P)(s) ===> exists(P)(s) & fair(P)(tail(s)))
+
+at position [] of the preceding formula leads to 
+
+All P s:(P = eq(0) & s = blink | P = eq(0) & s = 1:blink ===> 
+         exists(P)(s) & fair0(P)(tail(s)))
+
+Simplifying the preceding formula (27 steps) leads to 
+
+exists(eq(0))(blink) & exists(eq(0))(1:blink) & fair0(eq(0))(1:blink) & 
+fair0(eq(0))(blink)
+
+Narrowing the preceding formula (1 step) leads to 
+
+exists(eq(0))(1:blink) & fair0(eq(0))(1:blink) & fair0(eq(0))(blink)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+exists(eq(0))(blink) & fair0(eq(0))(1:blink) & fair0(eq(0))(blink)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+fair0(eq(0))(1:blink) & fair0(eq(0))(blink)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+fair0(eq(0))(blink)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 7
+
+Solutions:
+
+True

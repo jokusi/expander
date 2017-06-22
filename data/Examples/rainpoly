@@ -1,0 +1,2 @@
+-- rainbow
+repeat(rotateC(rainbow(polyS(6,[33,11],yellow))))

@@ -1,0 +1,60 @@
+-- COREGS
+
+constructs: a b eps
+defuncts:   # + sym star compl S A B 		-- R#x = {w|xw in R}
+preds:      epsIn parse
+fovars:     R R1 R2 w 
+
+axioms:
+
+  R+R == R
+& eps*R == R
+& R*eps == R
+& star$eps == eps
+
+& 0#x == 0
+& eps#x == 0
+& sym(x)#y == ite(x=y)(eps,0)
+& (R1+R2)#x == (R1#x)+(R2#x)
+& (R1*R2)#x == (R1#x)*R2+ite(epsIn$R1)(R2#x,0)
+& star(R)#x == (R#x)*star(R)
+& compl(R)#x == compl$R#x
+
+& (epsIn$0 <==> False)
+& (epsIn$eps <==> True)
+& (epsIn$sym$x <==> False)
+& (epsIn$R1+R2 <==> epsIn$R1 | epsIn$R2)
+& (epsIn$R1*R2 <==> epsIn$R1 & epsIn$R2)
+& (epsIn$star$R <==> True)
+& (epsIn$compl$R <==> Not(epsIn$R))
+
+& S = sym(a)*B+sym(b)*A+eps
+& A = sym(a)*S+sym(b)*A*A
+& B = sym(b)*S+sym(a)*B*B
+
+& (parse(0)$w <==> False)
+& (parse(eps)$w <==> null$w)
+& (parse(sym$x)$w <==> w = [x])
+& (parse(R1+R2)$w <==> parse(R1)$w | parse(R2)$w)
+& (parse(R1*R2)[] <==> epsIn$R1 & epsIn$R2)
+& (parse(R1*R2)$x:w <==> parse((R1*R2)#x)$w)
+& (parse(star$R)[] <==> True)
+& (parse(star$R)$x:w <==> parse(star(R)#x)$w)
+
+& (R1 ~ R2 ===> R1#x ~ R2#x & (epsIn$R1 <==> epsIn$R2))
+
+theorems:
+ 
+  (R*star(R) = star(R) <=== epsIn(R))
+& (R2*star(R1*R2) = star(R1*R2) <=== epsIn(R2))
+& (x = a | x = b)
+
+conjects:
+
+  parse(S)[a,b,a,b,b,a]
+& parse(S)[a,b,a,b,b,b]
+& star$sym(a)+sym(b) ~ star$star(sym(a))*star(sym(b))
+& star$R1+R2 ~ star$star(R1)*star(R2)
+& compl$star(R1)*R2 ~ 1+R1+star(R1+R2)*R2*(R1+R2)*star(R1+R2)
+& star(R1)*R2 ~ (R1*star(R1)*R2)+R2
+

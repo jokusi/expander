@@ -1,0 +1,2 @@
+-- flashshine
+repeat(flash(list(shineW(polyR(8,[32,12],yellow)))))

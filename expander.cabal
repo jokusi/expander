@@ -41,62 +41,894 @@ category:            Math
 
 build-type:          Simple
 
+data-dir:            data
+
+data-files:          Examples/abp
+                   , Examples/ABPproofA1
+                   , Examples/ABPproofA2
+                   , Examples/ABPproofB
+                   , Examples/ABPproofC
+                   , Examples/ABPproofD
+                   , Examples/ABPproofE
+                   , Examples/ABPproofF
+                   , Examples/account
+                   , Examples/AFcrit
+                   , Examples/AFcritT
+                   , Examples/AFheatP
+                   , Examples/AFheatPT
+                   , Examples/AGsafe
+                   , Examples/AGsafeT
+                   , Examples/align
+                   , Examples/ani
+                   , Examples/aniT
+                   , Examples/arithExpr
+                   , Examples/ASSOCproof
+                   , Examples/auto1
+                   , Examples/auto2
+                   , Examples/band
+                   , Examples/base
+                   , Examples/baseAlt
+                   , Examples/bisblinkP
+                   , Examples/bisblinkT
+                   , Examples/blinkzipMuP
+                   , Examples/blinkzipMuT
+                   , Examples/blinkzipP
+                   , Examples/blinkzipT
+                   , Examples/bool
+                   , Examples/bottle
+                   , Examples/bottleac
+                   , Examples/bottleAlt
+                   , Examples/bottleef
+                   , Examples/BOTTLEFproof
+                   , Examples/bottleP
+                   , Examples/BOTTLEproof
+                   , Examples/bottlePT
+                   , Examples/btree
+                   , Examples/bzipP
+                   , Examples/bzipT
+                   , Examples/carpet
+                   , Examples/cbau2
+                   , Examples/cbau2-0
+                   , Examples/cellular
+                   , Examples/circtab
+                   , Examples/circtabA
+                   , Examples/circtabAS
+                   , Examples/circtabB
+                   , Examples/circtabBR2S
+                   , Examples/circtabBS
+                   , Examples/circtabBSR
+                   , Examples/cobintree
+                   , Examples/coin
+                   , Examples/coin2
+                   , Examples/colorhull
+                   , Examples/combsp
+                   , Examples/COMMproof
+                   , Examples/copyrem
+                   , Examples/coregs
+                   , Examples/coregsC1
+                   , Examples/coregsC1T
+                   , Examples/coregsC3
+                   , Examples/coregsC3T
+                   , Examples/cpic1
+                   , Examples/cpic2
+                   , Examples/crossing
+                   , Examples/cse
+                   , Examples/cycle
+                   , Examples/decagon
+                   , Examples/derec1P
+                   , Examples/derec1T
+                   , Examples/derecExp
+                   , Examples/derecJava
+                   , Examples/dissect
+                   , Examples/DIVproof
+                   , Examples/DIVterm
+                   , Examples/DNA
+                   , Examples/drei
+                   , Examples/echo
+                   , Examples/echo1
+                   , Examples/echo1proof
+                   , Examples/echo1proofT
+                   , Examples/echo2
+                   , Examples/echo2proof
+                   , Examples/echo3
+                   , Examples/echo4
+                   , Examples/echoac
+                   , Examples/ECHOACproof
+                   , Examples/echoproof
+                   , Examples/echoproofT
+                   , Examples/EFatomheat5P
+                   , Examples/EFatomheat5SP
+                   , Examples/EFatomheat5ST
+                   , Examples/EFatomheat5T
+                   , Examples/election
+                   , Examples/eqtest
+                   , Examples/errorheat
+                   , Examples/errorheatS
+                   , Examples/errorheatSAlt
+                   , Examples/evenoddNP
+                   , Examples/evenoddNT
+                   , Examples/evenoddP
+                   , Examples/evenoddT
+                   , Examples/evens2
+                   , Examples/evensmorse
+                   , Examples/evensmorseT
+                   , Examples/evensodds
+                   , Examples/evensoddsP
+                   , Examples/evensoddsT
+                   , Examples/evenszip
+                   , Examples/evenszipT
+                   , Examples/evodmorse
+                   , Examples/evodmorseT
+                   , Examples/EVODproof
+                   , Examples/EVproof
+                   , Examples/evterm
+                   , Examples/EXPproof
+                   , Examples/EXwait
+                   , Examples/EXwaitT
+                   , Examples/factflow
+                   , Examples/factor3-4-6-2
+                   , Examples/factor6-6-6-2
+                   , Examples/faders
+                   , Examples/fahrplan
+                   , Examples/fairblink2P
+                   , Examples/fairblink2T
+                   , Examples/fairblinkCP
+                   , Examples/fairblinkCT
+                   , Examples/fairblinkmuP
+                   , Examples/fairblinkmuT
+                   , Examples/fairblinkP
+                   , Examples/fairblinkSP
+                   , Examples/fairblinkST
+                   , Examples/fairblinkT
+                   , Examples/fairblinkxP
+                   , Examples/fairblinkxT
+                   , Examples/fern2-12-1-1
+                   , Examples/ferns
+                   , Examples/fib01
+                   , Examples/fib01T
+                   , Examples/fibnatC
+                   , Examples/FIBproof
+                   , Examples/five
+                   , Examples/five2
+                   , Examples/flash
+                   , Examples/flash0
+                   , Examples/flash2
+                   , Examples/flashplait
+                   , Examples/flashpoly
+                   , Examples/flashpolyR
+                   , Examples/flashshine
+                   , Examples/flashsnow
+                   , Examples/flower4C
+                   , Examples/flowerC
+                   , Examples/flowers
+                   , Examples/fooP
+                   , Examples/fooPT
+                   , Examples/FP
+                   , Examples/fruit
+                   , Examples/FRUIT1proof
+                   , Examples/FRUIT2proof
+                   , Examples/FRUIT3proof
+                   , Examples/FRUIT4proof
+                   , Examples/gauss
+                   , Examples/gauss1P
+                   , Examples/gauss1PT
+                   , Examples/gear
+                   , Examples/gettup
+                   , Examples/gooP
+                   , Examples/gooPT
+                   , Examples/graph10
+                   , Examples/graph11C
+                   , Examples/graph1C
+                   , Examples/graph2C
+                   , Examples/graph3
+                   , Examples/graph4
+                   , Examples/graph5
+                   , Examples/graph6
+                   , Examples/graph7
+                   , Examples/graph8
+                   , Examples/graph9
+                   , Examples/graphs
+                   , Examples/grow
+                   , Examples/hanoi
+                   , Examples/hanoi3GP
+                   , Examples/hanoi3T
+                   , Examples/hanoiActs
+                   , Examples/hanoiAlt
+                   , Examples/hanoiLab
+                   , Examples/hextree2C
+                   , Examples/hextree3C
+                   , Examples/hinze
+                   , Examples/hrel
+                   , Examples/hulls
+                   , Examples/infbintree
+                   , Examples/invinv
+                   , Examples/invinvT
+                   , Examples/iter1iter2
+                   , Examples/iter1iter2T
+                   , Examples/iterate
+                   , Examples/iterateT
+                   , Examples/iterloop
+                   , Examples/iterloopT
+                   , Examples/javaterm
+                   , Examples/joins
+                   , Examples/karnaugh5C
+                   , Examples/kino
+                   , Examples/kinotest
+                   , Examples/kinotest2
+                   , Examples/knight
+                   , Examples/KNIGHTsols
+                   , Examples/kochP
+                   , Examples/kochT
+                   , Examples/kozen1P
+                   , Examples/kozen1T
+                   , Examples/kozen2P
+                   , Examples/kozen2T
+                   , Examples/kozentypes
+                   , Examples/kripke1
+                   , Examples/kripke2
+                   , Examples/kripke3
+                   , Examples/kripke4
+                   , Examples/kripke5
+                   , Examples/kripke6
+                   , Examples/kripke7
+                   , Examples/lazy
+                   , Examples/LAZYproof
+                   , Examples/LAZYterm
+                   , Examples/leaves
+                   , Examples/lift
+                   , Examples/liftAlt
+                   , Examples/liftKusiek
+                   , Examples/liftLab
+                   , Examples/liftMueller
+                   , Examples/liftPulte
+                   , Examples/liftPulte2
+                   , Examples/light
+                   , Examples/lightsnow
+                   , Examples/lisa
+                   , Examples/list
+                   , Examples/listeval
+                   , Examples/listrev
+                   , Examples/LISTREVproof
+                   , Examples/listsols
+                   , Examples/log
+                   , Examples/log2
+                   , Examples/log3
+                   , Examples/log4
+                   , Examples/log4actsP
+                   , Examples/log4actsT
+                   , Examples/log4permP
+                   , Examples/log4permT
+                   , Examples/log4queensP
+                   , Examples/log4queensT
+                   , Examples/log4selectP
+                   , Examples/log4selectT
+                   , Examples/log4sortedP
+                   , Examples/log4sortedT
+                   , Examples/logConj0
+                   , Examples/logConj0T
+                   , Examples/logConj1
+                   , Examples/logConj1T
+                   , Examples/logConj2
+                   , Examples/logConj2T
+                   , Examples/lpw
+                   , Examples/lr1
+                   , Examples/lr1run
+                   , Examples/lr1runT
+                   , Examples/lr2
+                   , Examples/lr2Act
+                   , Examples/lr2run
+                   , Examples/lr2runT
+                   , Examples/lr3
+                   , Examples/LRalt
+                   , Examples/LRaltRun
+                   , Examples/mapfact
+                   , Examples/mapfactT
+                   , Examples/mapiter1
+                   , Examples/mapiter1T
+                   , Examples/mapiter2
+                   , Examples/maploop
+                   , Examples/maploop0
+                   , Examples/maploop0T
+                   , Examples/maploopT
+                   , Examples/mapziptup
+                   , Examples/matrix
+                   , Examples/mats
+                   , Examples/meet
+                   , Examples/mergeP
+                   , Examples/mergePalt
+                   , Examples/mergePT
+                   , Examples/micro
+                   , Examples/microS
+                   , Examples/mirrorcoP
+                   , Examples/mirrorcoPT
+                   , Examples/mirrorP
+                   , Examples/mirrorPT
+                   , Examples/modal
+                   , Examples/monad
+                   , Examples/MONADproof
+                   , Examples/morphs
+                   , Examples/morsef
+                   , Examples/morsefT
+                   , Examples/morseinv
+                   , Examples/morseinv2
+                   , Examples/morseinv2T
+                   , Examples/morseinvT
+                   , Examples/msort1P
+                   , Examples/msort1PT
+                   , Examples/msort2P
+                   , Examples/msort2PT
+                   , Examples/msort3P
+                   , Examples/msort3PT
+                   , Examples/mutex
+                   , Examples/mutexAC
+                   , Examples/mutexco
+                   , Examples/mutexquad
+                   , Examples/mwgc
+                   , Examples/nat
+                   , Examples/natloop
+                   , Examples/natloopN
+                   , Examples/natloopNT
+                   , Examples/natloopT
+                   , Examples/natstream
+                   , Examples/natstreamSol
+                   , Examples/natstreamSolT
+                   , Examples/natstreamT
+                   , Examples/NATths
+                   , Examples/NEED0proof
+                   , Examples/NEED1proof
+                   , Examples/NEED2proof
+                   , Examples/needcoind
+                   , Examples/NEEDproof
+                   , Examples/NEEDterm
+                   , Examples/nemos
+                   , Examples/newman
+                   , Examples/newman2
+                   , Examples/newman2P
+                   , Examples/newmanP
+                   , Examples/newmanPT
+                   , Examples/notfairblink
+                   , Examples/notfairblink2
+                   , Examples/notfairblink2T
+                   , Examples/notfairblinkT
+                   , Examples/Notsorted
+                   , Examples/NOTthree2P
+                   , Examples/NOTthree2PT
+                   , Examples/NOTthreeP
+                   , Examples/NOTthreePT
+                   , Examples/ntnC
+                   , Examples/obdd
+                   , Examples/obst
+                   , Examples/oddszip
+                   , Examples/oddszipT
+                   , Examples/olli
+                   , Examples/one2P
+                   , Examples/one2T
+                   , Examples/oscis
+                   , Examples/PAFL
+                   , Examples/PAFL1P
+                   , Examples/PAFL1T
+                   , Examples/PAFL2P
+                   , Examples/PAFL2T
+                   , Examples/PAFLall
+                   , Examples/pairs
+                   , Examples/pal11P
+                   , Examples/pal1P
+                   , Examples/pal2P
+                   , Examples/palindrome
+                   , Examples/parity
+                   , Examples/part1
+                   , Examples/part2
+                   , Examples/part3
+                   , Examples/partflattenN
+                   , Examples/partflattenNT
+                   , Examples/partn
+                   , Examples/PARTN2proof
+                   , Examples/PARTN2term
+                   , Examples/PARTNproof
+                   , Examples/PARTNproof1
+                   , Examples/PARTNproof2
+                   , Examples/PARTNterm
+                   , Examples/pascal4
+                   , Examples/paths
+                   , Examples/peaks
+                   , Examples/penrose
+                   , Examples/phil
+                   , Examples/PHIL1proof
+                   , Examples/PHIL2proof
+                   , Examples/philac
+                   , Examples/PHILAC1proof
+                   , Examples/PHILAC2proof
+                   , Examples/PHILalt
+                   , Examples/piles
+                   , Examples/plaits
+                   , Examples/polar
+                   , Examples/polygons
+                   , Examples/polynoms
+                   , Examples/polysG0C
+                   , Examples/polysG1
+                   , Examples/polysG10
+                   , Examples/polysG11C
+                   , Examples/polysG2
+                   , Examples/polysG3
+                   , Examples/polysG4
+                   , Examples/polysG5C
+                   , Examples/polysG6
+                   , Examples/polysG7
+                   , Examples/polysG8
+                   , Examples/polysG9
+                   , Examples/polytab
+                   , Examples/popempty
+                   , Examples/POPEMPTYproof
+                   , Examples/POPEMPTYterm
+                   , Examples/poppush
+                   , Examples/POPPUSHproof
+                   , Examples/POPPUSHterm
+                   , Examples/POTproof
+                   , Examples/POTproofterm
+                   , Examples/POTterm
+                   , Examples/primes5
+                   , Examples/primes6
+                   , Examples/prims
+                   , Examples/PRIMSproof
+                   , Examples/product
+                   , Examples/prog
+                   , Examples/pruneP
+                   , Examples/prunePT
+                   , Examples/pulse
+                   , Examples/pulse2
+                   , Examples/pushcomp
+                   , Examples/PUSHCOMP2
+                   , Examples/PUSHCOMPproof
+                   , Examples/PUSHCOMPterm
+                   , Examples/puzzle
+                   , Examples/PUZZLEproof
+                   , Examples/pychaosC
+                   , Examples/pyramidC
+                   , Examples/pytree1
+                   , Examples/pytree2
+                   , Examples/pytree3
+                   , Examples/quad
+                   , Examples/quad1
+                   , Examples/quad2
+                   , Examples/quad3
+                   , Examples/queens
+                   , Examples/queens4
+                   , Examples/queens5
+                   , Examples/queensE4
+                   , Examples/queensE5
+                   , Examples/queensE6
+                   , Examples/rainpie
+                   , Examples/rainpie2
+                   , Examples/rainpie2C
+                   , Examples/rainpie3
+                   , Examples/rainpie5
+                   , Examples/rainplait
+                   , Examples/rainplait2
+                   , Examples/rainplait3
+                   , Examples/rainplait4
+                   , Examples/rainpoly
+                   , Examples/rainpoly2
+                   , Examples/rainpoly2-1
+                   , Examples/rainpoly3
+                   , Examples/rainpoly3-1
+                   , Examples/rainpoly5
+                   , Examples/rainpolyR
+                   , Examples/rainpyt
+                   , Examples/rainpyt2
+                   , Examples/rainpyt2d
+                   , Examples/rainpyt2l
+                   , Examples/rainpyt3
+                   , Examples/rainpytd
+                   , Examples/rainpytl
+                   , Examples/rainrect
+                   , Examples/rainrect2
+                   , Examples/rainrectld
+                   , Examples/rainsnow
+                   , Examples/rainsnow1
+                   , Examples/rainsnow2
+                   , Examples/rainsnow3
+                   , Examples/raintabB
+                   , Examples/rectangle
+                   , Examples/rects
+                   , Examples/rects0
+                   , Examples/rects2
+                   , Examples/rects3
+                   , Examples/rects4
+                   , Examples/rectsC
+                   , Examples/recttabA
+                   , Examples/recttabAS
+                   , Examples/recttabB
+                   , Examples/recttabBS
+                   , Examples/regeqs
+                   , Examples/relalg
+                   , Examples/RELALG1proof
+                   , Examples/RELALG2proof
+                   , Examples/relalgdb
+                   , Examples/relalgp
+                   , Examples/RELALGP1proof
+                   , Examples/RELALGP1term
+                   , Examples/RELALGP2proof
+                   , Examples/RELALGP2term
+                   , Examples/RELALGP3proof
+                   , Examples/RELALGPproof1
+                   , Examples/RELALGPproof2
+                   , Examples/RELALGproof1
+                   , Examples/RELALGproof2
+                   , Examples/repBy1bfP
+                   , Examples/repBy1bfPT
+                   , Examples/repBy1P
+                   , Examples/repBy1PT
+                   , Examples/repBy2P
+                   , Examples/repBy2PT
+                   , Examples/repplait
+                   , Examples/reprot
+                   , Examples/Req1badP
+                   , Examples/Req1badPT
+                   , Examples/Req1freesP
+                   , Examples/Req1freesPT
+                   , Examples/Req1P
+                   , Examples/Req1PT
+                   , Examples/Req1randomP
+                   , Examples/Req1randomPT
+                   , Examples/reqs
+                   , Examples/rframe
+                   , Examples/rhpytree
+                   , Examples/robot
+                   , Examples/robot80-120
+                   , Examples/robotActs
+                   , Examples/robotActsP
+                   , Examples/robotGraph
+                   , Examples/rot
+                   , Examples/rotCpoly3
+                   , Examples/rotCpoly3-2
+                   , Examples/rotgrow
+                   , Examples/rotmat
+                   , Examples/rotnew
+                   , Examples/rotplait
+                   , Examples/rotpoly
+                   , Examples/rotpoly2
+                   , Examples/rotpoly2-2
+                   , Examples/rotpoly3
+                   , Examples/rotpoly3-2
+                   , Examples/roturt
+                   , Examples/rotwave
+                   , Examples/rotweety
+                   , Examples/rotweety2
+                   , Examples/rotweety3
+                   , Examples/rotweetysh
+                   , Examples/rotweetyshR
+                   , Examples/safe
+                   , Examples/safeT
+                   , Examples/sendmore
+                   , Examples/set
+                   , Examples/SETproof
+                   , Examples/shelves
+                   , Examples/shine
+                   , Examples/showtest1
+                   , Examples/showtest2
+                   , Examples/shuttle
+                   , Examples/shuttle2
+                   , Examples/shuttle3
+                   , Examples/shuttles
+                   , Examples/shuttles2
+                   , Examples/simpl
+                   , Examples/smilies
+                   , Examples/snake
+                   , Examples/snakes
+                   , Examples/SOL1tree
+                   , Examples/solspict
+                   , Examples/SOLSPICT1
+                   , Examples/SOLSPICT2
+                   , Examples/solver
+                   , Examples/SolverCG
+                   , Examples/SolverP
+                   , Examples/SolverR
+                   , Examples/sort1P
+                   , Examples/sort1PT
+                   , Examples/sort2P
+                   , Examples/sort2PT
+                   , Examples/sortperm
+                   , Examples/SORTproof
+                   , Examples/SPLITNproof
+                   , Examples/stack
+                   , Examples/STACK2IMPL
+                   , Examples/STACKconjs
+                   , Examples/STACKimpl
+                   , Examples/STACKimpl2
+                   , Examples/stars
+                   , Examples/stateflow2P
+                   , Examples/stateflow2PT
+                   , Examples/stateflowP
+                   , Examples/stateflowPT
+                   , Examples/states
+                   , Examples/stream
+                   , Examples/sum
+                   , Examples/sumT
+                   , Examples/swap
+                   , Examples/take3CSR
+                   , Examples/take3CSRshort
+                   , Examples/take3CSRshortT
+                   , Examples/take3CSRT
+                   , Examples/take3Requests1
+                   , Examples/take3Requests2
+                   , Examples/tattoo
+                   , Examples/tattoo4
+                   , Examples/testdirP
+                   , Examples/testdirT
+                   , Examples/testgrow
+                   , Examples/testnew5
+                   , Examples/tgraph
+                   , Examples/three1P
+                   , Examples/three1T
+                   , Examples/three2P
+                   , Examples/three2T
+                   , Examples/three3P
+                   , Examples/three3T
+                   , Examples/three4P
+                   , Examples/three4T
+                   , Examples/topempty
+                   , Examples/TOPEMPTYproof
+                   , Examples/TOPEMPTYterm
+                   , Examples/toppush
+                   , Examples/TOPPUSHproof
+                   , Examples/TOPPUSHterm
+                   , Examples/trans0
+                   , Examples/trans0code1
+                   , Examples/trans0code2
+                   , Examples/trans0code3
+                   , Examples/trans0code4
+                   , Examples/trans0code5
+                   , Examples/trans1
+                   , Examples/trans1S
+                   , Examples/trans2
+                   , Examples/trans2S
+                   , Examples/trans2sols
+                   , Examples/trans2SP
+                   , Examples/transDesc
+                   , Examples/transDescT
+                   , Examples/transIn
+                   , Examples/transInT
+                   , Examples/tree
+                   , Examples/turtles
+                   , Examples/tweetiesC
+                   , Examples/tweetynet
+                   , Examples/ufos
+                   , Examples/uni
+                   , Examples/updeq
+                   , Examples/UPDproof
+                   , Examples/UPDterm
+                   , Examples/widgets
+                   , Examples/wirth
+                   , Examples/WIRTHproof
+                   , Examples/WIRTHterm
+                   , Examples/yinyang
+                   , Examples/yinyangR
+                   , Examples/yinyangRR
+                   , Examples/yinyangRR2
+                   , Examples/yinyangRR2S
+                   , Examples/yinyangRRS
+                   , Examples/zip
+                   , Examples/zipEvensOddsP
+                   , Examples/zipmorse
+                   , Examples/*.gif
+                   , Examples/*.png
+                   , Examples/fairblinkAlt/fairblink1P
+                   , Examples/fairblinkAlt/fairblink1PT
+                   , Examples/fairblinkAlt/fairblink2P
+                   , Examples/fairblinkAlt/fairblink2PT
+                   , Examples/fairblinkAlt/fairblinkP
+                   , Examples/fairblinkAlt/fairblinkPT
+                   , Examples/lars/*.gif
+                   , Examples/microAlt/micro1P
+                   , Examples/microAlt/micro1T
+                   , Examples/microAlt/micro2P
+                   , Examples/microAlt/micro2T
+                   , Examples/microAlt/micro3P
+                   , Examples/microAlt/micro3T
+                   , Examples/microAlt/microS2
+                   , Examples/microAlt/microSpec
+                   , Examples/mutexAlt/mutex2
+                   , Examples/mutexAlt/mutex3
+                   , Examples/mutexAlt/mutex3proof
+                   , Examples/mutexAlt/mutex3term
+                   , Examples/mutexAlt/mutexco
+                   , Examples/transProofs/NOTthree2P
+                   , Examples/transProofs/NOTthree2PT
+                   , Examples/transProofs/NOTthreeP
+                   , Examples/transProofs/NOTthreePT
+                   , Examples/transProofs/oneP
+                   , Examples/transProofs/onePT
+                   , Examples/transProofs/three2P
+                   , Examples/transProofs/three2PT
+                   , Examples/transProofs/threeP
+                   , Examples/transProofs/threePT
+                   , Examples/transProofs/twoP
+                   , Examples/transProofs/twoPT
+                   , Examples/tweety/*.gif
+                   , Pix/Painter.js
+                   , style/style.css
+                   , style/Solver.glade
+                   , style/Painter.glade
+                   , style/icon.png
+
 -- Extra files to be distributed with the package, such as examples or a 
 -- README.
--- extra-source-files:  
+extra-source-files:  win/icon.ico
+                   , win/icon.rc
+                   , win/icon.o
+                   , win/res.bat
+                   , mac/expander.bundle
+                   , mac/icon.icns
+                   , mac/Info.plist
+                   , mac/launcher.sh
+                   , README.md
+                   , srcpath/bundle/win32/Paths.hs
+                   , srcpath/unbundled/Paths.hs
 
 -- Constraint on the version of Cabal needed to build this package.
-cabal-version:       >=1.22
+cabal-version:       >=1.18
 
+Flag hilbs
+  description: Build with hilbs executable.
+  default: False
 
+Flag more-warnings
+  description: More warnings for code cleanup.
+  default: False
+
+Flag bundle
+  description: Make data path relative for Win32 or OSX bundles.
+  default: False
+  
+library
+  hs-source-dirs:      src
+  if flag(bundle)
+    if os(osx)
+        hs-source-dirs: srcpath/bundle/osx
+    else
+        hs-source-dirs: srcpath/bundle/win32
+  else
+    hs-source-dirs: srcpath/unbundled
+  exposed-modules:     Ecom
+                     , Epaint
+                     , Esolve
+                     , Eterm
+                     , Gui
+                     , System.Expander
+                     
+  build-depends:       base  >=4.8 && < 5.0
+                     , transformers
+                     , mtl
+                     , array
+                     , gtk3
+                     , cairo
+                     , filepath
+                     , directory
+                     , text
+                     , deepseq
+
+  default-language:    Haskell2010
+  -- LANGUAGE extensions used by modules in this package.
+  other-extensions:    ForeignFunctionInterface
+                     , GeneralizedNewtypeDeriving
+  
+  other-modules:       Paths_expander
+                     , Paths
+                     
+                     
 executable expander
   -- .hs or .lhs file containing the Main module.
-  main-is:             Ecom.hs
+  main-is:             expander.hs
   
   -- Modules included in this executable, other than Main.
-  -- other-modules:       
+  -- other-modules:
   
   -- LANGUAGE extensions used by modules in this package.
-  other-extensions:    GeneralizedNewtypeDeriving
+  -- other-extensions: 
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.8 && <4.9
-                     , gtk3 >=0.13.6 && < 0.14
-                     , transformers >=0.4.2 && <0.5
-                     , array >=0.5.1 && <0.6
-  
+  build-depends:       base
+                     , expander
+                     , gtk3
+
   -- Directories containing source files.
-  hs-source-dirs:      src
-  
+  hs-source-dirs:      app
+
   -- Base language which the package is written in.
   default-language:    Haskell2010
+  
+  if (os(windows))
+    ld-options: -mwindows win/icon.o
+  
+  ghc-options:         -threaded -with-rtsopts=-N
+  if flag(more-warnings)
+    ghc-options:        -Wall
+                        -fno-warn-name-shadowing
+                        -fno-warn-type-defaults
+                        -fno-warn-unused-do-bind
+                        -fno-warn-type-defaults
 
-executable painter
+executable hilbs
   -- .hs or .lhs file containing the Main module.
-  main-is:             Hilbs.hs
+  main-is:             hilbs.hs
   
   -- Modules included in this executable, other than Main.
-  -- other-modules:       
-  
+  -- other-modules:
+                     
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.8 && <4.9
-                     , gtk3 >=0.13.6 && < 0.14
-  
+  build-depends:       base
+                     , expander
+                     , gtk3
+                     , transformers
+                     
   -- Directories containing source files.
-  hs-source-dirs:      src
-  
+  hs-source-dirs:      app
+
   -- Base language which the package is written in.
   default-language:    Haskell2010
- 
-library
-  build-depends:       base ==4.8.*
-                     , transformers >=0.4.2 && <0.5
-                     , mtl >=2.2.1 && <2.3
-                     , array >=0.5.1 && <0.6
-  exposed-modules:     Eterm
+  
+  other-extensions:    BangPatterns
+  
+  ghc-options:         -threaded -with-rtsopts=-N
+  if flag(more-warnings)
+    ghc-options:        -Wall
+                        -fno-warn-name-shadowing
+                        -fno-warn-type-defaults
+                        -fno-warn-unused-do-bind
+                        -fno-warn-type-defaults
+  
+  if (os(windows))
+    ld-options: -mwindows win/icon.o
+  
+  if !flag(hilbs)
+    buildable: False
+
+benchmark expander-bench
+  type:                exitcode-stdio-1.0
+    
+  -- .hs or .lhs file containing the Main module.
+  main-is:             expander-bench.hs
+  
+  -- Modules included in this executable, other than Main.
+  other-modules:       EtermBench
+                     , GuiBench
+                     , Eterm
+                     , Gui
+                     , System.Expander
+                     , Paths_expander
+                     , Paths
+  
+  -- Other library packages from which modules are imported.
+  build-depends:       base
+                     , expander
+                     , transformers
+                     , mtl
+                     , array
+                     , gtk3
+                     , cairo
+                     , directory
+                     , filepath
+                     , deepseq
+                     , criterion
+
+  -- Directories containing source files.
+  hs-source-dirs:      src, bench
+  if flag(bundle)
+    if os(osx)
+        hs-source-dirs: srcpath/bundle/osx
+    else
+        hs-source-dirs: srcpath/bundle/win32
+  else
+    hs-source-dirs: srcpath/unbundled
+  
+  ghc-options:         -threaded -with-rtsopts=-N -rtsopts=all
+
+  -- Base language which the package is written in.
   default-language:    Haskell2010
-  hs-source-dirs:      src
-  other-extensions:    GeneralizedNewtypeDeriving
+
+source-repository head
+  type:     git
+  location: https://github.com/jokusi/expander

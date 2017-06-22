@@ -1,0 +1,61 @@
+-- REGEQS
+
+constructs: 	a f g h esum osum
+
+defuncts: 	blink' nats' fibs' zen
+
+preds: 		even odd
+
+fovars: 	x' y' z' blink nats fibs fib gras requests responses  
+
+axioms: 
+
+  blink' == mu s.(0:1:s)
+& nats' == mu s.(0:map(+1)$s)
+& fibs' == mu s.(0:1:zipWith(+)(s)$tail$s) -- use simplifyBF !
+
+& zen(f(x,y)) == f(zen(y),f(a,zen(x)))
+& zen(a) == a
+
+& (even$0 <==> True)
+& (odd$0 <==> False)
+& (even$suc$x <==> odd$x)
+& (odd$suc$x <==> even$x)
+
+& states == [esum,osum]
+& labels == [0..9]
+
+& (even(x) ==> (esum,x) -> esum)
+& (odd(x)  ==> (esum,x) -> osum)
+& (even(x) ==> (osum,x) -> osum)
+& (odd(x)  ==> (osum,x) -> esum)
+
+conjects:
+
+esum = State(delta(tup(even x(esum),odd x(osum))),beta(1)) &osum = State(delta(tup(even x(osum),odd x(esum))),beta(0)) &
+
+(x = suc(y)
+& y = z+z'
+& z = suc(y)
+& x1 = a(x3)+x2
+& z' = suc(x')
+& x2 = x1*b(c)
+& x' = suc(x)
+& x4 = d)
+
+& (x = suc(y)
+& y = z+z'
+& y' = z
+& z = suc(y)
+& z' = suc(x')
+& x' = suc(x))
+
+& (x = f$y & y = g$z & z = h$0)
+& (x = f$y & y = g$z & z = h$x)
+& blink = 0:1:blink
+& nats = 0:map(+1)$nats
+& fibs = 0:1:zipWith(+)(fibs)$tail$fibs
+& fib = f(fib,f(fib))  		-- nodes of fib at level n = fibs!!(n+2)
+& gras = f(zen(gras),a)
+& requests = client(init,responses)
+& responses = server(requests)

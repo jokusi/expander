@@ -1,0 +1,38 @@
+-- NOTthreeP
+
+
+Derivation of
+
+all(NOTthree)[1,3]
+
+Simplifying the preceding formula (3 steps) leads to 
+
+NOTthree(1) & NOTthree(3)
+
+Adding
+
+  (NOTthree0(z0) <=== z0 = 1 | z0 = 3)
+& (three0(z0) ===> z0 =/= 1 & z0 =/= 3)
+
+to the axioms and applying coinduction w.r.t.
+
+  (NOTthree(st) ===> (a<>(not(atom(A))/\NOTthree))(st))
+
+at position [] of the preceding formula leads to 
+
+(a<>(not(atom(A))/\NOTthree0))(1) & (a<>(not(atom(A))/\NOTthree0))(3)
+
+The reducts have been simplified.
+
+Narrowing the preceding formula (4 steps) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 3
+
+Solutions:
+
+True

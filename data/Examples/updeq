@@ -1,0 +1,156 @@
+-- UPDEQ
+
+
+Derivation of
+
+    i > j
+==> (upd(i,x,f),j) ~ (f,j)
+
+Applying coinduction w.r.t.
+
+     s ~ s'
+===>   top(s) = top(s')
+     & pop(s) ~ pop(s')
+
+at position [] of the preceding formula leads to the formula
+
+All s s':
+(     Any i0 j0 x0 f0:
+      (  i0 > j0
+       & s = (upd(i0,x0,f0),j0)
+       & s' = (f0,j0))
+ ===>   top(s) = top(s')
+      & Any i1 j1 x1 f1:
+        (  i1 > j1
+         & pop(s) = (upd(i1,x1,f1),j1)
+         & pop(s') = (f1,j1)))
+
+Simplifying the preceding formula (16 steps) leads to the formula
+
+  All i0 j0 x0 f0:
+  (    i0 > j0
+   ==> top(upd(i0,x0,f0),j0) = top(f0,j0))
+& All i0 j0 x0 f0:
+  (    i0 > j0
+   ==> Any i1 j1 x1 f1:
+       (  i1 > j1
+        & pop(upd(i0,x0,f0),j0) = (upd(i1,x1,f1),j1)
+        & pop(f0,j0) = (f1,j1)))
+
+Applying the axioms
+
+  pop(f,i) = (f,pred(i))
+& top(f,i) = get(f,i)
+
+at positions [1,0,1,0,1],[0,0,1] of the preceding formula leads to the formula
+
+  All i0 j0 x0 f0:
+  (    i0 > j0
+   ==> get(upd(i0,x0,f0),j0) = top(f0,j0))
+& All i0 j0 x0 f0:
+  (    i0 > j0
+   ==> Any i1 j1 x1 f1:
+       (  i1 > j1
+        & (upd(i0,x0,f0),pred(j0)) = (upd(i1,x1,f1),j1)
+        & pop(f0,j0) = (f1,j1)))
+
+Simplifying the preceding formula (24 steps) leads to the formula
+
+  All i0 j0 x0 f0:
+  (    i0 > j0
+   ==> get(upd(i0,x0,f0),j0) = top(f0,j0))
+& All i0 j0 f0:
+  (    i0 > j0
+   ==> pop(f0,j0) = (f0,pred(j0)))
+& All i0 j0:
+  (    i0 > j0
+   ==> i0 > pred(j0))
+
+Applying the axioms
+
+  get(upd(i,x,f),i) = entry(x)
+& (     get(upd(i,x,f),j) = get(f,j)
+   <=== i =/= j)
+
+at position [0,0,1] of the preceding formula leads to the formula
+
+  All i0 j0 x0 f0:
+  (    i0 > j0
+   ==>     entry(x0) = top(f0,i0)
+         & j0 = i0
+       |   get(f0,j0) = top(f0,j0)
+         & i0 =/= j0)
+& All i0 j0 f0:
+  (    i0 > j0
+   ==> pop(f0,j0) = (f0,pred(j0)))
+& All i0 j0:
+  (    i0 > j0
+   ==> i0 > pred(j0))
+
+Applying the axiom
+
+top(f,i) = get(f,i)
+
+at position [0,0,1,1,0] of the preceding formula leads to the formula
+
+  All i0 j0 x0 f0:
+  (    i0 > j0
+   ==>     entry(x0) = top(f0,i0)
+         & j0 = i0
+       |   get(f0,j0) = get(f0,j0)
+         & i0 =/= j0)
+& All i0 j0 f0:
+  (    i0 > j0
+   ==> pop(f0,j0) = (f0,pred(j0)))
+& All i0 j0:
+  (    i0 > j0
+   ==> i0 > pred(j0))
+
+Simplifying the preceding formula (16 steps) leads to the formula
+
+  All i0 j0 f0:
+  (    i0 > j0
+   ==> pop(f0,j0) = (f0,pred(j0)))
+& All i0 j0:
+  (    i0 > j0
+   ==> i0 > pred(j0))
+
+Applying the axiom
+
+pop(f,i) = (f,pred(i))
+
+at position [0,0,1] of the preceding formula leads to the formula
+
+  All i0 j0 f0:
+  (    i0 > j0
+   ==> (f0,pred(j0)) = (f0,pred(j0)))
+& All i0 j0:
+  (    i0 > j0
+   ==> i0 > pred(j0))
+
+Simplifying the preceding formula (5 steps) leads to the formula
+
+All i0 j0:
+(    i0 > j0
+ ==> i0 > pred(j0))
+
+Applying the theorem
+
+     i > pred(j)
+<=== i > j
+
+at position [0,1] of the preceding formula leads to the formula
+
+All i0 j0:
+(    i0 > j0
+ ==> i0 > j0)
+
+Simplifying the preceding formula (2 steps) leads to the formula
+
+True
+
+Number of proof steps: 11
+
+Solutions:
+
+True

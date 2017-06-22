@@ -1,0 +1,44 @@
+-- morsef
+
+
+Derivation of
+
+morsef(morse) ~ morse
+
+Adding
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = morsef(morse) & z1 = morse)
+
+to the axioms and applying COINDUCTION wrt
+
+  (s ~ s' ===> 
+   head(s) = head(s') & 
+   (head(tail(s)) = head(tail(s')) & tail(tail(s)) ~ tail(tail(s'))))
+
+at position [] of the preceding formula leads to 
+
+morsef(tail(morse)) ~0 zip(tail(morse),inv(tail(morse)))
+
+The reducts have been simplified.
+
+Applying the THEOREM
+
+zip(s,inv(s)) = morsef(s)
+
+at position [1] of the preceding formula leads to 
+
+morsef(tail(morse)) ~0 morsef(tail(morse))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 3

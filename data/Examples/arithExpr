@@ -1,0 +1,35 @@
+-- arithExpr
+
+constructs:   Con Var Sum Prod
+defuncts:     d eval rsum rprod sum product
+fovars:       e e' es p v
+hovars:	      st
+
+axioms:
+
+  d(x)(Con(v)) == zero
+& d(x)(Var(y)) == ite(x=y)(one,zero)
+& d(x)(Sum(es)) == rsum(map(d(x))(es))
+& d(x)(Prod[]) == zero
+& (Prod(es) = p ==> d(x)(Prod(e:es)) == rsum[rprod[d(x)(e),p],rprod[e,d(x)(p)]])
+
+& zero == Con(0)
+& one == Con(1)
+& rsum[] == zero
+& rsum(e:es) == Sum(e:es)
+& rprod[] == one
+& rprod(e:es) == Prod(e:es)
+
+& eval(Con(v))(st) == v
+& eval(Var(x))(st) == st(x)
+& eval(Sum(es))(st) == sum(map(flip(eval)(st))(es))
+& eval(Prod(es))(st) == product(map(flip(eval)(st))(es))
+
+& sum == foldl(+)(0)
+& product == foldl(*)(1)
+
+terms:
+
+d(x)(Sum[Prod[Con(5),Var(x),Var(x)],Prod[Con(12),Var(x)],Con(23)]) <+>
+
+eval(e)(fun(x,6))

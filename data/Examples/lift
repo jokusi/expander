@@ -1,0 +1,63 @@
+-- LIFT
+
+specs:		modalS
+preds:		called served assert1 assert2
+constructs: 	stop go up down
+defuncts:	procs start lg
+fovars:		i k requests act dir 
+
+axioms:
+
+  states == [start] 
+& start == (0,stop,up,[]) 
+& lg == length(procs)
+
+-- go to next floor
+
+& (i+1=k ==>
+  (i,go,up,requests) -> ite(k`in`requests)(k,stop,up,requests-[k])
+					  (k,go,up,requests))
+
+& (i-1=k ==>
+  (i,go,down,requests) -> ite(k`in`requests)(k,stop,down,requests-[k])	
+					    (k,go,down,requests))
+
+-- check requests and choose direction
+
+& (NOTnull$requests ==>
+  (i,stop,up,requests) -> ite(null$filter((>i)/\(<lg))$requests)
+			     (i,stop,down,requests)(i,go,up,requests))
+
+& (NOTnull$requests ==>
+  (i,stop,down,requests) -> ite(null$filter((<i)/\(>=0))$requests)
+			       (i,stop,up,requests)(i,go,down,requests))
+
+-- press button
+
+& (i,stop,dir,requests) -> branch$map(rel(k,(i,stop,dir,insert(k,requests))))
+             		         $procs-requests-[i]
+
+& (i,go,dir,requests) -> branch$map(rel(k,(i,go,dir,insert(k,requests))))
+             		       $procs-requests
+
+-- 2 floors yield 11 states
+-- 3 floors yield 43 states
+-- 4 floors yield 131 states
+-- 5 floors yield 355 states
+
+& (called$i <==> pred$(i`in`).get3)
+& (served$i <==> pred$((i=).get0)/\((stop=).get1))
+& (assert1 <==> pred$((0<=)/\(<lg)).get0)
+& (assert2 <==> pred$rel((i,act,dir,requests), act=stop ==> i`NOTin`requests))
+
+conjects:
+
+  (0,stop,up,[1])`sats`AF$served$1				 --> True
+& start`sats`AG$called(0)`then`AF$served$0			 --> True
+& And$map(rel(i,start`sats`AG$called(i)`then`AF$served$i))$procs --> True
+& start`sats`AG$assert1/\assert2				 --> True
+
+terms: 
+
+    solsG$called(0)`then`AF$served$0
+<+> sols$and$map(rel(i,called(i)`then`AF$served$i))$procs

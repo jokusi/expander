@@ -1,0 +1,2 @@
+-- NOTthreePT
+[DeriveMode True False, Match 0, Mark [], Simplify True 100 False False, Mark [], Induction False 0, Mark [], Narrow 33 True, Mark []]

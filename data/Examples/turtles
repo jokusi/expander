@@ -1,0 +1,44 @@
+-- turtles
+
+defuncts: turtle
+
+axioms:
+
+turtle$1 == turt[hilb(3),M(33),blue$koch(3),M(33),T(40),M(33),
+                 green$snow(3,22)] &
+turtle$2 == turt[OFS(red),blue$circ(5),M(11),T(30),M(22),green$circ(5),
+	         rect(5,11),tria(11),C] &
+turtle$3 == turt[rect(22,11),yellow$circ(20),M(111),budP,M(111),T(40),                 M(111),RGB 13 131 200$polySF(5,33,11)] &
+turtle$4 == turt[OS(dark red),T(40),M(22),new,rotate(5)$red$rect(11,16),M(45),
+	         magenta$red$snow(1,2,3,6,turt[tria(-22),tria$22]),M(45),dark green$tria(-22),T(-40),
+		 M(55),red$pieP(30,55),M(22),T(50),M(35),
+	         SC$0.2,new,red$pytree$8,C,M(35),
+		 tree$turt[M(55),rect(22,11)],M(25),light blue$slice(22,45),
+		 T(-50),M(55),text$peter hans peter hans]
+terms:
+
+    rainbow(51)$pieP(51,111)
+<+> rainbow(22)$red$center$turt[circ$55,J$111,circ$55,R,J$111,circ$55,
+				R,J$111,circ$55]
+<+> repeat$fadeB$turtle$3
+<+> repeat$fadeB$turtle$3
+<+> turt[turtle$3,R,J(77),L,dark$turtle$3]
+<+> turt[SC$0.3,red$taichi(Sheng),C,T$45,J$222,blue$taichi(Peter,Paul)]
+<+> blue$turt$concat$replicate(8)[shine(42)$scale(7)$rhomb,T$45]
+<+> blue$hue$concat$replicate(8)[shine(42)$scale(7)$rhomb,T$45]
+<+> blue$hue$concat$replicate(15)[circ(33),J$33]
+<+> dark red$turt[gras$3,M$111,grasA$3,M$111,grasC$3,M$111,grasR$3]
+<+> fern2(12,1,1.5)
+<+> red$leafD(44,22)
+<+> red$leafA(222,55)
+<+> red$leafS(88,22)
+<+> red$leafC(100,33)
+<+> red$leafD2(44,22)
+<+> red$leafC2(100,33)
+<+> red$blos1(11,44,0)
+<+> red$blos1D(11,44,22)
+<+> red$blos1A(11,222,55)
+<+> red$blos1S(11,88,22)
+<+> red$blos1D2(11,44,22)
+<+> red$blos1C2(11,100,33)
+<+> turt[O,R,J(44),L,R,J(22),L,blue$waveS(3,40,45),J(111),C,gif(kaffee,44,44)]

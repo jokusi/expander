@@ -1,0 +1,35 @@
+-- derecJava 
+
+constructs:  	SUM PLUS MINUS PROD TIMES DIV 
+	        Sum Plus Minus NilS Prod Times Div_ NilP
+		EmbedI Var EncloseS 
+defuncts:    	derecSum derecProd derecFactor 
+fovars:		u u' t t' 
+
+axioms: 
+
+derecSum(SUM(u)) == Sum(derecProd(u),NilS) &
+
+(derecSum(t) = Sum(u',t') 
+	==> derecSum(PLUS(t,u)) == Sum(u',Plus(derecProd(u),t'))) &
+
+(derecSum(t) = Sum(u',t') 
+	==> derecSum(MINUS(t,u)) == Sum(u',Minus(derecProd(u),t'))) &
+
+derecProd(PROD(u)) == Prod(derecFactor(u),NilP) &
+
+(derecProd(t) = Prod(u',t')
+	==> derecProd(TIMES(t,u)) == Prod(u',Times(derecFactor(u),t'))) &
+
+(derecProd(t) = Prod(u',t')
+	==> derecProd(DIV(t,u)) == Prod(u',Div_(derecFactor(u),t'))) &
+
+derecFactor(EmbedI(x)) == EmbedI(x) &
+
+derecFactor(Var(x)) == Var(x) &
+
+derecFactor(EncloseS(u)) == EncloseS(derecSum(u)) 
+
+terms: 
+
+derecSum(SUM(TIMES(PROD(EmbedI(5)),Var(x)))) 

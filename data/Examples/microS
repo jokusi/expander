@@ -1,0 +1,34 @@
+-- microS
+
+specs:      	modalS
+constructs: 	start close heat error
+
+axioms:
+   
+  states == [1] 
+& atoms == [start,close,heat,error] 
+
+& 1 -> branch[2,3] & 2 -> 5 & 3 -> branch[1,6] 
+& 4 -> branch[1,3,4] & 5 -> branch[2,3] & 6 -> 7 & 7 -> 4
+
+& start -> branch[2,5,6,7]
+& close -> branch[3,4,5,6,7]
+& heat -> branch[4,7]
+& error -> branch[2,5]
+
+conjects: 
+
+  EF(heat)$5					--> True (needs perms in Ecom)	
+& EG(heat)$7					--> True	
+& AF(heat)$6					--> True	
+& all(EF$heat)$states 				--> True
+& all(AF$heat)[4,6,7]				--> True
+
+terms:
+
+    eval$EF(heat)			--> states
+<+> eval$EG(heat)			--> [4,7]
+<+> eval$AF(heat)			--> [4,6,7]
+<+> eval(start`then`heat)		--> [1,3,4,7]
+<+> eval(EX$start`then`heat)		--> [1,3,4,5,6,7]
+<+> eval(error`then`AG$not$heat)	--> [1,3,4,6,7]

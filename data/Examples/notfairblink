@@ -1,0 +1,79 @@
+-- notfairblink
+
+
+Derivation of
+
+not(G(F((=0).head)))$blink
+
+SIMPLIFYING the preceding formula (3 steps) leads to 
+
+F(G((=/=0).head))$blink
+
+NARROWING the preceding formula (1 step) leads to 
+
+G((=/=0).head)$blink | F(G((=/=0).head))$(1:blink)
+
+The reducts have been simplified.
+
+Adding
+
+  (G0(z0)$z1 <=== z0 = ((=/=0).head) & z1 = blink)
+
+to the axioms and applying COINDUCTION wrt
+
+  (G(P)$s ===> P(s) & G(P)$tail(s))
+
+at position [0] of the preceding formula leads to 
+
+All s P:((P = ((=/=0).head) & s = blink ==> P(s)) & 
+         (P = ((=/=0).head) & s = blink ==> G0(P)$tail(s)) | 
+         F(G((=/=0).head))$(1:blink))
+
+The reducts have been simplified.
+
+REMOVING SUBTREES at position [0,1] of the preceding formula leads to 
+
+All s P:((P = ((=/=0).head) & s = blink ==> P(s)) & 
+         (P = ((=/=0).head) & s = blink ==> G0(P)$tail(s)))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+All s P:(P = ((=/=0).head) & s = blink ==> P(s)) & 
+All s P:(P = ((=/=0).head) & s = blink ==> G0(P)$tail(s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+All s P:(s = blink ==> ((=/=0).head)$s) & 
+All s P:(P = ((=/=0).head) & s = blink ==> G0(P)$tail(s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+All s:(s = blink ==> ((=/=0).head)$s) & 
+All s P:(P = ((=/=0).head) & s = blink ==> G0(P)$tail(s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+All s:(((=/=0).head)$blink) & 
+All s P:(P = ((=/=0).head) & s = blink ==> G0(P)$tail(s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+((=/=0).head)$blink & All s P:(P = ((=/=0).head) & s = blink ==> G0(P)$tail(s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+(=/=0)$head(blink) & All s P:(P = ((=/=0).head) & s = blink ==> G0(P)$tail(s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+head(blink) =/= 0 & All s P:(P = ((=/=0).head) & s = blink ==> G0(P)$tail(s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+0 =/= 0 & All s P:(P = ((=/=0).head) & s = blink ==> G0(P)$tail(s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+False
+
+Number of proof steps: 13

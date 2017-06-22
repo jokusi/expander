@@ -1,0 +1,48 @@
+-- HANOI
+
+specs:   	modalS 
+constructs:	A B C initial final
+defuncts:	procs start draw pic tow
+fovars: 	xs ys zs
+
+axioms:
+
+start == A(list$procs)^B[]^C[] &
+states == [start] &
+atoms == [final] &
+
+A[]^B(x:xs) -> A[x]^B(xs) &
+A(x:xs)^B[] -> A(xs)^B[x] &
+A[]^C(x:xs) -> A[x]^C(xs) &
+A(x:xs)^C[] -> A(xs)^C[x] &
+B[]^C(x:xs) -> B[x]^C(xs) &
+B(x:xs)^C[] -> B(xs)^C[x] &
+
+(x < y ==> A(x:xs)^B(y:ys) -> A(xs)^B(x:y:ys))	&
+(y < x ==> A(x:xs)^B(y:ys) -> A(y:x:xs)^B(ys))	&
+(x < y ==> A(x:xs)^C(y:ys) -> A(xs)^C(x:y:ys))	&
+(y < x ==> A(x:xs)^C(y:ys) -> A(y:x:xs)^C(ys))	&
+(x < y ==> B(x:xs)^C(y:ys) -> B(xs)^C(x:y:ys))	&
+(y < x ==> B(x:xs)^C(y:ys) -> B(y:x:xs)^C(ys))	&
+
+(atom(initial)$A(xs)^B(ys)^C(zs) <==> xs = list$procs) &
+(atom(final)$A(xs)^B(ys)^C(zs) <==> ys = list$procs | zs = list$procs) &
+
+(x `in` atoms ==> x -> branch$filter(atom$x)$states) &
+
+draw == wtree $ fun(x,ite(atom(initial)$x|atom(final)$x)(pic$x)$x) &
+
+pic$A(xs)^B(ys)^C(zs) == center$turt[tow$xs,J$16,tow$ys,J$16,tow$zs] &
+tow$xs == scale(6)$pileR$length(procs):xs
+
+conjects: start `sats` EF$final			--> True
+
+-- A : 1 2 3  B :  C :
+-- A : 2 3  B :  C : 1
+-- A : 3  B : 2  C : 1
+-- A : 3  B : 1 2  C :
+-- A :  B : 1 2  C : 3
+-- A : 1  B : 2  C : 3
+-- A : 1  B :  C : 2 3
+-- A :  B :  C : 1 2 3
+

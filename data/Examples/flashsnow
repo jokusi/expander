@@ -1,0 +1,3 @@
+-- sflashsnow
+repeat(shuffle(flash(snow(3,22,red)),flash(turt(J(44),snow(3,22,green))),
+               flash(turt(J(88),snow(3,22,blue)))))

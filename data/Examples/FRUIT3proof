@@ -1,0 +1,548 @@
+-- FRUIT3PROOF
+
+
+
+Derivation of
+
+p7(x,y)
+
+Narrowing the preceding tree leads to the summand
+
+  x0 =/= brombeere
+& p6(x0,y0)
+
+Adding the other summands leads to
+
+    x0 =/= brombeere
+  & p6(x0,y0)
+|   y0 =/= gefrierfach
+  & p6(x0,y0)
+
+Applying the axiom
+
+     p6(x,y)
+<===   p3(x,y)
+     | p4(x,y)
+
+at positions [1,1],[0,1] of the preceding tree leads to the formula
+
+    x0 =/= brombeere
+  & (  p3(x0,y0)
+     | p4(x0,y0))
+|   y0 =/= gefrierfach
+  & (  p3(x0,y0)
+     | p4(x0,y0))
+
+Applying the axioms
+
+  (     p4(x,y)
+   <===   steinobst(x)
+        & konservierung(y))
+& (     p3(x,y)
+   <===   obst(x)
+        & erhitzen(y))
+
+at positions [1,1,1],[1,1,0],[0,1,1],[0,1,0] of the preceding tree leads to the formula
+
+    x0 =/= brombeere
+  & (    obst(x0)
+       & erhitzen(y0)
+     |   steinobst(x0)
+       & konservierung(y0))
+|   y0 =/= gefrierfach
+  & (    obst(x0)
+       & erhitzen(y0)
+     |   steinobst(x0)
+       & konservierung(y0))
+
+Applying the axioms
+
+  (     konservierung(x)
+   <===   kuehlen(x)
+        | erhitzen(x))
+& (     steinobst(x)
+   <===   x = kirsche
+        | x = pflaume
+        | x = pfirsich)
+& (     obst(x)
+   <===   steinobst(x)
+        | beerenobst(x))
+& (     erhitzen(x)
+   <===   x = dose
+        | x = glas)
+
+at positions [1,1,1,1],[1,1,0,1],[0,1,1,0],[0,1,0,0] of the preceding tree leads to the formula
+
+    x0 =/= brombeere
+  & (    (  steinobst(x0)
+          | beerenobst(x0))
+       & erhitzen(y0)
+     |   (  x0 = kirsche
+          | x0 = pflaume
+          | x0 = pfirsich)
+       & konservierung(y0))
+|   y0 =/= gefrierfach
+  & (    obst(x0)
+       & (  y0 = dose
+          | y0 = glas)
+     |   steinobst(x0)
+       & (  kuehlen(y0)
+          | erhitzen(y0)))
+
+Applying the axioms
+
+  (     erhitzen(x)
+   <===   x = dose
+        | x = glas)
+& (     beerenobst(x)
+   <===   x = himbeere
+        | x = brombeere)
+& (     steinobst(x)
+   <===   x = kirsche
+        | x = pflaume
+        | x = pfirsich)
+& (     kuehlen(x)
+   <===   x = kuehlschrank
+        | gefrieren(x))
+
+at positions [1,1,1,1,1],[1,1,1,1,0],[0,1,0,0,1],[0,1,0,0,0] of the preceding tree leads to the formula
+
+    x0 =/= brombeere
+  & (    (  (  x0 = kirsche
+             | x0 = pflaume
+             | x0 = pfirsich)
+          | (  x0 = himbeere
+             | x0 = brombeere))
+       & erhitzen(y0)
+     |   (  x0 = kirsche
+          | x0 = pflaume
+          | x0 = pfirsich)
+       & konservierung(y0))
+|   y0 =/= gefrierfach
+  & (    obst(x0)
+       & (  y0 = dose
+          | y0 = glas)
+     |   steinobst(x0)
+       & (  (  y0 = kuehlschrank
+             | gefrieren(y0))
+          | (  y0 = dose
+             | y0 = glas)))
+
+Applying the axiom
+
+     gefrieren(x)
+<===   x = gefrierfach
+     | x = tiefkuehltruhe
+
+at position [1,1,1,1,0,1] of the preceding tree leads to the formula
+
+    x0 =/= brombeere
+  & (    (  (  x0 = kirsche
+             | x0 = pflaume
+             | x0 = pfirsich)
+          | (  x0 = himbeere
+             | x0 = brombeere))
+       & erhitzen(y0)
+     |   (  x0 = kirsche
+          | x0 = pflaume
+          | x0 = pfirsich)
+       & konservierung(y0))
+|   y0 =/= gefrierfach
+  & (    obst(x0)
+       & (  y0 = dose
+          | y0 = glas)
+     |   steinobst(x0)
+       & (  (  y0 = kuehlschrank
+             | (  y0 = gefrierfach
+                | y0 = tiefkuehltruhe))
+          | (  y0 = dose
+             | y0 = glas)))
+
+Simplifying (53 steps) the preceding tree leads to the summand
+
+  x0 = kirsche
+& erhitzen(y0)
+
+Adding the other summands leads to
+
+    x0 = kirsche
+  & erhitzen(y0)
+|   x0 = pflaume
+  & erhitzen(y0)
+|   x0 = pfirsich
+  & erhitzen(y0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   x0 = pfirsich
+  & konservierung(y0)
+|   x0 = pflaume
+  & konservierung(y0)
+|   x0 = kirsche
+  & konservierung(y0)
+|   y0 = dose
+  & steinobst(x0)
+|   y0 = glas
+  & steinobst(x0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   y0 = glas
+  & obst(x0)
+|   y0 = dose
+  & obst(x0)
+
+Applying the theorem
+
+       x = kirsche
+     | x = pflaume
+     | x = pfirsich
+<=== steinobst(x)
+
+at position [] of the preceding tree leads to the formula
+
+    steinobst(x0)
+  & erhitzen(y0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   x0 = pfirsich
+  & konservierung(y0)
+|   x0 = pflaume
+  & konservierung(y0)
+|   x0 = kirsche
+  & konservierung(y0)
+|   y0 = dose
+  & steinobst(x0)
+|   y0 = glas
+  & steinobst(x0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   y0 = glas
+  & obst(x0)
+|   y0 = dose
+  & obst(x0)
+
+Applying the theorem
+
+       x = kirsche
+     | x = pflaume
+     | x = pfirsich
+<=== steinobst(x)
+
+at position [] of the preceding tree leads to the formula
+
+    steinobst(x0)
+  & konservierung(y0)
+|   steinobst(x0)
+  & erhitzen(y0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   y0 = dose
+  & steinobst(x0)
+|   y0 = glas
+  & steinobst(x0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   y0 = glas
+  & obst(x0)
+|   y0 = dose
+  & obst(x0)
+
+Applying the theorem
+
+       x = dose
+     | x = glas
+<=== erhitzen(x)
+
+at position [] of the preceding tree leads to the formula
+
+    erhitzen(y0)
+  & steinobst(x0)
+|   steinobst(x0)
+  & konservierung(y0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   y0 = glas
+  & obst(x0)
+|   y0 = dose
+  & obst(x0)
+
+Applying the theorem
+
+       x = dose
+     | x = glas
+<=== erhitzen(x)
+
+at position [] of the preceding tree leads to the formula
+
+    erhitzen(y0)
+  & obst(x0)
+|   erhitzen(y0)
+  & steinobst(x0)
+|   steinobst(x0)
+  & konservierung(y0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+
+Applying the axiom
+
+     obst(x)
+<===   steinobst(x)
+     | beerenobst(x)
+
+at position [0,1] of the preceding tree leads to the formula
+
+    erhitzen(y0)
+  & (  steinobst(x0)
+     | beerenobst(x0))
+|   erhitzen(y0)
+  & steinobst(x0)
+|   steinobst(x0)
+  & konservierung(y0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+
+Simplifying (3 steps) the preceding tree leads to the summand
+
+  y0 = kuehlschrank
+& steinobst(x0)
+
+Adding the other summands leads to
+
+    y0 = kuehlschrank
+  & steinobst(x0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   steinobst(x0)
+  & konservierung(y0)
+|   beerenobst(x0)
+  & erhitzen(y0)
+|   steinobst(x0)
+  & erhitzen(y0)
+
+Applying the theorem
+
+       steinobst(x)
+     | beerenobst(x)
+<=== obst(x)
+
+at position [] of the preceding tree leads to the formula
+
+    obst(x0)
+  & erhitzen(y0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   steinobst(x0)
+  & konservierung(y0)
+
+Narrowing (4 steps) at position [4,1] of the preceding tree leads to the formula
+
+    obst(x0)
+  & erhitzen(y0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   steinobst(x0)
+  & (  y0 = kuehlschrank
+     | y0 = tiefkuehltruhe
+     | y0 = gefrierfach
+     | y0 = glas
+     | y0 = dose)
+
+Simplifying (3 steps) the preceding tree leads to the summand
+
+  x0 = himbeere
+& erhitzen(y0)
+
+Adding the other summands leads to
+
+    x0 = himbeere
+  & erhitzen(y0)
+|   y0 = dose
+  & steinobst(x0)
+|   y0 = glas
+  & steinobst(x0)
+|   y0 = gefrierfach
+  & steinobst(x0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   obst(x0)
+  & erhitzen(y0)
+
+Applying the theorem
+
+       x = dose
+     | x = glas
+<=== erhitzen(x)
+
+at position [] of the preceding tree leads to the formula
+
+    erhitzen(y0)
+  & steinobst(x0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   y0 = gefrierfach
+  & steinobst(x0)
+|   y0 = tiefkuehltruhe
+  & steinobst(x0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   obst(x0)
+  & erhitzen(y0)
+
+Applying the theorem
+
+       x = gefrierfach
+     | x = tiefkuehltruhe
+<=== gefrieren(x)
+
+at position [] of the preceding tree leads to the formula
+
+    gefrieren(y0)
+  & steinobst(x0)
+|   erhitzen(y0)
+  & steinobst(x0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   y0 = kuehlschrank
+  & steinobst(x0)
+|   obst(x0)
+  & erhitzen(y0)
+
+Applying the theorem
+
+       x = kuehlschrank
+     | gefrieren(x)
+<=== kuehlen(x)
+
+at position [] of the preceding tree leads to the formula
+
+    kuehlen(y0)
+  & steinobst(x0)
+|   erhitzen(y0)
+  & steinobst(x0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   obst(x0)
+  & erhitzen(y0)
+
+Applying the theorem
+
+       kuehlen(x)
+     | erhitzen(x)
+<=== konservierung(x)
+
+at position [] of the preceding tree leads to the formula
+
+    konservierung(y0)
+  & steinobst(x0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   obst(x0)
+  & erhitzen(y0)
+
+Narrowing (3 steps) at position [2,0] of the preceding tree leads to the formula
+
+    konservierung(y0)
+  & steinobst(x0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   (  x0 = kirsche
+     | x0 = pflaume
+     | x0 = pfirsich
+     | x0 = brombeere
+     | x0 = himbeere)
+  & erhitzen(y0)
+
+Simplifying (3 steps) the preceding tree leads to the summand
+
+  x0 = kirsche
+& erhitzen(y0)
+
+Adding the other summands leads to
+
+    x0 = kirsche
+  & erhitzen(y0)
+|   x0 = pflaume
+  & erhitzen(y0)
+|   x0 = pfirsich
+  & erhitzen(y0)
+|   x0 = brombeere
+  & erhitzen(y0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   konservierung(y0)
+  & steinobst(x0)
+
+Applying the theorem
+
+       x = kirsche
+     | x = pflaume
+     | x = pfirsich
+<=== steinobst(x)
+
+at position [] of the preceding tree leads to the formula
+
+    steinobst(x0)
+  & erhitzen(y0)
+|   x0 = brombeere
+  & erhitzen(y0)
+|   x0 = himbeere
+  & erhitzen(y0)
+|   konservierung(y0)
+  & steinobst(x0)
+
+Applying the theorem
+
+       x = himbeere
+     | x = brombeere
+<=== beerenobst(x)
+
+at position [] of the preceding tree leads to the formula
+
+    beerenobst(x0)
+  & erhitzen(y0)
+|   steinobst(x0)
+  & erhitzen(y0)
+|   konservierung(y0)
+  & steinobst(x0)
+
+Applying the theorem
+
+       steinobst(x)
+     | beerenobst(x)
+<=== obst(x)
+
+at position [] of the preceding tree leads to the formula
+
+    obst(x0)
+  & erhitzen(y0)
+|   konservierung(y0)
+  & steinobst(x0)

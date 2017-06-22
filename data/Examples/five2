@@ -1,0 +1,6 @@
+-- five2
+f(f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+  f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+  f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+  f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+  f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)))

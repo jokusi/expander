@@ -1,0 +1,117 @@
+-- CROSSING
+
+constructs:	car train green red up down ccross tcross
+		Road Rail Control || st1 st2
+defuncts:	Crossing draw sync
+preds:		P X EF AF EG AG Car Train Green Up
+fovars:		act act' E F G E' F'
+hovars:      	P X
+
+axioms:
+
+Crossing == Road||Rail||Control &
+states == [Road,Rail,Control,Rail||Control,Crossing] &
+
+labels == [car,train,up,down,green,red,ccross,tcross] &
+
+draw == wtree $ fun(x||y||z,shelf(1)$map(text.noBrackets)[x,y,z],
+                    x||y,shelf(1)$map(text.noBrackets)[x,y],
+                    x,text$noBrackets$x) &
+
+sync$Road    == [up,down] &
+sync$Rail    == [green,red] &
+sync$Control == [up,down,green,red] &
+sync$act:E   == sync$E &
+sync$E||F    == sync(E)`join`sync(F) &
+
+{- 
+Crossing == [0,0,0,0] &
+states == [Crossing] &
+
+(Car <==> atom$(==1).get0) &
+(Train <==> atom$(==1).get1) &
+(Up <==> atom$(==1).get2) &
+(Green <==> atom$(==1).get3) &
+
+([0,0,0,0],car)		-> [1,0,0,0] &
+([0,0,0,0],train)	-> [0,1,0,0] &
+([1,0,0,0],up)		-> [1,0,1,0] &
+([1,0,0,0],train)	-> [1,1,0,0] &
+([1,0,1,0],ccross)	-> [0,0,1,0] &
+([1,0,1,0],train)	-> [1,1,1,0] &
+([0,0,1,0],down)	-> [0,0,0,0] &
+([0,0,1,0],train)	-> [0,1,1,0] &
+([1,1,1,0],ccross)	-> [0,1,1,0] &
+([0,1,1,0],down)	-> [0,1,0,0] &
+([0,1,0,0],car)		-> [1,1,0,0] &
+([0,1,0,0],green)	-> [0,1,0,1] &
+([1,1,0,0],green)	-> [1,1,0,1] &
+([0,1,0,1],tcross)	-> [0,0,0,1] &
+([0,1,0,1],car)		-> [1,1,0,1] &
+([1,1,0,1],tcross)	-> [1,0,0,1] &
+([0,0,0,1],car)		-> [1,0,0,1] &
+([0,0,0,1],red)		-> [0,0,0,0] &
+([1,0,0,1],red)		-> st1	     &
+(st1,up)		-> [1,0,1,0] &
+(st1,train)		-> st2	     &
+(st22,up)		-> [1,1,1,0] &
+-}
+
+(Road,car)      -> up:ccross:down:Road &
+(Rail,train)    -> green:tcross:red:Rail &
+(Control,up)    -> down:Control &
+(Control,green) -> red:Control &
+
+(act:E,act) -> E & 
+
+-- ((up:ccross:down:Road)||Rail||Control,train) -> st1 & 
+-- (Road||(green:tcross:red:Rail)||Control,car) -> st2 & 
+
+-- (st1,up)    -> (ccross:down:Road)||(green:tcross:red:Rail)||down:Control &
+-- (st2,green) -> (up:ccross:down:Road)||(tcross:red:Rail)||red:Control &
+
+(act `NOTin` sync(F) -- & (E,F,act) =/= (Road,(green:tcross:red:Rail)||Control,car)
+     ==> (E||F,act) -> branch$map(fun(E',E'||F))$transL(E)$act) & 
+
+(act `NOTin` sync(E) -- & (E,F,act) =/= (up:ccross:down:Road,Rail||Control,train)
+     ==> (E||F,act) -> branch$map(fun(F',E||F'))$transL(F)$act) &
+
+(E||F,act) -> branch$map(fun((E',F'),E'||F'))$
+   		        prodL[transL(E)$act,transL(F)$act] &
+
+-- branching-time fixpoints
+
+(EF$P <==> MU X.(P\/EX$X)) &			-- finally on some path
+(AF$P <==> MU X.(P\/(AX(X)/\EX$true))) &	-- finally on each path 
+	
+(EG$P <==> NU X.(P/\(EX(X)\/AX$false)))	&	-- generally on some path
+(AG$P <==> NU X.(P/\AX$X))			-- generally on each path
+
+conjects: 
+
+Crossing `sats` (ccross#false)\/tcross#false &
+Crossing `sats` AX$(ccross#false)\/tcross#false &
+Crossing `sats` AX$AX$(ccross#false)\/tcross#false &
+Crossing `sats` AX$AX$AX$(ccross#false)\/tcross#false &
+
+Crossing `sats` AG$(ccross#false)\/tcross#false &	-- (1)
+Crossing `sats` AG$car#AF$ccross<>true &   	 	-- (2)
+Crossing `sats` AG$train#AF$tcross<>true &		-- (3)
+
+Crossing `sats` AG$Car`then`AF$Up &       
+Crossing `sats` AG$Train`then`AF$Green &  
+
+Crossing `sats` AG$car#AF$(up<>true)/\
+			   foldr1(/\)$map(#false)$labels-up &
+Crossing `sats` AG$train#AF$(green<>true)/\
+			     foldr1(/\)$map(#false)$labels-green
+
+terms:
+
+eval$(ccross#false)\/tcross#false	<+>     
+eval$car#AF$up<>true			<+>	    
+eval$train#AF$green<>true				     	   
+
+
+
+

@@ -1,0 +1,36 @@
+-- /Users/Padawitz/ExpanderLib/three2P
+
+0. Derivation of
+
+(all(NOTthree)$[1,3])
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(NOTthree(1)&NOTthree(3))
+
+2. Adding
+
+  (NOTthree0(z0) <=== z0 = 1 | z0 = 3)
+
+to the axioms and applying COINDUCTION wrt
+
+  (NOTthree(st) ===> (a<>(not(A)/\NOTthree))$st)
+
+at positions
+[]
+of the preceding formulas leads to 
+
+NOTthree0(1)
+
+The reducts have been simplified.
+
+3. NARROWING the preceding formulas (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+

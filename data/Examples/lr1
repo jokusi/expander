@@ -1,0 +1,39 @@
+-- LR1
+
+constructs: S A B c d mul end shift error 
+defuncts:   states labels atoms draw
+fovars:     hidden
+
+axioms:
+
+states == [0] &
+labels == [S,A,B,c,d,mul,end] &
+atoms  == [shift,error,S A,A B,B c,B d,A A mul B] &
+
+(0,A) -> 1 & (0,B) -> 2 & (0,c) -> 3 & (0,d) -> 4 & 
+(1,mul) -> 5 & (5,B) -> 6 & (5,c) -> 3 & (5,d) -> 4 &
+
+(x `in` [c,d] ==> (shift,x) -> branch[0,5]) &
+(shift,mul) -> 1 & (S A,end) -> 1 & 
+(x `in` [c,d] ==> (error,x) -> branch[1,2,3,4,6]) &
+(x `in` [mul,end] ==> (error,x) -> branch[0,5]) &
+(x `in` [mul,end] ==> (A B,x) -> 2) & 
+(x `in` [mul,end] ==> (B c,x) -> 3) & 
+(x `in` [mul,end] ==> (B d,x) -> 4) & 
+(x `in` [mul,end] ==> (A A mul B,x) -> 6) &
+
+draw == fun(parseLR(hidden,x,y,z),
+            shelf(3,11)[tower(22,3)$(red$text$state stack):map(text)$x,
+                        tower(2,3)[red$text$syntax trees,
+				   shelf(11,9,M,C)$map(frame.tree)$y],
+                        tower(22,3)$(red$text$input):map(text)$z],x,tree$x)
+
+terms:
+
+    parseLR$c mul d  
+<+> parseLR(hidden,[c,d,gg,vvvv,ss],[h(t,z,u),g,h(t,h,m,z,u)],[999,555555])
+<+> tower(2,3)[red$text$syntax trees,
+               shelf(11,9)$map(frame.tree)[f(gg(h,mm)),bbbbb]]
+
+
+

@@ -1,0 +1,92 @@
+-- take3Requests1
+
+
+Derivation of
+
+(take(3)$Requests1) = requests
+
+Narrowing the preceding formula (1 step) leads to 
+
+(take(3)$Client1(0)$Server(Requests1)) = requests
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any b s':((0:(take(2)$Client1(b*2)$s')) = requests & Server(Requests1) = (b:s'))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any b s'0 b0:
+ (Server(Requests1) = (b:(b0:s'0)) & 
+  (0:((b*2):(take(1)$Client1(b0*2)$s'0))) = requests)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any b b0 s' b1:
+ (Server(Requests1) = (b:(b0:(b1:s'))) & [0,b*2,b0*2] = requests)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any b b0 s' b1:
+ (Server(Client1(0)$Server(Requests1)) = (b:(b0:(b1:s'))) & 
+  [0,b*2,b0*2] = requests)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any b0 s' b1 s'1 b2:
+ (Server(Client1(b2*2)$s'1) = (b0:(b1:s')) & Server(Requests1) = (b2:s'1) & 
+  [0,2,b0*2] = requests)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any s' b1 b2 s'2 b:
+ (Server(Client1(b*2)$s'2) = (b1:s') & Server(Requests1) = (b2:(b:s'2)) & 
+  [0,2,((b2*2)+1)*2] = requests)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any b2 b s'3 b3:
+ (Server(Requests1) = (b2:(b:(b3:s'3))) & [0,2,((b2*2)+1)*2] = requests)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any b2 b s'3 b3:
+ (Server(Client1(0)$Server(Requests1)) = (b2:(b:(b3:s'3))) & 
+  [0,2,((b2*2)+1)*2] = requests)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any b s'3 b3 s' b4:
+ (Server(Client1(b4*2)$s') = (b:(b3:s'3)) & Server(Requests1) = (b4:s') & 
+  [0,2,6] = requests)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 10

@@ -1,0 +1,70 @@
+-- NOTthreeP
+
+
+Derivation of
+
+all(NOTthree)[1,3]
+
+Simplifying the preceding formula (3 steps) leads to 
+
+NOTthree(1) & NOTthree(3)
+
+Adding
+
+  (NOTthree0(z0) <=== z0 = 1 | z0 = 3)
+& (three0(z0) ===> z0 =/= 1 & z0 =/= 3)
+
+to the axioms and applying coinduction w.r.t.
+
+  (NOTthree(st) ===> (a<>(not(atom(A))/\NOTthree))(st))
+
+at position [] of the preceding formula leads to 
+
+All st:(st = 1 | st = 3 ===> (a<>(not(atom(A))/\NOTthree0))(st))
+
+Simplifying the preceding formula (7 steps) leads to 
+
+(a<>(not(atom(A))/\NOTthree0))(1) & (a<>(not(atom(A))/\NOTthree0))(3)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any st':((1,a) -> st' & (not(atom(A))/\NOTthree0)(st')) & 
+(a<>(not(atom(A))/\NOTthree0))(3)
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (17 steps) leads to 
+
+NOTthree0(1) & (a<>(not(atom(A))/\NOTthree0))(3)
+
+Narrowing the preceding formula (1 step) leads to 
+
+(1 = 1 | 1 = 3) & (a<>(not(atom(A))/\NOTthree0))(3)
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (1 step) leads to 
+
+(a<>(not(atom(A))/\NOTthree0))(3)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any st':((3,a) -> st' & (not(atom(A))/\NOTthree0)(st'))
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (14 steps) leads to 
+
+NOTthree0(1)
+
+Narrowing the preceding formula (1 step) leads to 
+
+1 = 1 | 1 = 3
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (1 step) leads to 
+
+True
+
+Number of proof steps: 11

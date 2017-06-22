@@ -1,0 +1,45 @@
+<?xml version="1.0"?> <!--*- mode: xml -*-->
+<app-bundle>
+  <meta>
+    <prefix name="default">${env:PREFIX}</prefix>
+    <!-- Change this to your expander install dir, e.g. if you used
+         "$ cabal install" with prefix /some/path then enter "/some/path" as
+         prefix:expander. You do not have to change anything if you install with
+         prefix <path_to_expander_cabal_project>/dist/dist" -->
+    <prefix name="expander">${project}/..</prefix>
+    <destination overwrite="yes">${project}/../dist/macapp</destination>
+    <gtk>gtk+-3.0</gtk>
+  </meta>
+
+  <plist>${project}/Info.plist</plist>
+
+  <!-- The executable for the application -->
+  <main-binary>${prefix:expander}/dist/build/expander/expander</main-binary>
+
+  <!-- Modules for GTK+ (image loaders, etc) -->
+  <!-- Any additional data, like images, or Glade files -->
+  <!-- Optionally specify a launcher script to use. Builtin script is
+       used if not specified.  -->
+  <launcher-script>${project}/launcher.sh</launcher-script>
+
+
+  <!-- Copy icons. Note that the .icns file is an Apple format which
+       contains up to 4 sizes of icon. You can use
+       /Developer/Applications/Utilities/Icon Composer.app to import
+       artwork and create the file. -->
+  <data dest="${bundle}/Contents/Resources">
+    ${project}/icon.icns
+  </data>
+  <binary>
+    ${prefix}/lib/pango/${pkg:pango:pango_module_version}/modules/
+  </binary>
+  <binary>
+    ${prefix}/lib/gdk-pixbuf-2.0/${pkg:gdk-pixbuf-2.0:gdk_pixbuf_binary_version}/loaders/*.so
+  </binary>
+
+  <data dest="${bundle}/Contents/Resources/share/expander">
+    ${prefix:expander}/data
+  </data>
+
+  <icon-theme icons="all">Adwaita</icon-theme>
+</app-bundle>

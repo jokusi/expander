@@ -1,0 +1,96 @@
+-- repBy2P
+
+
+Derivation of
+
+repBy2(rep2)(min)
+      (leaf(3)#(leaf(2)#leaf(6)))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(rep2(min)(leaf(3)#(leaf(2)#leaf(6)),x)))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),
+                 fun((z,u2),(min(y,z),u1#u2))
+                    (rep2(min)(leaf(2)#leaf(6),x)))
+                (rep2(min)(leaf(3),x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),
+                 fun((z,u2),(min(y,z),u1#u2))
+                    (fun((y,u1),
+                         fun((z,u2),(min(y,z),u1#u2))
+                            (rep2(min)(leaf(6),x)))
+                        (rep2(min)(leaf(2),x))))
+                (rep2(min)(leaf(3),x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),
+                 fun((z,u2),(min(y,z),u1#u2))
+                    (fun((y,u1),
+                         fun((z,u2),(min(y,z),u1#u2))
+                            ((6,leaf(x))))
+                        (rep2(min)(leaf(2),x))))
+                (rep2(min)(leaf(3),x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),
+                 fun((z,u2),(min(y,z),u1#u2))
+                    (fun((y,u1),(min(y,6),u1#leaf(x)))
+                        (rep2(min)(leaf(2),x))))
+                (rep2(min)(leaf(3),x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),
+                 fun((z,u2),(min(y,z),u1#u2))
+                    (fun((y,u1),(min(y,6),u1#leaf(x)))
+                        ((2,leaf(x)))))
+                (rep2(min)(leaf(3),x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),
+                 fun((z,u2),(min(y,z),u1#u2))
+                    ((min(2,6),leaf(x)#leaf(x))))
+                (rep2(min)(leaf(3),x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),
+                 fun((z,u2),(min(y,z),u1#u2))
+                    ((2,leaf(x)#leaf(x))))
+                (rep2(min)(leaf(3),x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),(min(y,2),u1#(leaf(x)#leaf(x))))
+                (rep2(min)(leaf(3),x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.(fun((y,u1),(min(y,2),u1#(leaf(x)#leaf(x))))
+                ((3,leaf(x)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u.((min(3,2),leaf(x)#(leaf(x)#leaf(x)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu x u(2,leaf(x)#(leaf(x)#leaf(x))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1((2,leaf(2)#(leaf(2)#leaf(2))))
+
+Simplifying the preceding term (1 step) leads to 
+
+leaf(2)#(leaf(2)#leaf(2))
+
+Number of proof steps: 14

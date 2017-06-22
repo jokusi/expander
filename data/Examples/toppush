@@ -1,0 +1,76 @@
+-- TOPPUSH
+
+
+Derivation of
+
+top(push(x,s)) = just(x)
+
+Applying the axioms
+
+  push(x2,(f,i)) = (upd(suc(i),x2,f),suc(i))
+& just(x0) = entry(x0)
+
+at positions [],[] of the preceding formula leads to the formula
+
+Any f0 i0:
+(  top((upd(suc(i0),x,f0),suc(i0))) = entry(x)
+ & s = (f0,i0))
+
+Simplifying the preceding formula leads to the formula
+
+Any f0 i0:
+(  top(upd(suc(i0),x,f0),suc(i0)) = entry(x)
+ & s = (f0,i0))
+
+Applying the axiom
+
+top(f,i) = get(f,i)
+
+at position [0,0] of the preceding formula leads to the formula
+
+Any f0 i0:
+(  get(upd(suc(i0),x,f0),suc(i0)) = entry(x)
+ & s = (f0,i0))
+
+Applying the axioms
+
+  get(upd(i,x4,f),i) = entry(x4)
+& (     get(upd(i,x4,f),j) = get(f,j)
+   <=== i =/= j)
+
+at position [0,0] of the preceding formula leads to the formula
+
+Any f0 i0:
+(  (  entry(x) = entry(x)
+    |   get(f0,suc(i0)) = entry(x)
+      & suc(i0) =/= suc(i0))
+ & s = (f0,i0))
+
+Simplifying the preceding formula (7 steps) leads to the formula
+
+Any f0 i0:
+(s = (f0,i0))
+
+Applying the theorem
+
+     True
+===> Any f i:
+     (s0 = (f,i))
+
+at position [] of the preceding formula leads to the formula
+
+    All s0:
+    (Any f i:
+     (s0 = (f,i)))
+==> Any f0 i0:
+    (s = (f0,i0))
+
+Simplifying the preceding formula leads to the formula
+
+True
+
+Number of proof steps: 7
+
+Solutions:
+
+True

@@ -1,0 +1,36 @@
+-- TOPEMPTYproof
+
+
+Derivation of
+
+top(empty) = nothing
+
+Narrowing the preceding formula leads to 
+
+top((new,0)) = nothing
+
+Narrowing the preceding formula leads to 
+
+top((new,0)) = index(0)
+
+Simplifying the preceding formula leads to 
+
+top(new,0) = index(0)
+
+Narrowing the preceding formula leads to 
+
+get(new,0) = index(0)
+
+Narrowing the preceding formula leads to 
+
+index(0) = index(0)
+
+Simplifying the preceding formula leads to 
+
+True
+
+Number of proof steps: 6
+
+Solutions:
+
+True

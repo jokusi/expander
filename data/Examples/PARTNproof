@@ -1,0 +1,113 @@
+-- PARTNproof
+
+
+Derivation of
+
+partn(s,n) = p ==> s = flatten(p)
+
+Hoare invariant creation for the iterative program
+
+partn(s,n) = g(n,s,0,[],[])
+
+at position [] of the preceding formula leads to 
+
+INV(s,n,s,0,[],[]) & 
+(g(n,z3,z4,z5,z6) = p & INV(s,n,z3,z4,z5,z6) ==> s = flatten(p))
+
+Narrowing at position [0] of the preceding formula (3 steps) leads to 
+
+True & (g(n,z3,z4,z5,z6) = p & INV(s,n,z3,z4,z5,z6) ==> s = flatten(p))
+
+Reducts have been simplified.
+
+Simplifying the preceding formula leads to 
+
+g(n,z3,z4,z5,z6) = p & INV(s,n,z3,z4,z5,z6) ==> s = flatten(p)
+
+Shifting subformulas at position [0,1] of the preceding formula leads to 
+
+g(n,z3,z4,z5,z6) = p ==> (INV(s,n,z3,z4,z5,z6) ==> s = flatten(p))
+
+Applying fixpoint induction w.r.t.
+
+g(n,[],k,s,p) = p++[s] & 
+(g(n,x:s,k,s',p) = z7 <=== k < n & g(n,s,k+1,s'++[x],p) = z7) & 
+(g(n,x:s,k,s',p) = z7 <=== k > n & g(n,x:s,0,[],p++[s']) = z7)
+
+at position [] of the preceding formula leads to 
+
+All n k s p x s' z7:(All s6:(INV(s6,n,[],k,s,p) ==> s6 = flatten(p++[s])) & 
+                     (All s7:(INV(s7,n,x:s,k,s',p) ==> s7 = flatten(z7)) <=== 
+                      k < n & 
+                      All s7:(INV(s7,n,s,k+1,s'++[x],p) ==> s7 = flatten(z7))) & 
+                     (All s8:(INV(s8,n,x:s,k,s',p) ==> s8 = flatten(z7)) <=== 
+                      k > n & 
+                      All s8:(INV(s8,n,x:s,0,[],p++[s']) ==> s8 = flatten(z7))))
+
+Applying the axiom resp. theorem
+
+INV(s,n,s1,k,s2,p) <=== s = flatten(p++[s2++s1])
+
+at positions [0,2,1,1,0,0],[0,2,0,0,0],[0,1,1,1,0,0],[0,1,0,0,0],[0,0,0,0] of the preceding formula leads to 
+
+All n k s p x s' z7:(All s6:(s6 = flatten(p++[s++[]]) ==> s6 = flatten(p++[s])) & 
+                     (All s7:(s7 = flatten(p++[s'++x:s]) ==> s7 = flatten(z7)) <=== 
+                      k < n & 
+                      All s7:(s7 = flatten(p++[s'++[x]++s]) ==> 
+                              s7 = flatten(z7))) & 
+                     (All s8:(s8 = flatten(p++[s'++x:s]) ==> s8 = flatten(z7)) <=== 
+                      k > n & 
+                      All s8:(s8 = flatten(p++[s']++[[]++x:s]) ==> 
+                              s8 = flatten(z7))))
+
+Simplifying the preceding formula (29 steps) leads to 
+
+All n k s p x s' z7:(k > n & flatten(p++[s',x:s]) = flatten(z7) ==> 
+                     flatten(p++[s'++x:s]) = flatten(z7))
+
+Applying the axiom resp. theorem
+
+flatten(p++p') = flatten(p)++flatten(p')
+
+at positions [0,1],[0,0,1] of the preceding formula leads to 
+
+All n k s p x s' z7:(k > n & flatten(p)++flatten[s',x:s] = flatten(z7) ==> 
+                     flatten(p)++flatten[s'++x:s] = flatten(z7))
+
+Applying the axiom resp. theorem
+
+flatten(s:p) = s++flatten(p)
+
+at positions [0,1],[0,0,1] of the preceding formula leads to 
+
+All n k s p x s' z7:(k > n & flatten(p)++s'++flatten[x:s] = flatten(z7) ==> 
+                     flatten(p)++s'++x:s++flatten[] = flatten(z7))
+
+Applying the axioms
+
+  flatten[] = []
+& flatten(s:p) = s++flatten(p)
+
+at positions [0,1],[0,0,1] of the preceding formula leads to 
+
+All n k s p x s' z7:(k > n & flatten(p)++s'++x:s++flatten[] = flatten(z7) ==> 
+                     flatten(p)++s'++x:s++[] = flatten(z7))
+
+Applying the axiom resp. theorem
+
+flatten[] = []
+
+at position [0,0,1] of the preceding formula leads to 
+
+All n k s p x s' z7:(k > n & flatten(p)++s'++x:s++[] = flatten(z7) ==> 
+                     flatten(p)++s'++x:s++[] = flatten(z7))
+
+Simplifying the preceding formula (4 steps) leads to 
+
+True
+
+Number of proof steps: 12
+
+Solutions:
+
+True

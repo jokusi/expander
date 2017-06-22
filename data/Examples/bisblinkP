@@ -1,0 +1,55 @@
+-- bisblinkP
+
+Derivation of
+
+Bis(blink,(0:(1:blink)))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(blink,(0:(1:blink))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+(rel((s,s'),((s=s')|((head(s)=head(s'))&(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(tail(s),tail(s'))))))$(blink,(0:(1:blink))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+((blink=(0:(1:blink)))|((head(blink)=head((0:(1:blink))))&(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(tail(blink),tail((0:(1:blink)))))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+((head(blink)=head((0:(1:blink))))&(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(tail(blink),tail((0:(1:blink))))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+((0=head((0:(1:blink))))&(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(tail(blink),tail((0:(1:blink))))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+((0=0)&(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(tail(blink),tail((0:(1:blink))))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(tail(blink),tail((0:(1:blink)))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$((1:blink),tail((0:(1:blink)))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$((1:blink),(1:blink)))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+(rel((s,s'),((s=s')|((head(s)=head(s'))&(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(tail(s),tail(s'))))))$((1:blink),(1:blink)))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((1:blink)=(1:blink))|((head((1:blink))=head((1:blink)))&(NU X(rel((s,s'),((s=s')|((head(s)=head(s'))&X(tail(s),tail(s'))))))$(tail((1:blink)),tail((1:blink))))))
+
+SIMPLIFYING the preceding formulas (one step) leads to 
+
+True
+
+Number of proof steps: 12

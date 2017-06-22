@@ -1,0 +1,127 @@
+-- micro2P
+
+
+Derivation of
+
+head(pa) `in` [4,6,7] & isPath(pa) ==> F(Heat)(pa)
+
+Simplifying the preceding formula (3 steps) leads to 
+
+(head(pa) = 4 & isPath(pa) ==> F(Heat)(pa)) & 
+(head(pa) = 6 & isPath(pa) ==> F(Heat)(pa)) & 
+(head(pa) = 7 & isPath(pa) ==> F(Heat)(pa))
+
+The tree has been split.
+The current formula is given by
+
+head(pa) = 4 & isPath(pa) ==> F(Heat)(pa)
+
+Applying the axiom or theorem
+
+F(P)(pa) <=== P(pa) | F(P)(tail(pa))
+
+at position [1] of the preceding factors leads to the factor
+
+head(pa) = 4 & isPath(pa) ==> Heat(pa) | F(Heat)(tail(pa))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+Heat(pa) <=== head(pa) `in` [4,7]
+
+at position [1,0] of the preceding factors leads to 2 factors.
+The current factor is given by
+
+head(pa) = 6 & isPath(pa) ==> F(Heat)(pa)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Heat(pa) | F(Heat)(tail(pa)) <=== head(pa) = 4 & isPath(pa)
+F(Heat)(pa) <=== head(pa) = 4 & isPath(pa)
+
+have been added as theorems.
+
+The tree slider has been moved.
+The current factor is given by
+
+head(pa) = 7 & isPath(pa) ==> F(Heat)(pa)
+
+Applying the axiom or theorem
+
+F(P)(pa) <=== P(pa) | F(P)(tail(pa))
+
+at position [1] of the preceding factors leads to the factor
+
+head(pa) = 7 & isPath(pa) ==> Heat(pa) | F(Heat)(tail(pa))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+Heat(pa) <=== head(pa) `in` [4,7]
+
+at position [1,0] of the preceding factors leads to a single formula,
+which is given by
+
+head(pa) = 6 & isPath(pa) ==> F(Heat)(pa)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Heat(pa) | F(Heat)(tail(pa)) <=== head(pa) = 7 & isPath(pa)
+F(Heat)(pa) <=== head(pa) = 7 & isPath(pa)
+
+have been added as theorems.
+
+Applying the axioms
+
+  (F(P)(pa) <=== P(pa) | F(P)(tail(pa)))
+& (isPath(pa) ===> head(pa) -> head(tail(pa)))
+& (isPath(pa) ===> isPath(tail(pa)))
+
+at positions [1],[0,1] of the preceding formula leads to 
+
+head(pa) = 6 & head(pa) -> head(tail(pa)) & isPath(tail(pa)) ==> 
+Heat(pa) | F(Heat)(tail(pa))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Replacing the subtrees at position [0,1,0] of the preceding formula leads to 
+
+head(pa) = 6 & 6 -> head(tail(pa)) & isPath(tail(pa)) ==> 
+Heat(pa) | F(Heat)(tail(pa))
+
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+6 -> 7
+
+at position [0,1,0] of the preceding formula leads to 
+
+head(pa) = 6 & 7 = head(tail(pa)) & isPath(tail(pa)) ==> 
+Heat(pa) | F(Heat)(tail(pa))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+F(Heat)(pa) <=== head(pa) = 7 & isPath(pa)
+
+at position [1,1] of the preceding formula leads to 
+
+True
+
+The reducts have been simplified.
+
+Number of proof steps: 11
+
+Solutions:
+
+True

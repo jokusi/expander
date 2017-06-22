@@ -1,0 +1,4 @@
+-- flash
+repeat[shineB(polyS(6,[33,11],yellow)),reverse[rainbow(polyS(6,[33,11],yellow),30)],rainbow(polyS(6,[33,11],yellow),30),
+       reverse[shineW(polyS(6,[33,11],yellow))],shineW(polyS(6,[33,11],yellow)),
+       reverse[shineB(polyS(6,[33,11],yellow))]]

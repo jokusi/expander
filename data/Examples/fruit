@@ -1,0 +1,57 @@
+-- FRUIT
+
+preds: 	    obst steinobst beerenobst
+            konservierung kuehlen gefrieren erhitzen
+	    p0 p1 p2 p3 p4 p5 p6 p7 p8 p9
+constructs: kirsche pflaume pfirsich himbeere brombeere
+            kuehlschrank gefrierfach tiefkuehltruhe dose glas
+fovars:     x y b c
+
+axioms:
+
+(obst(x) <=== steinobst(x) | beerenobst(x))			&
+(steinobst(x) <=== x = kirsche | x = pflaume | x = pfirsich)	&
+(beerenobst(x)	<=== x = himbeere | x = brombeere)		&
+
+(konservierung(x) <=== kuehlen(x) | erhitzen(x))		&
+(kuehlen(x) <=== x = kuehlschrank | gefrieren(x))		&
+(gefrieren(x) <=== x = gefrierfach | x = tiefkuehltruhe)	&
+(erhitzen(x) <=== x = dose | x = glas)				&
+
+(p0(x,y) <=== obst(x) & konservierung(y))			&
+(p1(x,y) <=== p0(x,y) & (x,y) =/= (himbeere,kuehlschrank))	&
+
+(p2(x,y) <=== obst(x) & gefrieren(y))				&
+(p3(x,y) <=== obst(x) & erhitzen(y))				&
+(p4(x,y) <=== steinobst(x) & konservierung(y))  		&
+(p5(x,y) <=== x = brombeere & konservierung(y))			&
+
+(p6(x,y) <=== p3(x,y) | p4(x,y))				&
+(p7(x,y) <=== p6(x,y) & (x,y) =/= (brombeere,gefrierfach))	&
+
+(p8(x,y) <=== obst(x) & erhitzen(y))				&
+(p9(x,y) <=== steinobst(x) & konservierung(y))
+
+theorems:
+
+(obst(x) ===> steinobst(x) | beerenobst(x))			&
+(steinobst(x) ===> x = kirsche | x = pflaume | x = pfirsich)	&
+(beerenobst(x)	===> x = himbeere | x = brombeere)		&
+
+(konservierung(x) ===> kuehlen(x) | erhitzen(x))		&
+(kuehlen(x) ===> x = kuehlschrank | gefrieren(x))		&
+(gefrieren(x) ===> x = gefrierfach | x = tiefkuehltruhe)	&
+(erhitzen(x) ===> x = dose | x = glas)
+
+conjects:
+
+p1(x,y)			&  		-- p2(x,y) | p3(x,y) | p4(x,y) | p5(x,y)
+
+All b c:((b,c) = (kirsche,glas) ==> p2(b,c) & p2(x,y) | p3(b,c) & p3(x,y) |
+			            p4(b,c) & p4(x,y) | p5(b,c) & p5(x,y))
+			&		-- p3(x,y) | p4(x,y)
+
+p7(x,y)			&  		-- p8(x,y) | p9(x,y)
+
+All b c:((b,c) = (pfirsich,dose) ==> p8(b,c) & p8(x,y) | p9(b,c) & p9(x,y))
+			&		-- p8(x,y)

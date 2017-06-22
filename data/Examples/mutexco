@@ -1,0 +1,60 @@
+-- MUTEXco
+
+specs:		CTL
+preds:		Idle Wait Crit enabled safe noSeq
+copreds:	others
+constructs:    	c
+defuncts:   	request enter leave posi maxwait weight
+fovars:		xs ys xs' ys'
+
+axioms:
+
+(st >> st' <==> weight(st) > weight(st')) &
+
+weight(xs,ys) == (length(xs)-posi(xs++ys),maxwait-length(xs),length$ys) &
+
+(st -> st' <=== st' = f$st & enabled(f)$st) &			
+
+(enabled(request$x)(xs,ys) <=== Idle(x)(xs,ys) & maxwait > length$xs) &			
+enabled(enter)(x:xs,[]) &
+enabled(leave)(xs,[x]) &          			
+
+request(x)(xs,ys) == (x:xs,ys) &
+enter(xs,ys) == (init$xs,[last$xs]) &
+leave(xs,ys) == (xs,[]) &
+
+(Wait(x)(xs,ys) <==> x `in` xs) &
+(Crit(x)(xs,ys) <==> x `in` ys) &
+(Idle(x)(xs,ys) <==> x `NOTin` xs & x `NOTin` ys) &
+
+safe(xs,[]) & safe(xs,[x]) &
+
+(others(P)(x)$st ===> (x =/= y ==> P(y)$st)) &
+	
+(noSeq$x <==> EF $ Crit(x) /\ (Crit(x) `EU` 
+			       (not(Crit$x) /\ 
+              		        (others(not.Crit)(x) `EU` Crit$x))))
+
+theorems:
+
+((xs,ys) >> st <=== c `in` xs & (xs,ys) -> st) &  	-- transDesc
+(x `in` xs' | x `in` ys' 
+               <=== x `in` xs & (xs,ys) -> (xs',ys')) &	-- transIn
+(x `in` xs++ys <=== x `in` xs) &
+(posi$x:s = suc$posi$s <=== c `in` s) &  	
+(posi$s++s' = posi$s <=== c `in` s) &  	
+(True ===> Any xs ys: st = (xs,ys)) & 
+(x `in` init$y:s | x = last$y:s <=== x = y | x `in` s) 
+			
+conjects: 
+
+(safe$st ==> AG(safe)$st) &   	-- AGsafe: proof by coinduction on AG
+
+(Idle(x)(xs,ys) & length$xs < maxwait ==> EX(Wait$x)(xs,ys)) & 	
+				-- EXwait: proof by resolution on EX			
+(c `in` xs | c `in` ys ==> AF(Crit$c)(xs,ys))	
+			      	-- AFcrit: proof by Noetherian induction wrt >>
+
+
+
+

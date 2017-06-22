@@ -1,0 +1,46 @@
+-- LOG4
+
+constructs:	A B C go
+preds:  	sorted select perm actsABC actions queens board safe
+fovars: 	x y z s s' s'' n act acts acts' p
+
+axioms:
+
+  sorted[]
+& sorted[x]
+& (sorted(x:(y:s)) <=== x <= y & sorted(y:s))
+
+& perm([],[])
+& (perm(x:s,y:s') <=== select(x:s,y) & perm((x:s)-[y],s'))
+
+& (actsABC(n,acts) <=== actions(n,A,B,C,acts))
+& actions(0,x,y,z,[])
+& (actions(suc(n),x,y,z,acts++go(x,z):acts')
+	           <=== actions(n,x,z,y,acts) & actions(n,y,x,z,acts'))
+
+& (queens(n,s) <=== board([1..n],[],s))
+
+& board([],s,s)
+& (board(x:s,s',s'') 
+	<=== select(x:s,y) & safe(y,1,s') & board((x:s)-[y],y:s',s''))
+
+& (safe(x,n,[])  <==> True)
+& (safe(x,n,y:s) <==> x =/= y+n & y =/= x+n & safe(x,n+1,s))
+
+& select(x:s,x)
+& (select(x:s,y) <=== select(s,y))
+
+conjects:
+
+  sorted[1,3,4]						-- sorted
+    --> True
+& select([1,3,4],x)					-- select
+    --> x = 1 | x = 2 | x = 3 
+& perm([1,3,4],s)					-- perm
+    --> s = [1,3,4] | s = [1,4,3] | s = [3,1,4] | 
+    --  s = [3,4,1] | s = [4,1,3] | s = [4,3,1]
+& actsABC(3,acts) 					-- acts
+    --> acts = [go(A,C),go(A,B),go(C,B),go(A,C),go(B,A),go(B,C),go(A,C)]
+& queens(4,s)						-- queens
+    --> s = [3,1,4,2] | s = [2,4,1,3]
+

@@ -1,0 +1,102 @@
+-- PULTE elevator 2
+
+specs: CTLS Logfix
+defuncts: lg l next pressed emptyUR emptyDR dirUp dirDown procs
+constructs: up down e
+fovars: i j dir DR UR c m
+preds: Next Pressed EmptyUR EmptyDR DirUp DirDown Served PUp PDown
+
+axioms:
+start == (2,up,[],[])&
+states == [start]&
+labels == e:[1..lg]&
+lg == 1+max$procs&
+
+
+-- Die Atome haben folgende Bedeutung:
+-- next(m): Das als Nächstes besuchte Stockwerk ist m.
+-- pressed(m): Es gab eine Anfrage für Stockwerk m.
+-- EmptyUR, EmptyDR: Die Liste der Anfragen oberhalb bzw. unterhalb des Aufzugs
+-- ist leer.
+-- DirUp, DirDown: Der Aufzug fährt auf- bzw. abwärts.
+
+atoms == (map(next)$[1..lg])++(map(pressed)$[1..lg])++[emptyUR,emptyDR,dirUp,dirDown] &
+
+
+-- Die Zuordnung von Atomen zu Zuständen ist über die Prädikate definiert.
+next(m) -> branch$filter(rel(st,Next(m)(st)))$states &
+pressed(m) -> branch$filter(rel(st,Pressed(m)(st)))$states &
+emptyUR -> branch$filter(rel(st,EmptyUR(st)))$states &
+emptyDR -> branch$filter(rel(st,EmptyDR(st)))$states &
+dirUp -> branch$filter(DirUp)$states &
+dirDown -> branch$filter(DirDown)$states &
+
+
+-- Next(m) gilt dann, wenn das nächste Stockwerk m ist.
+-- Pressed(m) gilt, wenn m in einer der Anfragelisten enthalten ist.
+(Next(m)$(i,dir,DR,UR) <==> m = i) &
+(Pressed(m)$(i,dir,DR,UR) <==> m `in` DR | m `in` UR) &
+(EmptyUR(i,dir,DR,UR) <==> UR = []) &
+(EmptyDR(i,dir,DR,UR) <==> DR = []) &
+(DirUp(i,dir,DR,UR) <==> dir = up) &
+(DirDown(i,dir,DR,UR) <==> dir = down) &
+
+-- Das Prädikat PUp drückt aus, dass die Richtung up beibehalten wird, wenn
+-- nicht die Liste der Anfragen oberhalb leer ist. PDown ist die Entsprechung
+-- für die Fahrtrichtung down.
+(PUp <==> (Up `then` (AX(Up) \/ EmptyUR))) &
+(PDown <==> (Down `then` (AX(Down) \/ EmptyUR))) &
+
+
+
+-- 1. Keine Bewegung, falls beide Anfragelisten leer sind.
+((i,dir,[],[]),e)->(i,dir,[],[]) &
+
+-- 2. Richtung ändern, falls keine Anfragen in Fahrtrichtung vorhanden sind.
+(UR =/= [] ==> ((i,down,[],UR),e)->(i,up,[],UR)) &
+(DR =/= [] ==> ((i,up,DR,[]),e)->(i,down,DR,[])) &
+
+-- 3. Bewegung, wenn es keine Eingabe gibt und der Aufzug abwärts fährt:
+--    (Die Liste der Anfragen unterhalb ist so sortiert, dass das erste Element
+--     das größte ist.)
+-- 3.1. Wenn es eine Anfrage für das nächste Stockwerk gibt, wird diese 
+--      gelöscht.
+-- 3.2. Wenn nicht, dann nicht.
+-- 3.3. Falls das nächste Stockwerk das unterste ist, wird zunächst nur die
+--      Fahrtrichtung geändert, ohne eine Bewegung durchzuführen. Falls es
+--      eine Anfrage für das unterste Stockwerk gab, wird diese gelöscht.
+-- 3.4. Falls es keine Anfrage für das letzte Stockwerk gibt, muss die Liste 
+--      der Anfragen unterhalb der Aufzugposition leer sein. Falls die Liste 
+--      der Anfragen oberhalb auch leer ist, trifft Fall 1 zu.
+
+(i > 1 ==> ((i,down,i:DR,UR),e)->(i-1,down,DR,UR)) &
+(i > 1 & i =/= j==> ((i,down,j:DR,UR),e)->(i-1,down,j:DR,UR)) &
+(i = 1 ==> ((i,down,[i],UR),e)->(i,up,[],UR)) &
+(i = 1 & UR =/= [] ==> ((i,down,[],UR),e)->(i,up,[],UR)) &
+
+
+-- 4. Bewegung, ohne neue Eingabe, wenn der Aufzug aufwärts fährt. Die Fälle 
+--    sind genau symmetrisch zu denen für die Abwätsbewegung.
+--    (Die Liste der Anfragen oberhalb ist so sortiert, dass das erste Element
+--     das kleinste ist.)
+
+(i < lg ==> ((i,up,DR,i:UR),e)->(i+1,up,DR,UR)) &
+(i < lg & i =/= j ==> ((i,up,DR,j:UR),e)->(i+1,up,DR,j:UR)) &
+(i = lg ==> ((i,up,DR,[i]),e)->(i,down,DR,[])) &
+(i = lg & DR =/= [] ==> ((i,up,DR,[]),e)->(i,down,DR,[])) &
+
+-- 5. Eintragen von neuen Anfragen in die richtige Liste. Hier muss die 
+--    Sortierung der Liste berücksichtigt werden.
+(c =/= e & (c > i|(c = i & dir = up)) ==> 
+    ((i,dir,DR,UR),c)->(i,dir,DR,insert(c,UR))) &
+(c =/= e & (c < i|(c = i & dir = down)) ==> 
+    ((i,dir,DR,UR),c)->(i,dir,reverse$insert(c,reverse$DR),UR))
+
+conjects:
+
+--Jeder Zustand, der angefragt wurde, wird auch vom Aufzug erreicht:
+(All m st: (st `in` states & m `in` labels) ==> 
+    (st `sats` Pressed$m `then` AF$Next$m)) &
+
+-- Richtungsänderung nur, wenn keine Anfragen mehr in Fahrtrichtung vorhanden:
+(All st: (st `in` states) ==> (st `sats` PUp /\ PDown))

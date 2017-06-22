@@ -1,0 +1,4 @@
+-- rainpoly2
+shuffle(fproduct(fun(z,rainbow(z,102,33,0)),fun(z,rainbow(z,102, -33,0)),
+                 fun(z,rainbow(z,102,33,90)),fun(z,rainbow(z,102,33, -90)))(polySF(12,[33,11],
+                                                                                   yellow)))

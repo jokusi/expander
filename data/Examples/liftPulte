@@ -1,0 +1,64 @@
+-- PULTE LIFT
+
+defuncts: lg procs n l next pressed emptyUR emptyDR up down remove
+constructs: up down e
+fovars: i dir DR UR c m set
+preds: Next Pressed EmptyUR EmptyDR Up Down F G X \/ /\ not `then` and or
+
+axioms:
+start == (2,up,{},{})&
+states == [start]&
+lg == length$procs &
+labels == (e:[1..lg])&
+atoms == ((map(next)[1..lg])++(map(pressed)[1..lg])++[emptyUR,emptyDR,up,down]) &
+
+-- l(m) == ite(m = 1) ([1],(l(m-1) ++ [m])) &
+
+next(m) -> branch$filter(rel(st,Next(m)(st)))$states &
+pressed(m) -> branch$filter(rel(st,Pressed(m)(st)))$states &
+emptyUR -> branch$filter(rel(st,EmptyUR(st)))$states &
+emptyDR -> branch$filter(rel(st,EmptyDR(st)))$states &
+up -> branch$filter(rel(st,Up(st)))$states &
+down -> branch$filter(rel(st,Down(st)))$states &
+
+(Next(m)(i,dir,DR,UR) <==> m = i) &
+(Pressed(m)(i,dir,DR,UR) <==> m `in` DR | m `in` UR) &
+(EmptyUR(i,dir,DR,UR) <==> UR = []) &
+(EmptyDR(i,dir,DR,UR) <==> DR = []) &
+(Up(i,dir,DR,UR) <==> dir = up) &
+(Down(i,dir,DR,UR) <==> dir = down) &
+
+-- keine Bewegung, falls beide Anfragelisten leer
+((i,dir,{},{}),e)->(i,dir,{},{}) &
+
+-- Richtung ändern, falls keine Anfragen in Fahrtrichtung vorhanden
+(UR =/= {} ==> ((i,down,{},UR),e)->(i,up,{},UR)) &
+(DR =/= {} ==> ((i,up,DR,{}),e)->(i,down,DR,{})) &
+
+-- Bewegung, wenn es keine Eingabe gibt und der Aufzug abwärts fährt
+(i > 1 & DR =/= {} ==> ((i,down,DR,UR),e)->(i-1,down,remove(i,DR),UR)) &
+(i = 1 & DR =/= {} ==> ((i,down,DR,UR),e)->(i,up,remove(i,DR),UR)) &
+(i = 1 & UR =/= {} ==> ((i,down,{},UR),e)->(i,up,{},UR)) &
+
+-- Bewegung, wenn es keine Eingabe gibt und der Aufzug aufwärts fährt
+(i < lg & UR =/= {} ==> ((i,up,DR,UR),e)->(i+1,up,DR,remove(i,UR))) &
+(i = lg & UR =/= {} ==> ((i,up,DR,UR),e)->(i,down,DR,remove(i,UR))) &
+(i = lg & DR =/= {} ==> ((i,up,DR,{}),e)->(i,down,DR,{})) &
+
+-- Hilfsfunktion zum Entfernen von i aus Menge
+remove(i,set) == ite(i `in` set) (set - {i}, set) &
+
+-- Eintragen von neuen Anfrage in richtige Liste
+(c =/= e & (c > i|(c = i & dir = up)) ==> ((i,dir,DR,UR),c)->(i,dir,DR,c:UR)) &
+(c =/= e & (c < i|(c = i & dir = down)) ==> ((i,dir,DR,UR),c)->(i,dir,c:DR,UR))
+
+
+conjects:
+
+-- (LTL)
+-- jeder Zustand, der angefragt wurde, wird erreicht
+start `sats` G(Pressed(m) `then` F$Next$m) &
+
+-- Richtungsänderung nur, wenn keine Anfragen mehr in Fahrtrichtung vorhanden
+start `sats` G(Up `then` or[X(Up),EmptyUR]) &
+start `sats` G(Down `then` or[X(Down),EmptyDR])

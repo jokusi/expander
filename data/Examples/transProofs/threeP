@@ -1,0 +1,44 @@
+-- threeP
+
+
+Derivation of
+
+all(three)[2,4]
+
+Simplifying the preceding formula (3 steps) leads to 
+
+three(2) & three(4)
+
+Narrowing the preceding formula (1 step) leads to 
+
+(a#(atom(A)\/three))(2) & three(4)
+
+The axioms were MATCHED against their redices.
+
+Narrowing the preceding formula (1 step) leads to 
+
+All st':((2,a) -> st' ==> (atom(A)\/three)(st')) & three(4)
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (9 steps) leads to 
+
+three(4)
+
+Narrowing the preceding formula (1 step) leads to 
+
+(a#(atom(A)\/three))(4)
+
+The axioms were MATCHED against their redices.
+
+Narrowing the preceding formula (1 step) leads to 
+
+All st':((4,a) -> st' ==> (atom(A)\/three)(st'))
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (7 steps) leads to 
+
+True
+
+Number of proof steps: 7

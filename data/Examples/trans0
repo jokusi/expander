@@ -1,0 +1,60 @@
+-- TRANS0
+
+specs:		modal
+preds:	 	is less
+constructs:	a b c 
+defuncts:   	lg drawR drawI drawL drawR drawS
+fovars:     	st k n
+
+axioms:     
+
+  states == [0,22] 
+& lg == length$states	
+		 
+& (st < 6 ==> st -> st+1<+>ite(st`mod`2 = 0,st,()))
+& 6 -> branch$[1..5]++[7..10]	  
+& 7 -> 14 
+& 22 -> 33<+>44
+& 44 -> ()
+
+& (is$x <==> atom(=x))
+& (less$x <==> atom(<x))
+
+& drawI == wtree $ fun(st,ite(st`in`states,
+			      color(index(st,states),lg)$circ$11,
+			      frame$blue$text$st))
+
+& drawL == wtree (1,fun((st,k,n),ite(Int$st,
+				     color(k,n)$circ$11,
+				     frame$blue$text$st)))
+
+& drawR == wtree $ fun(eps,gif(cat,11,11))
+
+& drawS == wtree $ fun(sat(st),frame$text$st)
+
+conjects:  
+
+  (=14)$3		--> False
+& AG(<14)$9		--> True
+& all(EX(=4))[3,4,6]	--> True
+
+terms:   
+
+    eval(is$4)		--> [4]
+<+> eval(EX$is$4)	--> [3,4,6]
+<+> eval(EF$is$4)	--> [4,0,1,2,3,5,6]
+
+<+> eval(EF$less$4)	--> [0..6]	
+<+> eval(AF$less$4)	--> [0..3]	
+<+> eval(EG$less$4)	--> [0..2]	
+<+> eval(AG$less$4)	--> []
+<+> eval(AG$less$14)	--> [8..10]
+
+<+> eval $ (is$4) `then` EF(less$2)		--> [0..10,14,22,33,44]
+<+> eval $ (is$4) `then` EF(less$1)		--> [0..3,5..10,14,22,33,44]
+<+> eval $ AG $ (is$4) `then` EF(less$1)	--> [7..10,14,22,33,44]
+
+<+> trans(6) `meet` eval(less$2)	       	--> [1]
+
+<+> auto$star$plus(a)+plus(b*c)		--> recognizer of (a+|(bc)+)*
+			 

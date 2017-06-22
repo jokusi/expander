@@ -1,0 +1,26 @@
+-- robotActs
+
+constructs: final forw turn
+defuncts:   start inits states atoms labels blocks rep
+fovars:     p
+
+axioms:
+
+start == (0,0) & inits == [start]			     	&
+
+atoms == [final] & labels == [forw,turn]			&
+
+blocks == [(2,6),(6,2)]						&
+
+rep(forw) == [M(2)] & rep(turn) == [R,M(2),L]			& 
+
+(x < 8 & (x+2,y) = p & p `NOTin` blocks ==> ((x,y),forw) -> p)	&
+(y < 12 & (x,y+2) = p & p `NOTin` blocks ==> ((x,y),turn) -> p)	&
+
+final -> (8,12)
+	
+terms:
+
+AF(final)(start) <+>
+
+turt(OS:concatMap(rep)[forw,turn,forw,turn,forw,turn,forw]++[C,place(circ(2,red),blocks)]) 

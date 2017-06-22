@@ -1,0 +1,12 @@
+-- CSE
+
+fovars: a b c d e f i g c' d'
+
+conjects:
+
+a = b*c
+& d' = d+a
+& e = b*c
+& f = d'+e
+& i = b*c
+& c' = d'+i

@@ -1,0 +1,217 @@
+-- /Users/padawitz/Examples/errorheatSP
+
+0. Derivation of
+
+G(Error)$s ==> G(not(Heat))$s
+
+All axioms are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING the preceding formulas (one step) leads to 
+
+NU X.(Error/\(X.tail))$s ==> G(not(Heat))$s
+
+2. SIMPLIFYING the preceding formulas (one step) leads to 
+
+NU X.(Error/\(X.tail))$s ==> NU X.(not(Heat)/\(X.tail))$s
+
+3. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> 
+       (not(Heat)/\(rel(s,NU X.(Error/\(X.tail))$s).tail))$s)
+
+4. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> 
+       not(Heat)$s & (rel(s,NU X.(Error/\(X.tail))$s).tail)$s)
+
+5. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((NU X.(Error/\(X.tail))$s ==> not(Heat)$s) & 
+       (NU X.(Error/\(X.tail))$s ==> (rel(s,NU X.(Error/\(X.tail))$s).tail)$s))
+
+6. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> not(Heat)$s) & 
+All s:(NU X.(Error/\(X.tail))$s ==> (rel(s,NU X.(Error/\(X.tail))$s).tail)$s)
+
+7. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> Not(Heat(s))) & 
+All s:(NU X.(Error/\(X.tail))$s ==> (rel(s,NU X.(Error/\(X.tail))$s).tail)$s)
+
+8. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> Not(head(s) `in` [4,7])) & 
+All s:(NU X.(Error/\(X.tail))$s ==> (rel(s,NU X.(Error/\(X.tail))$s).tail)$s)
+
+9. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) `NOTin` [4,7]) & 
+All s:(NU X.(Error/\(X.tail))$s ==> (rel(s,NU X.(Error/\(X.tail))$s).tail)$s)
+
+10. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 4 & head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> (rel(s,NU X.(Error/\(X.tail))$s).tail)$s)
+
+11. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((NU X.(Error/\(X.tail))$s ==> head(s) =/= 4) & 
+       (NU X.(Error/\(X.tail))$s ==> head(s) =/= 7)) & 
+All s:(NU X.(Error/\(X.tail))$s ==> (rel(s,NU X.(Error/\(X.tail))$s).tail)$s)
+
+12. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 4) & 
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> (rel(s,NU X.(Error/\(X.tail))$s).tail)$s)
+
+13. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 4) & 
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> rel(s,NU X.(Error/\(X.tail))$s)$tail(s))
+
+14. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 4) & 
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+15. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((Error/\(NU X.(Error/\(X.tail)).tail))$s ==> head(s) =/= 4) & 
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+16. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(Error(s) & (NU X.(Error/\(X.tail)).tail)$s ==> head(s) =/= 4) & 
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+17. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(head(s) `in` [2,5] & (NU X.(Error/\(X.tail)).tail)$s ==> head(s) =/= 4) & 
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+18. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(4 `in` [2,5] & (NU X.(Error/\(X.tail)).tail)$s ==> head(s) =/= 4) & 
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+19. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(False & (NU X.(Error/\(X.tail)).tail)$s ==> head(s) =/= 4) & 
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+20. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+21. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((Error/\(NU X.(Error/\(X.tail)).tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+22. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(Error(s) & (NU X.(Error/\(X.tail)).tail)$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+23. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(head(s) `in` [2,5] & (NU X.(Error/\(X.tail)).tail)$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+24. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(7 `in` [2,5] & (NU X.(Error/\(X.tail)).tail)$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+25. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(False & (NU X.(Error/\(X.tail)).tail)$s ==> head(s) =/= 7) & 
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+26. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(NU X.(Error/\(X.tail))$s ==> NU X.(Error/\(X.tail))$tail(s))
+
+27. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((Error/\(NU X.(Error/\(X.tail)).tail))$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+28. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(Error(s) & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+29. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(head(s) `in` [2,5] & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+30. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((head(s) = 2 | head(s) = 5) & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+31. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(head(s) = 2 & (NU X.(Error/\(X.tail)).tail)$s | 
+       head(s) = 5 & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+32. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:((head(s) = 2 & (NU X.(Error/\(X.tail)).tail)$s ==> 
+        NU X.(Error/\(X.tail))$tail(s)) & 
+       (head(s) = 5 & (NU X.(Error/\(X.tail)).tail)$s ==> 
+        NU X.(Error/\(X.tail))$tail(s)))
+
+33. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(head(s) = 2 & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s)) & 
+All s:(head(s) = 5 & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+34. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(head(s) = 2 & NU X.(Error/\(X.tail))$tail(s) ==> 
+       NU X.(Error/\(X.tail))$tail(s)) & 
+All s:(head(s) = 5 & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+35. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:True & 
+All s:(head(s) = 5 & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+36. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(head(s) = 5 & (NU X.(Error/\(X.tail)).tail)$s ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+37. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:(head(s) = 5 & NU X.(Error/\(X.tail))$tail(s) ==> 
+       NU X.(Error/\(X.tail))$tail(s))
+
+38. SIMPLIFYING the preceding formulas (one step) leads to 
+
+All s:True
+
+39. SIMPLIFYING the preceding formulas (one step) leads to 
+
+True
+
+Number of proof steps: 39

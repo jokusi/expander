@@ -1,0 +1,11 @@
+-- plaits
+
+turt$fun(z,[z,R,J(22),R,z,L,J(22),L,z,R,J(22),R,z,L,J(22),L,z,R,J(22),R,z,L,J(22),L,z,R,J(22),R,z,L,J(22),L,z,R,J(22),R,z])$
+  meet(2,red$plaitS(3,50,45),green$plaitS(3,50, -45))
+
+<+> turt[O,leafF(90,45),C,R,J(44),L,O,plaitS(3,50,45),C,R,J(22),L,blue$waveS(3,40,45)]
+
+<+> meet(4,green$plait(5,60,45),red$plait(5,60,-45))
+
+<+> green$plaitS(5,60,45)
+<+> red$plaitS(6,50,-55)

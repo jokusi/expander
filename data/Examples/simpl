@@ -1,0 +1,159 @@
+-- SIMPL
+
+constructs:     a b c
+defuncts: 	plus times take iterate iter
+preds:		P Q R
+fovars:		x' y' z'
+hovars: 	H I
+
+axioms: 
+
+  plus(0,x) == x
+& (x > 0 ==> plus(x,y) == plus(x-1,y)+1)
+& times(0,x) == 0
+& times(suc(x),y) == times(x,y)+y
+
+& iter == mu I.fun(H,fun(x,x:I(H)$H$x))
+& iterate(H)$x == x:iterate(H)$H$x 
+
+conjects:
+
+  (P(x,y) & Q(z) & (P(x,y) ==> R(x,y,z)))
+& (P(x,y) ==> (Q(y) ==> R(x,y,z)) | P(y,z))
+& And$zipWith(=)([1,x,3,4])([1,2,y,4])
+& (Any x y z:(x = f(y) & Q(z)) ==> Any x' y' z':(Q(z') & f(y') = x'))
+& [2,3]++[5`mod`2,1] <+> 78 <+> []^{9,5,5}^{9,9,5} = x
+& {2,1^3,{1,4,x},f({5,5})} = {{4,x,1},3^1,2,3^1,f({5}),2}
+
+& Any x: Q(x)
+& Q(suc(y))
+& All x: R(x)
+& R(y+z)
+& Any x: x = suc(y)
+& suc(y) = y+z
+
+& Any x: (x = f(h(y,z),z) & P(x,y))
+& All x: (x =/= f(h(y,z),z) | P(x,y))
+& All x: (x = f(h(y,z),z) & P(x,y) ==> Q(x))
+& All x: (P(x,y) ==> x =/= f(h(y,z),z) | Q(x))
+
+& (x = [] ==> ((x =/= [] ==> Q(x)) & (x = [] ==> R(x))))
+& (x = [] ==> ((x =/= [] ==> Q(x)) | (x = [] ==> R(x))))
+
+& plus(4,suc(5)) = x
+& all(=) $ zip[1,2,3,4,5] $ [1,2,3,4,5]
+& f(fun(suc(x),x+x,x,x*x),z) = f(fun(suc(y),y+y,z,z*z),z)
+
+& (pos 1 0 =/= 4 & 5 =/= 2)
+
+& f[1,x,3,4,5] == 111
+& disjoint[[1,2,3],[4,1,6]]
+& filter(=/=)$prodL[[1,2,3],[1,2,3]]
+
+& any((=5))[6,7,5,4]
+
+terms: 
+
+    g(s,g(s,sd,g(s,sd,r)),r)<+>g(s,sd,r)<+>g(s,sd,g(s,sd,r))<+>g(g(s,sd,r),sd,r)
+<+> take(4)$iter(+1)$0 
+<+> take(4)$iterate(+1)$0 
+<+> take(4)$iter(+3*2)$0 
+<+> take(4)$iter(f.g)$0
+
+<+> fun(x,fun(y,5+x))$3+y
+
+<+> sort[5,6,3,1,3]
+<+> ((+1)**5)(66)
+<+> (suc**5)(66)
+<+> 1*2*3-4*5*6+7/8*9^1*2*3-4*5*6+7*8*9  -->  -114^390
+<+> f$g$h(y)$h(x)$z 
+<+> f[1,f[1..5],3,4,5]
+<+> 11*2-6*7*8*9*0+9/5+8*8*8^66+6^9*9-3*5
+<+> plus(4,suc$5) 
+<+> suc(x)-suc(f(x,x))
+
+<+> times(3,5)
+<+> times(pos 1,5)
+<+> times(3,times(2,pos 1 1)+5)
+<+> (times(1,pos 0 1)+(times(2,pos 0 1 1)+5))+(((times(0,pos 1 0 0 1)+5)+5)+5)
+
+<+> map(suc)[1..4]
+<+> map(fun(x,x+1))[1..5]
+<+> map(f(t).g)[1..4]
+<+> map(+1)[1..6]
+<+> map(**)$zip[1..5]$[1..5]
+<+> map(+3)[1..5] 
+<+> map(fun(x,x+1))[1..5] 
+<+> map(f(t).(+1))[1..5] 
+<+> concat$map(fun(x,[x,suc(x)]))[1..6]
+<+> map(fun(x,insert(x,[1..5]++[8..10])))[6,7]
+
+<+> f$replicate(5)$6
+<+> concat$replicate(5)[1..5]
+<+> replicate(3)$map(fun(x,x$frame$black$text$ff hhhhh ff$88))  
+                    [red,green,blue]
+
+<+> h(1,map(widg.red.frame.text)[0..4])
+<+> h(1,map(widg.frame.red.text)[0..4])
+<+> h(1,map(fun(x,widg(x,frameS$red$text$x+1)))[0..4]) 
+
+<+> fun(f(x),g(h(x)),r(x),h(g(x))) $ f(5)
+<+> fun(f(x),g(h(x)),r(x),h(g(x))) $ r(5)
+<+> fun(f(x),g(x,x))$suc$f$5
+<+> fun(c(x),f(x,x),b(x),g(g(x,x),g(x,x)))$b$c$suc$5
+
+<+> g(pos 1 0 1,g(g(pos 1 0 1,g(pos 1 1,pos 1 1)),x))
+<+> g(g(x,pos 1 0),g(g(g(pos 0,x),g(x,x)),x))
+<+> f(pos 2 0,x,f(pos 2 2 1,x,f(pos 2 2 1,pos 2 2 2,x)))
+<+> f(x,f(f(x,f(x,f(x,f(pos 1 0,y)),f(x,f(x,y)),f(x,f(x,pos 1 0 1 3)))),y))
+
+<+> lin(5*x+6*y+z)+lin(4*x+7*y+z)
+<+> gauss(x+y-z+z' = 6 		&
+      2*x+y-z-z'   = 8		&
+      x+2*y+z-2*z' = 10		&
+      x-y-z+3*z'   = 2)
+<+> gaussI(x+y-z+z' = 6         &
+      2*x+y-z-z'   = 8		&
+      x+2*y+z-2*z' = 10		&
+      x-y-z+3*z'   = 2)
+
+<+> filter(<4)[1..5]
+<+> filter(`NOTin`[2,5])[1,2,3,4,5]
+<+> filter(rel(x,sum$x=6))$replicate(3)[1,2,3]
+<+> filterL(=/=)[[1,2,3],[a,1,c]]
+<+> filterL(=/=)[[1,2,3],[1,2,3]]
+<+> filterL(`NOTin`)[[3,5,7],[[2,3,4],[4,5,6],[6,7,8]]]
+<+> filter(rel([x,y,z],x=/=y&y=/=z&z=/=x))$replicate(3)[1,2,3]
+<+> filterL(rel((x,y,z),x=/=y&y=/=z&z=/=x))$replicate(3)[1,2,3]
+<+> filter(rel(x,sum$x=6))$[3,2,1]:[2,1,2]:replicate(2)[1,2,3]++[[1,1,1]]
+
+<+> 1(2(3(4(a,a),4(a,a)),3(4(a,a),4(a,a))),2(3(4(a,a),4(a,a)),3(4(a,a),4(a,a))))  
+<+> fun(x,f(f(x,x,x),f(x,x,x)))(f(ggg,nnn,bbb))
+
+<+> map(+3)[3,6,4] 
+<+> map(fun(x,frame(x$text$ff hhhhh ff$8)))[red,green,blue] -- pict type: widget
+<+> mapfilterL(=/=)(+)[[1,2,3],[1,2,3]]
+<+> mapfilterL(=/=)(+)$replicate(2)[1..5]
+<+> [(0,[1]),(1,[2]),(2,[3]),(3,[4]),(4,[5]),(5,[0])]
+
+<+> concat$replicate(5)[1,2,f(pos 0 1 2 1,g(x)),3,4]
+
+<+> f(g(h,n),widg(widg(t,z,red$oval(22,44)),z,light green$oval(44,22)))
+<+> f(g(h,widg(t,z,gif(goat,44,22))),     widg(widg(t,z,gif(nemo,66,44)),z,light green(oval(44,22))))
+<+> widg(replicate(5)[1..4],center$turt[shine(11)$red$circ$22,J$33,
+					shine(11)$blue$circ$22])
+<+> turt[place(0,0)$red$circ$5,place(0,10)$green$circ$5,
+         place(10,10)$blue$circ$5,place(10,0)$yellow$circ$5]
+<+> turt$map(fun((x,y,H),place(x,y)$H$circ$5))[(0,0,red),(0,10,green),(10,10,blue),(10,0,yellow)]
+<+> gifs(tweety,12,155,155)
+
+<+> red_uuu(light blue_hhhh,magenta_uuu(bbbbbbb(light blue_hhhh,light green_xxxx),yellow_xxxx,cyan_ppp,iiiii))
+
+<+> f(f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a))
+<+> f(a,f(a,a,a,a,a,a,a),a,a,f(a,a,a,a,a,a,a),a,f(a,a,a,a,a,a,a))
+<+> f(g(h(pos 1 0 1,pos 1)),k(m(c(pos 1 0 1),d(pos 1 0 0,pos 0))))
+<+> seq(assign(pos 1 0 1,int(pos 0)),        loop(greater(var(x),int(0)),             seq(assign(pos 1 1 0 1,mul(var(fact),var(pos 1 1 0 1))),                 assign(pos 1 1 1 1,sub(var(pos 1 0 1),int(pos 1 0 0 0))))))
+<+> seq(assign(pos 1 0 1,int(pos 0)),        loop(greater(var(x),int(pos 1 1 1)),             seq(assign(pos 1 1 0 1,mul(var(fact),var(pos 1 1 0 1))),                 assign(pos 1 1 1 1,sub(var(pos 1 0 1),int(pos 1 1 1 1))))))
+<+> seq(assign(pos 1 1 1,int(pos 1 1)),        loop(greater(var(x),int(0)),             seq(assign(pos 1 1 1 0,mul(var(pos 1 1 0),var(x))),                 assign(x,sub(var(pos 1 0 0 0),int(1))))))
+{- <+> f(f(a,f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,a)))),a) -}
+

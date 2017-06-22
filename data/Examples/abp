@@ -1,0 +1,97 @@
+-- ABP (alternating bit protocol)
+
+-- see K. Lin, J. Goguen, A Hidden Proof of the Alternating Bit Protocol, and
+-- J. Goguen, K. Lin, Behavioral Verification of Distributed Concurrent Systems 
+-- with BOBJ, Proc. Conf. on Quality Software, IEEE Press (2003) 216-235
+
+constructs: ok error
+defuncts:   not fhead ftail fhead1 fhead2 trans next1 next2
+preds:	    Nat
+fovars:     x s s' is is' cs b b' m n acks data
+
+axioms:
+  fhead(0:s) = ok
+& fhead(suc(n):s) = error
+& ftail(0:s) = s
+& ftail(suc(n):s) = n:s
+& fhead1(s,s') = fhead(s)
+& fhead2(s,s') = fhead(s')
+& ftail(s,s') = (ftail(s),ftail(s'))
+
+& (head(trans(b,m,b',n,is,cs)) = n  <===  b =/= b' & fhead1(cs) = ok)
+
+& (tail(trans(b,m,b',n,is,cs)) = trans(b,m,b,m,is,ftail(cs))  
+				    <===  b =/= b' & fhead1(cs) = ok)
+& (trans(b,m,b',n,is,cs) = trans(b,m,b',n,is,ftail(cs))  
+				    <===  b =/= b' & fhead1(cs) = error)
+& (trans(b,m,b,n,is,cs) = trans(not(b),head(is),b,n,tail(is),ftail(cs)) 
+				    <===  fhead2(cs) = ok)
+& (trans(b,m,b,n,is,cs) = trans(b,m,b,n,is,ftail(cs)) 
+				    <===  fhead2(cs) = error)
+
+& (next1(cs) = cs  		 <===  fhead1(cs) = ok)
+& (next1(cs) = next1(ftail(cs))  <===  fhead1(cs) = error)
+& (next2(cs) = cs  		 <===  fhead2(cs) = ok)
+& (next2(cs) = next2(ftail(cs))  <===  fhead2(cs) = error)
+
+& (s ~ s'  ===>  head(s) = head(s') & tail(s) ~ tail(s'))
+
+& Nat(0)
+& (Nat(suc(n))  <===  Nat(n))
+
+theorems:
+
+  not(b) =/= b
+& (True  ===>  Any n is': is = n:is')
+& (True  ===>  fhead1(cs) = ok | fhead1(cs) = error)
+& (True  ===>  fhead2(cs) = ok | fhead2(cs) = error)
+ 
+& fhead1(next1(cs)) = ok		                  -- follows from (A1)
+						   -- used in the proof of (F)
+						   
+& fhead2(next2(cs)) = ok		                  -- follows from (A2)
+						   -- used in the proof of (F)
+
+& (trans(b,m,b,n,is,cs) = trans(b,m,b,n,is,next2(ftail(cs)))
+     <===  fhead2(cs) = error)   			   -- follows from (B)
+     					  -- used in the proofs of (E) and (F)
+					  
+& (trans(b,m,b',n,is,cs) = trans(b,m,b',n,is,next1(ftail(cs)))
+     <===  b =/= b' & fhead1(cs) = error) 	           -- follows from (C)
+     					           -- used in the proof of (D)
+						   
+& (trans(b,m,b,n,is,cs) = trans(not(b),head(is),b,n,tail(is),next1(ftail(cs)))
+     <===  fhead2(cs) = ok)			   	                -- (D)
+     					           -- used in the proof of (F)
+						   
+& (tail(trans(b,m,b',n,is,cs)) = trans(b,m,b,m,is,next2(ftail(cs)))
+     <===  b =/= b' & fhead1(cs) = ok)   				-- (E)
+
+ -- induction orderings
+
+& suc(n) >> n					   -- used in the proof of (A)
+& (fhead2(cs) = error  ===>  cs >> ftail(cs))      -- used in the proof of (B)
+& (fhead1(cs) = error  ===>  cs >> ftail(cs))      -- used in the proof of (C)
+
+conjects:
+  
+  (Nat(n)  ==>  fhead1(next1(n:data,acks)) = ok)		       -- (A1)
+& (Nat(n)  ==>  fhead2(next2(data,n:acks)) = ok)		       -- (A2)
+
+& (fhead2(cs) = error  
+     ==>  trans(b,m,b,n,is,ftail(cs)) = trans(b,m,b,n,is,next2(ftail(cs))))   
+     								        -- (B)
+									  			
+& (b =/= b' & fhead1(cs) = error
+     ==>  trans(b,m,b',n,is,ftail(cs)) = trans(b,m,b',n,is,next1(ftail(cs))))		
+     									-- (C)
+
+& (fhead2(cs) = ok  
+     ==>  trans(b,m,b,n,is,cs) = 
+          trans(not(b),head(is),b,n,tail(is),next1(ftail(cs))))         -- (D)
+			
+& (b =/= b' & fhead1(cs) = ok
+     ==>  tail(trans(b,m,b',n,is,cs)) = trans(b,m,b,m,is,next2(ftail(cs))))
+     									-- (E)
+
+& trans(b,m,b,n,is,cs) ~ n:is						-- (F)

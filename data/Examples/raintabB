@@ -1,0 +1,3 @@
+-- raintabB
+tabB(3,0,rframe(turt(rainbow(circ(33,yellow)))),rframe(polyR(51,[33])),
+        rframe(turt(rainbow(polyR(51,[33])))))

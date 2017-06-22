@@ -1,0 +1,30 @@
+-- RELALGP (relations as predicates)
+
+preds:    Q R S A O L I notI \/ /\ C * T <= <=> dom ran
+hovars:   Q R S A
+fovars:   x y z
+
+axioms:   L(x,y) 					 &
+	  (I(x,y)	<===  x = y)			 &
+	  (notI(x,y)    <===  x =/= y)			 &
+          ((R\/S)(x,y)  <===  R(x,y) | S(x,y))		 &
+          ((R/\S)(x,y)  <===  R(x,y) & S(x,y))  	 &
+	  (C(R)(x,y)    <===  Not(R(x,y)))   		 &  
+          ((R*S)(x,y)   <===  R(x,z) & S(z,y))  	 &
+	  (T(R)(x,y)    <===  R(y,x))   		 &
+	  ((R<=S)(x,y)  <===  (R(x,y) ==> S(x,y)))	 &
+	  ((R<=>S)(x,y) <===  (R<=S)(x,y) & (S<=R)(x,y)) &
+	  (dom(R)(x,y)  <===  R(x,z))			 &
+	  (ran(R)(x,y)  <===  R(z,y))			
+	  
+conjects:
+
+(All x y:((Q*R)<=S)(x,y) <==> All x y:((T(Q)*C(S))<=C(R))(x,y))			&
+
+All x y: (dom((R/\(R*C(I)))/\(C(I)*R)) <=> dom((((C(I)*R)/\R)*C(I))/\R))(x,y)	&
+
+(Any x y: C(T(C(R*A))*dom(R))(x,y) & All x y: ((dom(A)<=dom(R))/\(dom(R/\I)<=>dom(R)))(x,y) 
+   ==> All x y:(dom(R)<=dom(A))(x,y)) 
+
+
+

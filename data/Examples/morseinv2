@@ -1,0 +1,46 @@
+-- morseinv2
+
+
+Derivation of
+
+morse1(inv(s)) ~ inv(morse1(s))
+
+Adding
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = morse1(inv(s)) & z1 = inv(morse1(s)))
+
+to the axioms and applying COINDUCTION wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at position [] of the preceding formula leads to 
+
+All s0:(morse2(inv(s0)) ~0 inv(morse2(s0)))
+
+The reducts have been simplified.
+
+Adding
+
+  (z2 ~0 z3 <=== z2 = morse2(inv(s0)) & z3 = inv(morse2(s0)))
+
+to the axioms and applying COINDUCTION wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at position [0] of the preceding formula leads to 
+
+All s0:(morse1(inv(tail(s0))) ~0 inv(morse1(tail(s0))))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 3

@@ -1,0 +1,3 @@
+-- pulse
+repeat(pulse(oval(66,132,red)),turt(J(222),pulse(oval(66,132,green))),
+       turt(J(222),pulse(oval(66,132,blue))))

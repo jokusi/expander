@@ -1,0 +1,11 @@
+-- hulls
+
+terms:
+
+tabB(5,5,
+     tup(id,outline,odots,hframe,rframe)
+     (grow(trunk,grow(grow(trunk,grow(trunk,trunk)),trunk)))) <+>
+table(52,22,22,hull[rainbow(polySF(5,[22,44],yellow),51)]) <+>
+hull(polySF(12,[44,22],green)) <+>
+hull(leafF(33,11,red)) <+>
+rframe(polyF(12,[44,11],green))

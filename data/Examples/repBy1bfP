@@ -1,0 +1,72 @@
+-- repBy1bfP
+
+
+Derivation of
+
+repBy1(rep0)(min)(leaf(3)#(leaf(2)#leaf(6))) = t
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any u x:(u = t & rep0(min)(leaf(3)#(leaf(2)#leaf(6)),x) = (x,u))
+
+Simplifying the preceding formula (2 steps) leads to 
+
+Any x:(rep0(min)(leaf(3)#(leaf(2)#leaf(6)),x) = (x,t))
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any x:(Any y z u1 u2:((min(y,z),u1#u2) = (x,t) & rep0(min)(leaf(3),x) = (y,u1) & 
+                      rep0(min)(leaf(2)#leaf(6),x) = (z,u2)))
+
+Simplifying the preceding formula (5 steps) leads to 
+
+Any y z u1 u2:(u1#u2 = t & rep0(min)(leaf(3),min(y,z)) = (y,u1) & 
+               rep0(min)(leaf(2)#leaf(6),min(y,z)) = (z,u2))
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any y z u1 u2:(u1#u2 = t & (3,leaf(min(y,z))) = (y,u1) & 
+               rep0(min)(leaf(2)#leaf(6),min(y,z)) = (z,u2))
+
+Simplifying the preceding formula (6 steps) leads to 
+
+Any z u2:(rep0(min)(leaf(2)#leaf(6),min(3,z)) = (z,u2) & leaf(min(3,z))#u2 = t)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any z u2:(Any y z1 u1 u5:((min(y,z1),u1#u5) = (z,u2) & 
+                          rep0(min)(leaf(2),min(3,z)) = (y,u1) & 
+                          rep0(min)(leaf(6),min(3,z)) = (z1,u5)) & 
+          leaf(min(3,z))#u2 = t)
+
+Simplifying the preceding formula (2 steps) leads to 
+
+Any z u2:(Any y z1 u1 u5:(min(y,z1) = z & u1#u5 = u2 & 
+                          rep0(min)(leaf(2),min(3,z)) = (y,u1) & 
+                          rep0(min)(leaf(6),min(3,z)) = (z1,u5)) & 
+          leaf(min(3,z))#u2 = t)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any z u2:(Any y z1 u1 u5:(min(y,z1) = z & u1#u5 = u2 & 
+                          (2,leaf(min(3,z))) = (y,u1) & 
+                          rep0(min)(leaf(6),min(3,z)) = (z1,u5)) & 
+          leaf(min(3,z))#u2 = t)
+
+Simplifying the preceding formula (6 steps) leads to 
+
+Any z u2:(Any z1 u5:(rep0(min)(leaf(6),min(3,z)) = (z1,u5) & min(2,z1) = z & 
+                     leaf(min(3,z))#u5 = u2) & 
+          leaf(min(3,z))#u2 = t)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any z u2:(Any z1 u5:((6,leaf(min(3,z))) = (z1,u5) & min(2,z1) = z & 
+                     leaf(min(3,z))#u5 = u2) & 
+          leaf(min(3,z))#u2 = t)
+
+Simplifying the preceding formula (12 steps) leads to 
+
+leaf(2)#(leaf(2)#leaf(2)) = t
+
+Number of proof steps: 12

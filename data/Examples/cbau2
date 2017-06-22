@@ -1,0 +1,9 @@
+-- cbau2
+
+conjects:
+
+y = cons(push(1),cons(save(fact),cons(pop,z))) &
+z = cons(load(x),cons(push(1),cons(cmp(gt),fork(none,
+        cons(load(fact),cons(load(x),cons(mul,cons(save(fact),
+        cons(pop,cons(load(x),cons(push(1),cons(sub,cons(save(x),
+        cons(pop,z))))))))))))))

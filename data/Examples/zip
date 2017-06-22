@@ -1,0 +1,19 @@
+-- ZIP
+
+preds:      zipAny P
+copreds:    zipAll
+fovars:     s s'
+hovars:     P
+
+axioms:
+
+  (zipAny(P)(x:s)(y:s') <=== P(x,y) | zipAny(P)(s)(s'))
+& (zipAll(P)(x:s)(y:s') ===> P(x,y) & zipAll(P)(s)(s'))
+
+conjects:
+
+  zip([1,2,3,4,5,6])([2,3,4,5,6,7]) = x
+& zipWith(*)([1,2,3,4,5,6])([2,3,4,5,6,7]) = x
+& zipAny(=)([1,2,x,4,5,6])([2,3,4,5,6,7])
+& zipAny(=)(1:(2:(x:(4:(5:y)))))([2,3,4,5,6,7])
+& zipAll(=)(2:(x:(4:(5:(6:y)))))([2,3,4,5,6,7])

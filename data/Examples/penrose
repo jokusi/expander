@@ -1,0 +1,65 @@
+-- penrose
+
+defuncts: F a f g h sh ra tr tra tra' pen track2
+hovars:   F
+
+axioms: 
+   a == grow(LB)[skip,RB,
+                 grow(LB)[RS,grow(RS)[LB,grow(RB)[grow(RB)[skip,LS,RS]]]]]
+&  f(x) == grow(LS)[grow(RB)[skip,x],grow(LB)[x],
+                    (fun(y,grow(LS)[skip,grow(LB)[x],y])**8)$LS]
+&  g(x) == red$grow(LS)[grow(RB)[skip,x],grow(LB)[x],
+                        (fun(y,grow(LS)[skip,grow(LB)[x],y])**8)$LS]
+&  h(x) == red$sh(LS)[sh(RB)[skip,x],sh(LB)[x],
+               (fun(y,red$sh(LS)[skip,sh(LB)[x],y])**8)$red$sh(LS)[]]
+&  sh(x) == growT(shine$22,x)
+&  ra(x) == growT(inCenter(rainbow$6),x)
+&  tr(x) == growT(track$ascF,x)
+&  ratr(x)(y) == growT(inCenter$rainbow2(6).tracc2(x),y)
+&  rats(x)(y) == growT(inCenter(rainbow2$6).tracc2(x),y)
+&  ratt(x)(y) == growT(inCenter(rainbow$6).inCenter(tracc2$x),y)
+&  ratu(x)(y) == growT(inCenter(rainbow$6).inCenter(tracc$x),y)
+&  pen(F) == scale(0.6)$orange$
+              F(RS)[skip,
+                    F(RB)[skip,skip,
+		          F(RB)[F(RB)[],
+ 			        F(LB)[F(RS)[skip,F(LB)[]],
+				      F(RS)[F(LB)[skip,skip,
+						  F(LB)[F(LS)[],F(RS)[]]]]]]]]
+
+terms:	
+
+    grow(LB)[LB,grow(RB)[LS],grow(LS)[skip,RS,RB],grow(RS)[LB,LS]]
+<+> grow(RB)[RB,grow(LS)[skip,RS,RB],grow(RS)[LB,LS],
+             grow(LB)[skip,skip,RS]] 
+
+<+> (fun(x,grow(LB)[skip,skip,x])**4)(LB)			-- 5-star
+<+> grow(LB)[LS,RS,(fun(x,grow(LB)[skip,RS,x])**3)$LB]  	-- 5-star
+<+> grow(RB)[RS,grow(LB)[skip,RS,grow(LB)[skip,RS,LB]],
+             grow(RB)[skip,LS],LS] 
+<+> (fun(x,grow(LB)[RS,LS,x])**5)(LB)
+<+> (fun(x,grow(LB)[grow(RS)[RB],LS,x])**5)(LB)
+
+<+> (fun(x,grow(LS)[skip,skip,x])**9)(LS)			-- 10-star
+<+> grow(LS)[RB,LB,(fun(x,grow(LS)[skip,LB,x])**8)$LS]
+<+> f(LB)
+<+> f(grow(LB)[skip,RB,LB])
+<+> f(grow(LB)[skip,RB,grow(LB)[RS,RS]])
+<+> f(grow(LB)[skip,RB,grow(LB)[RS,grow(RS)[LB,RB]]])
+<+> f(grow(LB)[skip,RB,grow(LB)[RS,grow(RS)[LB,grow(RB)[RB]]]])
+<+> f(a)
+<+> g(a)
+<+> h(a)
+
+<+> turt$init$concat$replicate(10)[red$sh(RS)[],T$36]
+<+> turt$init$concat$replicate(10)[pen$sh,T$36]
+<+> turt$init$concat$replicate(10)[pen$ra,T$36]
+<+> turt$init$concat$replicate(10)[pen$tr,T$36]
+<+> turt$init$concat$replicate(10)[pen$ratr$ascF,T$36]   -- penrose8raint3
+<+> turt$init$concat$replicate(10)[pen$rats$ascF,T$36]   -- penrose8raint4
+<+> turt$init$concat$replicate(10)[pen$ratt$ascF,T$36]   -- penrose8raint5
+<+> turt$init$concat$replicate(10)[pen$ratu$ascF,T$36]   -- penrose8raint6
+<+> turt$init$concat$replicate(10)[pen$rats$symF,T$36]   -- penrose8raint7
+<+> turt$init$concat$replicate(10)[pen$rats$angF,T$36]   -- penrose8raint8 
+					      --  yellow -> penrose8raint10
+<+> turt$init$concat$replicate(10)[pen$rats$sloF,T$36]   -- penrose8raint9

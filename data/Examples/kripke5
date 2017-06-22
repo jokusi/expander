@@ -1,0 +1,28 @@
+-- KRIPKE5  Probeklausur Aufgabe 4
+
+constructs: 	p q
+defuncts: 	states atoms pic draw drawR
+fovars:		k
+
+axioms:
+
+states == [1,4] & atoms == [p,q] &
+
+1 -> 2<+>5 &
+2 -> 3<+>5 &
+4 -> 4 &
+
+p -> 1<+>2<+>3 &
+q -> branch[1,3,4,5] &
+
+pic == frameSF.black.text &
+
+draw  == wtree $ fun(bingo(x),light blue$pic$x) &
+drawR == wtree(3,fun((bingo(x),k,n),color(k,n)$pic$x))
+
+terms: 
+
+    sols(AX$AX$q)			--> [1,4,2,5,3]				
+<+> stateflow(AX$AX$q)			--> [1,4,2,5,3]
+<+> solsG(EX$false`then`AX$q)		--> [1,4,2]
+<+> stateflow(EX$false`then`AX$q)	--> [1,4,2]

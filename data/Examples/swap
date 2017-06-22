@@ -1,0 +1,9 @@
+-- SWAP
+
+defuncts:	restrict forall exists quantor x X Y F and or not
+fovars:		u2 u1 u t2 t1 t j i b y z
+hovars:		F{and,or} X{x} Y{x}
+
+axioms:
+
+X < Y ==> X(Y(t1,u1),Y(t2,u2)) = Y(X(t1,t2),X(u1,u2))

@@ -1,0 +1,2 @@
+-- maploopT
+[DeriveMode False False, Match 0, Mark [[]], DeriveMode True False, Induction False 0, Mark [[0, 0, 0]], Theorem False (F "=" [F "f" [F "$" [F "$" [F "loop" [F "f" []], V "n"], V "x"]], F "$" [F "$" [F "loop" [F "f" []], V "n"], F "f" [V "x"]]]), Mark [], Narrow 1 True, Mark []]

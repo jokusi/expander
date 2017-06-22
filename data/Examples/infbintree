@@ -1,0 +1,15 @@
+-- infbintree
+
+defuncts:   left root right mirror
+fovars:     t t'
+
+axioms:
+
+  left(mirror(t)) == right(t)
+& root(mirror(t)) == root(t)
+& right(mirror(t)) == left(t)
+
+& (t ~ t' ===> left(t) ~ left(t') & root(t) = root(t') & right(t) ~ right(t'))
+
+conjects:   mirror(mirror(t)) ~ t
+

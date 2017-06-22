@@ -1,0 +1,17 @@
+-- tree
+rotate(tree(seq(assign(fact,int(1)),loop(greater(var(x),int(0)),
+            seq(assign(fact,mul(var(fact),var(x))),
+            assign(x,sub(var(x),int(1)))))))) <+>
+turt(tree(seq(assign(fact,int(1)),
+     loop(greater(var(x),int(0)),
+     seq(assign(fact,mul(var(fact),var(x))),
+         assign(x,sub(var(x),int(1))))))),
+     M(222),
+     flipV(tree(seq(assign(fact,int(1)),
+     loop(greater(var(x),int(0)),
+     seq(assign(fact,mul(var(fact),var(x))),
+	 assign(x,sub(var(x),int(1)))))))),
+     M(222),
+     flipH(tree(seq(assign(fact,int(1)),loop(greater(var(x),int(0)),
+     seq(assign(fact,mul(var(fact),var(x))),
+         assign(x,sub(var(x),int(1)))))))))

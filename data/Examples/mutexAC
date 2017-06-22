@@ -1,0 +1,25 @@
+-- MUTEXAC
+
+constructs: 	a b wait try crit safe
+defuncts:       states atoms AG
+
+axioms:
+
+states == mapprodL(bag)[map($a)[wait,try,crit],map($b)[wait,try,crit]] &
+atoms == [safe] &
+
+wait(x) -> try(x) &
+(x =/= y ==> try(x)^wait(y) -> crit(x)^wait(y)) &
+(x =/= y ==> try(x)^try(y) -> [crit(x)^try(y),try(x)^crit(y)]) &
+crit(x) -> wait(x) &
+
+safe -> states-(crit(a)^crit(b))
+ 
+terms:
+
+AG(safe)
+
+--> wait(a)^wait(b) <+> try(b)^wait(a) <+> crit(b)^wait(a) <+> try(a)^wait(b) <+>
+--  try(a)^try(b) <+> crit(b)^try(a) <+> crit(a)^wait(b) <+> crit(a)^try(b)
+
+

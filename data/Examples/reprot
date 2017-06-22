@@ -1,0 +1,2 @@
+-- test
+repeat(rotate(10,polyR(5,[33,11],blue),poly(5,[44,22,22],red)))

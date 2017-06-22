@@ -1,0 +1,57 @@
+-- hinze
+
+constructs:   Empty Node 
+defuncts:     atree eval parse insertNat insertNice
+	      big prune delete join split deleteNice
+fovars:       b c t l r ll lr rl rr
+hovars:       a
+
+axioms:
+
+  atree == Node(Node(Empty,2,Empty),5,Empty)
+
+& eval(Node(Empty,a,Empty)) == a
+& eval(Node(Empty,a,t))     == a(Empty,eval(t))
+& eval(Node(t,a,Empty))     == a(eval(t),Empty)
+& eval(Node(l,a,r))         == a(eval(l),eval(r))
+
+& parse(Empty)  == Empty
+& parse(a(l,r)) == Node(parse(l),a,parse(r))
+& parse(a)      == Node(Empty,a,Empty)
+
+& insertNat(a)(Empty) 	    == Node(Empty,a,Empty)
+& insertNat(a)(Node(l,b,r)) == ite(a <= b)(Node(insertNat(a)(l),b,r),
+				           Node(l,b,insertNat(a)(r)))
+
+& insertNice(a) == eval.insertNat(a).parse
+
+& big(n) == Node(big(2*n),n,big(2*n+1))
+
+& prune(0)(t)     	     == Empty
+& prune(n)(Empty) 	     == Empty
+& prune(1)(Node(l,a,r))      == Node(Empty,a,Empty)
+& prune(suc(n))(Node(l,a,r)) == Node(prune(n)(l),a,prune(n)(r))
+
+& pruneBig(n) == eval$prune(n)$big$1 
+
+& delete(a)(Empty) 	 == Empty
+& delete(a)(Node(l,a,r)) == join(l,r)
+& delete(a)(Node(l,b,r)) == ite(a < b)(Node(delete(a)(l),b,r),
+				       Node(l,b,delete(a)(r)))
+
+& join(Empty,r)          == r
+& (split(ll,a,lr) = (b,t) ==> 
+   join(Node(ll,a,lr),r) == Node(t,b,r))
+
+& split(l,a,Empty)          == (a,l)
+& (split(l,rl,b,rr) = (c,t) ==> 
+   split(l,a,Node(rl,b,rr)) == (c,Node(l,a,t)))
+
+& deleteNice(a) == eval.delete(a).parse
+
+terms:
+
+    insertNat(7)$atree
+<+> insertNice(7)$5(2,Empty)
+<+> pruneBig$3
+<+> deleteNice(7)$5(2,7(6,9))

@@ -1,0 +1,118 @@
+-- GRAPHS
+
+defuncts:   G1 G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12 frame intcirc redassign 
+constructs: F C f g
+fovars:     k n
+hovars:     F C
+
+axioms:
+
+  frame(g) == wtree(fun(x,rframe(text(x))))(g)
+
+& intcirc(g) == wtree(fun(x,ite(Int(x),circ(11,red),x)))(g)
+
+& redassign(g) == wtree(fun(x,ite(x=assign,red(text(x)),x)))(g)
+
+& drawLC(g) == wtreeL(fun(x,k,n,circ(5,color(k,n))))(g)
+
+& drawLRC(g) == wtreeL(fun(x,k,n,circ(k*2+2,color(k,n))))(g)
+
+& drawLO(g) == wtreeL(fun(x,k,n,oval(5,15,color(k,n))))(g)
+
+& drawLL(g) == wtreeL(fun(x,k,n,turt(R,leaf(15,15,color(k,n)))))(g)
+
+& drawLA(g) == wtreeL(fun(x,k,n,turt(R,leafA(100,40,color(k,n)))))(g)
+
+& drawLM(g) == wtreeL(fun(x,k,n,turt(R,leafM(100,40,color(k,n)))))(g)
+
+& drawLRO(g) == wtreeL(fun(x,k,n,oval(k*2+2,15,color(k,n))))(g)
+
+& drawHC(g) == wtreeH(fun(x,k,n,circ(5,color(k,n))))(g)
+
+& drawHRC(g) == wtreeH(fun(x,k,n,circ(k*2+2,color(k,n))))(g)
+
+& drawHO(g) == wtreeH(fun(x,k,n,oval(5,15,color(k,n))))(g)
+
+& drawHRO(g) == wtreeH(fun(x,k,n,oval(k*2+2,15,color(k,n))))(g)
+
+& drawPC(g) == wtreeP(fun(x,k,n,circ(5,color(k,n))))(g)
+
+& drawPRC(g) == wtreeP(fun(x,k,n,circ(k+1,color(k,n))))(g)
+
+& drawBC(g) == wtreeB(fun(x,k,n,circ(5,color(k,n))))(g)
+
+& drawBRC(g) == wtreeB(fun(x,k,n,circ(k+1,color(k,n))))(g)
+
+& G1 == [(1,a,[1,2]),(2,a,3),(2,c,[3,4]),(3,a,[1,4]),(4,a,4)]
+& G2 == [(1,4),(2,2),(3,5),(4,3),(5,1)]
+& G3 == 0(1,2(5,6,2(5,6,3)))
+& G4 == [(0,[0,1]),(1,2),(2,[2,3]),(3,4),(4,[4,5]),(5,6)]
+& G5 == [(7,3),(3,[2,1]),(2,5),(6,7),(1,4),(3,5),(4,3)]
+& G6 == 0(0(0(0(1,2),widg(pos 0 0,2,light red(circ(33)))),2),
+        0(pos ,0(0(0(0(1,2),0(pos 1 1 0 0,2)),2),0(pos 1 1,2))))
+& G7 == seq(assign(fact,int(1)),            loop(greater(var(z),int(0)),                 seq(assign(fact,mul(var(fact),var(z))),                     assign(z,sub(var(z),int(1))))))
+& G8 == seq(assign(fact,int(1)),
+            loop(widg(var(z),int(0),red$snow(6,3,88,6,tria(-1))),
+                seq(assign(fact,
+                           widg(var(fact),var(z),
+                                frame(red$text(hans peter wolf)))),
+                    assign(z,sub(var(z),int(pos 1 1 0 1))))))
+& G9 == f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a))
+& G10 == f(f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+  f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+  f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+  f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+  f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)))
+& G11 == 0(1(2,2,2(3(4,4,4,4,4,4,4,4,4,4,4)),2,2,2,2,2,2,2,2,2,2,                 2(3(4,4,4,4,4,4,4,4,4,4,4)),2,2))
+& G12 == 0(1(2,             2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                 4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),             2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,             2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                 4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),             2))
+
+terms:   
+
+    f(widg$matrix[(3,4,c),(a,b,dd)],kkk,kkk)
+<+> fun(x,f(g(444,widg(444,bbb,x),widg(444,widg(444,bbb,x),x)),widg(444,bbb,x)))
+    $matrix[(3,4,c),(a,b,dd)]
+<+> (iterate(fun(x,widg(x,circ$22)))$widg$circ$44)!!3
+<+> drawLC(G7) <+> drawLO(G9) <+> drawLM(G9)
+<+> fun((F,C),F$C$circ$44,7777)((rainbow(0,5),red))
+<+> file(graph1)
+<+> file(fadeterm)
+<+> file(widg(widg$red$rect(22,11),
+              widg(widg$green$rect(11,22),yellow$tria$15),              circ$22),         FF)
+<+> repeat(map(animate)(tup(id,reverse)(map(fun(n,polyR(n,[22,55,44],red)))[1..15])))
+<+> repeat(fork(rotate(10,poly(6,[33,11],red)):
+	      map(fun((x,y,z),rotate(x,turt(J(y),poly(6,[33,11],z)))))
+	      [(-10,66,green),(7.5,132,blue),(-7.5,198,magenta),(5,264,dark cyan)])) 
+<+> aaaa(ddd,
+     aaaa(ddd,
+          bbb(ddd,
+              aaaaa(ddd,
+                    bbb(ddd,cccccc(ccccc,ccccccccccccccccccccccccc),ccccccccc,
+                        ccccccccccccccccccccccccc),
+                    ccccccccc,ccccccccccccccccccccccccc),
+              aaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,ccccccccc,
+                            ccccccccccccccccccccccccc)),
+          bbb,ccccccccc,ccccccccccccccccccccccccc,ccccccccccccccccccccccccc,
+          ccccccccccccccccccccccccc),
+     aaaaaaaaaaaaaaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,
+                               ccccccccccccccccccccccccc))
+<+> aaaaaaaaaaa(aaaaaaaaaaaaa(bbb,
+                          aaaaaaaaa(bbb,ccccccccccccccccccccccccc,ccccccccc,
+                                    ccccccccccccccccccccccccc,ccccccccc,
+                                    ccccccccccccccccccccccccc,
+                                    aaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,
+                                                  ccccccccc,5+6,ccccccccc),
+                                    ccccccccccccccccccccccccc)),
+            aaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,ccccccccc,
+                          ccccccccccccccccccccccccc,ccccccccc),
+            aaaaaaaaaaaaaaaaaaaaaaaaa(bbb,
+                                      aaaaaa(bbb,ccccccccc,
+                                             ccccccccccccccccccccccccc,
+                                             ccccccccccccccccccccccccc,
+                                             ccccccccccccccccccccccccc,
+                                             ccccccccc,
+                                             ccccccccccccccccccccccccc,
+                                             ccccccccc)),
+            aaaaaaaaaaaaaaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,
+                                      ccccccccccccccccccccccccc,ccccccccc,
+                                      ccccccccccccccccccccccccc))
+

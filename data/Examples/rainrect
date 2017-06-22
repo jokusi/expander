@@ -1,0 +1,4 @@
+-- rainrect
+repeat(rainbow(rect(42,42,yellow),102,42,0),rainbow(rect(42,42,yellow),102,-42,0),
+       reverse(rainbow(rect(42,42,yellow),102,42,0)),
+       reverse(rainbow(rect(42,42,yellow),102,-42,0)))

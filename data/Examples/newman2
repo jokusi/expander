@@ -1,0 +1,16 @@
+-- NEWMAN2 (Newman's Lemma)
+
+preds:    R star >>
+fovars:   x y z u
+hovars:   R 
+
+axioms:   star(R)(x,x)                			&
+	  (star(R)(x,z) <=== R(x,y) & star(R)(y,z))	&
+          (x >> y <=== R(x,y))				&	
+          (x >> z <=== R(x,y) & star(R)(y,z))			 	
+
+theorems: (R(x,y) & R(x,z) ===> Any u:(star(R)(y,u) & star(R)(z,u))) &
+	  (star(R)(x,y) & star(R)(y,z) ===> star(R)(x,z))			 
+	  
+conjects: (star(R)(x,y) & star(R)(x,z) 
+		==> Any u:(star(R)(y,u) & star(R)(z,u)))

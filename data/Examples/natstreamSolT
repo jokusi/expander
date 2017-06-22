@@ -1,0 +1,2 @@
+-- natstreamSolT
+[DeriveMode False False, Match 0, Mark [], DeriveMode True False, Induction False 0, Mark [], Induction False 0, Mark [], Induction False 0, Mark [], Narrow 1 True, Mark []]

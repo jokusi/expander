@@ -1,0 +1,38 @@
+-- ECHOAC
+
+-- see M.-O. Stehr, J. Meseguer, P.C. Ölveczky, Rewriting Logic as a Unifying 
+-- Framework for Petri Nets, in: H. Ehrig et al., eds., Unifying Petri Nets, 
+-- Springer LNCS 2128 (2001) 250-303
+
+constructs: quiet waiting uninformed pending terminated accepted mailbox
+            a b c
+defuncts:   msgsout msgsin
+fovars:     x y ms 
+
+axioms:
+
+msgsout(a) = {(a,b),(a,c)}		&
+msgsout(b) = {(b,a)}			&
+msgsout(c) = {(c,a)}			&
+
+msgsin(a) = {(b,a),(c,a)}		&
+msgsin(b) = {(a,b)}			&
+msgsin(c) = {(a,c)}			&
+
+--WAITING:    
+  quiet(x) -> waiting(x)^mailbox(msgsout(x))
+
+-- TERMINATED: 
+& (msgsin(x) <= ms ==> waiting(x)^mailbox(ms) -> terminated(x))
+
+-- PENDING:   
+& uninformed(x)^mailbox((y,x)) -> pending((x,y))^mailbox(msgsout(x)-(x,y))
+
+-- ACCEPTED:   
+& (msgsin(x)-(y,x) <= ms 
+              ==> pending((x,y))^mailbox(ms) -> accepted(x)^mailbox((x,y)))
+
+conjects:
+
+(quiet{a}^waiting{}^mailbox{}^uninformed{b,c}^pending{}^terminated{}^accepted{})	
+

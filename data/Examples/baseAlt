@@ -1,0 +1,72 @@
+-- base
+
+defuncts: 	flip length ++ head tail init last take drop iterate 
+preds:		`in` `NOTin` null NOTnull
+fovars: 	s s' n SEC
+hovars: 	f g h
+
+axioms:
+
+(f.g)$x == f$g$x &
+flip(f)$x$y == f$y$x &
+iterate(f)$x == collapse$x:iterate(f)$f$x &
+
+x+0 == x & x+0.0 == x &
+0+x == x & 0.0+x == x &
+x-0 == x & x-0.0 == x &
+0-x == -x & 0.0-x == -x &
+suc(x) - suc(y) == x-y &
+x*0 == 0 & x*0.0 == 0 &
+0*x == 0 & 0.0*x == 0 &
+x*1 == x & x*1.0 == x &
+1*x == x & 1.0*x == x &
+x**0 == 1 & x**0.0 == 1 &
+0**x == 0 & 0.0**x == 0 &
+x**1 == x & x**1.0 == x &
+1**x == 1 & 1.0**x == 1 &
+0/x == 0 & 0.0/x == 0 &
+x/1 == x & x/1.0 == x &
+
+length[] == 0 &
+length$x:s == suc$length$s &
+
+[]++s == s &
+s++[] == s &
+(x:s)++s' == x:(s++s') &
+
+head$x:s == x &
+tail$x:s == s &
+
+init$x:y:s == x:init$y:s &
+init[x] == [] &
+
+last$x:y:s == last$y:s &
+last[x] == x &
+
+take(0)$s == [] &
+take(suc$n)[] == [] &
+take(suc$n)$x:s == x:take(n)$s &
+
+drop(0)$s == s &
+drop(suc$n)[] == [] &
+drop(suc$n)$x:s == drop(n)$s &
+
+([] = x:s <==> False) &
+(x:s = [] <==> False) &
+([] =/= x:s <==> True) &
+(x:s =/= [] <==> True) &
+
+(x `in` [] <==> False) &
+(x `in` y:s <==> x = y | x `in` s) &
+(x `NOTin` [] <==> True) &
+(x `NOTin` y:s <==> x =/= y & x `NOTin` s) &
+
+(null$s <==> s=[]) &
+(NOTnull$s <==> s=/=[]) &
+
+(x <= x <==> True) &
+(x >= x <==> True) &
+(x < x <==> False) &
+(x < suc$x <==> True) &
+(x > x <==> False) &
+(suc$x > x <==> True) 

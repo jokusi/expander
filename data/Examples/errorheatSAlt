@@ -1,0 +1,117 @@
+-- errorheatS
+
+
+Derivation of
+
+G(Error.head)$s ==> G(not(Heat).head)$s
+
+Simplifying the preceding formula (1 step) leads to 
+
+NU X.((Error.head)/\(X.tail))$s ==> G(not(Heat).head)$s
+
+Simplifying the preceding formula (1 step) leads to 
+
+NU X.((Error.head)/\(X.tail))$s ==> NU X.((not(Heat).head)/\(X.tail))$s
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       ((not(Heat).head)/\(rel(s,NU X.((Error.head)/\(X.tail))$s).tail))$s)
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       head(s) =/= 4 & head(s) =/= 7 & NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:((NU X.((Error.head)/\(X.tail))$s ==> head(s) =/= 4) & 
+       (NU X.((Error.head)/\(X.tail))$s ==> head(s) =/= 7) & 
+       (NU X.((Error.head)/\(X.tail))$s ==> 
+        NU X.((Error.head)/\(X.tail))$tail(s)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(NU X.((Error.head)/\(X.tail))$s ==> head(s) =/= 4) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(((Error.head)/\(NU X.((Error.head)/\(X.tail)).tail))$s ==> head(s) =/= 4) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(head(s) = 2 & NU X.((Error.head)/\(X.tail))$tail(s) | 
+       head(s) = 5 & NU X.((Error.head)/\(X.tail))$tail(s) ==> 
+       head(s) =/= 4) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(4 = 2 & NU X.((Error.head)/\(X.tail))$tail(s) | 
+       4 = 5 & NU X.((Error.head)/\(X.tail))$tail(s) ==> 
+       head(s) =/= 4) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(NU X.((Error.head)/\(X.tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(((Error.head)/\(NU X.((Error.head)/\(X.tail)).tail))$s ==> head(s) =/= 7) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(head(s) = 2 & NU X.((Error.head)/\(X.tail))$tail(s) | 
+       head(s) = 5 & NU X.((Error.head)/\(X.tail))$tail(s) ==> 
+       head(s) =/= 7) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(7 = 2 & NU X.((Error.head)/\(X.tail))$tail(s) | 
+       7 = 5 & NU X.((Error.head)/\(X.tail))$tail(s) ==> 
+       head(s) =/= 7) & 
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(NU X.((Error.head)/\(X.tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(((Error.head)/\(NU X.((Error.head)/\(X.tail)).tail))$s ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:(head(s) = 2 & NU X.((Error.head)/\(X.tail))$tail(s) | 
+       head(s) = 5 & NU X.((Error.head)/\(X.tail))$tail(s) ==> 
+       NU X.((Error.head)/\(X.tail))$tail(s))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All s:True
+
+Simplifying the preceding formula (1 step) leads to 
+
+True
+
+Number of proof steps: 18

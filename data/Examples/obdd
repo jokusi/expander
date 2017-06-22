@@ -1,0 +1,83 @@
+-- OBDD
+
+defuncts:	x restrict forall exists quantor and or not
+		ob1 ob2 
+preds:		eqob
+fovars:		t t1 t2 u u1 u2 b
+hovars:		F{and,or} X{x} Y{x}
+
+axioms:
+  X(t,t) == t
+& not(1) == 0
+& not(0) == 1
+& not(X(t,u)) == X(not(t),not(u))
+& or(1,t) == 1
+& or(0,t) == t
+& or(t,1) == 1
+& or(t,0) == t
+& and(1,t) == t
+& and(0,t) == 0
+& and(t,1) == t
+& and(t,0) == 0
+& F(X(t1,u1),X(t2,u2)) == X(F(t1,t2),F(u1,u2))
+& (X < Y ==> F(X(t1,u1),Y(t2,u2)) == X(F(t1,Y(t2,u2)),F(u1,Y(t2,u2))))
+& (X > Y ==> F(X(t1,u1),Y(t2,u2)) == Y(F(X(t1,u1),t2),F(X(t1,u1),u2)))
+& quantor(F)(X,1) == 1
+& quantor(F)(X,0) == 0
+& quantor(F)(X,X(t,u)) == F(t,u)
+& (X =/= Y ==> quantor(F)(X,Y(t,u)) == Y(quantor(F)(X,t),quantor(F)(X,u)))
+& exists(X,t) == quantor(or)(X,t)
+& forall(X,t) == quantor(and)(X,t)
+-- & exists(X,t) == or(restrict(X,0,t),restrict(X,1,t))
+-- & forall(X,t) == and(restrict(X,0,t),restrict(X,1,t))
+& restrict(X,b,0) == 0
+& restrict(X,b,1) == 1
+& restrict(X,0,X(t,u)) == t
+& restrict(X,1,X(t,u)) == u
+& (X =/= Y ==> restrict(X,b,Y(t,u)) == Y(restrict(X,b,t),restrict(X,b,u)))
+
+& (eqob(t,u) <==> dnf$t = dnf$u)
+
+& ob1 ==
+x0(x1(pos 1 1 0 0,pos 1 1 0),
+   x1(x2(pos 1 1 0 0,pos 1 1 1),
+      x2(x3(x4(pos 1 1 0 0 1 0,x5(0,pos 1 1 1)),pos 1 1 1),1)))
+& ob2 ==
+x5(pos 1 0,x4(x3(pos 1 0 1 0,x1(x2(pos 1 0 1 0 1 0,x0(0,pos 1 1)),pos 1 1)),1))
+
+conjects:
+
+eqob(ob1,ob2)						&
+dnf$ob1 = dnf$ob2					&
+
+exists(x1,x0(x2(0,1),x1(x2(0,1),1))) = 
+     or(restrict(x1,1,x0(x2(0,1),x1(x2(0,1),1))),
+        restrict(x1,0,x0(x2(0,1),x1(x2(0,1),1))))	&	-- OBDD1
+x0(x1(0,x2(0,1)),x1(x2(0,1),x2(0,1))) =
+     not(not(x0(x1(0,x2(0,1)),x1(x2(0,1),x2(0,1)))))     	-- OBDD2
+
+terms:
+
+minimize["010","011","100","110"]  			<+>	-- DNF1
+obdd["#0#","##0"] 					<+>	-- DNF2
+obdd["11##","##11"]					<+>	-- DNF3
+obdd["####11","#1#1##","1#1###"]  			<+>	-- DNF4
+obdd["11####","##11##","####11"]  			<+>	-- DNF5
+obdd["######11","####11##","##11####","11######"]	<+>	-- DNF6
+obdd["0000","0011","0110","1100","0101","1010","1001","1111"]   -- PARITY
+						        <+>
+permute$x0(x1(0,x2(0,1)),x1(x2(0,1),x2(0,1)))		<+>	-- OBDD3
+permute$x0(x1(pos 0 1 1 0 0,pos 0 1 1 0),
+        x1(x2(pos 0 1 1 0 0,pos 0 1 1 1),
+        x2(x3(x4(pos 0 1 1 0 0 1 0,x5(0,pos 0 1 1 1)),
+        pos 0 1 1 1),1)))					-- OBDD4
+							<+>
+permute(x0(x1(pos 0 1 1 0 0,pos 0 1 1 0),
+           x1(x2(pos 0 1 1 0 0,pos 0 1 1 1),
+              x2(x3(x4(pos 0 1 1 0 0 1 0,x5(0,pos 0 1 1 1)),pos 0 1 1 1),1))),
+        x5(pos 1 1 0,
+           x4(x3(pos 1 1 0 1 0,
+                 x1(x2(pos 1 1 0 1 0 1 0,x0(0,pos 1 1 1)),pos 1 1 1)),
+              1)),
+        [4,5,3,1,2,0])					
+

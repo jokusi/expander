@@ -1,0 +1,8 @@
+-- peaks
+
+terms:
+
+repeat[peaksR(polyF(12,[32,16],blue))] <+>
+repeat[peaksR(light(polyF(12,[32,16],blue), -21))] <+>
+repeat[peaksR(polyF(3,[16,32,16],blue))] <+>
+repeat[peaks(polyR(3,[16,32]))]

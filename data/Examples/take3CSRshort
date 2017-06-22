@@ -1,0 +1,52 @@
+-- take3CSRshort
+
+
+Derivation of
+
+take(3)$get2(CSR)
+
+Simplifying the preceding term (11 steps) leads to 
+
+0:
+(take(2)$
+ fun((b:s),
+     (head(get1(mu client server requests)$get2(mu client server requests))*2):
+     ((get0(mu client server requests)$mkRequest(b))$s))$
+ tail(get1(mu client server requests)$get2(mu client server requests)))
+
+Simplifying the preceding term (11 steps) leads to 
+
+0:
+(((head((get0(mu client server requests)$0)$get1(mu client server requests)$
+        get2(mu client server requests))+
+   1)*
+  2):
+ (take(1)$
+  (get0(mu client server requests)$
+   (head(tail(get1(mu client server requests)$get2(mu client server requests)))*
+    2))$
+  tail(tail(get1(mu client server requests)$get2(mu client server requests)))))
+
+Simplifying the preceding term (11 steps) leads to 
+
+0:
+(2:
+ ((head(tail(get1(mu client server requests)$get2(mu client server requests)))*
+   2):
+  []))
+
+Simplifying the preceding term (11 steps) leads to 
+
+[0,2,(head(tail(get2(mu client server requests)))+1)*2]
+
+Simplifying the preceding term (11 steps) leads to 
+
+[0,2,
+ ((head(get1(mu client server requests)$get2(mu client server requests))*2)+1)*
+ 2]
+
+Simplifying the preceding term (11 steps) leads to 
+
+[0,2,6]
+
+Number of proof steps: 6

@@ -1,0 +1,37 @@
+-- shine
+turt(turt(shineW(circ(42,dark dark yellow),22,45)),J(99),turt(shineB(circ(42,dark yellow),22, -45)))
+
+<+> shuffle(map(fun((x,y),shineB(polySF(24,[33,11],yellow),x,y)))
+        [(33,0),( -33,0),(33,90),(33, -90)])
+
+<+> shine(circ(77,red),84,1,1)
+
+<+> shuffle(tup(fun(z,shineB(z)),fun(z,shineB(turt(T(45),z))),
+fun(z,shineB(turt(R,z))),
+            fun(z,shineB(turt(T(135),z))))
+        (turt(plaitS(4,60,45,yellow),plaitS(4,60, -45,yellow))))
+
+<+> shuffle(tup(fun(z,shineB(z,33)),fun(z,shineB(turt(T(45),z),33)),fun(z,shineB(turt(R,z),33)),
+            fun(z,shineB(turt(T(135),z),33)))
+        (turt(plaitS(4,60,45,yellow),plaitS(4,60, -45,yellow))))
+
+<+> map(fun(x,shineB(turt(T(x),plaitS(6,50,45,yellow),plaitS(6,50, -45,yellow)),0)))[0,60,120]
+
+<+> map(fun(x,shineB(turt(SC(0.9):T(x):map(fun((y,z),plaitS(6,50,y,z)))[(45,yellow),( -45,yellow),(40,red),( -40,red)]),0)))[0,60,120]
+
+<+> (shineW(polySF(8,[32,12],yellow)),shineB(polySF(8,[32,12],yellow)))
+
+<+> repeat(tup(shineW,reverse.shineW,shineB,reverse.shineB)
+       (polyR(8,[32,12],yellow)))
+
+<+> tabA(3,44,
+     map(fun((F,x),turt(F(polySF(8,[32,12],x)))))
+     [(shineW,dark yellow),(fun(y,shineW(y,0,22.5)),light blue),(shineW,blue)])
+
+<+> turt(turt(shineW(polyR(10,[140,100],green),70,0)),J(280),turt(shineW(polyR(10,[140,100],green),70)),
+     J(340),turt(shineW(polyR(10,[140,100],green),0)),J(280),
+     turt(shineW(polyR(10,[140,100],green),0,0)))
+
+<+> shineW(polyR(1,[0,0,0,33,0,0,0,0,0,33,0,0,0,0,0,33,0,0,0,0,0,33,0,0]))
+
+<+> polyRS(1,[0,0,0,33,0,0,0,0,0,33,0,0,0,0,0,33,0,0,0,0,0,33,0,0])

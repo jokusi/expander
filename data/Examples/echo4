@@ -1,0 +1,59 @@
+-- ECHO4
+
+-- see pp. 277-282 in: M.-O. Stehr, J. Meseguer, P.C. Oelveczky, Rewriting Logic
+-- as a Unifying Framework for Petri Nets, in: H. Ehrig et al., eds., 
+-- Unifying Petri Nets, Springer LNCS 2128 (2001) 250-303
+
+constructs: quiet waiting uninformed pending terminated accepted mailbox final
+            A a b c d e
+defuncts:   nodes pairs network out in start end inits atoms
+fovars:     qs ws ms ts us ps as
+
+axioms:
+
+nodes == set[A,a,b,c,d,e] &
+
+pairs == [(A,a),(A,b),(A,c),(a,b),(a,c),(b,e),(c,d),(d,e)] &
+
+network == pairs++map(fun(x,y,(y,x)))(pairs) &
+
+out(x) == filter(rel(y,z,y=x))(network) &
+
+in(x) == filter(rel(y,z,z=x))(network) &
+
+-- send message  
+(qs =/= [] 
+  ==> quiet(qs)^waiting(ws)^mailbox(ms) 
+   	-> branch(map(fun(x,quiet(qs-[x])^waiting(x:ws)^mailbox(out(x)++ms)))(qs))) &
+
+-- receive acknowledgment
+(ws =/= [] 
+  ==> waiting(ws)^terminated(ts)^mailbox(ms)
+   	-> branch(map(fun(x,waiting(ws-[x])^terminated(x:ts)^mailbox(ms-in(x))))
+		     (filter(rel(x,in(x)`subset`ms))(ws)))) &
+
+-- send received message
+(ms =/= [] 
+  ==> uninformed(us)^pending(ps)^mailbox(ms)
+  	-> branch(map(fun(y,x,uninformed(us-[x])^pending((x,y):ps)^
+		              mailbox(ms-[(y,x)]++out(x)-[(x,y)])))
+	             (filter(rel(y,x,x`in`us))(ms)))) &
+
+-- send received acknowledgment
+(ps =/= [] 
+  ==> pending(ps)^accepted(as)^mailbox(ms) 
+       -> branch(map(fun(x,y,pending(ps-[(x,y)])^accepted(insert(x,as))^mailbox((x,y):ms-in(x))))
+	            (filter(rel(x,y,in(x)-[(y,x)]`subset`ms))(ps)))) & 
+
+start == quiet[A]^waiting[]^terminated[]^uninformed(nodes-[A])^pending[]^accepted[]^mailbox[] &
+
+inits == [start] &
+
+atoms == [final] & final -> end &
+
+end == quiet[]^waiting[]^terminated[A]^uninformed[]^pending[]^accepted(nodes-[A])^mailbox[]
+
+terms:
+
+EF(final)(start)
+

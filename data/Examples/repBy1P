@@ -1,0 +1,59 @@
+-- repBy1P
+
+
+Derivation of
+
+repBy1(rep0)(min)
+      (leaf(3)#(leaf(2)#leaf(6))) = t
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any x:(rep0(min)(leaf(3)#(leaf(2)#leaf(6)),x) = (x,t))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any y z u1 u2:(u1#u2 = t & rep0(min)(leaf(3),min(y,z)) = (y,u1) & 
+               rep0(min)(leaf(2)#leaf(6),min(y,z)) = (z,u2))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any z u2:(rep0(min)(leaf(2)#leaf(6),min(3,z)) = (z,u2) & leaf(min(3,z))#u2 = t)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any u5 u1 z1 y:(rep0(min)(leaf(2),min(3,min(y,z1))) = (y,u1) & 
+                rep0(min)(leaf(6),min(3,min(y,z1))) = (z1,u5) & 
+                leaf(min(3,min(y,z1)))#(u1#u5) = t)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any u5 z1:(rep0(min)(leaf(6),min(3,min(2,z1))) = (z1,u5) & 
+           leaf(min(3,min(2,z1)))#(leaf(min(3,min(2,z1)))#u5) = t)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+leaf(2)#(leaf(2)#leaf(2)) = t
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 6
+
+Solutions:
+
+leaf(2)#(leaf(2)#leaf(2)) = t

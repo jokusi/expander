@@ -1,0 +1,10 @@
+-- leaves
+
+terms:
+
+leafM(222,30) <+>
+turt(leafF(20,5,red),J(33),leafF(20,15,blue),J(33),leafF(20,20)) <+>
+turt(leafS(11,10,red),J(44),leafS(11,60,blue),J(44),leafS(11,160)) <+>
+turt(leafS(6,30,red),J(44),leafS(6,60,blue),J(44),leafS(6,89),J(44),leafS(6,120)) <+>
+turt(O,leafF(90,45),C,R,J(44),L,O,plaitS(3,45),C,R,J(22),L,waveS(3,40,45,blue))
+

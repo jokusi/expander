@@ -1,0 +1,2 @@
+-- rain2
+rainbow(hframe(rect(22,11,blue)),16)

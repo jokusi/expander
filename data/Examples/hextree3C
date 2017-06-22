@@ -1,0 +1,179 @@
+([Turtle ((183.643,96.0232),0.0,#000000,0) (7.62939e-06,3.8147e-06,367.281,430.729) 1.0 [Widg (Path ((183.643,96.0232),0.0,#FF0000
+,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)])
+, Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jum
+p 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (-104.245,8.59
+678,235.043,358.299) 1.0 [Widg (Path ((183.643,96.0232),0.0,#FF0073,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.
+4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, 
+Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 
+15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (-187.276,-21.4054,224.249,160.412) 1.0 [Widg (Path ((183.643,96.0232),0.0,#F
+F00E6,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0
+.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232)
+,0.0,#A500FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, J
+ump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (-114.848,-125.65,224.249,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0
+,#A500FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.
+0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #00000
+0 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (83.03
+94,-208.683,264.857,96.0232) 1.0 [Widg (Path ((183.643,96.0232),0.0,#3200FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-1
+5.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jum
+p -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.
+0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (143.036,-136.255,369.103,100.417) 1.0 [Widg (Path ((183.643,96.0232)
+,0.0,#0041FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0),
+ (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,9
+6.0232),0.0,#00B4FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale
+ 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#00B4FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 15.0, Turn 9
+0.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.
+0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (113.038,-136.256,294.856,100.417) 1.0 [Widg (Path ((183.6
+43,96.0232),0.0,#00B4FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), 
+(15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc 
+((183.643,96.0232),0.0,#00FFD7,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 
+45.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#00FFD7,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 1
+5.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264
+, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (-12.4228,-23.2232,224.249,100.416) 1.0 [Widg (
+Path ((183.643,96.0232),0.0,#00FFD7,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132
+,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0
+, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.
+0232),0.0,#000000,0) (83.037,-63.8298,264.856,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#00FF64,0) 2 [(0.0,0.0), (-15.0,0.0)
+, (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0,
+ Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#0FFF00,0) pieslice 15.0 180.
+0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,9
+6.0232),0.0,#000000,0) (143.036,-33.8295,264.856,96.0232) 1.0 [Widg (Path ((183.643,96.0232),0.0,#0FFF00,0) 2 [(0.0,0.0), (-15.0,0
+.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000
+ 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump
+ 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#82FF00,0) pieslice 15.0 180.0), Close, Close, Open #0
+00000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.
+0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (113.036,8.59678,224.249,100.417
+) 1.0 [Widg (Path ((183.643,96.0232),0.0,#82FF00,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.42
+64), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1
+.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle 
+((183.643,96.0232),0.0,#000000,0) (143.036,38.5968,224.249,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#F5FF00,0) 2 [(0.0,0.0)
+, (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Op
+en #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#FF9600,0) piesl
+ice 15.0 180.0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Close, Clos
+e, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#FF9600,0
+) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Wid
+g (Arc ((183.643,96.0232),0.0,#FF9600,0) pieslice 15.0 180.0), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0,
+ Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, S
+cale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#F5FF00,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump (-36.213
+2), Turn 90.0, Jump 21.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#F5FF00,0) pieslice 15.0 180.0), C
+lose, Close]), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, 
+Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0
+232),0.0,#000000,0) (143.036,49.2034,224.249,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#0FFF00,0) 2 [(0.0,0.0), (-15.0,0.0),
+ (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, 
+Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.
+2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#82FF00,0) pieslice 15.0 180.0), Close, Close, Open #00000
+0 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, J
+ump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#82FF00,0) pieslice 15.0 180.0), Close, Close, Ope
+n #000000 0, Jump (-36.2132), Turn 90.0, Jump 21.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#82FF00,
+0) pieslice 15.0 180.0), Close, Close]), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90
+.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, W
+idg (Arc ((183.643,96.0232),0.0,#00FF64,0) pieslice 15.0 180.0), Close, Close]), Close, Close]), Close, Close]), Close, Close, Ope
+n #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn
+ 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (143.036,49.2034,224.249,100
+.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#0041FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-4
+2.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Sca
+le 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Arc
+ ((183.643,96.0232),0.0,#00B4FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90
+.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, W
+idg (Arc ((183.643,96.0232),0.0,#00B4FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump (-36.2132), Turn 90.0, Jump 21
+.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#00B4FF,0) pieslice 15.0 180.0), Close, Close]), Close, 
+Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #00
+0000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#3200FF,0) piesl
+ice 15.0 180.0), Close, Close, Open #000000 0, Jump (-36.2132), Turn 90.0, Jump 21.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (A
+rc ((183.643,96.0232),0.0,#3200FF,0) pieslice 15.0 180.0), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jum
+p 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale
+ 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#A500FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump (-36.2132), 
+Turn 90.0, Jump 21.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#A500FF,0) pieslice 15.0 180.0), Close
+, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #
+000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) 
+(168.643,72.4264,204.133,96.0233) 1.0 [Widg (Path ((183.643,96.0232),0.0,#FF00E6,0) 2 [(0.0,0.0), (-15.0,0.0), (0.0,-21.2132), (15
+.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 35.2644, Scale 0.866025, Jump 15.0, Close,
+ Close, Open #000000 0, Jump -0.0, Turn 90.0, Jump 21.2132, Turn 144.736, Scale 0.866025, Jump 15.0, Widg (Arc ((183.643,96.0232),
+0.0,#A500FF,0) pieslice 15.0 180.0), Close, Close]), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4
+264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, 
+Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (132.243,8.59691,471.527,358.305) 1.0 [Widg (Path ((183.643,96.0232),0.0
+,#FF0073,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.
+0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #00000
+0 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (163.1
+53,72.4264,198.643,96.0232) 1.0 [Widg (Path ((183.643,96.0232),0.0,#FF00E6,0) 2 [(0.0,0.0), (-15.0,0.0), (0.0,-21.2132), (15.0,0.0
+), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 35.2644, Scale 0.866025, Jump 15.0, Widg (Arc ((
+183.643,96.0232),0.0,#A500FF,0) pieslice 15.0 180.0), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.
+4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0,
+ Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (143.036,-21.4026,554.56,160.421) 1.0 [Widg (Path ((183.643,96.0232),0.
+0,#FF00E6,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0
+.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0
+232),0.0,#A500FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.
+0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#A500FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0
+, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, 
+Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (143.036,-125.649,482.137,100.417) 1.0 [Widg (Path ((183.643,
+96.0232),0.0,#A500FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15
+.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((1
+83.643,96.0232),0.0,#3200FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.
+0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#3200FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 15.0
+, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, T
+urn 135.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (102.43,-208.681,284.252,96.0232) 1.0 [Widg (Path 
+((183.643,96.0232),0.0,#3200FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.
+2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Clo
+se, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232)
+,0.0,#000000,0) (143.036,49.2034,224.249,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#0041FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-3
+6.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump
+ 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#00B4FF,0) pieslice 15.0 180.0), C
+lose, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),
+0.0,#00B4FF,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 
+15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,9
+6.0232),0.0,#00B4FF,0) pieslice 15.0 180.0), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Tur
+n 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.
+0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (-1.81645,-136.257,224.249,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#0041
+FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)
+]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, J
+ump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (72.4302,-13
+6.255,254.251,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#00B4FF,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-4
+2.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0
+, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jum
+p 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (143.036,-23.223,379.709,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#0
+0FFD7,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0
+.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0
+, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#00FF64,0) pieslice 15.
+0 180.0), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #0
+00000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (
+102.43,-63.8292,284.25,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#00FF64,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), 
+(-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, 
+Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale
+ 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (143.036,49.2034,224.249,100.417) 1.0 [Widg (Path ((183.643,96.023
+2),0.0,#0FFF00,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0
+), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643
+,96.0232),0.0,#82FF00,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Sca
+le 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#82FF00,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 15.0, Turn
+ 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 13
+5.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#82FF00,0) pieslice 15.0 180.0), Close, Close]), Close, Close, Open #0
+00000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.
+0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Turtle ((183.643,96.0232),0.0,#000000,0) (102.43,-33.8296,224.249,96.0232
+) 1.0 [Widg (Path ((183.643,96.0232),0.0,#0FFF00,0) 2 [(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.42
+64), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1
+.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Turtle 
+((183.643,96.0232),0.0,#000000,0) (143.036,8.59691,254.25,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#82FF00,0) 2 [(0.0,0.0),
+ (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 180.0, Ope
+n #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#F5FF00,0) piesli
+ce 15.0 180.0), Close, Close, Open #000000 0, Jump 36.2132, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Arc ((
+183.643,96.0232),0.0,#F5FF00,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0,
+ Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg
+ (Turtle ((183.643,96.0232),0.0,#000000,0) (143.036,38.5968,224.249,100.417) 1.0 [Widg (Path ((183.643,96.0232),0.0,#F5FF00,0) 2 [
+(0.0,0.0), (-15.0,0.0), (-36.2132,-21.2132), (-15.0,-42.4264), (15.0,-42.4264), (36.2132,-21.2132), (15.0,0.0), (0.0,0.0)]), Turn 
+180.0, Open #000000 0, Jump 15.0, Turn 90.0, Jump -0.0, Turn 315.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump 36.21
+32, Turn 90.0, Jump 21.2132, Turn 45.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#FF9600,0) pieslice 15.0 180.0), Cl
+ose, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,
+#FF9600,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 
+15.0, Close, Close, Open #000000 0, Jump (-36.2132), Turn 90.0, Jump 21.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.64
+3,96.0232),0.0,#FF9600,0) pieslice 15.0 180.0), Close, Close]), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0
+, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, 
+Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#82FF00,0) pieslice 15.0 180.0), Close, Close]), Close, Close, Open #000000
+ 0, Jump (-36.2132), Turn 90.0, Jump 21.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#0FFF00,0) piesli
+ce 15.0 180.0), Close, Close]), Close, Close]), Close, Close, Open #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale
+ 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Turn 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Arc 
+((183.643,96.0232),0.0,#00FFD7,0) pieslice 15.0 180.0), Close, Close, Open #000000 0, Jump (-36.2132), Turn 90.0, Jump 21.2132, Tu
+rn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#00FFD7,0) pieslice 15.0 180.0), Close, Close]), Close, Close, Op
+en #000000 0, Jump 15.0, Turn 90.0, Jump 42.4264, Turn 90.0, Scale 1.0, Jump 15.0, Close, Close, Open #000000 0, Jump (-15.0), Tur
+n 90.0, Jump 42.4264, Turn 135.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#00B4FF,0) pieslice 15.0 180.0), Close, C
+lose, Open #000000 0, Jump (-36.2132), Turn 90.0, Jump 21.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0
+,#00B4FF,0) pieslice 15.0 180.0), Close, Close]), Close, Close]), Close, Close]), Close, Close, Open #000000 0, Jump (-36.2132), T
+urn 90.0, Jump 21.2132, Turn 225.0, Scale 1.0, Jump 15.0, Widg (Arc ((183.643,96.0232),0.0,#A500FF,0) pieslice 15.0 180.0), Close,
+ Close]), Close, Close]), Close, Close]],[[]])

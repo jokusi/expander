@@ -1,0 +1,27 @@
+-- /Users/Padawitz/ExpanderLib/three1P
+
+0. Derivation of
+
+(all(three)$[2,4])
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(three(2)&three(4))
+
+2. NARROWING the preceding formulas (one step) leads to 
+
+three(4)
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+
+3. NARROWING the preceding formulas (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+

@@ -1,0 +1,2 @@
+-- colorhull
+table(52,22,22,hull[color(light red,rainbow(polySF(5,[22,44],yellow),51))])

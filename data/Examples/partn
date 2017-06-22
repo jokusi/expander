@@ -1,0 +1,23 @@
+-- PARTN
+
+specs:      LIST
+defuncts:   partn g lg
+preds:      lgOk
+fovars:	    k n x p p' s s'
+axioms:     partn(s,n) = g(n,s,0,[],[]) 			 		&
+            g(n,[],k,s,p) = p++[s]						&
+            (g(n,x:s,k,s',p) = g(n,s,k+1,s'++[x],p) <=== k < n)			&
+	    (g(n,x:s,k,s',p) = g(n,x:s,0,[],p++[s']) <=== k > n)		&
+	    -- (INV(s,n,s1,k,s2,p) <=== s = flatten(p++[s2++s1]))		&
+	    (INV(s,n,s1,k,s2,p) <=== lgOk(n,p) & k = length(s2) & k <= n)	&
+	    lg[] = 0								&
+	    lg(x:s) = lg(s)+1							&
+	    lgOk(n,[])								&
+	    (lgOk(n,[s])  <===  lg(s) <= n)					&
+	    (lgOk(n,s:s':p)  <===  lg(s) = n & lgOk(n,s':p))
+
+theorems:   flatten(p++p') = flatten(p)++flatten(p')				&
+ 	    (lgOk(n,p++[s]) <=== lgOk(n,p) & length(s) <= n)			
+ 
+conjects:   (partn(s,n) = p ==> s = flatten(p))					&
+	    (partn(s,n) = p ==> lgOk(n,p))

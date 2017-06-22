@@ -1,0 +1,73 @@
+-- SETPROOF
+
+
+Derivation of
+
+    e`elem`s = true
+==> insert(e,s) ~ s
+
+Applying coinduction w.r.t.
+
+     s ~ s'
+===> e`elem`s = e`elem`s'
+
+to the preceding tree leads to the formula
+
+All s' s1 e1:
+(     Any e2:
+      (  e2`elem`s' = true
+       & s1 = insert(e2,s'))
+ ===> e1`elem`s1 = e1`elem`s')
+
+Simplifying (4 steps) the preceding tree leads to the formula
+
+All s' e1 e2:
+(    e2`elem`s' = true
+ ==> e1`elem`insert(e2,s') = e1`elem`s')
+
+Applying the axiom
+
+e`elem`insert(e',s) = (e`eq`e')`or`(e`elem`s)
+
+at position [0,1,0] of the preceding tree leads to the formula
+
+All s' e1 e2:
+(    e2`elem`s' = true
+ ==> (e1`eq`e2)`or`(e1`elem`s') = e1`elem`s')
+
+Applying the axioms
+
+  e`eq`e = true
+& (     e`eq`e' = false
+   <=== e =/= e')
+
+at position [0,1,0,0] of the preceding tree leads to the formula
+
+All s' e1 e2:
+(    e2`elem`s' = true
+ ==>     true`or`(e2`elem`s') = e2`elem`s'
+       & e1 = e2
+     |   false`or`(e1`elem`s') = e1`elem`s'
+       & e1 =/= e2)
+
+Applying the axioms
+
+  false`or`b = b
+& true`or`b = true
+
+at positions [0,1,1,0,0],[0,1,0,0,0] of the preceding tree leads to the formula
+
+All s' e1 e2:
+(    e2`elem`s' = true
+ ==>     true = e2`elem`s'
+       & e1 = e2
+     |   e1`elem`s' = e1`elem`s'
+       & e1 =/= e2)
+
+Simplifying (11 steps) the preceding tree leads to the formula
+
+True
+
+The following solutions were computed:
+
+True

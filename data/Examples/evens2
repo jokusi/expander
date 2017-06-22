@@ -1,0 +1,13 @@
+-- evens2
+
+constructs: a b c
+fovars: s
+
+axioms: 
+a:b:s == b:b:a:a:s	
+-- a:c:s == c:a:a:s
+
+terms:
+a:b:a:b:s <+>
+a:b:a:c:s <+>
+a:c:a:a:b:s

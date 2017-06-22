@@ -1,0 +1,54 @@
+-- LR3
+
+constructs: shift error S E T U add mul X NUM end c
+defuncts:   states labels atoms draw
+preds:      EA EMA
+fovars:     hidden
+
+axioms:
+
+states == [0] &
+labels == [end,S,E,T,U,add,mul,X,NUM] &
+atoms == [shift,error,S E,E E add T,E T,T T mul U,T U,U X,U NUM] &
+
+(0,X) -> 4 & 
+(0,NUM) -> 5 & 
+(0,E) -> 1 & 
+(0,T) -> 2 & 
+(0,U) -> 3 & 
+(1,add) -> 6 & 
+(2,mul) -> 7 & 
+(6,X) -> 4 & 
+(6,NUM) -> 5 & 
+(6,T) -> 8 & 
+(6,U) -> 3 &
+(7,X) -> 4 & 
+(7,NUM) -> 5 & 
+(7,U) -> 9 &
+(8,mul) -> 7 &
+
+(shift,X) -> 0 & 
+(shift,NUM) -> 0 &
+(S E,end) -> 1 & 
+(shift,add) -> 1 & 
+(EA$x ==> (E T,x) -> 2) & 
+(shift,mul) -> 2 & 
+(EMA$x ==> (T U,x) -> 3) &
+(EMA$x ==> (U X,x) -> 4) &
+(EMA$x ==> (U NUM,x) -> 5) &
+(shift,X) -> 6<+>7 & 
+(shift,NUM) -> 6<+>7 &
+(EA$x ==> (E E add T,x) -> 8) & 
+(shift,mul) -> 8 &
+(EMA$x ==> (T T mul U,x) -> 9) &
+
+(EA$x <==> x `in` [end,add]) &
+(EMA$x <==> EA(x) | x = mul)
+
+{- S E == id &
+E T == id &
+T U == id &
+U X == id &
+U NUM == fun(two,2,three,3,four,4) & -}
+
+terms: parseLR$NUM add NUM mul X add NUM mul X mul X 

@@ -1,0 +1,42 @@
+-- election
+
+constructs: 	idle elect elected final
+defuncts:   	procs lg next vals first leader get
+		inits states mu nu \/ /\ get upd replicate
+fovars:		val val' s
+
+axioms:	
+
+lg == length(procs) & next(i) == (i+1)`mod`lg &
+
+vals == nextperm(procs) &
+
+inits == [idle] &
+	       
+atoms == [final] &
+
+idle -> branch(map(first)(procs)) &
+
+first == fun(i,elect(get(i)(vals),next(i))) &
+
+(val > get(i)(vals) ==> elect(val,i) -> elect(val,next(i))) &
+
+(get(i)(vals) = val' & val < val' ==> elect(val,i) -> elect(val',next(i))) &
+
+(val = get(i)(vals) ==> elect(val,i) -> elected(i,next(i),1)) &
+
+(i =/= j ==> elected(i,j,k) -> elected(i,next(j),k+1)) &
+
+final -> elected(leader,leader,lg) & leader == index(max(vals),vals)
+
+--replicate(0,x) == [] & replicate(suc(i),x) == x:replicate(i,x) &		       
+
+--isLeader == fun(x,bool(x=leader)) &
+
+--informed == fun(final(s),bool(all(isLeader)(s)))  &
+
+--bounded(x) == fun(s,bool(length(set(s))<=x)) &
+
+--Bounded(x) == filterlists2(bounded(x))(replicate(lg,procs))		       
+
+terms: AF(final)(idle)

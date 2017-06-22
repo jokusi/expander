@@ -1,0 +1,13 @@
+-- meet
+
+terms:
+
+meet0$turt[R,J(66),blue$circ(55),red$tria(55),turt[J(44),green$tria( -55)]]
+<+>
+meet(1,turt(R,J(6),circ(5,blue)),meet(1,tria(12,red),turt(J(4),tria( -12,green))))
+<+>
+meet(4,wave(5,60,45,red),turt(R,J(20),L,wave(5,60, -45,blue)))
+<+>
+meet(4,waveS(5,60,45,red),turt(R,J(20),L,waveS(5,60, -45,blue)))
+<+>
+meet(4,plaitS(3,60,45,green),plaitS(5,60, -45,red))

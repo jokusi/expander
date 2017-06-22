@@ -1,0 +1,38 @@
+-- AFheatP
+
+
+Derivation of
+
+all(AF(atom(heat)))[4,6,7]
+
+Simplifying the preceding formula (1 step) leads to 
+
+MU(X,atom(heat)\/AX(X))(4) & MU(X,atom(heat)\/AX(X))(6) & 
+MU(X,atom(heat)\/AX(X))(7)
+
+Simplifying the preceding formula (1 step) leads to 
+
+(atom(heat)\/AX(MU(X,atom(heat)\/AX(X))))(4) & MU(X,atom(heat)\/AX(X))(6) & 
+MU(X,atom(heat)\/AX(X))(7)
+
+Simplifying the preceding formula (8 steps) leads to 
+
+MU(X,atom(heat)\/AX(X))(6) & MU(X,atom(heat)\/AX(X))(7)
+
+Simplifying the preceding formula (1 step) leads to 
+
+(atom(heat)\/AX(MU(X,atom(heat)\/AX(X))))(6) & MU(X,atom(heat)\/AX(X))(7)
+
+Simplifying the preceding formula (11 steps) leads to 
+
+MU(X,atom(heat)\/AX(X))(7)
+
+Simplifying the preceding formula (1 step) leads to 
+
+(atom(heat)\/AX(MU(X,atom(heat)\/AX(X))))(7)
+
+Simplifying the preceding formula (7 steps) leads to 
+
+True
+
+Number of proof steps: 7

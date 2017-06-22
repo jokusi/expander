@@ -1,0 +1,23 @@
+-- kozentypes
+
+defuncts:   	split bot top `arrow`
+copreds: 	`le`
+fovars:		x1 x2 y1 y2
+
+axioms:
+
+  split(top) == ()
+& split(bot) == ()
+& split(x`arrow`y) == (x,y)
+& (x `le` y ===> 
+   x = bot | y = top | 
+   Any x1 x2 y1 y2:(split(x) = (x1,x2) & split(y) = (y1,y2) & y1 `le` x1 & x2 `le` y2))
+
+theorems:
+
+  x = bot | Any x1 x2: split(x) = (x1,x2)
+
+conjects:   
+  
+  x `le` y & y `le` z ==> x `le` z
+

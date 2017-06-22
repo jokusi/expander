@@ -1,0 +1,27 @@
+-- microS2
+
+specs:      CTLS LTLS
+constructs: start close heat error
+defuncts:   sucs props
+
+axioms:
+
+sucs(1) == [2,3] & sucs(2) == [5] & sucs(3) == [1,6] & sucs(4) == [1,3,4] & 
+sucs(5) == [2,3] & sucs(6) == [7] & sucs(7) == [4] &
+
+props(1) == [] & props(2) == [start,error] & props(3) == [close] &
+props(4) == [close,heat] & props(5) == [start,close,error] & 
+props(6) == [start,close] & props(7) == [start,close,heat] &
+
+(hatom(at)$s <==> at -> head$s)
+
+conjects: 
+
+all(EF(atom(heat)))(states) &				--> True
+all(EF(atom(heat)))[4,6,7]  &				--> True
+all(AF(atom(heat)))(states) &				--> False
+all(AF(atom(heat)))[4,6,7]  &				--> True
+(G(hatom(error))(pa) ==> G(not(hatom(heat)))(pa)) 	--> True (errorheat)
+
+
+

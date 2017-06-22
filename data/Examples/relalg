@@ -1,0 +1,56 @@
+-- RELALG (relations as terms)
+
+defuncts: O L I \/ /\ C * T
+preds:	  <=
+fovars:   Q R S A
+
+axioms:   O\/R = R				&
+	  O/\R = O				&
+	  L\/R = L				&
+	  L/\R = R				&
+	  R\/R = R				&
+	  R/\R = R				&
+-- 	  R\/S = S\/R				commutativity is applied by	
+-- 	  R/\S = S/\R				reversing arguments manually	
+	  R\/(R/\S) = R				&
+	  R/\(R\/S) = R				&
+	  Q\/(R\/S) = (Q\/R)\/S			&
+	  Q/\(R/\S) = (Q/\R)/\S			&
+	  Q\/(R/\S) = (Q\/R)/\(Q\/S)		&
+	  Q/\(R\/S) = (Q/\R)\/(Q/\S)		&
+	  C(R\/S) = C(R)/\C(S)			&
+	  C(R/\S) = C(R)\/C(S)			&
+	  C(O) = L				&
+	  C(L) = O				&
+	  C(C(R)) = R				&
+	  I*R = R				&
+          R*I = R				&
+	  L*L = L				&
+	  Q*(R*S) = (Q*R)*S			&
+          Q*(R\/S) = (Q*R)\/(Q*S)		&
+	  Q*(R/\S) <= (Q*R)/\(Q*S)		&
+	  (R\/S)*Q = (R*Q)\/(S*Q)		&
+	  (R/\S)*Q <= (R*Q)/\(S*Q)              &
+	  (Q*R <= Q*S  <===  R <= S)	        &
+	  (R*Q <= S*Q  <===  R <= S)	        &
+	  (R/\Q <= R/\S  <===  Q <= S)	        &
+	  T(O) = O				&
+	  T(L) = L				&
+	  T(I) = I				&
+	  T(R*S) = T(S)*T(R)			&
+	  T(R\/S) = T(R)\/T(S)			&
+	  T(R/\S) = T(R)/\T(S)			&
+	  T(T(R)) = R				&
+	  T(C(R)) = C(T(R))			
+--	  (Q*(R/\S) = (Q*R)/\(Q*S) <=== (Q*C(I))/\Q = 0) &
+--	  ((R/\S)*Q = (R*Q)/\(S*Q) <=== (C(I)*Q)/\Q = 0) &
+	  
+conjects: (R/\(R*C(I))/\(C(I)*R))*L <= ((((C(I)*R)/\R)*C(I))/\R)*L	&
+	  ((((C(I)*R)/\R)*C(I))/\R)*L <= (R/\(R*C(I))/\(C(I)*R))*L	&
+	  (T(C(R*A))*R*L =/= L & (R*L)/\(A*L) = A*L & (R/\I)*L = R*L 
+		==> (R*L)/\(A*L) = R*L)
+
+
+
+
+

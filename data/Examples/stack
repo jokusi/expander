@@ -1,0 +1,14 @@
+-- STACK
+
+constructs: just nothing
+defuncts:   empty push pop top
+fovars:     x s
+
+axioms:
+
+top(empty) = nothing &
+top(push(x,s)) = just(x) &
+pop(empty) = empty &
+pop(push(x,s)) = s
+
+

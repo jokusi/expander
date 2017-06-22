@@ -1,0 +1,52 @@
+-- KINO
+
+constructs: attraktivitaet hoch mittel gering
+            preis normal zuschlag loge ja nein
+	    wetter schoen schlecht warten
+	    besetzung top kategorie action comedy drama scifi
+	    land national inter reservierung
+	    gruppe freunde paar allein
+defuncts:   baum positives negatives
+
+axioms:
+
+baum(1) == attraktivitaet(hoch,mittel,gering) &
+baum(2) == preis(normal,zuschlag) &
+baum(3) == loge(ja,nein) &
+baum(4) == wetter(schoen,mittel,schlecht) &
+baum(5) == warten(ja,nein) &
+baum(6) == besetzung(top,mittel) &
+baum(7) == kategorie(action,comedy,drama,scifi) &
+baum(8) == land(national,inter) &
+baum(9) == reservierung(ja,nein) &
+baum(10) == gruppe(freunde,paar,allein) &
+
+positives == 
+         [(hoch,zuschlag,ja,schlecht,ja,top,action,inter,ja,freunde),
+          (mittel,normal,ja,mittel,nein,mittel,comedy,inter,nein,paar),
+          (mittel,normal,ja,mittel,nein,mittel,drama,inter,nein,paar),
+          (hoch,zuschlag,ja,schoen,nein,top,scifi,inter,ja,freunde),
+          (mittel,normal,ja,schlecht,nein,mittel,comedy,national,nein,freunde),
+ 	  (mittel,normal,nein,schlecht,ja,mittel,action,inter,nein,freunde),
+	  (hoch,normal,ja,mittel,ja,top,drama,inter,nein,paar),
+	  (mittel,normal,ja,schlecht,nein,mittel,action,inter,nein,paar)] &
+
+negatives ==
+	 [(mittel,normal,nein,mittel,ja,mittel,drama,inter,nein,freunde),
+          (gering,normal,ja,mittel,ja,mittel,scifi,inter,nein,allein),
+          (gering,normal,ja,schoen,nein,mittel,comedy,national,nein,freunde),
+          (mittel,normal,ja,schoen,nein,mittel,comedy,inter,nein,paar),
+          (mittel,normal,nein,schlecht,ja,mittel,action,national,nein,allein),
+          (hoch,zuschlag,ja,mittel,ja,mittel,scifi,inter,nein,allein),
+          (mittel,normal,ja,schoen,ja,top,drama,inter,ja,freunde)]
+
+terms: 
+   concept(map(baum)[1..10],positives,negatives) <+>
+
+   concept(map(baum)[1..10],           [(hoch,zuschlag,ja,schlecht,ja,top,action,inter,ja,freunde)],           [(mittel,normal,nein,mittel,ja,mittel,drama,inter,nein,freunde)]) <+>
+
+   reduce(map(baum)[1..10],
+           [(hoch,zuschlag,ja,schlecht,ja,top,action,inter,ja,freunde),
+            (hoch,zuschlag,ja,schoen,ja,top,action,inter,ja,freunde),
+	    (hoch,zuschlag,ja,mittel,ja,top,action,inter,ja,freunde)])
+   ---> [(hoch,zuschlag,ja,wetter,ja,top,action,inter,ja,freunde)]

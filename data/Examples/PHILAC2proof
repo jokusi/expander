@@ -1,0 +1,451 @@
+-- PHILAC2PROOF
+
+
+Derivation of
+
+All s:
+(      safe(s)
+     & s -> s'
+ ==> safe(s'))
+
+Narrowing the preceding formula leads to 
+
+  (    think(a)^think(b)^think(c)^think(d)^avail(f1)^avail(f2)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    think(a)^think(c)^eat(b)^eat(d) -> s'
+   ==> safe(s'))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3)
+   ==> safe(eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3)))
+& (    think(a)^think(c)^eat(b)^eat(d) -> s'
+   ==> safe(s'))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    think(a)^think(c)^eat(b)^eat(d) -> s'
+   ==> safe(s'))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    think(b)^avail(left(b))^avail(right(b))^think(a)^think(c)^eat(d) = s'
+   ==> safe(s'))
+& (    think(d)^avail(left(d))^avail(right(d))^think(a)^think(c)^eat(b) = s'
+   ==> safe(s'))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    think(b)^avail(f2)^avail(right(b))^think(a)^think(c)^eat(d) = s'
+   ==> safe(s'))
+& (    think(d)^avail(left(d))^avail(right(d))^think(a)^think(c)^eat(b) = s'
+   ==> safe(s'))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = think(b)^avail(f2)^avail(f3)^think(a)^think(c)^eat(d)
+   ==> safe(think(b)^avail(f2)^avail(f3)^think(a)^think(c)^eat(d)))
+& (    think(d)^avail(left(d))^avail(right(d))^think(a)^think(c)^eat(b) = s'
+   ==> safe(s'))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    think(d)^avail(left(d))^avail(right(d))^think(a)^think(c)^eat(b) = s'
+   ==> safe(s'))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    think(d)^avail(f4)^avail(right(d))^think(a)^think(c)^eat(b) = s'
+   ==> safe(s'))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = think(d)^avail(f4)^avail(f1)^think(a)^think(c)^eat(b)
+   ==> safe(think(d)^avail(f4)^avail(f1)^think(a)^think(c)^eat(b)))
+& (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    eat(a)^think(b)^think(c)^think(d)^avail(f3)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = eat(c)^think(b)^eat(a)^think(d)
+   ==> safe(eat(c)^think(b)^eat(a)^think(d)))
+& (    think(a)^avail(left(a))^avail(right(a))^think(b)^think(c)^think(d)^avail(f3)^avail(f4) = s'
+   ==> safe(s'))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Applying the axioms
+
+  right(a) = f2
+& left(a) = f1
+
+at positions [1,0],[1,0] of the preceding formula leads to 
+
+  (    s' = eat(c)^think(b)^eat(a)^think(d)
+   ==> safe(eat(c)^think(b)^eat(a)^think(d)))
+& (    s' = think(a)^avail(f1)^avail(f2)^think(b)^think(c)^think(d)^avail(f3)^avail(f4)
+   ==> safe(think(a)^avail(f1)^avail(f2)^think(b)^think(c)^think(d)^avail(f3)^avail(f4)))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = think(a)^avail(f1)^avail(f2)^think(b)^think(c)^think(d)^avail(f3)^avail(f4)
+   ==> safe(think(a)^avail(f1)^avail(f2)^think(b)^think(c)^think(d)^avail(f3)^avail(f4)))
+& (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    eat(b)^think(a)^think(c)^think(d)^avail(f1)^avail(f4) -> s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = eat(d)^eat(b)^think(a)^think(c)
+   ==> safe(eat(d)^eat(b)^think(a)^think(c)))
+& (    think(b)^avail(left(b))^avail(right(b))^think(a)^think(c)^think(d)^avail(f1)^avail(f4) = s'
+   ==> safe(s'))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Applying the axioms
+
+  right(b) = f3
+& left(b) = f2
+
+at positions [1,0],[1,0] of the preceding formula leads to 
+
+  (    s' = eat(d)^eat(b)^think(a)^think(c)
+   ==> safe(eat(d)^eat(b)^think(a)^think(c)))
+& (    s' = think(b)^avail(f2)^avail(f3)^think(a)^think(c)^think(d)^avail(f1)^avail(f4)
+   ==> safe(think(b)^avail(f2)^avail(f3)^think(a)^think(c)^think(d)^avail(f1)^avail(f4)))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = think(b)^avail(f2)^avail(f3)^think(a)^think(c)^think(d)^avail(f1)^avail(f4)
+   ==> safe(think(b)^avail(f2)^avail(f3)^think(a)^think(c)^think(d)^avail(f1)^avail(f4)))
+& (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    eat(c)^think(a)^think(b)^think(d)^avail(f1)^avail(f2) -> s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = eat(a)^think(d)^think(b)^eat(c)
+   ==> safe(eat(a)^think(d)^think(b)^eat(c)))
+& (    think(c)^avail(left(c))^avail(right(c))^think(a)^think(b)^think(d)^avail(f1)^avail(f2) = s'
+   ==> safe(s'))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Applying the axioms
+
+  right(c) = f4
+& left(c) = f3
+
+at positions [1,0],[1,0] of the preceding formula leads to 
+
+  (    s' = eat(a)^think(d)^think(b)^eat(c)
+   ==> safe(eat(a)^think(d)^think(b)^eat(c)))
+& (    s' = think(c)^avail(f3)^avail(f4)^think(a)^think(b)^think(d)^avail(f1)^avail(f2)
+   ==> safe(think(c)^avail(f3)^avail(f4)^think(a)^think(b)^think(d)^avail(f1)^avail(f2)))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = think(c)^avail(f3)^avail(f4)^think(a)^think(b)^think(d)^avail(f1)^avail(f2)
+   ==> safe(think(c)^avail(f3)^avail(f4)^think(a)^think(b)^think(d)^avail(f1)^avail(f2)))
+& (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    eat(d)^think(a)^think(b)^think(c)^avail(f2)^avail(f3) -> s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = eat(b)^think(a)^eat(d)^think(c)
+   ==> safe(eat(b)^think(a)^eat(d)^think(c)))
+& (    think(d)^avail(left(d))^avail(right(d))^think(a)^think(b)^think(c)^avail(f2)^avail(f3) = s'
+   ==> safe(s'))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Applying the axioms
+
+  right(d) = f1
+& left(d) = f4
+
+at positions [1,0],[1,0] of the preceding formula leads to 
+
+  (    s' = eat(b)^think(a)^eat(d)^think(c)
+   ==> safe(eat(b)^think(a)^eat(d)^think(c)))
+& (    s' = think(d)^avail(f4)^avail(f1)^think(a)^think(b)^think(c)^avail(f2)^avail(f3)
+   ==> safe(think(d)^avail(f4)^avail(f1)^think(a)^think(b)^think(c)^avail(f2)^avail(f3)))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    s' = think(d)^avail(f4)^avail(f1)^think(a)^think(b)^think(c)^avail(f2)^avail(f3)
+   ==> safe(think(d)^avail(f4)^avail(f1)^think(a)^think(b)^think(c)^avail(f2)^avail(f3)))
+& (    eat(a)^eat(c)^think(b)^think(d) -> s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+    eat(a)^eat(c)^think(b)^think(d) -> s'
+==> safe(s')
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+  (    think(a)^avail(left(a))^avail(right(a))^eat(c)^think(b)^think(d) = s'
+   ==> safe(s'))
+& (    think(c)^avail(left(c))^avail(right(c))^eat(a)^think(b)^think(d) = s'
+   ==> safe(s'))
+
+Reducts have been simplified.
+
+Applying the axioms
+
+  right(c) = f4
+& left(c) = f3
+& right(a) = f2
+& left(a) = f1
+
+at positions [1,0],[1,0],[0,0],[0,0] of the preceding formula leads to 
+
+  (    s' = think(a)^avail(f1)^avail(f2)^eat(c)^think(b)^think(d)
+   ==> safe(think(a)^avail(f1)^avail(f2)^eat(c)^think(b)^think(d)))
+& (    s' = think(c)^avail(f3)^avail(f4)^eat(a)^think(b)^think(d)
+   ==> safe(think(c)^avail(f3)^avail(f4)^eat(a)^think(b)^think(d)))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+    s' = think(c)^avail(f3)^avail(f4)^eat(a)^think(b)^think(d)
+==> safe(think(c)^avail(f3)^avail(f4)^eat(a)^think(b)^think(d))
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to 
+
+True
+
+Reducts have been simplified.
+
+Number of proof steps: 30
+
+Solutions:
+
+True

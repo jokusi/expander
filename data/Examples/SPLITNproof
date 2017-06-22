@@ -1,0 +1,233 @@
+-- SPLITNPROOF
+
+
+
+Derivation of
+
+    partn(n,S) = Pt
+==> S = flatten(Pt)
+
+Hoare invariant creation for the iterative program
+
+partn(n,s) = g(n,s,1,[],[])
+
+at position [0] of the preceding tree leads to the formula
+
+  INV(n,S,n,S,1,[],[])
+& (      g(z0,z1,z2,z3,z4) = Pt
+       & INV(n,S,z0,z1,z2,z3,z4)
+   ==> S = flatten(Pt))
+
+Applying the axiom
+
+     INV(n,s,n,s1,k,s2,p)
+<=== s = flatten(p++[s2++s1])
+
+at position [0] of the preceding tree leads to the formula
+
+  S = flatten([]++[[]++S])
+& (      g(z0,z1,z2,z3,z4) = Pt
+       & INV(n0,S,z0,z1,z2,z3,z4)
+   ==> S = flatten(Pt))
+
+Simplifying the preceding tree leads to the factor
+
+S = flatten[S]
+
+Rewriting at position [] of the preceding factor leads to the factor
+
+S = S
+
+Simplifying the preceding factor leads to a new formula. The current formula is given by
+
+      g(z0,z1,z2,z3,z4) = Pt
+    & INV(n0,S,z0,z1,z2,z3,z4)
+==> S = flatten(Pt)
+
+Shifting the factors at position [0,1] of the preceding tree leads to the formula
+
+    g(z0,z1,z2,z3,z4) = Pt
+==> (    INV(n0,S,z0,z1,z2,z3,z4)
+     ==> S = flatten(Pt))
+
+Applying fixpoint induction w.r.t.
+
+  (     g(n1,x0:s3,k0,s'0,p0) = z6
+   <===   k0 <= n1
+        & g(n1,s3,k0+1,s'0++[x0],p0) = z6)
+& (     g(n2,x1:s4,k1,s'1,p1) = z7
+   <===   k1 > n2
+        & g(n2,x1:s4,1,[],p1++[s'1]) = z7)
+& g(n3,[],k2,s5,p2) = p2++[s5]
+
+to the preceding tree leads to the formula
+
+All p2 s5 k2 n3 z7 n2 s4 x1 k1 s'1 p1 z6 n1 s3 x0 k0 s'0 p0:
+(  (     All n4 S3:
+         (    INV(n4,S3,n1,x0:s3,k0,s'0,p0)
+          ==> S3 = flatten(z6))
+    <===   k0 <= n1
+         & All n5 S4:
+           (    INV(n5,S4,n1,s3,k0+1,s'0++[x0],p0)
+            ==> S4 = flatten(z6)))
+ & (     All n6 S5:
+         (    INV(n6,S5,n2,x1:s4,k1,s'1,p1)
+          ==> S5 = flatten(z7))
+    <===   k1 > n2
+         & All n7 S6:
+           (    INV(n7,S6,n2,x1:s4,1,[],p1++[s'1])
+            ==> S6 = flatten(z7)))
+ & All n8 S7:
+   (    INV(n8,S7,n3,[],k2,s5,p2)
+    ==> S7 = flatten(p2++[s5])))
+
+Applying the axiom
+
+     INV(n,s,n,s1,k,s2,p)
+<=== s = flatten(p++[s2++s1])
+
+at positions [0,2,0,0],[0,1,1,1,0,0],[0,1,0,0,0],[0,0,1,1,0,0],[0,0,0,0,0] of the preceding tree leads to the formula
+
+All p2 s5 k2 n3 z7 n2 s4 x1 k1 s'1 p1 z6 n1 s3 x0 k0 s'0 p0:
+(  (     All n4 S3:
+         (      S3 = flatten(p0++[s'0++(x0:s3)])
+              & n4 = n1
+          ==> S3 = flatten(z6))
+    <===   k0 <= n1
+         & All n5 S4:
+           (      S4 = flatten(p0++[(s'0++[x0])++s3])
+                & n5 = n1
+            ==> S4 = flatten(z6)))
+ & (     All n6 S5:
+         (      S5 = flatten(p1++[s'1++(x1:s4)])
+              & n6 = n2
+          ==> S5 = flatten(z7))
+    <===   k1 > n2
+         & All n7 S6:
+           (      S6 = flatten((p1++[s'1])++[[]++(x1:s4)])
+                & n7 = n2
+            ==> S6 = flatten(z7)))
+ & All n8 S7:
+   (      S7 = flatten(p2++[s5++[]])
+        & n8 = n3
+    ==> S7 = flatten(p2++[s5])))
+
+Simplifying the preceding tree leads to the factor
+
+All z6 n1 s3 x0 k0 s'0 p0:
+(      k0 <= n1
+     & flatten(p0++[(s'0++[x0])++s3]) = flatten(z6)
+ ==> flatten(p0++[s'0++(x0:s3)]) = flatten(z6))
+
+Applying the theorem
+
+(s++[x])++s' = s++(x:s')
+
+at position [0,1] of the preceding factor leads to the factor
+
+All z6 n1 s3 x0 k0 s'0 p0:
+(      k0 <= n1
+     & flatten(p0++[s'0++(x0:s3)]) = flatten(z6)
+ ==> flatten(p0++[s'0++(x0:s3)]) = flatten(z6))
+
+Simplifying the preceding factor leads to a new formula. The current formula is given by
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & flatten((p1++[s'1])++[x1:s4]) = flatten(z7)
+ ==> flatten(p1++[s'1++(x1:s4)]) = flatten(z7))
+
+Applying the theorem
+
+flatten(p++p') = flatten(p)++flatten(p')
+
+at positions [0,1],[0,0,1] of the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & flatten(p1++[s'1])++flatten[x1:s4] = flatten(z7)
+ ==> flatten(p1)++flatten[s'1++(x1:s4)] = flatten(z7))
+
+Applying the theorem
+
+flatten(p++p') = flatten(p)++flatten(p')
+
+at position [0,0,1] of the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & (flatten(p1)++flatten[s'1])++flatten[x1:s4] = flatten(z7)
+ ==> flatten(p1)++flatten[s'1++(x1:s4)] = flatten(z7))
+
+Applying the axiom
+
+flatten(s:p) = s++flatten(p)
+
+at position [0,0,1] of the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & (flatten(p1)++(s'1++flatten[]))++flatten[x1:s4] = flatten(z7)
+ ==> flatten(p1)++flatten[s'1++(x1:s4)] = flatten(z7))
+
+Applying the axiom
+
+flatten[] = []
+
+at position [0,0,1] of the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & (flatten(p1)++(s'1++[]))++flatten[x1:s4] = flatten(z7)
+ ==> flatten(p1)++flatten[s'1++(x1:s4)] = flatten(z7))
+
+Applying the axiom
+
+flatten(s:p) = s++flatten(p)
+
+at position [0,0,1] of the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & (flatten(p1)++(s'1++[]))++((x1:s4)++flatten[]) = flatten(z7)
+ ==> flatten(p1)++flatten[s'1++(x1:s4)] = flatten(z7))
+
+Applying the axiom
+
+flatten[] = []
+
+at position [0,0,1] of the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & (flatten(p1)++(s'1++[]))++((x1:s4)++[]) = flatten(z7)
+ ==> flatten(p1)++flatten[s'1++(x1:s4)] = flatten(z7))
+
+Applying the axiom
+
+flatten(s:p) = s++flatten(p)
+
+at position [0,1] of the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & (flatten(p1)++(s'1++[]))++((x1:s4)++[]) = flatten(z7)
+ ==> flatten(p1)++((s'1++(x1:s4))++flatten[]) = flatten(z7))
+
+Applying the axiom
+
+flatten[] = []
+
+at position [0,1] of the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & (flatten(p1)++(s'1++[]))++((x1:s4)++[]) = flatten(z7)
+ ==> flatten(p1)++((s'1++(x1:s4))++[]) = flatten(z7))
+
+Simplifying the preceding tree leads to the formula
+
+All z7 n2 s4 x1 k1 s'1 p1:
+(      k1 > n2
+     & (flatten(p1)++s'1)++(x1:s4) = flatten(z7)
+ ==> flatten(p1)++(s'1++(x1:s4)) = flatten(z7))

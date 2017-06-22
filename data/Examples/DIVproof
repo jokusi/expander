@@ -1,0 +1,87 @@
+-- DIVproof
+
+
+Derivation of
+
+div(x,y) = (q,r) ==> x = (y*q)+r & r < y
+
+Hoare invariant creation for the iterative program
+
+div(x,y) = loop(y,0,x)
+
+at position [] of the preceding formula leads to 
+
+INV(x,y,0,x) & 
+(loop(y,z1,z2) = z0 & INV(x,y,z1,z2) ==> (z0 = (q,r) ==> x = (y*q)+r & r < y))
+
+Narrowing at position [0] of the preceding formula leads to 
+
+True & 
+(loop(y,z1,z2) = z0 & INV(x,y,z1,z2) ==> (z0 = (q,r) ==> x = (y*q)+r & r < y))
+
+Reducts have been simplified.
+
+Simplifying the preceding formula leads to 
+
+loop(y,z1,z2) = z0 & INV(x,y,z1,z2) ==> (z0 = (q,r) ==> x = (y*q)+r & r < y)
+
+Shifting subformulas at position [0,1] of the preceding formula leads to 
+
+loop(y,z1,z2) = z0 ==> 
+(INV(x,y,z1,z2) ==> (z0 = (q,r) ==> x = (y*q)+r & r < y))
+
+Applying fixpoint induction w.r.t.
+
+(loop(y,q,r) = (q,r) <=== r < y) & 
+(loop(y,q,r) = z3 <=== r >= y & loop(y,q+1,r-y) = z3)
+
+at position [] of the preceding formula leads to 
+
+All y q r z3:((All x q0 r0:(INV(x,y,q,r) ==> 
+                            ((q,r) = (q0,r0) ==> x = (y*q0)+r0 & r0 < y)) <=== 
+               r < y) & 
+              (All x q1 r1:(INV(x,y,q,r) ==> 
+                            (z3 = (q1,r1) ==> x = (y*q1)+r1 & r1 < y)) <=== 
+               r >= y & 
+               All x q1 r1:(INV(x,y,q+1,r-y) ==> 
+                            (z3 = (q1,r1) ==> x = (y*q1)+r1 & r1 < y))))
+
+Applying the axiom resp. theorem
+
+INV(x,y,q,r) <=== x = (y*q)+r
+
+at positions [0,1,1,1,0,0],[0,1,0,0,0],[0,0,0,0,0] of the preceding formula leads to 
+
+All y q r z3:((All x q0 r0:(x = (y*q)+r ==> 
+                            ((q,r) = (q0,r0) ==> x = (y*q0)+r0 & r0 < y)) <=== 
+               r < y) & 
+              (All x q1 r1:(x = (y*q)+r ==> 
+                            (z3 = (q1,r1) ==> x = (y*q1)+r1 & r1 < y)) <=== 
+               r >= y & 
+               All x q1 r1:(x = (y*(q+1))+(r-y) ==> 
+                            (z3 = (q1,r1) ==> x = (y*q1)+r1 & r1 < y))))
+
+Simplifying the preceding formula (57 steps) leads to 
+
+All y q r q1 r1:(r >= y & All q1 r1:((y*(q+1))+(r-y) = (y*q1)+r1) & 
+                 All r1:(r1 < y) ==> 
+                 (y*q)+r = (y*q1)+r1)
+
+Applying the axiom resp. theorem
+
+(x*(y+1))+(z-x) = (x*y)+z
+
+at position [0,0,1,0] of the preceding formula leads to 
+
+All y q r q1 r1:(r >= y & All q1 r1:((y*q)+r = (y*q1)+r1) & All r1:(r1 < y) ==> 
+                 (y*q)+r = (y*q1)+r1)
+
+Simplifying the preceding formula (2 steps) leads to 
+
+True
+
+Number of proof steps: 9
+
+Solutions:
+
+True

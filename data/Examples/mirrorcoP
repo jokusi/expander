@@ -1,0 +1,244 @@
+-- mirrorcoP
+
+
+Derivation of
+
+mirror(mirror(t)) ~ t
+
+Adding
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = mirror(mirror(t)) & z1 = t)
+& (x ~/~0 y ===> x =/= y)
+& (x ~/~0 y ===> Not(y ~0 x))
+& (x ~/~0 z ===> Not(x ~0 y) | Not(y ~0 z))
+& (z0 ~/~0 z1 ===> z0 =/= mirror(mirror(t)) | z1 =/= t)
+
+to the axioms and applying coinduction w.r.t.
+
+  (t ~ t' ===> lrr(t) ~pr lrr(t'))
+
+at position []
+of the preceding formula leads to 
+
+All t t':(Any t0:(t = mirror(mirror(t0)) & t' = t0) ===> lrr(t) ~pr lrr(t'))
+
+Simplifying the preceding formula (7 steps) leads to 
+
+All t0:(lrr(mirror(mirror(t0))) ~pr lrr(t0))
+
+Adding
+
+  (x ~pr0 y <=== x = y)
+& (x ~pr0 y <=== y ~pr0 x)
+& (x ~pr0 z <=== x ~pr0 y & y ~pr0 z)
+& (z2 ~pr0 z3 <=== z2 = lrr(mirror(mirror(t0))) & z3 = lrr(t0))
+& (x ~/~pr0 y ===> x =/= y)
+& (x ~/~pr0 y ===> Not(y ~pr0 x))
+& (x ~/~pr0 z ===> Not(x ~pr0 y) | Not(y ~pr0 z))
+& (z2 ~/~pr0 z3 ===> z2 =/= lrr(mirror(mirror(t0))) | z3 =/= lrr(t0))
+
+to the axioms and applying coinduction w.r.t.
+
+  ((t,x,u) ~pr (t',y,u') ===> t ~ t' & x = y & u ~ u')
+& (undef ~pr (t,x,u) ===> False)
+& ((t,x,u) ~pr undef ===> False)
+
+at position [0]
+of the preceding formula leads to 
+
+All t0:(All t x u t' y u':(Any t0:((t,x,u) = lrr(mirror(mirror(t0))) & 
+                                   (t',y,u') = lrr(t0)) ===> 
+                           t ~0 t' & x = y & u ~0 u') & 
+        All t x u t' y u':(Any t0:(undef = lrr(mirror(mirror(t0))) & 
+                                   (t,x,u) = lrr(t0)) ===> 
+                           False) & 
+        All t x u t' y u':(Any t0:((t,x,u) = lrr(mirror(mirror(t0))) & 
+                                   undef = lrr(t0)) ===> 
+                           False))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All t x u t' y u':(Any t0:((t,x,u) = lrr(mirror(mirror(t0))) & 
+                           (t',y,u') = lrr(t0)) ==> 
+                   t ~0 t' & x = y & u ~0 u') & 
+All t x u t0:(Not(undef = lrr(mirror(mirror(t0)))) | Not((t,x,u) = lrr(t0))) & 
+All t x u t0:(Not((t,x,u) = lrr(mirror(mirror(t0)))) | Not(undef = lrr(t0)))
+
+The tree has been split.
+The current formula is given by
+
+All t x u t' y u':(Any t0:((t,x,u) = lrr(mirror(mirror(t0))) & 
+                           (t',y,u') = lrr(t0)) ==> 
+                   t ~0 t' & x = y & u ~0 u')
+
+Applying the axioms
+
+  (lrr(mirror(t)) = undef <=== lrr(t) = undef)
+& (lrr(mirror(t)) = (mirror(u'),x,mirror(u)) <=== lrr(t) = (u,x,u'))
+
+at position [0,0,0,0,1]
+of the preceding factors leads to the factor
+
+All t x u t' y u':(Any t0:(((t,x,u) = undef & lrr(mirror(t0)) = undef | 
+                            Any u'0 x0 u0:((t,x,u) = (mirror(u'0),x0,mirror(u0)) & 
+                                           lrr(mirror(t0)) = (u0,x0,u'0))) & 
+                           (t',y,u') = lrr(t0)) ==> 
+                   t ~0 t' & x = y & u ~0 u')
+
+The axioms were MATCHED against their redices.
+
+Simplifying at position [0,0,0,0]
+of the preceding factors (5 steps) leads to the factor
+
+All t x u t' y u':(Any t0:(Any u'0 x0 u0:(u = mirror(u0) & 
+                                          lrr(mirror(t0)) = (u0,x,u'0) & 
+                                          t = mirror(u'0)) & 
+                           (t',y,u') = lrr(t0)) ==> 
+                   t ~0 t' & x = y & u ~0 u')
+
+Applying the axioms
+
+  (lrr(mirror(t)) = undef <=== lrr(t) = undef)
+& (lrr(mirror(t)) = (mirror(u'),x,mirror(u)) <=== lrr(t) = (u,x,u'))
+
+at position [0,0,0,0,0,1,0]
+of the preceding factors leads to the factor
+
+All t x u t' y u':(Any t0:(Any u'0 x0 u0:(u = mirror(u0) & 
+                                          (undef = (u0,x,u'0) & lrr(t0) = undef | 
+                                           Any u'1 x1 u1:((mirror(u'1),x1,
+                                                           mirror(u1)) = (u0,x,
+                                                                          u'0) & 
+                                                          lrr(t0) = (u1,x1,u'1))) & 
+                                          t = mirror(u'0)) & 
+                           (t',y,u') = lrr(t0)) ==> 
+                   t ~0 t' & x = y & u ~0 u')
+
+The axioms were MATCHED against their redices.
+
+Simplifying at position [0,0,0,0,0,1]
+of the preceding factors (5 steps) leads to the factor
+
+All t x u t' y u':(Any t0:(Any u'0 x0 u0:(u = mirror(u0) & 
+                                          Any u'1 x1 u1:(mirror(u1) = u'0 & 
+                                                         lrr(t0) = (u1,x,u'1) & 
+                                                         mirror(u'1) = u0) & 
+                                          t = mirror(u'0)) & 
+                           (t',y,u') = lrr(t0)) ==> 
+                   t ~0 t' & x = y & u ~0 u')
+
+Simplifying the preceding factors (29 steps) leads to the factor
+
+All x t0 u'1 u1:(lrr(t0) = (u1,x,u'1) ==> mirror(mirror(u'1)) ~0 u'1)
+
+Applying the axioms
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = mirror(mirror(t)) & z1 = t)
+
+at position [0,1]
+of the preceding factors leads to the factor
+
+All x t0 u'1 u1:(lrr(t0) = (u1,x,u'1) ==> 
+                 mirror(mirror(u'1)) = u'1 | u'1 ~0 mirror(mirror(u'1)) | 
+                 Any y:(mirror(mirror(u'1)) ~0 y & y ~0 u'1) | 
+                 Any t:(mirror(mirror(u'1)) = mirror(mirror(t)) & u'1 = t))
+
+The axioms were MATCHED against their redices.
+
+Substituting u'1 for t to the preceding factors leads to the factor
+
+All x t0 u'1 u1:(lrr(t0) = (u1,x,u'1) ==> 
+                 mirror(mirror(u'1)) = u'1 | u'1 ~0 mirror(mirror(u'1)) | 
+                 Any y:(mirror(mirror(u'1)) ~0 y & y ~0 u'1) | 
+                 Any t u'1:(mirror(mirror(u'1)) = mirror(mirror(u'1)) & 
+                            u'1 = u'1))
+
+Simplifying the preceding factors (1 step) leads to 2 factors.
+The current factor is given by
+
+All t x u t0:(Not(undef = lrr(mirror(mirror(t0)))) | Not((t,x,u) = lrr(t0)))
+
+Applying the axioms
+
+  (lrr(mirror(t)) = undef <=== lrr(t) = undef)
+& (lrr(mirror(t)) = (mirror(u'),x,mirror(u)) <=== lrr(t) = (u,x,u'))
+
+at position [0,0,0,1]
+of the preceding factors leads to the factor
+
+All t x u t0:(Not(undef = undef & lrr(mirror(t0)) = undef | 
+                  Any u' x3 u2:(undef = (mirror(u'),x3,mirror(u2)) & 
+                                lrr(mirror(t0)) = (u2,x3,u'))) | 
+              Not((t,x,u) = lrr(t0)))
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding factors (4 steps) leads to the factor
+
+All t x u t0:(lrr(mirror(t0)) =/= undef | (t,x,u) =/= lrr(t0))
+
+Applying the axioms
+
+  (lrr(mirror(t)) = undef <=== lrr(t) = undef)
+& (lrr(mirror(t)) = (mirror(u'),x,mirror(u)) <=== lrr(t) = (u,x,u'))
+
+at position [0,0,0]
+of the preceding factors leads to the factor
+
+All t x u t0:((undef =/= undef & lrr(t0) = undef | 
+               Any u' x4 u3:((mirror(u'),x4,mirror(u3)) =/= undef & 
+                             lrr(t0) = (u3,x4,u'))) | 
+              (t,x,u) =/= lrr(t0))
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding factors (11 steps) leads to a single formula,
+which is given by
+
+All t x u t0:(Not((t,x,u) = lrr(mirror(mirror(t0)))) | Not(undef = lrr(t0)))
+
+Applying the axioms
+
+  (lrr(mirror(t)) = undef <=== lrr(t) = undef)
+& (lrr(mirror(t)) = (mirror(u'),x,mirror(u)) <=== lrr(t) = (u,x,u'))
+
+at position [0,0,0,1]
+of the preceding formula leads to 
+
+All t x u t0:(Not((t,x,u) = undef & lrr(mirror(t0)) = undef | 
+                  Any u' x5 u4:((t,x,u) = (mirror(u'),x5,mirror(u4)) & 
+                                lrr(mirror(t0)) = (u4,x5,u'))) | 
+              Not(undef = lrr(t0)))
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (31 steps) leads to 
+
+All t0 u4 x5 u':(undef =/= lrr(t0) | lrr(mirror(t0)) =/= (u4,x5,u'))
+
+Applying the axioms
+
+  (lrr(mirror(t)) = undef <=== lrr(t) = undef)
+& (lrr(mirror(t)) = (mirror(u'),x,mirror(u)) <=== lrr(t) = (u,x,u'))
+
+at position [0,1,0]
+of the preceding formula leads to 
+
+All t0 u4 x5 u':(undef =/= lrr(t0) | 
+                 (undef =/= (u4,x5,u') & lrr(t0) = undef | 
+                  Any u'2 x u:((mirror(u'2),x,mirror(u)) =/= (u4,x5,u') & 
+                               lrr(t0) = (u,x,u'2))))
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (5 steps) leads to 
+
+True
+
+Number of proof steps: 21

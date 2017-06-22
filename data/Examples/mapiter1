@@ -1,0 +1,32 @@
+-- mapiter1
+
+
+Derivation of
+
+(map(f)$iter1(f,x)) ~ iter1(f,f(x))
+
+Adding
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = (map(f)$iter1(f,x)) & z1 = iter1(f,f(x)))
+
+to the axioms and applying COINDUCTION wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at position [] of the preceding formula leads to 
+
+All x f:((map(f)$iter1(f,f(x))) ~0 iter1(f,f(f(x))))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 2

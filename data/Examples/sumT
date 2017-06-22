@@ -1,0 +1,2 @@
+-- sumT
+[DeriveMode False False, Match 0, Mark [], Induction True 0, Mark [], Narrow 1 True, Mark [], Simplify True 100 False False, Mark []]

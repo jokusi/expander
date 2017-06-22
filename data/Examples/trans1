@@ -1,0 +1,22 @@
+-- TRANS1
+
+specs:		CTL
+preds:     	two
+copreds:   	one
+constructs: 	a b
+defuncts:       states labels
+
+axioms:
+
+states == [2] & labels == [a,b] &
+
+(2,b) -> 1<+>3 & (3,b) -> 3 & (3,a) -> 4 & (4,b) -> 3 &
+
+(one(st) ===> (two/\(b#one))(st)) &
+(two(st) <=== ((a<>true)\/(b<>two))(st))
+
+conjects: 
+
+all(one)[3,4] &		-- coinduction + narrow match	--> True
+all(two)[2,3,4]		-- narrow match			--> True
+

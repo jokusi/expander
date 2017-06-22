@@ -1,0 +1,2 @@
+-- rotCpoly3-2
+repeat(rotateC(turt(poly(6,[33,11],red),J(66),poly(6,[33,11],green),J(66),poly(6,[33,11],blue))))

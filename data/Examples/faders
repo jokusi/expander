@@ -1,0 +1,13 @@
+-- faders
+
+terms:
+
+fadeW(grow(trunk,grow(grow(trunk,grow(trunk,trunk)),trunk))) <+>
+
+repeat[fadeB(snow(3,22,green)),fadeW(snow(3,22,green))] <+>
+
+repeat[shuffle[concat[fadeB(poly(6,[33,11],red)),fadeW(poly(6,[33,11],red))],
+               concat[fadeB(turt(J(66),polyR(6,[33,11],green))),fadeW(turt(J(66),polyR(6,[33,11],green)))],
+               concat[fadeB(turt(J(132),poly(6,[33,11],blue))),fadeW(turt(J(132),poly(6,[33,11],blue)))]]]
+
+

@@ -1,0 +1,2 @@
+-- fairblink2PT
+[DeriveMode True False, Match 0, Mark [], DeriveMode False False, Induction False 0, Mark [], Simplify 100 False False, Mark [[1]], Induction False 0, Mark [], Simplify 100 False False, Mark [], DeriveMode True False, Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark []]

@@ -1,0 +1,9 @@
+-- stars
+
+terms:
+
+[star(22,20,7,red),star(33,7,3,green),star(22,3,0.5,blue)] <+>		 	-- star
+turt(star(15,24,12,blue),T(12),star(15,15,9,yellow),star(5,12,2,red)) <+>	-- star2
+turt(star(15,24,12),T(12),star(15,15,9),star(5,12,2)) <+>
+odots(polySF(5,[22,55,44],light dark yellow)) <+>				-- starfish
+rainbow(polySF(5,[22,55,44],light blue),51) 					-- starfish3

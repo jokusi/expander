@@ -1,0 +1,20 @@
+-- ufos
+
+terms:
+
+    turt[cyan$polyR(99,44),red$polyR(33,44,0,44)] 		-- ufo
+
+<+> turt[red$polyR(34,44,44,0.1),green$polyR(34,44,0.1,44],
+         blue$polyR(34,0.1,44,44)]				-- ufo2
+
+<+> turt[shineB$green$polyR(34,44,0.1,44),
+         shineW$blue$polyR(34,0.1,44,44),
+         red$polyR(34,44,44,0.1)]				-- ufo3
+
+<+> shineB$turt[red$polyR(34,44,44,0.1,
+		green$polyR(34,44,0.1,44),
+		blue$polyR(34,0.1,44,44)]
+
+<+> (shineB$red$polyR(34,44,44,0.1) <+> 
+     shineW$green$polyR(34,44,0.1,44) <+>
+     shineB$blue$polyR(34,0.1,44,44))

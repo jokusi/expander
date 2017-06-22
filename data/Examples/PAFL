@@ -1,0 +1,22 @@
+-- PAFL
+
+defuncts: flatten
+
+preds: part >>
+
+fovars: s s' p s1
+axioms:
+
+  part([x],[[x]]) 
+& (part(x:y:s,[x]:p) <=== part(y:s,p))
+& (part(x:y:s,(x:s'):p) <=== part(y:s,s':p))
+
+& flatten[] == []
+& flatten(s:p) == s++flatten(p)
+
+& x:s>>s
+& (s >> s' <=== s >> s1 & s1 >> s')
+
+conjects:
+
+part(s,p) ==> flatten(p)=s

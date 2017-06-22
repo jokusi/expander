@@ -1,0 +1,58 @@
+-- prog
+
+terms:  
+
+seq(assign(fact,int(1)),
+    loop(greater(var(x),int(0)),
+         seq(assign(fact,mul(var(fact),var(x))),
+             assign(x,sub(var(x),int(1))))))
+<+> seq(assign(fact,int(1)),       loop(greater(var(x),int(pos 1 1)),            seq(assign(fact,mul(var(pos 1 1 1),var(pos 1))),                assign(x,sub(var(x),int(1))))))
+<+> seq(assign(fact,int(1)),       loop(greater(var(x),int(pos 1 1 1 1)),            seq(assign(fact,mul(var(fact),var(x))),                assign(x,sub(var(pos 1 0 0),int(pos 1 1 1 1))))))
+<+> appC(assign("fact",intE(1)),
+         oneC(loop(greater(var("x"),intE(0)),
+                   appC(assign ("fact",prodF(appP(var("fact"),
+                                                  oneP(var("x"))))),
+                        oneC(assign ("x",sub(var("x"),intE(1))))))))
+
+<+> seq(assign(fact,widg(int(1),red(circ(22)))),               loop(greater(var(x),int(0)),                    seq(widg(fact,mul(var(fact),var(x)),turt[light light blue(oval(22,11)),
+							     dark green(text(assign))]),                    widg(x,sub(var(x),int(1)),frame$red(text(assign))))))
+
+<+> assign(fact,          widg(fact(fact(pos 1 0 1 0,pos 1 0 1),                    widg(2,                         turt[dark red(frame(light blue(rect(22,pos 1 1 0 0 3 0 1)))),                              text(fact2)])),               red(turt[light green(pos 1 1 0 0 3 0),text(assign),M(222),                        light blue(oval(33,11)),T(45),J(222),                        red(snow(pos 1 1 0 0 6 0 3,3,55,6,                                 rect(pos 1 1 0 0 6 0 4 1,0.5)))])))
+
+<+> seq(assign(T,i*k),assign(U,T+1),ite(lt(i,j),assign(x,U),ite(gt(i,j),assign(y,U),
+								        assign(y,(x-T)/j))))
+
+<+> ite(lt(i,j),assign(x,(i*k)+1),ite(gt(i,j),assign(y,(i*k)+1),assign(y,(x-(i*k))/j))) 
+
+<+>
+
+ite(lt(i,j),assign(x,(i*k)+1),
+    ite(gt(i,j),
+        assign(y,
+               (ite(lt(i,j),assign(x,(i*k)+1),
+			    ite(gt(i,j),assign(y,(i*k)+1),assign(y,(x-(i*k))/j)))*k)+1),
+					assign(y,(x-(i*k))/j))) 
+
+<+>
+
+seq(assign(fact,int(pos 0)),
+    loop(greater(var(x),
+                 int(var(sub(var(assign(pos 1 0 1 0 0 0 0 1,
+                                        mul(var(sub(var(x),int(pos 1 0 0 0))),
+                                            var(pos 1 0 1 0 0 0 0 1 0 0)))),
+                             int(pos 1 0 0 0))))),
+         seq(assign(pos 1 0 1 0 0 0 0 1,
+                    mul(var(sub(var(x),int(pos 1 0 0 0))),
+                        var(pos 1 0 1 0 0 0 0 1 0 0))),
+             assign(x,sub(var(x),int(pos 1)))))) 
+
+<+>
+
+0(2(4,6(pos 0)),
+  9(11(13(15),17(19(21(23(25(pos 1 1 0 0,pos 1 1 0 0)),29(pos 1 0 0 0))))),
+    32(34(widg(38(40(42(44),46(pos 1 0 0 0))),49(pos 1 1 0 0 0 0),
+               52(54(56(58),60)),62(pos 1 1 0 0 2 0),65(67(69(71),73)),
+               75(pos 1 1 0 0 4 0),oval(88,22)),
+          78(80(82(84(86),88(pos 1 0 0 0))),91(pos 1 1 0 0 0 0))),
+       94(96,98(100(102),104(pos 1))),107(pos 1 1 1 0,pos 1 1 1 1))),
+  111(pos 1 0,pos 1 1))

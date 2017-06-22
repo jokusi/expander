@@ -1,0 +1,19 @@
+-- LISA
+
+axioms:
+
+  states == [1]
+& labels == [a,b,c,d,e]
+& atoms  == [h,g,rrr,44,55]
+
+& (1,c) -> 2 & (1,d) -> 3 & (1,e) -> 4
+& (2,a) -> 5 & (2,b) -> 6
+& (4,a) -> 7 & (4,b) -> 8
+
+& h -> 1 & g -> branch[2,4] & rrr -> 3 
+& 44 -> branch[5,7] & 55 -> branch[6,8]
+
+terms:
+
+f(a)(g(b,k),c)
+[h(hh$s,wow,widg$circ$33),Lisa[Amalie,Otto,Hans,Emma],widg$red$oval(66,44)] 

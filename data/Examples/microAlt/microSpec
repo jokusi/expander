@@ -1,0 +1,29 @@
+-- MICRO
+
+specs:      LCTL
+preds:      Start' Close' Heat' Error' Start Close Heat Error 
+defuncts:   states atoms
+fovars:     st pa
+
+axioms:
+  
+   states = [1,2,3,4,5,6,7]
+
+ & 1 -> [2,3] & 2 -> 5 & 3 -> [1,6] & 6 -> 7 & 7 -> 4 & 4 -> [1,3,4] & 5 -> [2,3]
+
+ & (Start(pa) <=== head(pa) `in` [2,5,6,7])
+ & (Close(pa) <=== head(pa) `in` [3,4,5,6,7])
+ & (Heat(pa) <=== head(pa) `in` [4,7])
+ & (Error(pa) <=== head(pa) `in` [2,5])
+
+ & (Start'(st) <=== st `in` [2,5,6,7])
+ & (Close'(st) <=== st `in` [3,4,5,6,7])
+ & (Heat'(st) <=== st `in` [4,7])
+ & (Error'(st) <=== st `in` [2,5])
+
+conjects:
+
+   (G(Neg(Heat))(pa) | F(Neg(Error))(pa))				
+ & (head(pa) `in` [4,6,7] & isPath(pa) ==> F(Heat)(pa)) 		
+ & All st:(st `in` states ==> EF(Heat')(st))
+

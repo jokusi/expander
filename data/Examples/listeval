@@ -1,0 +1,74 @@
+-- LISTEVAL
+
+-- In contrast to LIST, LISTEVAL uses Boolean functions and more complex guards
+-- (see *). This makes LISTEVAL suitable for pure evaluation tasks, while LIST 
+-- is more appropriate for proofs.
+
+specs:      nat bool
+preds:      P any zipAny
+copreds:    all zipAll ~
+defuncts:   ++ map foldl sum product flatten ext scan zip zipWith 
+            mergesort merge split card primes sieve NOTdivided_by splitAt
+fovars:     n x y z xs ys s s' s1 s2 p
+hovars:     F P
+
+axioms:
+
+  map(F)[] = []
+& map(F)(x:s) = F(x):map(F)(s)
+
+& foldl(F)(x)[] = x
+& foldl(F)(x)(y:s) = foldl(F)(F(x,y))(s)
+& sum(s) = foldl(+)(0)(s)
+& product(s) = foldl(*)(1)(s)
+
+& flatten(s) = foldl(++)[](s)
+
+& ext(F)(s) = flatten(map(F)(s))
+
+& scan(F)(x)[] == [x]
+& scan(F)(x)(y:s) == x:scan(F)(F(x,y))(s)
+
+& zip[][] == []
+& zip(x:s)(y:s') == (x,y):zip(s)(s')
+& zipWith(F)[][] == []
+& zipWith(F)(x:s)(y:s') == F(x,y):zipWith(F)(s)(s')
+
+& (any(P)(x:s) <=== P(x) | any(P)(s))
+& (all(P)(x:s) ===> P(x) & all(P)(s))
+& (zipAny(P)(x:s)(y:s') <=== P(x,y) | zipAny(P)(s)(s'))
+& (zipAll(P)(x:s)(y:s') ===> P(x,y) & zipAll(P)(s)(s'))
+
+& (split(s) = (s1,s2) 
+   ==> mergesort(x:(y:s)) == merge(mergesort(x:s1),mergesort(y:s2)))
+& (length(s) <= 1 ==> mergesort(s) == s)
+-- & mergesort(s) == s
+
+& (split(s) = (s1,s2) ==> split(x:(y:s)) == (x:s1,y:s2))
+& (length(s) <= 1 ==> split(s) == (s,[]))
+-- & split(s) == (s,[])
+
+& (x <= y ==> merge(x:s,y:s') == x:merge(s,y:s'))
+& merge(x:s,y:s') == y:merge(x:s,s')
+& merge([],s) == s
+& merge(s,[]) == s
+
+& primes(n)  == sieve[2..n]
+& sieve[]    == []
+& sieve(x:s) == x:sieve(filter(NOTdivided_by(x))(s))
+& NOTdivided_by(x)(y) == (=/=0)(y`mod`x)
+
+& splitAt(0)(s)        == ([],s)
+& splitAt(suc(n))[]    == ([],[])
+& splitAt(suc(n))(x:s) == fun((s,s'),(x:s,s')) $ splitAt(n)(s)
+
+terms:
+
+mergesort[1,2,3,4,5,6,3,2,1]		<+>
+map(suc)[1,2,3,4,5,6]			<+>
+foldl(*)(5)[1,2,3,4,5,6]		<+>
+primes(11)				<+>
+filter(=/=4)[1,2,3,4,5]			<+>
+(suc.length)(get0([1,2,3],2,3))         <+>
+splitAt(3)[5..12]			<+>
+foldl(+)(0)[1..5]

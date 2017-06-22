@@ -1,0 +1,46 @@
+* {
+    -GtkWindow-resize-grip-height: 0;
+    -GtkWindow-resize-grip-width: 0;
+}
+.bg_white {
+    background-color: #FFFFFF;
+}
+.bg_blue {
+    background-color: #AAAAFF;
+}
+.bg_green {
+    background-color: #AAFFAA;
+}
+.bg_magenta {
+    background-color: #FFAAFF;
+}
+.bg_red {
+    background-color: #FFAAAA;
+}
+@keyframes redpulse {
+    from { background-color: #FF0100; }
+    to { background-color: #FFF900; }
+}
+.bg_redpulse {
+    animation: redpulse 1s infinite alternate;
+}
+.font10 {
+    font: 10px Sans-serif italic;
+}
+.font12 {
+    font: 12px Sans-serif;
+}
+.font12b {
+    font: 12px Sans-serif;
+    font-weight: bold;
+}
+.default_button{
+    font: 12px Sans-serif;
+}
+#subToBut {
+    border-style: groove;
+    font: 9px Sans-serif;
+}
+#ent {
+    font: 12px Monospace;
+}

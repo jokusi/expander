@@ -1,0 +1,1 @@
+[Clear, Push [0], Narrow "", Clear, Simplify "100", Clear, Push [0, 1, 0], RemoveSubtrees, Clear, Simplify "100", Clear, Push [0, 1, 0, 0, 1, 1], Instantiate "1", Clear, Push [0, 1, 0, 2], Narrow "3", Clear, Simplify "100", Clear]

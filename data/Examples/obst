@@ -1,0 +1,22 @@
+-- OBST
+
+constructs: obst steinobst beerenobst
+            kirsche pflaume pfirsich himbeere brombeere
+            konservierung kuehlen gefrieren erhitzen
+            kuehlschrank gefrierfach tiefkuehltruhe dose glas
+defuncts:   ktree otree
+
+axioms:
+
+otree == obst(steinobst(kirsche,pflaume,pfirsich),beerenobst(himbeere,brombeere)) &
+
+ktree == konservierung(kuehlen(kuehlschrank,gefrieren(gefrierfach,tiefkuehltruhe)), 
+		       erhitzen(dose,glas))
+
+terms: concept([otree,ktree],
+	       [(kirsche,glas),(pfirsich,dose)],
+	       [(himbeere,kuehlschrank),(brombeere,gefrierfach)])
+       --> (steinobst,konservierung)<+>(obst,erhitzen)
+
+
+

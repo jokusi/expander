@@ -1,0 +1,56 @@
+-- sendmore
+
+specs:      CTLS
+constructs: final
+preds:	    relO relR relY REL eqHolds distinct
+defuncts:   states atoms draw vals setO setR setN setY setE
+fovars:     s e n d o r y st
+
+axioms:
+
+  (distinct$x:xs <==> x `NOTin` xs & distinct$xs)
+& (distinct[] <==> True)
+
+& states == [[]] & atoms == [final]	
+
+& vals == 0:[2..8]
+
+& [] -> branch$setE
+
+& [e,d] -> branch$map(fun(y,[y,e,d]))$filter(flipR(curryR$relY)(e,d))$vals
+
+& [y,e,d] -> branch$map(fun(n,[n,y,e,d]))$filter(`NOTin`[y,e,d])$vals
+
+& [n,y,e,d] -> branch$map(fun(r,[r,n,y,e,d]))
+		     $filter(flipR(curryR$relR)[n,y,e,d])$vals
+
+& [r,n,y,e,d] -> branch$map(fun(o,[r,n,y,e,d]))
+		       $filter(flipR(curryR$relO)[r,n,y,e,d])$vals
+
+-- & setO == filterL(REL)$replicate(6)$vals
+
+& (REL <==> distinct /\ eqHolds)
+
+& (eqHolds$[o,r,n,y,e,d] <==> (e+o)*100+(n+r)*10+d+e=o*1000+n*100+e*10+y)
+
+& setO == mapfilter2(relO)(fun((o,st),o:st))(vals)$setR
+
+& setR == mapfilter2(relR)(fun((r,st),r:st))(vals)$setN
+
+& setN == mapfilter2(`NOTin`)(fun((n,st),n:st))(vals)$setY
+
+& setY == mapfilter2(relY)(fun((y,st),y:st))(vals)$setE
+
+& setE == mapfilter2(=/=)(fun((e,d),[e,d]))(vals)$vals
+
+& (relO(o,[r,n,y,e,d]) <==> o`NOTin`[r,n,y,e,d] & eqHolds$[o,r,n,y,e,d])
+
+& (relR(r,[n,y,e,d]) <==> r`NOTin`[n,y,e,d] & ((n+r)*10+d+e)`mod`100=e*10+y)
+
+& (relY(y,[e,d]) <==> y`NOTin`[e,d] & (d+e)`mod`10=y)
+
+-- & states == [vals] 
+
+-- & (Not(rel5$st) ==> st -> nextperm$st)		
+
+-- & final -> branch$listsfilter(rel5)$replicate(7)$vals

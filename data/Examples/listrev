@@ -1,0 +1,34 @@
+-- LISTREV
+
+preds:      sorted sortedB
+copreds:    unsorted ~
+defuncts:   reverse card
+fovars:     x y s s'
+
+axioms:
+
+  sorted[]
+& sorted[x]
+& (sorted(x:y:s) <=== x <= y & sorted(y:s))
+& sortedB[]
+& sortedB[x]
+& (sortedB(x:y:s) <=== x >= y & sortedB(y:s))
+& (unsorted[] ===> False)
+& (unsorted[x] ===> False)
+& (unsorted(x:(y:s)) ===> (x <= y ==> unsorted(y:s)))
+& (s ~ s' ===> card(x,s) = card(x,s'))
+
+& reverse[]    = []
+& reverse(x:s) = reverse(s)++[x]
+& card(x,[])  = 0
+& card(x,x:s) = card(x,s)+1
+& (card(x,y:s) = card(x,s)+1 <=== x =/= y)
+
+theorems:
+
+  (x:s ~ s'++[x] <=== s ~ s')
+& (sortedB(s'++[x])  <===  s ~ s' & (sorted(s) ==> sortedB(s')) & sorted(x:s))
+
+conjects:
+
+  reverse(s) = s' ==> s ~ s' & (sorted(s) ==> sortedB(s'))

@@ -1,0 +1,199 @@
+-- widgets
+
+axioms:		
+    turtle == turt[red$circ$55,J$111,green$circ$55]
+&   turtle2 == turt[T(44),red$oval(111,55),J(222),blue$circ(44)]
+
+terms:
+    repeat$gifs(lars,8,88,44)
+<+> turt[pile(33,11),J$20,pile(22,5),J$20,pileR[7,5,4,3,2,3,4,5]]
+<+> scale(22)$track(asc)$red$hilb$3
+<+> scale(2)$red$rainbow(55)$track(ascF)$HE
+<+> scale(2)$red$rainbow(55)$grav$track(ascF)$PE
+<+> scale(4)$red$track(ascF)$tria$22
+<+> scale(4)$red$track(ascF)$poly(33,28,55,22)
+<+> scale(4)$red$track(symF)$poly(33,28,55,22)
+<+> scale(4)$red$track(angF)$poly(33,28,55,22)
+<+> scale(4)$red$track(sloF)$poly(33,28,55,22)
+<+> file(river)<+>blue(waveSF(5,20,45))
+<+> center$blue$waveSF(5,20,45)
+<+> grav(blue(waveSF(5,20,45)))
+<+> red$frameS$center$blue$waveSF(5,20,45)
+<+> shelf(1)$[circ$33,file$river,circ$44]
+<+> shelf(1)$[circ(33),center(blue(waveSF(5,20,45))),circ(44)]
+<+> planar(111)$turt[rect(111,55),J$166,rect(55,111)]
+<+> turt$T(-120):M(90):concat(replicate(5)[T$60,M$90])   -- hexagon
+<+> turt$T(-108):M(90):concat(replicate(4)[T$72,M$90])   -- pentagon
+<+> turt[T(-108),M$90,T$108,M$90,T$72,M$90,T$108,M$90]   -- thickRhombL
+<+> turt[T(-72),M$90,T$72,M$90,T$108,M$90,T$72,M$90]     -- thickRhombR
+<+> turt[T(-144),M$90,T$144,M$90,T$36,M$90,T$144,M$90]   -- thinRhombL
+<+> turt[T(-36),M$90,T$36,M$90,T$144,M$90,T$36,M$90]     -- thinRhombR
+<+> snow(1,5,4,6,red$rect(222,222))
+<+> snow(0.17,5,4,6,red$rect(222,222))
+<+> snow(-1,1,4,8,red$rect(222,222))
+<+> red$snow(1,6,3,6,tria$222)
+<+> fun(x,turt[red$x,T$45,M$444,blue$x])$snow(1,6,3,6,tria$222)
+<+> red$snow(1,6,4,6,turt[tria(-333),tria$333])		-- snowtest1
+<+> red$snow(-1,6,4,6,turt[tria(-333),tria$333])	-- snowtest2
+<+> red$snow(1,4,4,4,polyF(4,111,333))			-- snowtest3
+<+> red$snow(-1,4,4,8,polyF(4,111,333))			-- snowtest4
+<+> red$snow(-1,6,4,8,polyF(4,111,333))			-- snowtest5
+<+> yellow$snow4(1,2,4,6,turt[tria$222,tria(-222)])	-- snowtest6
+<+> snow(-0.8,5,4,8,red$rect(222,222))			-- snowtest7
+<+> turn(36)$red$snow(1,6,2,5,polyLT(5,111,333))	-- snowtest8
+<+> red$snow(1,4,2,5,blos1C2(11,100,22))		-- snowtest9
+<+> red$snow4(1,4,2,5,blos1C2(11,100,22))		-- snowtest10
+<+> red$snow4(1,4,2,5,blos1A(11,222,55))		-- snowtest11
+<+> red$snow(1,5,4,5,turn(54)$grav$turt[blos1D2(5,60,20)])	
+							-- snowtest12
+<+> red$snow(1.4,5,3,5,turn(54)$blos1A2(5,222,111))	-- snowtest13
+<+> snow(1.4,5,3,5,turn(54)$grav$turt[blos1D2(5,66,20)])
+<+> snow(1.4,5,3,5,blos1C(5,111,44))
+<+> snow(1.4,5,3,5,turn(54)$blos1A(5,222,111))
+<+> red$snow(1,4,4,4,circ$222)
+<+> red$snow(-1,4,4,4,circ$222)
+<+> red$snow(1,1,4,4,grav$pytree$3)
+<+> rect(222,111)+oval(111,222)
+<+> repeat$concat$map(fun(x,[gif(x,66),white$circ$111])) 
+                  [nemo,nemo2,turtle,tweety]
+<+> repeat[fast$pytree$2,skip,fast$white$pytree$2]
+<+> yellow$scale(4)$trackF$hilb$4
+<+> planar$red$growH[budH,budH,skip,budH,budH,skip]
+<+> scale(11)$center$red$koch$3
+<+> rainbow(5)$red$trackF$scale(20)$center$koch$3  	-- rain5koch3
+<+> tria(88)+rect(44,111)
+<+> rect(44,111)+rect(44,111)+rect(111,44)+rect(111,44)
+<+> red(rect(44,111))+green(rect(44,111))+blue(rect(111,44))   
+    +yellow(rect(111,44))
+<+> tria(88)+turt[R,rect(111,44)]
+<+> meetL[red$tria$88,green$rect(44,111)]
+<+> turt[tria(88),R,rect(99,44),L,J$222,circ$77]
+<+> light blue$frameF$red$trackF$tria$111
+<+> repeat$flash$red$tria$111
+<+> repeat$rotate(10)$red$tria$111
+<+> repeat$rotate(10)$smooth$dragon$6
+<+> repeat$rotate(5)$turt[J$222,gif(nemo,70)]
+<+> repeat[fadeB$red$tria$111,fadeW$red$tria$(-111)]
+<+> pulse$red$polyR(5,222,155)
+<+> repeat$pulse$red$trackF$poly(5,222,155)
+<+> repeat$pulse$red$trackCF$poly(5,222,155)
+<+> repeat$flash$red$trackF$poly(5,222,155)
+<+> repeat$turt[red$peaksISF(222,111),red$peaksOSF(222,111)]
+<+> red$scale(4)$barn$5
+<+> orange$scale(5)$fern$6
+<+> red$pytree$6
+<+> repeat$rotate(45)$tria$77
+<+> repeat$anim[red$circ$333,blue$circ$222,green$circ$111,blue$circ$222]
+<+> repeat$aniMF(11)[green$circ$111,red$circ$333,green$circ$111]
+<+> repeat$aniMF(33)[green$circ$333,red$turt[J$555,circ$111],
+		     green$circ$333]
+<+> red$pieP(4,55,33)
+<+> grav$turt[T$60,tria$111,J$222,red$rect(77,66)]
+<+> tria(55)+red(rect(77,66))+circ$66
+<+> tria$111<+>turt[T$60,tria$111,J$222,red$rect(77,66)]
+<+> repeat$pulse$turt[red$tria$222,green$tria(-222)]
+<+> plaitSF(3,50,45)
+<+> turt[J( -222),gif(nemo,80,80),J(222),gif(tweety,90,90),J(222),
+         gif(nemo2,80,80)]				-- ntn
+<+> turt[T$45,rect(99,66)]
+<+> turt[red$circ$55,text$aaa]
+<+> chord(222,78)
+<+> chord(1111,556)
+<+> red$chord2(222,111)
+<+> turt[T$45,arc(440,90)]    -- vertical leaf   90/2=45
+<+> turt[T$30,arc(440,60)]    -- vertical leaf   60/2=30
+<+> turt[T(-45),arc(440,90)]  -- horizontal leaf 90-120=-45
+<+> turt[T(-60),arc(440,60)]  -- horizontal leaf 60-120=-60
+<+> turt[T(-70),arc(440,40)]
+<+> blue$frame(0)$turtle
+<+> map(fun(x,blue$frame(x)$turtle))[0..5]
+<+> frame(0)$turt[T(44),red$oval(111,55),J(222),blue$circ(44)]
+<+> rotate(10)$bar(3,49,red)
+<+> rect(22,11)
+<+> green$tria$99
+<+> magenta$polyS(5,33,11)
+<+> scale(11)$polyS(9,11,22,33,22,11)
+<+> green$tria(55)
+<+> turt[rect(22,11),J(11),tria(11,green),J(11),magenta$polyS(5,33,11)]
+<+> f(a,a,a,a,a,widg(a,a,a,a,a,a,a,a,a,a,a,green$circ$55),a,a,a,a,
+      widg(a,red$circ$33))
+<+> turt[blue$chord(90,30),J$222,light orange$chord1(90,60),J$222,
+         dark grey$chord2(90,90),J$222,light grey$chord2(90,120)]
+<+> chord1(120,60)<+>red$chord2(120,60)
+<+> dots$red$polySF(5,33)
+<+> red$polySR2C(5,222,111)
+<+> rainbow(51)$yellow$arc(51,180) 
+<+> rainbow(51)$yellow$circ$51
+<+> rainbow(51)$yellow$rect(51,51)
+<+> rainbow(51,0,1)$yellow$circ$51 
+<+> rainbow(51,1,0)$yellow$circ$51
+<+> rainbow(51,1,1)$yellow$circ$51
+<+> rainbow(51,1,4)$yellow$circ$51
+<+> rainbow(100,1,1)$yellow$circ$100
+<+> rainbow(100,2,2)$yellow$circ$100
+<+> rainbow(100,10,10)$yellow$circ$100
+<+> scale(5)$rainbow(11)$red$fern$4
+<+> flipV$green$chord(200,90)
+<+> rotate(10)$turt[red$arc(100,140),B,T(40),green$chord(100,220)] 
+<+> rainbow(11,6,11)$turt$concat$map(fun(x,[x$arc(111,90),R]))
+    [red,green,blue,yellow]
+<+> red$pieA(10,66)
+<+> red$pieC(10,66)
+<+> red$pieP(10,66)
+<+> red$pieP(10,75,85,100,85)
+<+> red$pieP3(10,75,85,100,85)
+<+> RGB 111 0 222$arc(22,60)
+<+> repeat$rotate(5)$red$pieP(10,66)
+<+> fun(x,turt[red$x,M(111),flipV$green$x,M(66),flipH$blue$x])$slice(33,50)
+<+> fun(x,turt[x,J$200,flipV$x,B,flipV$x,x])(rainbow(51,0,-360)$yellow    
+                                             $oval(66,132))
+<+> turt[rframe$text$mul end,R,J$66,L,light light red$circ$22,J$66,
+         blue$cframe$text$div end,L,J$66,R,red$cframe$text$div end]
+<+> turt$concat$map(fun(x,[text$x,J$55]))[aaa ddd,
+                                          bbb vvv mmmmmmmmmmmmmmm,ccc]
+<+> shelf(3,22)$map(text)[aaa ddd,bbb vvv mmmmmmmmmmmmmmm,ccc]
+<+> hdots[red$circ(200),green$oval(100,300)]
+<+> frame(0)$turt[red$rect(55,111),green$rect(111,55)]
+<+> frame(0)[red$poly(5,33,55),green$center$poly(5,33,55),
+             blue$grav$poly(5,33,55)]
+<+> [path((55,-22),(55,222),(555,-22)),
+     grav$path((55,-22),(55,222),(555,-22)),
+     center$path((55,-22),(55,222),(555,-22))]
+<+> dots[red$rect(111,55),green$rect(111,55)]
+<+> polySR(5,88,0,111,0,0,144,0,0,0)
+<+> polySRC(5,88,0,88,111,0,0,111,144,0,0,0,144)	-- poly1
+<+> polyR2(5,222,111,0,0,0,111)
+<+> blue$polyR(6,222,111)
+<+> blue$polySR2(6,222,155)
+<+> red$polyR(5,222,0,111)
+<+> polyR2(15,111,222)
+<+> polyR2(15,222,111)
+<+> polyRC(22,155,222,333,222)				-- poly2
+<+> polySR2C(11,199,333,222,177)			-- poly3
+<+> polySR2C(6,199,266,222,0,0,122,0)			-- poly4
+<+> hframe(oval(66,22,red)) 
+<+> rainbow(51)$oval(222,111,cyan) 
+<+> rainbow2(51)$cyan$oval(222,111)
+<+> rainbow(51,0,45)$cyan$oval(200,25) 
+<+> rainbow(51,0,45)$cyan$oval(200,100) 
+<+> rainbow(51,22.5,45)$cyan$oval(200,25)
+<+> rainbow(102,90,90)$cyan$oval(240,30) 
+<+> turt[T(45),oval(11,66,blue),T(90),green$oval(11,66)]
+<+> repeat(rotate(15)$turt[T$45,blue$oval(11,66),R,
+           green$oval(11,66)])
+<+> green$frameF$matrix[(1,4),(2,2),(3,5),(4,3),(5,1)] 
+<+> red$scale(33)$hilb$3
+<+> place(rect(44,22),111,222,66)+place(rect(44,22),222,111,22)
+<+> shine(21,0,0.8)$red$tria$111
+<+> shine(21,0,0.8)$red$trackF$tria$111
+<+> shine(21)$red$pieP(10,100)
+<+> shine(42,0,3)$dark blue$slice(222,60)
+<+> scale(4)$shine(21)$blue$polyR(9,16,16,28,16) 
+<+> scale(4)$shine(-21)$blue$polyR(10,16,16,28,16) 
+<+> scale(4)$shine(21,11,0)$blue$polyR(9,16,16,28,16) 
+<+> scale(4)$shine(-21,0,11)$blue$polyR(10,16,16,28,16) 
+<+> text$hans hanshanshanshanshans hanshanshanshans hanshanshans
+<+> repeat[osciL(33,green)]
+<+> repeat[osciP(5,33,red,green)] 
+<+> repeat[shuffle[osciW(5,33,blue),osciW(3,66,yellow),osciW(1, -99,red)]] 
+<+> table(52,22,22,hull[color(light red,rainbow(polySF(5,[22,44],yellow),51))])

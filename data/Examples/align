@@ -1,0 +1,14 @@
+-- align
+
+constructs: a c g t
+defuncts: compl
+
+axioms: 
+compl == [a,t,c,g] 
+
+-- a c t a c t g c t    a g a t a g
+
+-- a d f a a a a a a    a a a a a a d f a
+
+-- e i n n e g e r blubb m i t g a z e l l e z a g t i m r e c e n n i e
+

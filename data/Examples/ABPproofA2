@@ -1,0 +1,96 @@
+-- ABPPROOFA2
+
+
+Derivation of
+
+    Nat(n)
+==> fhead2(next2(data,n:acks)) = ok
+
+Selecting induction variables at position [] of the preceding formula leads to the formula
+
+All data acks:
+(    Nat(!n)
+ ==> fhead2(next2(data,!n:acks)) = ok)
+
+Applying the axioms
+
+  (     next2(cs) = cs
+   <=== fhead2(cs) = ok)
+& (     next2(cs) = next2(ftail(cs))
+   <=== fhead2(cs) = error)
+
+at position [0,1,0,0] of the preceding formula leads to the formula
+
+All data acks:
+(    Nat(!n)
+ ==>   fhead2(data,!n:acks) = ok
+     |   fhead2(next2(ftail(data,!n:acks))) = ok
+       & fhead2(data,!n:acks) = error)
+
+Applying the axioms
+
+  fhead2(s,s') = fhead(s')
+& ftail(s,s') = (ftail(s),ftail(s'))
+
+at positions [0,1,1,1,0],[0,1,1,0,0,0,0],[0,1,0,0] of the preceding formula leads to the formula
+
+All data acks:
+(    Nat(!n)
+ ==>   fhead(!n:acks) = ok
+     |   fhead2(next2(ftail(data),ftail(!n:acks))) = ok
+       & fhead(!n:acks) = error)
+
+Applying the axioms
+
+  fhead(0:s) = ok
+& fhead(suc(n):s) = error
+& ftail(0:s) = s
+& ftail(suc(n):s) = n:s
+
+at positions [0,1,1,1,0],[0,1,1,0,0,0,1],[0,1,0,0] of the preceding formula leads to the formula
+
+All data acks:
+(    Nat(!n)
+ ==>   Any n2:
+       (  fhead2(next2(ftail(data),n2:acks)) = ok
+        & !n = suc(n2))
+     | !n = 0)
+
+Applying the induction hypothesis
+
+     fhead2(next2(data0,n0:acks0)) = ok
+<===   Nat(n0)
+     & !n >> n0
+
+at position [0,1,0,0,0] of the preceding formula leads to the formula
+
+    Nat(!n)
+==>   Any n2:
+      (  !n = suc(n2)
+       & Nat(n2)
+       & suc(n2) >> n2)
+    | !n = 0
+
+Applying the theorem
+
+suc(n) >> n
+
+at position [1,0,0,2] of the preceding formula leads to the formula
+
+    Nat(!n)
+==>   Any n2:
+      (  !n = suc(n2)
+       & Nat(n2))
+    | !n = 0
+
+Applying the axioms
+
+  Nat(0)
+& (     Nat(suc(n))
+   <=== Nat(n))
+
+at position [0] of the preceding formula leads to the formula
+
+True
+
+Number of proof steps: 7

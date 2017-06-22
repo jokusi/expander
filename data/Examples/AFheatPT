@@ -1,0 +1,2 @@
+-- AFheatPT
+[DeriveMode True False, Match 0, Mark [], Simplify 100 ["mu", "MU", "NU"] False False False, Mark [], Simplify 1 ["mu", "MU", "NU"] False False True, Mark [], Simplify 100 [] False False False, Mark [], Simplify 1 ["mu", "MU", "NU"] False False True, Mark [], Simplify 100 [] False False False, Mark [], Simplify 1 ["mu", "MU", "NU"] False False True, Mark [], Simplify 100 [] False False False, Mark []]

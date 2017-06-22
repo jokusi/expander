@@ -1,0 +1,2 @@
+-- AGsafeT
+[DeriveMode (False,False), Match 2, Mark [], DeriveMode (True,False), Induction False 0, Mark [], Narrow 4 True, Mark [], Narrow 4 True, Mark [], Narrow 4 True, Mark [], Narrow 4 True, Mark []]

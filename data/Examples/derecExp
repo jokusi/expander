@@ -1,0 +1,26 @@
+-- derecExp
+
+constructs:  	Sum Plus Minus NilS Prod Times Div_ NilP
+		EmbedI Var EncloseS 
+defuncts:    	SUM PLUS MINUS PROD TIMES DIV  
+fovars:		t t' u
+
+axioms: 
+
+SUM(t) == Sum(t,NilS) &
+
+PLUS(Sum(t,t'),u) == Sum(t,Plus(u,t')) &
+
+MINUS(Sum(t,t'),u) == Sum(t,Minus(u,t')) &
+
+PROD(t) == Prod(t,NilP) &
+
+TIMES(Prod(t,t'),u) == Prod(t,Times(u,t')) &
+
+DIV(Prod(t,t'),u) == Prod(t,Div_(u,t'))
+
+terms: 
+
+PLUS(SUM(PROD(Var(x))),
+     TIMES(PROD(EmbedI(5)),EncloseS(PLUS(SUM(PROD(Var(x))),
+					 TIMES(PROD(EmbedI(5)),EncloseS(y))))))

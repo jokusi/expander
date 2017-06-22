@@ -1,0 +1,7 @@
+-- oscis
+
+terms:
+
+repeat[osciP(5,33,red,green)] <+>
+repeat[shuffle[osciW(5,33,blue),osciW(3,66,yellow),osciW(1, -99,red)]] <+>
+repeat[osciL(33,green)]

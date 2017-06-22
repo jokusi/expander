@@ -1,0 +1,57 @@
+-- /Users/Padawitz/ExpanderLib/one2P
+
+0. Derivation of
+
+(all(one)$[3,4])
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(one(3)&one(4))
+
+2. Adding
+
+  (one0(z0) <=== z0 = 3 | z0 = 4)
+
+to the axioms and applying COINDUCTION wrt
+
+  (one(st) ===> (two/\(b#one))$st)
+
+at positions
+[]
+of the preceding formulas leads to 
+
+(two(3)&one0(3)&two(4))
+
+The reducts have been simplified.
+
+3. NARROWING the preceding formulas (one step) leads to 
+
+(one0(3)&two(4))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+
+4. NARROWING the preceding formulas (one step) leads to 
+
+two(4)
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+
+5. NARROWING the preceding formulas (one step) leads to 
+
+two(3)
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+
+6. NARROWING the preceding formulas (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+

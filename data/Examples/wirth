@@ -1,0 +1,20 @@
+-- WIRTH
+
+preds: P Q `gt` Nat
+fovars: x y z x' y' z'
+axioms:
+
+P(0) 									&
+(P(suc(x)) <=== P(x) & Q(x,suc(x))) 					&
+Q(x,0) 									&
+(Q(x,suc(y)) <=== P(x) & Q(x,y)) 					&
+((x,y) `gt` (x',y') <=== x > x') 					&
+((x,y) `gt` (x,y') <=== y > y') 					&
+((x,y,z) >> (x',y',z') <=== x > x' & x > y') 				&
+((x,y,z) >> (x',y',z') <=== (y,z) `gt` (x',0) & (y,z) `gt` (y',z'))	&
+Nat(0)									&
+(Nat(suc(x)) <=== Nat(x))
+
+conjects:
+
+Nat(x) & Nat(y) & Nat(z) ==> P(x) & Q(y,z)

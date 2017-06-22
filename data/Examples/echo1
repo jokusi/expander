@@ -1,0 +1,76 @@
+-- ECHO1
+
+-- see pp. 277-282 in: M.-O. Stehr, J. Meseguer, P.C. Oelveczky, Rewriting Logic
+-- as a Unifying Framework for Petri Nets, in: H. Ehrig et al., eds., 
+-- Unifying Petri Nets, Springer LNCS 2128 (2001) 250-303
+
+constructs: quiet waiting uninformed pending terminated accepted mailbox final
+            A a b aa ab ba bb aaa aab baa bab
+defuncts:   nodes pairs network out in syms snd receive readyToReturn finishWaiting 
+	    start end inits atoms
+fovars:     qs ws ms ts us ps as s rs s1 s2
+
+axioms:
+
+nodes == sort[A,a,b,aa,ab,ba,bb,aaa,aab,baa,bab] &
+
+pairs == [(A,a),(A,b),(a,aa),(a,ab),(b,ba),(b,bb),(aa,aaa),(aa,aab),(ba,baa),(ba,bab)] &
+
+syms(s) == map(fun(x,y,(y,x)))(s) &
+
+fst(x,y) == x & snd(x,y) == y &
+
+network == pairs++syms(pairs) &
+
+out(x) == filter(rel(y,z,y=x))(network) &
+
+in(x) == filter(rel(y,z,z=x))(network) &
+
+readyToReturn(ms,ps) == filter(rel(x,y,in(x)-[(y,x)]`subset`ms))(ps) &
+
+receive(ms,us) == filter(rel(y,x,x`in`us))(ms) &
+
+finishWaiting(ms,ws) == filter(rel(x,in(x)`subset`ms))(ws) &
+
+-- send message  
+quiet(x:qs)^waiting(ws)^mailbox(ms) -> quiet(qs)^waiting(x:ws)^mailbox(ms++out(x)) &
+
+-- receive and send message or receive and send acknowledgment
+
+(NOTnull(us) | NOTnull(ps)
+  ==> uninformed(us)^pending(ps)^accepted(as)^mailbox(ms)
+  	-> case(readyToReturn(ms,ps),
+		[],
+		case(receive(ms,us),[],(),
+		     s,
+                     case(map(snd)(s),
+		          s2,
+                          case(syms(s),
+			       rs,
+			       uninformed(us-s2)^pending(ps++rs)^accepted(as)
+					        ^mailbox(ms-s++concatMap(out)(s2)-rs)))),
+	        s,
+	        case(map(fst)(s),
+		     s1,
+		     uninformed(us)^pending(ps-s)^accepted(sort(as++s1))
+				   ^mailbox(ms-concatMap(in)(s1)++s)))) &
+
+-- finish broadcasting
+(NOTnull(ws)
+  ==> waiting(ws)^terminated(ts)^mailbox(ms)
+	-> case(finishWaiting(ms,ws),[],(),
+		s,
+		waiting(ws-s)^terminated(sort(ts++s))^mailbox(ms-concatMap(in)(s)))) &
+
+start == quiet[A]^waiting[]^terminated[]^uninformed(nodes-[A])^pending[]^accepted[]^mailbox[] &
+
+inits == [start] &
+
+atoms == [final] & final -> end &
+
+end == quiet[]^waiting[]^terminated[A]^uninformed[]^pending[]^accepted(nodes-[A])^mailbox[]
+
+terms:
+
+EF(final)(start)
+

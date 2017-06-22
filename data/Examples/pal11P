@@ -1,0 +1,104 @@
+-- pal11P
+
+
+Derivation of
+
+pal2[1,1]
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(reveq2[1,1](r)))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun(~(y:s2),
+                fun((r,b),(r++[1],bool(1 = y & Bool(b))))
+                   (reveq2[1](s2)))
+               (r)))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[1],bool(1 = head(r) & Bool(b))))
+               (reveq2[1](tail(r)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[1],bool(1 = head(r) & Bool(b))))
+               (fun(~(y:s2),
+                    fun((r,b),(r++[1],bool(1 = y & Bool(b))))
+                       (reveq2[](s2)))
+                   (tail(r)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[1],bool(1 = head(r) & Bool(b))))
+               (fun((r0,b),(r0++[1],bool(1 = head(tail(r)) & Bool(b))))
+                   (reveq2[](tail(tail(r)))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[1],bool(1 = head(r) & Bool(b))))
+               (fun((r0,b),(r0++[1],bool(1 = head(tail(r)) & Bool(b))))
+                   (fun(~[],([],bool(True)))
+                       (tail(tail(r)))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[1],bool(1 = head(r) & Bool(b))))
+               (fun((r0,b),(r0++[1],bool(1 = head(tail(r)) & Bool(b))))
+                   ([],bool(True)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[1],bool(1 = head(r) & Bool(b))))
+               ([]++[1],bool(1 = head(tail(r)) & Bool(bool(True))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[1],bool(1 = head(r) & Bool(b))))
+               ([1],bool(1 = head(tail(r))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(([1]++[1],bool(1 = head(r) & Bool(bool(1 = head(tail(r))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.([1,1],bool(1 = head(r) & 1 = head(tail(r)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(1 = head(get0(mu r b.([1,1],bool(1 = head(r) & 1 = head(tail(r)))))) & 
+     1 = head(tail(get0(mu r b.([1,1],bool(1 = head(r) & 1 = head(tail(r))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(1 = head[1,1] & 
+     1 = head(tail(get0(mu r b.([1,1],bool(1 = head(r) & 1 = head(tail(r))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(1 = 1 & 
+     1 = head(tail(get0(mu r b.([1,1],bool(1 = head(r) & 1 = head(tail(r))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(1 = head(tail(get0(mu r b.([1,1],bool(1 = head(r) & 1 = head(tail(r))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(1 = head(tail[1,1]))
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(1 = head[1])
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(1 = 1)
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(True)
+
+Number of proof steps: 19

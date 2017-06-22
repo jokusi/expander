@@ -1,0 +1,53 @@
+-- HANOIlab
+
+specs:   	modalS 
+constructs:	A B C initial final AB BA AC CA BC CB
+defuncts:	procs start draw pic tow
+fovars: 	xs ys zs
+
+axioms:
+
+start == A(list$procs)^B[]^C[] & 
+states == [start] & 
+labels == [AB,BA,AC,CA,BC,CB] &
+atoms == [final] &
+
+(A(x:xs)^B[],AB) -> A(xs)^B[x]	&
+(A(x:xs)^C[],AC) -> A(xs)^C[x]	&
+(A[]^B(x:xs),BA) -> A[x]^B(xs) 	&
+(A[]^C(x:xs),CA) -> A[x]^C(xs) 	&
+(B[]^C(x:xs),CB) -> B[x]^C(xs) 	&
+(B(x:xs)^C[],BC) -> B(xs)^C[x] 	&
+
+(x < y ==> (A(x:xs)^B(y:ys),AB) -> A(xs)^B(x:y:ys))	&
+(y < x ==> (A(x:xs)^B(y:ys),BA) -> A(y:x:xs)^B(ys))	&
+(x < y ==> (A(x:xs)^C(y:ys),AC) -> A(xs)^C(x:y:ys))	&
+(y < x ==> (A(x:xs)^C(y:ys),CA) -> A(y:x:xs)^C(ys))	&
+(x < y ==> (B(x:xs)^C(y:ys),BC) -> B(xs)^C(x:y:ys))	&
+(y < x ==> (B(x:xs)^C(y:ys),CB) -> B(y:x:xs)^C(ys))	&
+
+(atom(initial)$A(xs)^B(ys)^C(zs) <==> xs = list$procs) &
+(atom(final)$A(xs)^B(ys)^C(zs) <==> list$procs `in` [ys,zs]) &
+
+(x `in` atoms ==> x -> branch$filter(atom$x)$states) &
+
+draw == wtree $ fun(x,ite(x`in`labels)
+			 (frameS$text$x)
+			 (ite(atom(initial)$x|atom(final)$x)(pic$x)$x)) &
+
+pic$A(xs)^B(ys)^C(zs) == center$turt[tow$xs,J$16,tow$ys,J$16,tow$zs] &
+tow$xs == scale(6)$pileR$length(procs):xs
+
+conjects: start `sats` EF$Final	&		--> True
+	  any(=AB)$labels &
+	  map(=AB)$labels 
+
+-- A : 1 2 3  B :  C :
+-- A : 2 3  B :  C : 1
+-- A : 3  B : 2  C : 1
+-- A : 3  B : 1 2  C :
+-- A :  B : 1 2  C : 3
+-- A : 1  B : 2  C : 3
+-- A : 1  B :  C : 2 3
+-- A :  B :  C : 1 2 3
+

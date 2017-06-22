@@ -1,0 +1,57 @@
+-- /Users/padawitz/Examples/EFatomheat5P
+
+0. Derivation of
+
+EF(atom(heat))$5
+
+All axioms are admitted.
+Equation removal is safe.
+
+1. NARROWING the preceding formulas (one step) leads to 
+
+EF(rel(SEC,(SEC = 4 | SEC = 7)))$2 | EF(rel(SEC,(SEC = 4 | SEC = 7)))$3
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+2. Applying the theorem
+
+  (EF(P)$st <=== P(st) | EX(EF(P))$st)
+
+at positions
+[1]
+of the preceding formulas leads to 
+
+EF(rel(SEC,(SEC = 4 | SEC = 7)))$2 | EF(rel(SEC,(SEC = 4 | SEC = 7)))$1 | 
+EF(rel(SEC,(SEC = 4 | SEC = 7)))$6
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+3. Applying the theorem
+
+  (EF(P)$st <=== P(st) | EX(EF(P))$st)
+
+at positions
+[2]
+of the preceding formulas leads to 
+
+EF(rel(SEC,(SEC = 4 | SEC = 7)))$2 | EF(rel(SEC,(SEC = 4 | SEC = 7)))$1 | 
+EF(rel(SEC,(SEC = 4 | SEC = 7)))$7
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+4. Applying the theorem
+
+  (EF(P)$st <=== P(st) | EX(EF(P))$st)
+
+at positions
+[2]
+of the preceding formulas leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+

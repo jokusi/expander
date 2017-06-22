@@ -1,0 +1,19 @@
+-- NEWMAN (Newman's Lemma)
+
+preds:    r rs >>
+fovars:   u
+
+axioms:   rs(x,x)				&
+	  (rs(x,z) <=== r(x,y) & rs(y,z))	&
+          (x >> y <=== r(x,y))			&	
+          (x >> z <=== r(x,y) & rs(y,z))	
+
+theorems: (r(x,y) & r(x,z) ===> Any u: (rs(y,u) & rs(z,u))) &
+					-- r is locally confluent
+	  (r(x,y) ===> x >> y)			&
+	  (x >> y & rs(y,z) ===> x >> z)	&
+          (rs(x,y) & rs(y,z) ===> rs(x,z)) 		  
+	  
+conjects: rs(x,y) & rs(x,z) ==> Any u: (rs(y,u) & rs(z,u))
+					-- r is globally confluent
+

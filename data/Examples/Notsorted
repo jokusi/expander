@@ -1,0 +1,41 @@
+-- Notsorted
+
+
+Derivation of
+
+Not(sorted[4,6,5])
+
+Applying the theorem
+
+sorted(z3) ===> 
+z3 = [] | Any x:(z3 = [x]) | Any x y s:(x <= y & sorted(y:s) & z3 = x:y:s)
+
+at position [0] of the preceding formula leads to 
+
+Not([4,6,5] = [] | Any x:([4,6,5] = [x]) | 
+    Any x y s:(x <= y & sorted(y:s) & [4,6,5] = x:y:s))
+
+Simplifying the preceding formula (23 steps) leads to 
+
+All s:(sorted(6:s) ==> Not([5] = s))
+
+Applying the theorem
+
+sorted(z3) ===> 
+z3 = [] | Any x:(z3 = [x]) | Any x y s:(x <= y & sorted(y:s) & z3 = x:y:s)
+
+at position [0,0] of the preceding formula leads to 
+
+All s:(6:s = [] | Any x:(6:s = [x]) | 
+       Any x y s3:(x <= y & sorted(y:s3) & 6:s = x:y:s3) ==> 
+       Not([5] = s))
+
+Simplifying the preceding formula (28 steps) leads to 
+
+True
+
+Number of proof steps: 4
+
+Solutions:
+
+True

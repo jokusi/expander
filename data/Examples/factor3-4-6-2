@@ -1,0 +1,66 @@
+([Turtle #000000 21.5 27.0 0.0 [Turn 180.0, Jump 15.0, Turn 90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 5.0, Turn 90.0, Jump 10
+.0, Turn (-90.0), Pict [Rect #000000 11.5 17.0 5.0 10.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 5.0, Turn (-90.0),
+ Pict [Rect #000000 26.5 12.0 10.0 5.0 360.0], Close, Open #000000, Jump 5.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #0000
+00 11.5 37.0 5.0 10.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 15.0, Turn (-90.0), Pict [Rect #000000 26.5 22.0 10.
+0 5.0 360.0], Close, Open #000000, Jump 25.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 31.5 37.0 5.0 10.0 360.0], Cl
+ose, Open #000000, Jump 15.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 21.5 37.0 5.0 10.0 360.0], Close], Turtle #00
+0000 69.5 27.0 0.0 [Turn 180.0, Jump 15.0, Turn 90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 5.0, Turn 90.0, Jump 10.0, Turn (-9
+0.0), Pict [Rect #000000 59.5 17.0 5.0 10.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 5.0, Turn (-90.0), Pict [Rect 
+#000000 74.5 12.0 10.0 5.0 360.0], Close, Open #000000, Jump 5.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 59.5 37.0
+ 5.0 10.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 35.0, Turn (-90.0), Pict [Rect #000000 74.5 42.0 10.0 5.0 360.0]
+, Close, Open #000000, Jump 15.0, Turn 90.0, Jump 20.0, Turn (-90.0), Pict [Rect #000000 69.5 27.0 5.0 10.0 360.0], Close, Open #0
+00000, Jump 25.0, Turn 90.0, Jump 20.0, Turn (-90.0), Pict [Rect #000000 79.5 27.0 5.0 10.0 360.0], Close], Turtle #000000 117.5 2
+7.0 0.0 [Turn 180.0, Jump 15.0, Turn 90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 5.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict 
+[Rect #000000 107.5 17.0 5.0 10.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 5.0, Turn (-90.0), Pict [Rect #000000 12
+2.5 12.0 10.0 5.0 360.0], Close, Open #000000, Jump 5.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 107.5 37.0 5.0 10.
+0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 15.0, Turn (-90.0), Pict [Rect #000000 122.5 22.0 10.0 5.0 360.0], Close
+, Open #000000, Jump 20.0, Turn 90.0, Jump 25.0, Turn (-90.0), Pict [Rect #000000 122.5 32.0 10.0 5.0 360.0], Close, Open #000000,
+ Jump 20.0, Turn 90.0, Jump 35.0, Turn (-90.0), Pict [Rect #000000 122.5 42.0 10.0 5.0 360.0], Close], Turtle #000000 165.5 27.0 0
+.0 [Turn 180.0, Jump 15.0, Turn 90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 5.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect
+ #000000 155.5 17.0 5.0 10.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 5.0, Turn (-90.0), Pict [Rect #000000 170.5 1
+2.0 10.0 5.0 360.0], Close, Open #000000, Jump 10.0, Turn 90.0, Jump 25.0, Turn (-90.0), Pict [Rect #000000 160.5 32.0 10.0 5.0 36
+0.0], Close, Open #000000, Jump 10.0, Turn 90.0, Jump 35.0, Turn (-90.0), Pict [Rect #000000 160.5 42.0 10.0 5.0 360.0], Close, Op
+en #000000, Jump 20.0, Turn 90.0, Jump 15.0, Turn (-90.0), Pict [Rect #000000 170.5 22.0 10.0 5.0 360.0], Close, Open #000000, Jum
+p 25.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 175.5 37.0 5.0 10.0 360.0], Close], Turtle #000000 213.5 27.0 0.0 [
+Turn 180.0, Jump 15.0, Turn 90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 5.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #00
+0000 203.5 17.0 5.0 10.0 360.0], Close, Open #000000, Jump 15.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 213.5 17.0
+ 5.0 10.0 360.0], Close, Open #000000, Jump 25.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 223.5 17.0 5.0 10.0 360.0
+], Close, Open #000000, Jump 5.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 203.5 37.0 5.0 10.0 360.0], Close, Open #
+000000, Jump 25.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 223.5 37.0 5.0 10.0 360.0], Close, Open #000000, Jump 15
+.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 213.5 37.0 5.0 10.0 360.0], Close], Turtle #000000 21.5 86.0 0.0 [Turn 
+180.0, Jump 15.0, Turn 90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 10.0, Turn 90.0, Jump 5.0, Turn (-90.0), Pict [Rect #000000 
+16.5 71.0 10.0 5.0 360.0], Close, Open #000000, Jump 25.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 31.5 76.0 5.0 10
+.0 360.0], Close, Open #000000, Jump 10.0, Turn 90.0, Jump 15.0, Turn (-90.0), Pict [Rect #000000 16.5 81.0 10.0 5.0 360.0], Close
+, Open #000000, Jump 5.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 11.5 96.0 5.0 10.0 360.0], Close, Open #000000, J
+ump 15.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 21.5 96.0 5.0 10.0 360.0], Close, Open #000000, Jump 25.0, Turn 9
+0.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 31.5 96.0 5.0 10.0 360.0], Close], Turtle #000000 69.5 86.0 0.0 [Turn 180.0, Jump
+ 15.0, Turn 90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 10.0, Turn 90.0, Jump 5.0, Turn (-90.0), Pict [Rect #000000 64.5 71.0 1
+0.0 5.0 360.0], Close, Open #000000, Jump 25.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 79.5 76.0 5.0 10.0 360.0], 
+Close, Open #000000, Jump 5.0, Turn 90.0, Jump 20.0, Turn (-90.0), Pict [Rect #000000 59.5 86.0 5.0 10.0 360.0], Close, Open #0000
+00, Jump 10.0, Turn 90.0, Jump 35.0, Turn (-90.0), Pict [Rect #000000 64.5 101.0 10.0 5.0 360.0], Close, Open #000000, Jump 15.0, 
+Turn 90.0, Jump 20.0, Turn (-90.0), Pict [Rect #000000 69.5 86.0 5.0 10.0 360.0], Close, Open #000000, Jump 25.0, Turn 90.0, Jump 
+30.0, Turn (-90.0), Pict [Rect #000000 79.5 96.0 5.0 10.0 360.0], Close], Turtle #000000 117.5 86.0 0.0 [Turn 180.0, Jump 15.0, Tu
+rn 90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 5.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 107.5 76.0 5.0 10.0 
+360.0], Close, Open #000000, Jump 15.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 117.5 76.0 5.0 10.0 360.0], Close, 
+Open #000000, Jump 25.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 127.5 76.0 5.0 10.0 360.0], Close, Open #000000, J
+ump 5.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 107.5 96.0 5.0 10.0 360.0], Close, Open #000000, Jump 20.0, Turn 9
+0.0, Jump 25.0, Turn (-90.0), Pict [Rect #000000 122.5 91.0 10.0 5.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 35.0,
+ Turn (-90.0), Pict [Rect #000000 122.5 101.0 10.0 5.0 360.0], Close], Turtle #000000 165.5 86.0 0.0 [Turn 180.0, Jump 15.0, Turn 
+90.0, Jump 20.0, Turn 90.0, Open #000000, Jump 10.0, Turn 90.0, Jump 5.0, Turn (-90.0), Pict [Rect #000000 160.5 71.0 10.0 5.0 360
+.0], Close, Open #000000, Jump 25.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 175.5 76.0 5.0 10.0 360.0], Close, Ope
+n #000000, Jump 10.0, Turn 90.0, Jump 15.0, Turn (-90.0), Pict [Rect #000000 160.5 81.0 10.0 5.0 360.0], Close, Open #000000, Jump
+ 5.0, Turn 90.0, Jump 30.0, Turn (-90.0), Pict [Rect #000000 155.5 96.0 5.0 10.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0
+, Jump 25.0, Turn (-90.0), Pict [Rect #000000 170.5 91.0 10.0 5.0 360.0], Close, Open #000000, Jump 20.0, Turn 90.0, Jump 35.0, Tu
+rn (-90.0), Pict [Rect #000000 170.5 101.0 10.0 5.0 360.0], Close], Turtle #000000 213.5 86.0 0.0 [Turn 180.0, Jump 15.0, Turn 90.
+0, Jump 20.0, Turn 90.0, Open #000000, Jump 5.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 203.5 76.0 5.0 10.0 360.0]
+, Close, Open #000000, Jump 15.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 213.5 76.0 5.0 10.0 360.0], Close, Open #
+000000, Jump 25.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 223.5 76.0 5.0 10.0 360.0], Close, Open #000000, Jump 10
+.0, Turn 90.0, Jump 25.0, Turn (-90.0), Pict [Rect #000000 208.5 91.0 10.0 5.0 360.0], Close, Open #000000, Jump 10.0, Turn 90.0, 
+Jump 35.0, Turn (-90.0), Pict [Rect #000000 208.5 101.0 10.0 5.0 360.0], Close, Open #000000, Jump 25.0, Turn 90.0, Jump 30.0, Tur
+n (-90.0), Pict [Rect #000000 223.5 96.0 5.0 10.0 360.0], Close], Turtle #000000 21.5 145.0 0.0 [Turn 180.0, Jump 15.0, Turn 90.0,
+ Jump 20.0, Turn 90.0, Open #000000, Jump 10.0, Turn 90.0, Jump 5.0, Turn (-90.0), Pict [Rect #000000 16.5 130.0 10.0 5.0 360.0], 
+Close, Open #000000, Jump 25.0, Turn 90.0, Jump 10.0, Turn (-90.0), Pict [Rect #000000 31.5 135.0 5.0 10.0 360.0], Close, Open #00
+0000, Jump 10.0, Turn 90.0, Jump 15.0, Turn (-90.0), Pict [Rect #000000 16.5 140.0 10.0 5.0 360.0], Close, Open #000000, Jump 10.0
+, Turn 90.0, Jump 25.0, Turn (-90.0), Pict [Rect #000000 16.5 150.0 10.0 5.0 360.0], Close, Open #000000, Jump 10.0, Turn 90.0, Ju
+mp 35.0, Turn (-90.0), Pict [Rect #000000 16.5 160.0 10.0 5.0 360.0], Close, Open #000000, Jump 25.0, Turn 90.0, Jump 30.0, Turn (
+-90.0), Pict [Rect #000000 31.5 155.0 5.0 10.0 360.0], Close]],[[], [], [], [], [], [], [], [], [], [], []])

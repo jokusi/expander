@@ -1,0 +1,310 @@
+-- micro3P
+
+
+Derivation of
+
+All st:(st `in` states ==> EF(Heat')(st))
+
+Applying the axiom or theorem
+
+states = [1,2,3,4,5,6,7]
+
+at position [0,0,1] of the preceding formula leads to 
+
+EF(Heat')(1) & EF(Heat')(2) & EF(Heat')(3) & EF(Heat')(4) & EF(Heat')(5) & 
+EF(Heat')(6) & EF(Heat')(7)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+The tree has been split.
+The current formula is given by
+
+EF(Heat')(1)
+
+The tree slider has been moved.
+The current factor is given by
+
+EF(Heat')(4)
+
+Applying the axiom or theorem
+
+EF(P)(st) <=== P(st) | st -> st' & EF(P)(st')
+
+at position [] of the preceding factors leads to the factor
+
+Heat'(4) | Any st':(4 -> st' & EF(Heat')(st'))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+Heat'(st) <=== st `in` [4,7]
+
+at position [0] of the preceding factors leads to 6 factors.
+The current factor is given by
+
+EF(Heat')(5)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Heat'(4) | Any st':(4 -> st' & EF(Heat')(st'))
+EF(Heat')(4)
+
+have been added as theorems.
+
+The tree slider has been moved.
+The current factor is given by
+
+EF(Heat')(7)
+
+Applying the axiom or theorem
+
+EF(P)(st) <=== P(st) | st -> st' & EF(P)(st')
+
+at position [] of the preceding factors leads to the factor
+
+Heat'(7) | Any st':(7 -> st' & EF(Heat')(st'))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+Heat'(st) <=== st `in` [4,7]
+
+at position [0] of the preceding factors leads to 5 factors.
+The current factor is given by
+
+EF(Heat')(1)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Heat'(7) | Any st':(7 -> st' & EF(Heat')(st'))
+EF(Heat')(7)
+
+have been added as theorems.
+
+The tree slider has been moved.
+The current factor is given by
+
+EF(Heat')(6)
+
+Applying the axiom or theorem
+
+EF(P)(st) <=== P(st) | st -> st' & EF(P)(st')
+
+at position [] of the preceding factors leads to the factor
+
+Heat'(6) | Any st':(6 -> st' & EF(Heat')(st'))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+6 -> 7
+
+at position [1,0,0,0] of the preceding factors leads to the factor
+
+Heat'(6) | EF(Heat')(7)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+EF(Heat')(7) <=== True
+
+at position [1] of the preceding factors leads to 4 factors.
+The current factor is given by
+
+EF(Heat')(1)
+
+The reducts have been simplified.
+
+Heat'(6) | EF(Heat')(7)
+Heat'(6) | Any st':(6 -> st' & EF(Heat')(st'))
+EF(Heat')(6)
+
+have been added as theorems.
+
+The tree slider has been moved.
+The current factor is given by
+
+EF(Heat')(3)
+
+Applying the axiom or theorem
+
+EF(P)(st) <=== P(st) | st -> st' & EF(P)(st')
+
+at position [] of the preceding factors leads to the factor
+
+Heat'(3) | Any st':(3 -> st' & EF(Heat')(st'))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+3 -> 1<+>6
+
+at position [1,0,0,0] of the preceding factors leads to the factor
+
+Heat'(3) | EF(Heat')(1) | EF(Heat')(6)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+EF(Heat')(6) <=== True
+
+at position [2] of the preceding factors leads to 3 factors.
+The current factor is given by
+
+EF(Heat')(5)
+
+The reducts have been simplified.
+
+Heat'(3) | EF(Heat')(1) | EF(Heat')(6)
+Heat'(3) | Any st':(3 -> st' & EF(Heat')(st'))
+EF(Heat')(3)
+
+have been added as theorems.
+
+The tree slider has been moved.
+The current factor is given by
+
+EF(Heat')(1)
+
+Applying the axiom or theorem
+
+EF(P)(st) <=== P(st) | st -> st' & EF(P)(st')
+
+at position [] of the preceding factors leads to the factor
+
+Heat'(1) | Any st':(1 -> st' & EF(Heat')(st'))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+1 -> 2<+>3
+
+at position [1,0,0,0] of the preceding factors leads to the factor
+
+Heat'(1) | EF(Heat')(2) | EF(Heat')(3)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+EF(Heat')(3) <=== True
+
+at position [2] of the preceding factors leads to 2 factors.
+The current factor is given by
+
+EF(Heat')(2)
+
+The reducts have been simplified.
+
+Heat'(1) | EF(Heat')(2) | EF(Heat')(3)
+Heat'(1) | Any st':(1 -> st' & EF(Heat')(st'))
+EF(Heat')(1)
+
+have been added as theorems.
+
+The tree slider has been moved.
+The current factor is given by
+
+EF(Heat')(5)
+
+Applying the axiom or theorem
+
+EF(P)(st) <=== P(st) | st -> st' & EF(P)(st')
+
+at position [] of the preceding factors leads to the factor
+
+Heat'(5) | Any st':(5 -> st' & EF(Heat')(st'))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+5 -> 2<+>3
+
+at position [1,0,0,0] of the preceding factors leads to the factor
+
+Heat'(5) | EF(Heat')(2) | EF(Heat')(3)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+EF(Heat')(3) <=== True
+
+at position [2] of the preceding factors leads to a single formula,
+which is given by
+
+EF(Heat')(2)
+
+The reducts have been simplified.
+
+Heat'(5) | EF(Heat')(2) | EF(Heat')(3)
+Heat'(5) | Any st':(5 -> st' & EF(Heat')(st'))
+EF(Heat')(5)
+
+have been added as theorems.
+
+Applying the axiom or theorem
+
+EF(P)(st) <=== P(st) | st -> st' & EF(P)(st')
+
+at position [] of the preceding formula leads to 2 summands.
+The current summand is given by
+
+Heat'(2)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+The tree slider has been moved.
+The current summand is given by
+
+Any st':(2 -> st' & EF(Heat')(st'))
+
+Applying the axiom or theorem
+
+2 -> 5
+
+at position [0,0,0] of the preceding summands leads to the summand
+
+EF(Heat')(5)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the axiom or theorem
+
+EF(Heat')(5) <=== True
+
+at position [] of the preceding summands leads to a single formula,
+which is given by
+
+True
+
+The reducts have been simplified.
+
+Number of proof steps: 28
+
+Solutions:
+
+True

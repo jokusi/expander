@@ -1,0 +1,1 @@
+[DeriveMode True False, Match 2, Mark [], DeriveMode False False, Coinduction 0 False, Mark [], SplitTree, Mark [], Match 0, Simplify 100 True, Mark [], DeriveMode True False, Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark []]

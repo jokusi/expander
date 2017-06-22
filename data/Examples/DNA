@@ -1,0 +1,12 @@
+-- DNA
+
+axioms:	    labels == [A,C]
+
+ 	    & compl(A) == T
+ 	    & compl(C) == G
+
+-- A C T A C T G C T 
+-- A G A T A G
+
+-- A D F A A A A A A 
+-- A A A A A A D F A

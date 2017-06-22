@@ -1,0 +1,71 @@
+-- NAT
+
+preds:      X Nat even odd
+defuncts:   div fib loop fibL loop1 loop2 sum
+fovars:     q r n
+hovars:     f X
+
+axioms:
+
+  sum(0) = 0
+& sum(suc(x)) = sum(x)+x+1
+& (div(x,y) = (0,x) <=== x < y)
+& (div(x,y) = (q+1,r) <=== 0 < y & y <= x & div(x-y,y) = (q,r))
+& fib(0) == 0
+& fib(1) == 1
+& fib(suc(suc(n))) == fib(n)+fib(n+1)
+
+& Nat(0)
+& (Nat(suc(x)) <=== Nat(x))
+
+& even(0)
+& (even(suc(x)) <=== odd(x))
+& (odd(suc(x)) <=== even(x))
+
+-- & div(x,y) = loop(y,0,x)
+& (r < y ==> loop(y,q,r) == (q,r))
+& (r >= y ==> loop(y,q,r) == loop(y,q+1,r-y))
+& (INV(x,y,q,r) <=== x = (y*q)+r)
+
+& fibL(n) = loop1(n,0,1)
+& loop1(0,x,y) = x
+& loop1(suc(n),x,y) = loop1(n,y,x+y)
+
+& loop2(f)(0)(x) == x
+& loop2(f)(suc(n))(x) == f$loop2(f)(n)(x)		       
+
+& suc(x) >> x
+
+-- & (Nat(0) <==> True)
+-- & (Nat(suc(x)) <==> Nat(x))
+
+-- & (Nat <==> MU X.rel(x,x=0|Any y:x=suc(y)&X(y)))
+
+-- & (INV(n,x,y,z) <=== n >= x & y = fib(n-x) & z = fib(n-x+1))
+
+& (x >> y <=== x > y)
+
+conjects:
+
+  (sum(x) = y ==> x*(x+1) = 2*y)				-- sum1
+& (div(x,y) = (q,r) ==> x = (y*q)+r & r < y)			-- div
+& (x = (y*q)+r ==> loop(y,q,r) = div(x,y))			-- divloop
+& fibL(x) = fib(x)						-- fib
+& (Nat(x) ==> x+y = y+x)					-- comm
+& (Nat(x) ==> x+(y+z) = (x+y)+z)				-- assoc
+& (Nat(x) ==> x < 2**x)						-- exp
+& (Nat(x) ==> even(x) | odd(x))					-- evenodd
+& (Nat(x) ==> suc(x)*x = x**2+x)				-- pot
+& (Nat(n) ==> loop2(f)(n)$f$x = f$loop2(f)(n)(x))		-- natloop
+& (even(x) ==> x = 0 | Any y z:(x = y+z & odd(y) & odd(z)))	-- evenany
+
+& div(5,4) = x					
+& div(5,x) = (1,1)				
+& Any x y:(x < y & div(5,3)=(x,y))		
+
+terms:
+fun((suc(x),y),x+x+y)(6,10) <+>
+fun((suc(x),y),fun(z,x+y+z)(5))(suc(z),10) <+>
+filter(rel(x,x<5))[1,2,3,4,5,6] <+>
+filter(rel(x,Int(x)))[1,2,3.6,4,5,6]
+

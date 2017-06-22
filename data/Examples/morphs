@@ -1,0 +1,57 @@
+-- morphs
+
+terms:
+
+    red$morph0F(22)[poly(8,222),poly(4,55)]
+<+> red$morph0F(22)[poly(8,222),turt[J$222,poly(4,4)]]
+<+> red$morph0F(50)[rect(222,111),center$tria(111)]
+<+> red$morph0(55)[polySF(5,333,11),polySF(5,1,3)]
+<+> yellow$morph0W(111)[rect(444,222),turn(180)$grav$tria(111)] -- triangle
+<+> cyan$morph0F(111)[rect(222,222),poly(55,99),poly(11,6)]     -- hurricane
+<+> cyan$morph0F(22)$map(track$ascf)[rect(222,222),poly(55,99),poly(11,6)]
+
+<+> morphF(111)[cyan$smooth$rect(444,222),
+                cyan$smooth$rect(11,155)]	 		-- oval
+<+> morphF(111)[cyan$smooth$rect(444,222),
+		cyan$smooth$rect(11,155),smooth$rect(444,5)] 	-- oval2
+<+> morph(50)[red$frame$smooth$turt[T$45,rect(222,111),rect(111,222)],
+                smooth$turt[J$555,tria$1]]
+<+> morphCF(50)[red$rect(66,198),rect(198,2)]
+<+> morph(50)[red$rect(66,198),rect(198,66)]
+<+> morph(60)[red$rect(222,222),turt[J$777,tria(222)]]
+<+> morph(60)[spline$red$rect(222,222),turt[J$777,spline$tria(222)]]
+<+> morph(50)[red$turt[rect(66,198),rect(66,198)],poly(4,66,198)]
+<+> morph(50)[red$rect(66,198),
+              path((300,100),(300,20),(100,20),(100,100),(300,100))]
+<+> morph(100)[red$poly(4,222,111),turt[J$777,T(45),rect(55,55)]]
+<+> morph(100)$red$smooth$[rect(300,0),rect(0,300)]
+<+> morph(100)$red$smooth[rect(222,111),turt[J$444,tria(222)]]
+<+> morph(75)$[red$smooth$turt[T(45),rect(333,0),rect(0,333)],               smooth$turt[rect(0,333),rect(333,0)]]  	  	-- morph2
+<+> morph(55)[red$polyF(5,333,11),polyF(5,11,333)]        	-- morph3
+<+> morph(55)[red$polyF(5,111,333,111),polyF(5,11,333,11)]	-- morph4
+<+> morphCF(66)[yellow$polyF(5,333,1),polyF(5,1,333)]		-- morph5
+<+> morphF(66)[red$poly(10,220),poly(5,1,220)]			-- morph6
+<+> morphF(66)[cyan$poly(30,220),poly(15,1,220)]		-- morph7
+<+> morphF(66)[cyan$poly(36,220),yellow$poly(18,1,220),
+               poly(9,1,1,220,1)]				-- morph8
+<+> morphCF(66)[cyan$poly(36,220),yellow$poly(18,1,220),
+                poly(9,1,1,220,1)]				-- morph8C
+<+> fun(x,morphF(99)[x,turn(36)$scale(0.5)$x,turn(72)$x])
+                    $red$poly(5,1,220)				-- morph9
+<+> cyan$morph(20)[scale(33)$hilb$3,flipV$scale(33)$hilb$3]
+<+> cyan$morph(20)[scale(33)$cant$11,flipV$scale(33)$cant$11]
+<+> fun(x,[x,flipH$x])[cyan$morph(20)[scale(33)$cant$5,flipV$scale(33)$cant$5]]
+<+> turt$R:fun(x,[x,flipH$x])
+    [cyan$morphW(20)[scale(33)$cant$7,flipV$scale(33)$cant$8]]	-- cantmorph
+<+> rainbow3(5)$smooth$yellow$morphF(55)[rect(333,2),rect(2,333)] 
+								-- rainmorph
+<+> rainbow2(3)yellow$morphF(55)[poly(4,333,2),poly(4,2,333)]   -- rainmorph4
+<+> rainbow3(3)$yellow$morphF(55)[poly(4,333,2),poly(4,2,333)]  -- rainmorph5
+<+> rainbow3(5)$yellow$morphF(50)[poly(10,366,44),poly(10,44,366)]
+								-- rainmorph10-3
+<+> rainbow3(5)$yellow$morphCF(50)[poly(10,366,44),poly(10,44,366)]
+				    				-- rainmorph7
+<+> rainbow3(8)$yellow$morphF(50)[poly(12,366,122),poly(12,122,366)]
+								-- rainmorph10-6
+<+> rainbow(8)$blue$morphF(50)[poly(12,366,122)poly(12,122,366)]
+								-- rainmorph10-8

@@ -1,0 +1,46 @@
+-- take3Requests2
+
+
+Derivation of
+
+take(3)$Requests2
+
+Simplifying the preceding term (11 steps) leads to 
+
+0:
+((head(Server(Requests2))*2):
+ (take(1)$Client2(mkRequest(head(tail(Server(Requests2)))))$
+  tail(tail(Server(Requests2)))))
+
+Simplifying the preceding term (11 steps) leads to 
+
+0:
+(2:
+ (mkRequest(head(tail(Server(Requests2)))):
+  (take(1-1)$Client2(mkRequest(head(tail(tail(Server(Requests2))))))$
+   tail(tail(tail(Server(Requests2)))))))
+
+Simplifying the preceding term (11 steps) leads to 
+
+0:
+(2:
+ ((head(mkResponse(mkRequest(head(Server(Requests2)))):
+        Server(Client2(mkRequest(head(tail(Server(Requests2)))))$
+               tail(tail(Server(Requests2)))))*
+   2):
+  (take(0)$Client2(mkRequest(head(tail(tail(Server(Requests2))))))$
+   tail(tail(tail(Server(Requests2)))))))
+
+Simplifying the preceding term (11 steps) leads to 
+
+0:
+(2:
+ ((((((+1)$0)*2)+1)*2):
+  (take(0)$Client2(mkRequest(head(tail(tail(Server(Requests2))))))$
+   tail(tail(tail(Server(Requests2)))))))
+
+Simplifying the preceding term (6 steps) leads to 
+
+[0,2,6]
+
+Number of proof steps: 5

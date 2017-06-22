@@ -1,0 +1,62 @@
+-- polygons
+
+defuncts: shinepolys polys
+fovars:   n d a
+
+axioms:
+
+  polyR(5,99,33) -> blue$polyR(5,99,33)
+& blue$polyR(5,99,33) -> polyR(5,99,33)
+
+& shinepolys == map(fun(x,shine(x)$polyR(5,99,33)))
+		   [(21,0,0),(-21,0,0),(21,1,0),(-21,1,0),(21,0,2),(-21,0,2)]
+
+& polys(1) == [polyS(11,33,4),J(77),dark(polyR(5,33,11,blue)),J(77),gif(TweetyS),J(77),
+               flipH(polyR(5,33,11)),J(77),flipV(light(polyR(5,33,11))),J(77),
+ 	       flipV(polyS(11,33,4,dark cyan)),J(66),pie(6,30),J(44),light red$slice(44,50),
+ 	       J(111),flipV(slice(44,50))]
+
+& polys(2) == [polyF(5,[33,11],light blue),flipV(polyF(5,[33,11],dark cyan)),               polyR(5,[33,11]),flipH(polyR(5,33,11)),flipV(polyR(5,33,11)),               flipH(flipV(polyR(5,33,11))),pie(6,30),slice(44,50,light red),               flipV(slice(44,50)),flipH(slice(44,50)),gif(TweetyS)]
+
+& polys(3) == turt$[polyS(11,33,4),J(66),flipV$dark$polyR(5,33,11),J(111),gif(tweety,0),               J(111),flipH(polyR(5,33,11)),J(66),flipV(light(polyR(5,33,11))),J(55),               dark cyan$polySF(8,33,11),J$111,gif(nemo,0)]
+
+& polys(4) == [light $ polyR(10,[44,22]),T(45),M(444),dark $ polyR(10,[44,22])]
+
+& polys(5) == [dark $ polyR(10,[44,22]),J(77),light $ polyR(10,[44,22]),J(77),polyR(10,[44,22])]
+
+& polys(6) == [polyS(11,[33,4]),J(66),A(flipV(dark(polyR(5,[33,11],blue)))),J(55),
+               gif(TweetyS),J(55),A(flipH(polyR(5,[33,11]))),J(66),
+     	       A(flipV(light(polyR(5,[33,11])))),J(55),polySF(8,[33,11],dark cyan)]
+
+& polys(7) == [polyS(11,[33,4]),J(66),flipV(dark(polyR(5,[33,11],blue))),J(55),
+               gif(TweetyS),J(55),A(flipH(polyR(5,[33,11]))),J(66),
+     	       flipV(light(polyR(5,[33,11]))),J(55),polySF(8,[33,11],dark cyan)]
+
+& polys(8) == [polyS(11,[33,4]),J(77),dark(polyR(5,[33,11],blue)),J(77),
+               turt(J(111),gif(tweety,111),J(77),gif(nemo,111)),J(77),flipH(polyR(5,[33,11])),
+ 	       J(77),poly(5,[33,11]),J(77),circ(66,white)]
+
+terms:
+    odots(polySF(5,[22,55,44],light dark yellow))	-- starfish
+<+> rainbow(polySF(5,[22,55,44],light blue),51)		-- starfish3
+<+> rainbow(0,51)$hframe$yellow$rect(66,66) 
+<+> pie(0,102,95)					-- pyramid
+<+> polyR(5,99,33)<+>blue$polyR(5,99,33)
+<+> repeat $ rotate(11)$red$polySF(5,99,33)
+<+> rainbow(0,11)$red$star(5,111,33)<+>gif(nemo,111)
+<+> polyR(10,99,33)
+<+> polyR(38,222,188)
+<+> polyR(306,99)
+<+> shinepolys
+<+> table(3,140)$shinepolys
+<+> shelves(3,0)$shinepolys
+<+> turt $ polys(1)
+<+> turt $ polys(4)
+<+> turt $ polys(5)
+<+> turt $ polys(6)
+<+> turt $ polys(7)
+<+> turt $ polys(8)
+<+> turt $ polys(9)
+<+> repeat[fade(21)$polyR(10,44,22),fade(-21)$polyR(10,44,22)]
+<+> repeat[shuffle[pulse(red$polyR(6,33,11)),                   pulse(turt(J(66),green$poly(6,33,11))),                   pulse(turt(J(132),blue$poly(6,33,11)))]]
+<+> table(6,22)$polys(2)

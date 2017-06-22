@@ -1,0 +1,14 @@
+-- HREL
+
+preds:    any eq P 
+fovars:   x s i j 
+hovars:   P
+
+axioms:
+(any(P)(x:s) <=== P(x) | any(P)(s))		&
+(eq(i)(j) <=== i = j)
+
+conjects: 
+
+ any(eq(5))[3,4,5,6]
+

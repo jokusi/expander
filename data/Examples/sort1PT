@@ -1,0 +1,2 @@
+-- sort1PT
+[DeriveMode False False, Match 0, Mark [], Narrow 1 True, Mark [], Simplify 100 False False, Mark [], Narrow 1 True, Mark [], Simplify 100 False False, Mark [], Narrow 1 True, Mark [], Simplify 100 False False, Mark [], Narrow 1 True, Mark [], Simplify 100 False False, Mark [], Narrow 1 True, Mark [], Simplify 100 False False, Mark [], Narrow 1 True, Mark [], Simplify 100 False False, Mark []]

@@ -1,0 +1,58 @@
+-- /Users/Padawitz/ExpanderLib/blinkzipP
+
+0. Derivation of
+
+blink ~ zip(zero,one)
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Adding
+
+  (~0(z0,z1) <=== z0 = blink & z1 = zip(zero,one))
+
+to the axioms and applying COINDUCTION wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at positions
+[]
+of the preceding formulas leads to 
+
+All s s':(s = blink & s' = zip(zero,one) ===> 
+          head(s) = head(s') & ~0(tail(s),tail(s')))
+
+2. SIMPLIFYING the preceding formulas (12 steps) leads to 
+
+~0(1:blink,zip(one,zero))
+
+3. Adding
+
+  (~0(z2,z3) <=== z2 = (1:blink) & z3 = zip(one,zero))
+
+to the axioms and applying COINDUCTION wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at positions
+[]
+of the preceding formulas leads to 
+
+All s s':(s = (1:blink) & s' = zip(one,zero) ===> 
+          head(s) = head(s') & ~0(tail(s),tail(s')))
+
+4. SIMPLIFYING the preceding formulas (12 steps) leads to 
+
+~0(blink,zip(zero,one))
+
+5. NARROWING the preceding formulas (one step) leads to 
+
+blink = blink & zip(zero,one) = zip(zero,one) | 
+blink = (1:blink) & zip(zero,one) = zip(one,zero)
+
+The axioms have been MATCHED against their redices.
+
+6. SIMPLIFYING the preceding formulas (one step) leads to 
+
+True
+

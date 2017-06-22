@@ -1,0 +1,58 @@
+-- UPDproof
+
+
+Derivation of
+
+i > j ==> (upd(i,x,f),j) ~ (f,j)
+
+Applying coinduction w.r.t.
+
+s ~ s' ===> top(s) = top(s') & pop(s) ~ pop(s')
+
+at position [] of the preceding formula leads to 
+
+All i j x f:(i > j ==> top(upd(i,x,f),j) = top(f,j)) & 
+All i j x f:(i > j ==> 
+             Any i0 j0 x0 f0:(i0 > j0 & pop(upd(i,x,f),j) = (upd(i0,x0,f0),j0) & 
+                              pop(f,j) = (f0,j0)))
+
+Reducts have been simplified.
+
+Applying the axioms
+
+  pop(f,i) = (f,pred(i))
+& top(f,i) = get(f,i)
+
+at positions [1,0,1,0,2,0],[1,0,1,0,1,0],[0,0,1,1],[0,0,1,0] of the preceding formula leads to 
+
+All i j:(i > j ==> i > pred(j)) & 
+All i j x f:(i > j ==> get(upd(i,x,f),j) = get(f,j))
+
+Reducts have been simplified.
+
+Applying the axioms
+
+  get(upd(i,x,f),i) = entry(x)
+& (get(upd(i,x,f),j) = get(f,j) <=== i =/= j)
+
+at position [1,0,1,0] of the preceding formula leads to 
+
+All i j:(i > j ==> i > pred(j))
+
+Reducts have been simplified.
+
+Applying the theorem
+
+i > j ===> i > pred(j)
+
+at position [0,0] of the preceding formula leads to 
+
+True
+
+Reducts have been simplified.
+
+Number of proof steps: 4
+
+Solutions:
+
+True

@@ -1,0 +1,182 @@
+-- iterate
+
+
+Derivation of
+
+take(4)$iterate((+1))$5
+
+Simplifying the preceding term (1 step) leads to 
+
+take(4)$(pos 1 1 1 1:(iterate(pos 1 1 1 0)$(+1)$5))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1:(take(4-pos 1 1 1 0 1 1)$iterate(pos 1 1 1 0)$(+1)$5)
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1:(take(3)$iterate(pos 1 1 1 0)$(+1)$5)
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1:
+(take(3)$(pos 1 1 1 1 1:(iterate(pos 1 1 1 1 1 0)$pos 1 1 1 1 1 0$(+1)$5)))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1:
+(pos 1 1 1 1 1:
+ (take(3-pos 1 1 1 1 1 0 1 1)$iterate(pos 1 1 1 1 1 0)$pos 1 1 1 1 1 0$(+1)$5))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1:
+(pos 1 1 1 1 1:(take(2)$iterate(pos 1 1 1 1 1 0)$pos 1 1 1 1 1 0$(+1)$5))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1:
+((pos 1 1 1 1 1 1+pos 1 1 1 1 1 0 1 1):
+ (take(2)$iterate(pos 1 1 1 1 1 0)$pos 1 1 1 1 1 0$(+1)$5))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1:(6:(take(2)$iterate(pos 1 1 1 1 1 0)$pos 1 1 1 1 1 0$(+1)$5))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1:
+(6:
+ (take(2)$
+  (pos 1 1 1 1 1 1:
+   (iterate(pos 1 1 1 1 1 1 1 0)$pos 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 0$(+1)$5))))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1:
+(6:
+ (pos 1 1 1 1 1 1:
+  (take(2-pos 1 1 1 1 1 1 1 0 1 1)$iterate(pos 1 1 1 1 1 1 1 0)$
+   pos 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 0$(+1)$5)))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1:
+(6:
+ (pos 1 1 1 1 1 1:
+  (take(pos 1 1 1 1 1 1 1 0 1 1)$iterate(pos 1 1 1 1 1 1 1 0)$
+   pos 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 0$(+1)$5)))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1:
+(6:
+ ((pos 1 1 1 1 1 1 1+pos 1 1 1 1 1 1 1 0 1 1):
+  (take(pos 1 1 1 1 1 1 1 0 1 1)$iterate(pos 1 1 1 1 1 1 1 0)$
+   pos 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 0$(+1)$5)))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1:
+(6:
+ (((pos 1 1 1 1 1 1 1 1+pos 1 1 1 1 1 1 1 0 1 1)+pos 1 1 1 1 1 1 1 0 1 1):
+  (take(pos 1 1 1 1 1 1 1 0 1 1)$iterate(pos 1 1 1 1 1 1 1 0)$
+   pos 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 0$(+1)$5)))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1:
+(6:
+ (7:
+  (take(pos 1 1 1 1 1 1 1 0 1 1)$iterate(pos 1 1 1 1 1 1 1 0)$
+   pos 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 0$(+1)$5)))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1 1 1:
+(6:
+ (7:
+  (take(pos 1 1 1 1 1 1 1 1 1 0 1 1)$
+   (pos 1 1 1 1 1 1 1:
+    (iterate(pos 1 1 1 1 1 1 1 1 1 0)$pos 1 1 1 1 1 1 1 1 1 0$
+     pos 1 1 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 1 1 0$(+1)$5)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1 1 1:
+(6:
+ (7:
+  (pos 1 1 1 1 1 1 1:
+   (take(pos 1 1 1 1 1 1 1 1 1 0 1 1-pos 1 1 1 1 1 1 1 1 1 0 1 1)$
+    iterate(pos 1 1 1 1 1 1 1 1 1 0)$pos 1 1 1 1 1 1 1 1 1 0$
+    pos 1 1 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 1 1 0$(+1)$5))))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1 1 1:
+(6:
+ (7:
+  (pos 1 1 1 1 1 1 1:
+   (take(0)$iterate(pos 1 1 1 1 1 1 1 1 1 0)$pos 1 1 1 1 1 1 1 1 1 0$
+    pos 1 1 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 1 1 0$(+1)$5))))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1 1 1:
+(6:
+ (7:
+  ((pos 1 1 1 1 1 1 1 1+pos 1 1 1 1 1 1 1 1 1 0 1 1):
+   (take(0)$iterate(pos 1 1 1 1 1 1 1 1 1 0)$pos 1 1 1 1 1 1 1 1 1 0$
+    pos 1 1 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 1 1 0$(+1)$5))))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1 1 1:
+(6:
+ (7:
+  (((pos 1 1 1 1 1 1 1 1 1+pos 1 1 1 1 1 1 1 1 1 0 1 1)+
+    pos 1 1 1 1 1 1 1 1 1 0 1 1):
+   (take(0)$iterate(pos 1 1 1 1 1 1 1 1 1 0)$pos 1 1 1 1 1 1 1 1 1 0$
+    pos 1 1 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 1 1 0$(+1)$5))))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1 1 1:
+(6:
+ (7:
+  ((((pos 1 1 1 1 1 1 1 1 1 1+pos 1 1 1 1 1 1 1 1 1 0 1 1)+
+     pos 1 1 1 1 1 1 1 1 1 0 1 1)+
+    pos 1 1 1 1 1 1 1 1 1 0 1 1):
+   (take(0)$iterate(pos 1 1 1 1 1 1 1 1 1 0)$pos 1 1 1 1 1 1 1 1 1 0$
+    pos 1 1 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 1 1 0$(+1)$5))))
+
+Simplifying the preceding term (1 step) leads to 
+
+pos 1 1 1 1 1 1 1 1 1 1:
+(6:
+ (7:
+  (8:
+   (take(0)$iterate(pos 1 1 1 1 1 1 1 1 1 0)$pos 1 1 1 1 1 1 1 1 1 0$
+    pos 1 1 1 1 1 1 1 1 1 0$pos 1 1 1 1 1 1 1 1 1 0$(+1)$5))))
+
+Simplifying the preceding term (1 step) leads to 
+
+5:(6:(7:(8:[])))
+
+Simplifying the preceding term (1 step) leads to 
+
+5:(6:(7:[8]))
+
+Simplifying the preceding term (1 step) leads to 
+
+5:(6:[7,8])
+
+Simplifying the preceding term (1 step) leads to 
+
+5:[6,7,8]
+
+Simplifying the preceding term (1 step) leads to 
+
+[5,6,7,8]
+
+Number of proof steps: 26

@@ -1,0 +1,2 @@
+-- morsefT
+[DeriveMode True False, Match 0, Mark [], Induction False 1, Mark [[1]], Theorem False (F "=" [F "zip" [V "s", F "inv" [V "s"]], F "morsef" [V "s"]]), Mark [], Narrow 1 True, Mark []]

@@ -1,0 +1,13 @@
+-- trans2SP
+
+
+Derivation of
+
+map(stateflow)[three,NOTthree,four,five',six,eight]
+
+Simplifying the preceding term (59 steps) leads to 
+
+[stflow(con[2,4]),stflow(con[1,3]),stflow(con(4)),stflow(con(4)),
+ stflow(con[2,3,4]),stflow(con[1,2,3,4])]
+
+Number of proof steps: 1

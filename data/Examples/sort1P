@@ -1,0 +1,123 @@
+-- sort1P
+
+
+Derivation of
+
+sort1(leaf(3)#(leaf(2)#leaf(6))) = t
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any u ls ls1:(u = t & 
+              represttips1(leaf(3)#(leaf(2)#leaf(6)),sort(ls)) = (ls,u,ls1))
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (2 steps) leads to 
+
+Any ls ls1:(represttips1(leaf(3)#(leaf(2)#leaf(6)),sort(ls)) = (ls,t,ls1))
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any ls ls1:(Any ls6 ls3 u1 u2 ls4 ls2:((ls6++ls3,u1#u2,ls4) = (ls,t,ls1) & 
+                                       represttips1(leaf(3),sort(ls)) = (ls6,u1,
+                                                                         ls2) & 
+                                       represttips1(leaf(2)#leaf(6),ls2) = (ls3,
+                                                                            u2,
+                                                                            ls4)))
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (7 steps) leads to 
+
+Any ls1 ls6 ls3 u1 u2 ls2:(represttips1(leaf(3),sort(ls6++ls3)) = (ls6,u1,ls2) & 
+                           represttips1(leaf(2)#leaf(6),ls2) = (ls3,u2,ls1) & 
+                           u1#u2 = t)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any ls1 ls6 ls3 u1 u2 ls2:(Any y ls9:(([3],leaf(y),ls9) = (ls6,u1,ls2) & 
+                                      sort(ls6++ls3) = y:ls9) & 
+                           represttips1(leaf(2)#leaf(6),ls2) = (ls3,u2,ls1) & 
+                           u1#u2 = t)
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (8 steps) leads to 
+
+Any ls1 ls3 u1 u2 ls2:(Any y:(leaf(y) = u1 & sort([3]++ls3) = y:ls2) & 
+                       represttips1(leaf(2)#leaf(6),ls2) = (ls3,u2,ls1) & 
+                       u1#u2 = t)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any ls1 ls3 u1 u2 ls2:(Any y:(leaf(y) = u1 & sort([3]++ls3) = y:ls2) & 
+                       Any ls12 ls10 u5 u6 ls4 ls11:((ls12++ls10,u5#u6,ls4) = (ls3,
+                                                                               u2,
+                                                                               ls1) & 
+                                                     represttips1(leaf(2),ls2) = (ls12,
+                                                                                  u5,
+                                                                                  ls11) & 
+                                                     represttips1(leaf(6),ls11) = (ls10,
+                                                                                   u6,
+                                                                                   ls4)) & 
+                       u1#u2 = t)
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (4 steps) leads to 
+
+Any ls1 ls3 u1 u2 ls2:(Any y:(leaf(y) = u1 & sort([3]++ls3) = y:ls2) & 
+                       Any ls12 ls10 u5 u6 ls11:(represttips1(leaf(2),ls2) = (ls12,
+                                                                              u5,
+                                                                              ls11) & 
+                                                 represttips1(leaf(6),ls11) = (ls10,
+                                                                               u6,
+                                                                               ls1) & 
+                                                 ls12++ls10 = ls3 & u5#u6 = u2) & 
+                       u1#u2 = t)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any ls1 ls3 u1 u2 ls2:(Any y:(leaf(y) = u1 & sort([3]++ls3) = y:ls2) & 
+                       Any ls12 ls10 u5 u6 ls11:(Any y1 ls15:(([2],leaf(y1),
+                                                               ls15) = (ls12,u5,
+                                                                        ls11) & 
+                                                              ls2 = y1:ls15) & 
+                                                 represttips1(leaf(6),ls11) = (ls10,
+                                                                               u6,
+                                                                               ls1) & 
+                                                 ls12++ls10 = ls3 & u5#u6 = u2) & 
+                       u1#u2 = t)
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (8 steps) leads to 
+
+Any ls1 ls3 u1 u2 ls2:(Any y:(leaf(y) = u1 & sort([3]++ls3) = y:ls2) & 
+                       Any ls10 u5 u6 ls11:(Any y1:(leaf(y1) = u5 & 
+                                                    ls2 = y1:ls11) & 
+                                            represttips1(leaf(6),ls11) = (ls10,
+                                                                          u6,
+                                                                          ls1) & 
+                                            [2]++ls10 = ls3 & u5#u6 = u2) & 
+                       u1#u2 = t)
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any ls1 ls3 u1 u2 ls2:(Any y:(leaf(y) = u1 & sort([3]++ls3) = y:ls2) & 
+                       Any ls10 u5 u6 ls11:(Any y1:(leaf(y1) = u5 & 
+                                                    ls2 = y1:ls11) & 
+                                            Any y2 ls18:(([6],leaf(y2),ls18) = (ls10,
+                                                                                u6,
+                                                                                ls1) & 
+                                                         ls11 = y2:ls18) & 
+                                            [2]++ls10 = ls3 & u5#u6 = u2) & 
+                       u1#u2 = t)
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (49 steps) leads to 
+
+leaf(2)#(leaf(3)#leaf(6)) = t
+
+Number of proof steps: 12

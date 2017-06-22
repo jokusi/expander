@@ -1,0 +1,38 @@
+-- PHILalt
+
+constructs: a b c d f1 f2 f3 f4
+defuncts:   forks source target
+preds:      loop safe
+fovars:     x as ts es fs s s' ss
+
+axioms:
+
+forks(a) = {f1,f2}		&
+forks(b) = {f2,f3}		&
+forks(c) = {f3,f4}		&
+forks(d) = {f4,f1}		&
+
+(x `in` ts & reduced(as) & fs = forks(x) & fs `subset` as 
+              ==> (ts,as,es) -> (ts-x,as-fs,x:es)) 		&
+(x `in` es ==> (ts,as,es) -> (x:ts,as++forks(x),es-x))	&
+
+source = ({a,b,c,d},{f1,f2,f3,f4},{})				&
+
+target = ({a,c},{},{b,d})					&
+
+(s = target ==> loop(s:ss))					&	
+(s =/= target & reduced(s) & s -> s' & s' `NOTin` ss 
+            ==> (loop(s:ss) <=== loop(s':s:ss))) 		&
+
+safe({a,b,c,d},{f1,f2,f3,f4},{}) 	&
+safe({b,c,d},{f3,f4},{a}) 		&
+safe({a,c,d},{f1,f4},{b}) 		&
+safe({a,b,d},{f1,f2},{c}) 		&
+safe({a,b,c},{f2,f3},{d}) 		&
+safe({a,c},{},{b,d})			&
+safe({b,d},{},{a,c})			
+
+conjects:
+
+loop[source]	&
+All s: (safe(s) & s -> s' ==> safe(s'))

@@ -1,0 +1,117 @@
+-- fooP
+
+
+Derivation of
+
+foo(3)
+
+Simplifying the preceding term (1 step) leads to 
+
+ite(3 = 0)(0,foo(3-1)*foo(3+1))
+
+Simplifying the preceding term (1 step) leads to 
+
+ite(False)(0,foo(2)*foo(4))
+
+Simplifying the preceding term (1 step) leads to 
+
+foo(2)*foo(4)
+
+Simplifying the preceding term (1 step) leads to 
+
+ite(2 = 0)(0,foo(2-1)*foo(2+1))*foo(4)
+
+Simplifying the preceding term (1 step) leads to 
+
+ite(False)(0,foo(1)*foo(3))*foo(4)
+
+Simplifying the preceding term (1 step) leads to 
+
+(foo(1)*foo(3))*foo(4)
+
+Simplifying the preceding term (1 step) leads to 
+
+(foo(1)*foo(3))*ite(4 = 0)(0,foo(4-1)*foo(4+1))
+
+Simplifying the preceding term (1 step) leads to 
+
+(foo(1)*foo(3))*ite(False)(0,foo(3)*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+(foo(1)*foo(3))*(foo(3)*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+(ite(1 = 0)(0,foo(1-1)*foo(1+1))*foo(3))*(foo(3)*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+(ite(False)(0,foo(0)*foo(2))*foo(3))*(foo(3)*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*foo(3))*(foo(3)*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*ite(3 = 0)(0,foo(3-1)*foo(3+1)))*(foo(3)*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*ite(False)(0,foo(2)*foo(4)))*(foo(3)*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*(foo(2)*foo(4)))*(foo(3)*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*(foo(2)*foo(4)))*(ite(3 = 0)(0,foo(3-1)*foo(3+1))*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*(foo(2)*foo(4)))*(ite(False)(0,foo(2)*foo(4))*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*(foo(2)*foo(4)))*((foo(2)*foo(4))*foo(5))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*(foo(2)*foo(4)))*((foo(2)*foo(4))*ite(5 = 0)(0,
+                                                              foo(5-1)*foo(5+1)))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*(foo(2)*foo(4)))*((foo(2)*foo(4))*ite(False)(0,foo(4)*foo(6)))
+
+Simplifying the preceding term (1 step) leads to 
+
+((foo(0)*foo(2))*(foo(2)*foo(4)))*((foo(2)*foo(4))*(foo(4)*foo(6)))
+
+Simplifying the preceding term (1 step) leads to 
+
+((ite(0 = 0)(0,foo(0-1)*foo(0+1))*foo(2))*(foo(2)*foo(4)))*((foo(2)*foo(4))*(foo(4)*foo(6)))
+
+Simplifying the preceding term (1 step) leads to 
+
+((ite(True)(0,foo( -1)*foo(1))*foo(2))*(foo(2)*foo(4)))*((foo(2)*foo(4))*(foo(4)*foo(6)))
+
+Simplifying the preceding term (1 step) leads to 
+
+((0*foo(2))*(foo(2)*foo(4)))*((foo(2)*foo(4))*(foo(4)*foo(6)))
+
+Simplifying the preceding term (1 step) leads to 
+
+(0*(foo(2)*foo(4)))*((foo(2)*foo(4))*(foo(4)*foo(6)))
+
+Simplifying the preceding term (1 step) leads to 
+
+0*((foo(2)*foo(4))*(foo(4)*foo(6)))
+
+Simplifying the preceding term (1 step) leads to 
+
+0
+
+Number of proof steps: 27

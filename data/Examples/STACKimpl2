@@ -1,0 +1,32 @@
+-- STACKIMPL2
+
+preds:      ~
+constructs: new upd index entry
+defuncts:   pred get empty push pop top nothing
+fovars:     i j x f g s 
+
+axioms:
+
+pred(0) = 0
+& pred(suc(i)) = i
+& get(new,i) = index(i)
+& get(upd(i,x,f),i) = entry(x)
+& (get(upd(i,x,f),j) = get(f,j)
+   <=== i =/= j)
+& empty = (new,0)
+& push(x,(f,i)) = (upd(suc(i),x,f),suc(i))
+& top(f,i) = get(f,i)
+& pop(f,i) = (f,pred(i))
+& nothing = index(0)
+&((f,0) ~ (g,0) <=== get(f,0) = get(g,0))
+&((f,suc(i)) ~ (g,suc(j))
+   <=== get(f,suc(i)) = get(g,suc(j)) & (f,i) ~ (g,j))
+
+theorems:
+
+ ((upd(i,x,f),j) ~ (f,j) <=== i > j)
+& suc(i) > i
+& (i > j ===> i > pred(j))
+& top(push(x,s)) = entry(x)
+& pop(push(x,s)) ~ s
+& ((f,i) ~ (g,j) ===> i = j)

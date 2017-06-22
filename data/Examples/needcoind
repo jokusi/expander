@@ -1,0 +1,58 @@
+-- needcoind
+
+defuncts: 	f
+preds:		p q     -- NOTr     automatically generated complements
+copreds:	r	-- NOTq
+fovars: 	x y z
+
+axioms:
+
+  f(0,0) = 0
+& f(suc(x),0) = 1
+& f(x,suc(y)) = 2
+
+& p(0,0,0)
+& p(suc(x),0,1)
+& p(x,suc(y),2)
+
+& (0,0) -> 0
+& (suc(x),0) -> 1
+& (x,suc(y)) -> 2
+
+& q$0				-- q <=> r
+& q$1
+& (r$suc$suc$x ===> False)
+
+-- & (NOTq$0 ===> False)	automatically generated axioms
+-- & (NOTq$1 ===> False)        for complements
+-- & (NOTr$suc$suc$x)
+
+-- & (q$2 <=== q$2)
+-- & (r$1 ===> r$1)
+
+conjects: 
+
+  f(f(x,y),z) = 0
+& p(f(x,y),z,0)
+& (f(x,y),z) -> 0   	  --> x = 0 & y = 0 & z = 0
+
+& q$0			  --> True		         -- resolution	
+& (q$suc$suc$x ==> False) --> True		         -- induction
+-- & NOTq(0) 		  --> False		         -- coresolution
+-- & NOTq(suc(suc(x)))	  --> True		         -- coinduction
+
+& r$0			  --> True		         -- coinduction
+& (r$suc$suc$x ==> False) --> True		         -- coresolution
+-- & NOTr(0) ==> False	  --> True		         -- induction
+-- & NOTr(suc(suc(x)))    --> True          	         -- resolution
+
+& q$x		          --> x = 0 | x = 1	        -- resolution
+& (q$!x ==> False)        --> !x =/= 0 & !x =/= 1       -- induction
+-- & (NOTq(x) ==> False)  --> x = 0 | x = 1             -- coresolution
+-- & NOTq(!x)	          --> !x =/= 0 & !x =/= 1       -- coinduction
+
+& r$!x		          --> All y: !x =/= suc(suc(y)) -- coinduction
+& (r$x ==> False)         --> Any y: x = suc(suc(y))    -- coresolution
+-- & (NOTr(!x) ==> False) --> All y: !x =/= suc(suc(y)) -- induction
+-- & NOTr(x)	          --> Any y: x = suc(suc(y))    -- resolution
+

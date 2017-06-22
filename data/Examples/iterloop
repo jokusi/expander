@@ -1,0 +1,42 @@
+-- iterloop
+
+
+Derivation of
+
+iter1(f,(loop(f)$n)$x) ~ (map(loop(f)$n)$iter2(f,x))
+
+Adding
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = iter1(f,(loop(f)$n)$x) & z1 = (map(loop(f)$n)$iter2(f,x)))
+
+to the axioms and applying COINDUCTION wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at position [] of the preceding formula leads to 
+
+All x n f:(iter1(f,f((loop(f)$n)$x)) ~0 (map(loop(f)$n)$map(f)$iter2(f,x)))
+
+The reducts have been simplified.
+
+Applying the THEOREM
+
+(map(loop(f)$n)$map(f)$s) = (map(loop(f)$suc(n))$s)
+
+at position [0,1] of the preceding formula leads to 
+
+All x n f:(iter1(f,f((loop(f)$n)$x)) ~0 (map(loop(f)$suc(n))$iter2(f,x)))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 3

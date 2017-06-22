@@ -1,0 +1,14 @@
+-- KRIPKE1
+
+defuncts: states 
+
+axioms:
+
+states == [1,d3] &
+1 -> branch[b2,c2,b3,c3] &
+a2 -> c2<+>a3 &
+b2 -> a2<+>b3 &
+c2 -> b2<+>c3 
+
+terms: bisim --> [(1,b2),(1,c2),(1,a2),(d3,b3),(d3,c3),(d3,a3),
+             --	  (b2,c2),(b2,a2),(c2,a2),(b3,c3),(b3,a3),(c3,a3)]

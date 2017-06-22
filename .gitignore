@@ -1,3 +1,17 @@
 .cabal-sandbox
 dist
-cabal.sandbox.config
+Thumbs.db
+*~
+\#*#
+.DS_Store
+# exclude everything in the root dir
+/*.*
+# IntelliJ
+out
+# except:
+!/.gitignore
+!/expander.cabal
+!/LICENSE
+!/Setup.hs
+!/README.md
+!/stack.yaml

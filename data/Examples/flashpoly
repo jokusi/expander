@@ -1,0 +1,3 @@
+-- flashpoly
+repeat[shuffle[flash(poly(6,[33,11],red)),flash(turt(J(66),polyR(6,[33,11],green))),
+               flash(turt(J(132),poly(6,[33,11],blue)))]]

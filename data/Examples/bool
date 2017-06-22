@@ -1,0 +1,23 @@
+-- bool
+
+constructs:  true false
+defuncts:    not `and` `or` eq neq
+
+axioms:
+ 
+  not(true) == false
+& not(false) == true
+& true `and` x == x
+& x `and` true == x
+& false `and` x == false
+& x `and` false == false
+& true `or` x == true
+& x `or` true == true
+& false `or` x == x
+& x `or` false == x
+
+& eq(x,y) == bool(x=y)
+& neq(x,y) == bool(x=/=y)
+& bool(True) == true
+& bool(False) == false
+

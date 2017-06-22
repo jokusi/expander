@@ -1,0 +1,94 @@
+-- QUEENS
+
+specs:       	MODAL
+constructs:	final
+preds:		Final safe queens loop rec select select'
+defuncts:	procs start sols add shift draw drawS drawAll pic
+fovars:         val st
+
+axioms:
+
+  states == [start]
+& start == (procs,[]) 
+& atoms == [final]
+
+-- & (s=/=[] ==> (s,val) -> branch$map(shift$s)$filter(safe$1)$map(add$val)$s)
+
+& (Final(s,val) <==> null$s)
+
+& sols == filter(null.get0)$states
+
+& final -> branch$sols 
+
+& add(val)(x) == x:val
+
+& (safe(n)[x] <==> True)
+& (safe(n)(x:y:s) <==> x =/= y+n & y =/= x+n & safe(n+1)(x:s))
+
+& shift(s)(x:val) == (s-[x],x:val)
+
+& draw == wtree$fun(st,ite(Final$st,pic$st,st))
+
+& drawS == wtree$fun(st,ite(Final$st,pic$st,text$o))
+
+& drawAll == wtree$pic
+
+& pic(s,val) == matrix$zip(drop(length$s)$procs)$val
+
+-- iterative programs
+
+& (queens(n,val) <=== loop([1..n],[],([],val)))
+
+& (loop(s,val,st) <=== select(s,x) & safe(1)(x:val) & loop(s-[x],x:val,st))
+& (loop(s,val,st) <=== select'(s,x:s') & safe(1)(x:val) & loop(s',x:val,st)) 
+
+& select(x:s,x)
+& (select(x:s,y) <=== select(s,y))
+
+-- recursive program
+
+& (queens(n,val) <=== rec([1..n],val))
+
+& rec([],[])
+& (rec(x:s,y:val) <=== select'(x:s,y:s') & rec(s',val) & safe(1)(y:val))
+
+& select'(x:s,x:s)
+& (select'(x:s,y:x:s') <=== select'(s,y:s'))
+
+conjects:
+
+  Final$start		--> False	-- 5 simplification steps
+& EF(Final)$start	--> True	-- 92 simplification steps
+& AF(Final)$start	--> False    	-- 218 simplification steps
+& EG(Final)$start	--> False	-- 9 simplification steps -}
+
+& queens(4,val) {- derive/simplify/refute --> val=[3,1,4,2]|val=[2,4,1,3]
+		   derive/simplify --> 
+		   	board([2,4],[3,1],val)|board([3],[2,4,1],val)|
+		   	val=[3,1,4,2]|val=[2,4,1,3]|
+		   	board([2],[3,1,4],val)|board([1,3],[2,4],val) -}
+
+& queens(5,val) {- derive/simplify/refute --> 
+		 	val=[4,2,5,3,1]|val=[3,5,2,4,1]|val=[5,3,1,4,2]|
+		 	val=[4,1,3,5,2]|val=[5,2,4,1,3]|val=[1,4,2,5,3]|
+		 	val=[2,5,3,1,4]|val=[1,3,5,2,4]|
+		  	val=[3,1,4,2,5]|val=[2,4,1,3,5] 
+
+& select([1..4],x)
+
+& (x=[(0,2),(1,0),(2,3),(3,1)]&[(0,1),(1,3),(2,0),(3,2)]=z) 
+
+terms:
+    
+    map(pic)$sols
+
+<+> eval$atom$Final
+
+<+> eval$final
+
+     {- [[2,0,3,1],[1,3,0,2]] 			if procs = [0..3]
+
+        [[3,1,4,2,0],[2,4,1,3,0],[4,2,0,3,1],[3,0,2,4,1],[4,1,3,0,2],
+     	 [0,3,1,4,2],[1,4,2,0,3],[0,2,4,1,3],[2,0,3,1,4],[1,3,0,2,4]] 
+     	         		            	if procs = [0..4] -}	
+

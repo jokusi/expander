@@ -1,0 +1,35 @@
+-- evodmorse
+
+
+Derivation of
+
+evens(morse) ~ morse & odds(tail(morse)) ~ tail(morse)
+
+NARROWING the preceding formula (1 step) leads to 
+
+evens(zip(tail(morse),inv(tail(morse)))) ~ tail(morse)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Applying the THEOREM
+
+evens(zip(s,s')) = s
+
+at position [0] of the preceding formula leads to 
+
+tail(morse) ~ tail(morse)
+
+The reducts have been simplified.
+
+Applying the THEOREM
+
+s ~ s
+
+at position [] of the preceding formula leads to 
+
+True
+
+The reducts have been simplified.
+
+Number of proof steps: 3

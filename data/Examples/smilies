@@ -1,0 +1,9 @@
+-- smilies
+
+terms: 
+
+(place(circ(7,blue),([0,60],0)),place(circ(5,green),(30,30)),place(rect(4,6,orange),([ -9,69],60)),
+ place(rect(5,4,red),([0,60],70)),place(rect(25,3,red),(30,77))) <+>
+
+(place(circ(8,blue),([0,60],0)),place(polyF(4,[1,4],dark dark blue),([0,60],0)),
+ place(light( -6,circ(6,yellow)),(30,30)),place(waveS(1,53,30,red),(30,60)))

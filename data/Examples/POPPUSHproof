@@ -1,0 +1,72 @@
+-- POPPUSHproof
+
+
+Derivation of
+
+pop(push(x,s)) ~ s
+
+Applying the axiom resp. theorem
+
+push(x,(f,i)) = (upd(suc(i),x,f),suc(i))
+
+at position [0,0] of the preceding formula leads to 
+
+Any f i:(pop((upd(suc(i),x,f),suc(i))) ~ (f,i) & s = (f,i))
+
+Simplifying the preceding formula leads to 
+
+Any f i:(pop(upd(suc(i),x,f),suc(i)) ~ (f,i) & s = (f,i))
+
+Applying the axiom resp. theorem
+
+pop(f,i) = (f,pred(i))
+
+at position [0,0,0] of the preceding formula leads to 
+
+Any f i:((upd(suc(i),x,f),pred(suc(i))) ~ (f,i) & s = (f,i))
+
+Applying the axiom resp. theorem
+
+pred(suc(i)) = i
+
+at position [0,0,0,1] of the preceding formula leads to 
+
+Any f i:((upd(suc(i),x,f),i) ~ (f,i) & s = (f,i))
+
+Applying the theorem
+
+(upd(i,x,f),j) ~ (f,j) <=== i > j
+
+at position [0,0] of the preceding formula leads to 
+
+Any f i:(suc(i) > i & s = (f,i))
+
+Applying the axiom resp. theorem
+
+suc(i) > i
+
+at position [0,0] of the preceding formula leads to 
+
+Any f i:(True & s = (f,i))
+
+Simplifying the preceding formula leads to 
+
+Any f i:(s = (f,i))
+
+Applying the theorem
+
+True ===> Any f i:(s = (f,i))
+
+at position [] of the preceding formula leads to 
+
+All s0:(Any f2 i4:(s0 = (f2,i4))) ==> Any f i:(s = (f,i))
+
+Simplifying the preceding formula leads to 
+
+True
+
+Number of proof steps: 9
+
+Solutions:
+
+True

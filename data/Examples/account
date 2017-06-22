@@ -1,0 +1,15 @@
+-- ACCOUNT
+
+constructs: account credit debit transfer Peter Paul Mary
+fovars: k m n a b
+
+axioms:
+
+credit(a,k)^account(a,n) -> account(a,n+k)
+& (k <= n ==> debit(a,k)^account(a,n) -> account(a,n-k))
+& transfer(a,b,k)^account(a,m)^account(b,n) -> account(a,m-k)^account(b,n+k)
+
+terms:
+
+account(Peter,300)^account(Paul,250)^debit(Peter,200)^
+debit(Paul,50)^credit(Paul,300)^credit(Paul,300)^account(Mary,560)^credit(Mary,250)
