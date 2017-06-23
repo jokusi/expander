@@ -1,6 +1,6 @@
 -- MUTEX
 
-specs:		modalS
+specs:		modal
 preds:   	crits crit' live nonBlock noSeq idle wait crit
 defuncts:   	procs start lg diffpairs drawI drawL
 fovars:		st i c is ws cs k n

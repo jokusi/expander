@@ -228,16 +228,19 @@ scanner act = do
                 running <- readIORef runningRef
                 run <- readIORef runRef
                 as <- readIORef asRef
-                let loop = case as of w:s -> do when (noRepeat w)
-                                                    (writeIORef asRef s)
-                                                act w
-                                                when (isFast w) loop
-                                      _   -> stopScan'
-                when running $ do runnableStop run
-                                  run0 <- periodic delay loop
-                                  writeIORef runRef run0
-                                  runnableStart run0
-                                  writeIORef runningRef True
+                when running $ runnableStop run
+                run0 <- periodic delay loop
+                runnableStart run0
+                writeIORef runRef run0
+                writeIORef runningRef True
+            loop = do
+              as <- readIORef asRef
+              case as of
+                w:s -> do
+                  when (noRepeat w) $ writeIORef asRef s
+                  act w
+                  when (isFast w) loop
+                _   -> stopScan'
             stopScan0' = stopScan' >> writeIORef asRef []
             stopScan' = do
                 running <- readIORef runningRef
@@ -247,12 +250,13 @@ scanner act = do
         in Scanner
             { startScan0 = startScan0'
             , startScan  = startScan'
-            , addScan    = \bs -> do as' <- readIORef asRef
-                                     writeIORef asRef $ bs ++ as'
+            , addScan    = \bs -> do as <- readIORef asRef
+                                     writeIORef asRef $ bs ++ as
             , stopScan0  = stopScan0'
             , stopScan   = stopScan'
             , isRunning  = readIORef runningRef
             }
+
 
 -- * the WIDGSTORE template (not used)
 
@@ -864,8 +868,7 @@ painter pheight solveRef solve2Ref = do
             if deleted c then drawWidget hull
             else do
                 pic <- loadPhoto file
-                forM_ pic (canvasImage canv (round2 p) imageOpt)
-                return ()
+                mapM_ (canvasImage canv (round2 p) imageOpt) pic
         drawWidget (Oval ((x,y),0,c,i) rx ry) = do
             bgcolor <- readIORef bgcolorRef
             canvasOval canv (x,y) (rx,ry)

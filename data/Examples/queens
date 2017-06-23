@@ -1,6 +1,6 @@
 -- QUEENS
 
-specs:       	MODAL
+specs:       	modal
 constructs:	final
 preds:		Final safe queens loop rec select select'
 defuncts:	procs start sols add shift draw drawS drawAll pic
