@@ -92,6 +92,7 @@ data Solver = Solver
     , setForw         :: ButtonOpts -> Action
     , setQuit         :: ButtonOpts -> Action
     -- ^ The option function sets the behavior of the forward button.
+    , setInterpreter  :: String -> Action
     , setNewTrees     :: [TermS] -> String -> Action
     , setSubst        :: (String -> TermS,[String]) -> Action
     , simplify        :: Bool -> Action
@@ -320,7 +321,6 @@ data Painter = Painter
     , setButtons     :: ButtonOpts -> ButtonOpts -> ButtonOpts -> Action
     , setCurrInPaint :: Int -> Action
     , setEval        :: String -> Pos -> Action
-    , setFast        :: Bool -> Action
     }
 
 painter :: Int -> IORef Solver
@@ -383,7 +383,7 @@ painter pheight solveRef solve2Ref = do
     changedWidgetsRef <- newIORef nil2
     oldGraphRef <- newIORef nil2
     
-    fastRef <- newIORef False
+    fastRef <- newIORef True
     connectRef <- newIORef False
     -- onlySpaceRef <- newIORef False
     openRef <- newIORef False
@@ -1044,14 +1044,14 @@ painter pheight solveRef solve2Ref = do
                                 let r@(Rect (p,_,_,_) b h) = fromJust rect
                                     r' = Rect (add2 p q,0,black,0) (b+x1) $ h+y1
                                 writeIORef rectRef $ Just r'
-                                setFast' True
+                                setFast True
                                 draw55 [delWidg r,r']
                         _ -> do
                             changedWidgets <- readIORef changedWidgetsRef
                             let (ns,vs) = changedWidgets  -- rotate widgets
                                 ws = turnPict x1 vs
                             writeIORef changedWidgetsRef (ns,ws)
-                            setFast' True
+                            setFast True
                             rect <- readIORef rectRef
                             draw55 $ delPict vs++case rect of
                                 Just r -> r:ws
@@ -1065,7 +1065,7 @@ painter pheight solveRef solve2Ref = do
                 modifyIORef colorScaleRef $ \(_, csSnd) -> (n,csSnd)
                 (_,ws) <- readIORef changedWidgetsRef
                 when (pictSize ws < 20) $ do
-                    setFast' True
+                    setFast True
                     draw55 $ map (shiftCol n) ws
         
         moveScale = do 
@@ -1082,7 +1082,7 @@ painter pheight solveRef solve2Ref = do
                 writeIORef colorScaleRef (n,us)
                 when (pictSize ws < 20) $ do
                     writeIORef changedWidgetsRef (is,ws)
-                    setFast' True
+                    setFast True
                     rect <- readIORef rectRef
                     draw55 $ delPict vs++case rect of Just r -> r:ws; _ -> ws
         
@@ -1564,7 +1564,7 @@ painter pheight solveRef solve2Ref = do
             where write2 (ref1, ref2) (val1, val2)
                     = writeIORef ref1 val1 >> writeIORef ref2 val2
         
-        setFast' b = do 
+        setFast b = do 
             writeIORef fastRef b
             isNew <- readIORef isNewRef
             unless isNew
@@ -1590,7 +1590,7 @@ painter pheight solveRef solve2Ref = do
         
         switchFast = do
             fast <- readIORef fastRef
-            setFast' $ not fast
+            setFast $ not fast
             scaleAndDraw ""
         
         undo = do
@@ -1644,7 +1644,6 @@ painter pheight solveRef solve2Ref = do
         , setButtons     = setButtons'
         , setCurrInPaint = setCurrInPaint'
         , setEval        = setEval'
-        , setFast        = setFast'
         }
 -- * the GRAPH type
 
@@ -2386,10 +2385,12 @@ solPicT sig eval sizes spread t =
 -- searchPic and solPic are used by Ecom.
 
 partition :: Int -> Interpreter
-partition mode sizes _ t = jturtle $ drawPartition sizes mode t
+partition mode sizes _  t = do guard $ not $ isSum t
+                               jturtle $ drawPartition sizes mode t
 
 partitionT :: Int -> InterpreterT
-partitionT mode sizes _ t = rturtle $ drawPartition sizes mode t
+partitionT mode sizes _ t = do guard $ not $ isSum t
+                               rturtle $ drawPartition sizes mode t
 
 alignment,dissection,linearEqs,matrix,widgetTree,widgets :: Interpreter
 
@@ -4759,7 +4760,8 @@ drawPartition sizes mode = f $ case mode of 0 -> levelTerm
                                           lg = fromInt (length ts)
                   split _ dx dy t = [open,Jump dx',down,Jump dy',up,
                                             rectC c dx' dy',
-                                     blackText sizes $ show n,Close]
+                                     --blackText sizes $ show n,
+                                     Close]
                                      where dx' = dx/2; dy' = dy/2; F (c,n) _ = t
                   split1 dx dy [t]    = split False dx dy t
                   split1 dx dy (t:ts) = split False dx dy t++Jump dx:

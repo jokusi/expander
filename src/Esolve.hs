@@ -344,7 +344,7 @@ evaluate sig = eval
          eval (F "=/=" [t,u]) = evalNeq t u
          eval (F "<+>" ts)    = mkSum $ map eval ts
          eval (F x [F "()" ts]) | not $ collector x || binder x || projection x
-                             || x `elem` words "~ List Value string true false"
+                         || x `elem` words "~ List Value sat string true false"
                               = eval $ F x ts
          eval (F "length" [F x ts]) | collector x 
                               = mkConst $ length ts

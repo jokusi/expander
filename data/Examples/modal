@@ -1,4 +1,4 @@
--- MODAL
+-- modal
 
 preds:   	atom X P Q true false not \/ /\ `then` or and path 
 		EX XE <> >< EF AF FE FA `EU` `AU` F `U` `leadsto` nxt nxt2 
@@ -10,18 +10,40 @@ hovars:  	X P Q
 
 axioms:
 
--- PROPOSITIONAL operators
+-- modal operator simplification
 
-   (true$s <==> True)
- & (false$s <==> False)
- & (not(P)$s <==> Not(P$s))
- & ((P/\Q)$s <==> P$s & Q$s)
- & ((P\/Q)$s <==> P$s | Q$s)
- & (or <==> foldl(\/)$false)
+   (or <==> foldl(\/)$false)
  & (and <==> foldl(/\)$true)
- & ((P`then`Q)$s <==> (P$s ==> Q$s))
 
--- non-recursive BRANCHING-TIME operators
+ & (EF$P <==> MU X.(P\/EX$X))		     -- forward finally on some path
+ & (FE$P <==> MU X.(P\/XE$X))		     -- backwards finally on some path
+ & (AF$P <==> MU X.(P\/(AX(X)/\EX$true)))    -- forward finally on each path 	
+ & (FA$P <==> MU X.(P\/(XA(X)/\XE$true)))    -- backwards finally on each path 	
+ & (EG$P <==> NU X.(P/\(EX(X)\/AX$false)))   -- forward generally on some path
+ & (GE$P <==> NU X.(P/\(XE(X)\/XA$false)))   -- backwards generally on some path
+ & (AG$P <==> NU X.(P/\AX$X))		     -- forward generally on each path
+ & (GA$P <==> NU X.(P/\XA$X))		     -- backwards generally on each path
+
+ & ((P`EU`Q) <==> MU X.(Q\/(P/\EX$X)))	     -- until
+ & ((P`AU`Q) <==> MU X.(Q\/(P/\AX$X)))		
+ & ((P`EW`Q) <==> NU X.(Q\/(P/\EX$X)))       -- weak until
+ & ((P`AW`Q) <==> NU X.(Q\/(P/\AX$X)))
+ & ((P`ER`Q) <==> NU X.(Q/\(P\/EX$X)))       -- release
+ & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
+
+-- modal operator simplification outside eval
+
+ & (true$st <==> True)
+ & (false$st <==> False)
+ & (not(P)$st <==> Not(P$st))
+ & ((P/\Q)$st <==> P$st & Q$st)
+ & ((P\/Q)$st <==> P$st | Q$st)
+ & ((P`then`Q)$st <==> (P$st ==> Q$st))
+
+ & (atom(P)$st <==> P$st)
+ & (atom(P(lab))$st <==> P(lab)$st)
+-- & (P `in` atoms & st `in` states ==> (P$st <==> P `in` out$st))
+-- & (P `in` atoms & st `in` states ==> (P(lab)$st <==> P `in` outL(st)$lab))
 
  & (EX(P)$st <==> any(P)$trans$st)
  & (AX(P)$st <==> all(P)$trans$st)
@@ -33,25 +55,20 @@ axioms:
  & ((lab><P)$st <==> any(P)$parentsL(st)$lab)
  & ((lab##P)$st <==> all(P)$parentsL(st)$lab)
 
--- recursive BRANCHING-TIME operators (also needed for evaluation in ctlAlg)
+ & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & 
+				   allanytrans(X,st,st') &
+				   allanytrans(X,st',st)))
 
- & (EF$P <==> MU X.(P\/EX$X))		     -- forward finally on some path
- & (FE$P <==> MU X.(P\/XE$X))		     -- backwards finally on some path
- & (AF$P <==> MU X.(P\/(AX(X)/\EX$true)))    -- forward finally on each path 	
- & (FA$P <==> MU X.(P\/(XA(X)/\XE$true)))    -- backwards finally on each path 	
- & (EG$P <==> NU X.(P/\(EX(X)\/AX$false)))   -- forward generally on some path
- & (GE$P <==> NU X.(P/\(XE(X)\/XA$false)))   -- backwards generally on some path
- & (AG$P <==> NU X.(P/\AX$X))		     -- forward generally on each path
- & (GA$P <==> NU X.(P/\XA$X))		     -- backwards generally on each path
+ & (eqstateL <==> NU X.rel((st,st'),outL$st=outL$st' &
+				    allanytransL(X,st,st') &
+				    allanytransL(X,st',st)))
 
- & ((P`EU`Q) <==> MU X.(Q\/(P/\EX$X)))		-- until
- & ((P`AU`Q) <==> MU X.(Q\/(P/\AX$X)))		
- & ((P`EW`Q) <==> NU X.(Q\/(P/\EX$X)))		-- weak until
- & ((P`AW`Q) <==> NU X.(Q\/(P/\AX$X)))
- & ((P`ER`Q) <==> NU X.(Q/\(P\/EX$X)))		-- release
- & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
+ & (allanytrans(P,st,st') <==> allany(P)(trans$st)(trans$st'))
+
+ & (allanytransL(P,st,st') 
+        <==> all(rel(lab,allany(P)(transL(st)$lab)(transL(st')$lab)))$labels)
  
--- recursive BRANCHING-TIME operators as Horn resp. co-Horn clauses
+-- modal operator narrowing
 
  & (EF(P)$st <=== P$st | EX(EF$P)$st)	     -- forward finally on some path  	   
  & (AG(P)$st ===> P$st & AX(AG(P))$st)	     -- forward generally on each path
@@ -73,23 +90,6 @@ axioms:
  & ((P`ER`Q)$st ===> Q$st & (P$st | EX(P`ER`Q)$st))	-- release
  & ((P`AR`Q)$st ===> Q$st & (P$st | AX(P`AR`Q)$st))
 
-{- BRANCHING-TIME bisimilarities
-
- & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & 
-				   allanytrans(X,st,st') &
-				   allanytrans(X,st',st)))
-
- & (eqstateL <==> NU X.rel((st,st'),outL$st=outL$st' &
-				    allanytransL(X,st,st') &
-				    allanytransL(X,st',st)))
-
- & (allanytrans(P,st,st') <==> allany(P)(trans$st)(trans$st'))
-
- & (allanytransL(P,st,st') 
-        <==> all(rel(lab,allany(P)(transL(st)$lab)(transL(st')$lab)))$labels)
-
--- BRANCHING-TIME bisimilarities as Horn resp. co-Horn clauses
-
  & (st`~`st' ===> out$st=out$st' & allany(`~`)(trans$st)(trans$st')
 				 & allany(`~`)(trans$st')(trans$st))
 
@@ -97,7 +97,7 @@ axioms:
 		   allany(`~L`)(trans(st)$lab)(trans(st')$lab) &
 		   allany(`~L`)(trans(st')$lab)(trans(st)$lab))
 
--- non-recursive LINEAR-TIME operators
+-- temporal operator simplification
 
  & (head$tail$s = s' ==>
       (nxt(P)$s <==> s' `in` trans$head$s & (P(tail$s) | s' = head$s)))
@@ -107,8 +107,6 @@ axioms:
 
  & (P`leadsto`Q <==> G(P`then`F$Q))
 
--- recursive LINEAR-TIME operators
-
  & (path <==> NU X.nxt$X)
  & (F(P) <==> MU X.(P\/nxt$X))			-- finally
  & (G(P) <==> NU X.(P/\nxt$X))			-- generally
@@ -116,7 +114,9 @@ axioms:
  & (P`W`Q <==> NU X.(Q\/(P/\nxt$X)))		-- weak until
  & (P`R`Q <==> NU X.(Q/\(P\/nxt$X)))		-- release
 
--- recursive LINEAR-TIME operators as Horn resp. co-Horn clauses
+ & (eqpath <==> NU X.rel((s,s'),out$head$s=out$head$s' & nxt2(X)(s,s')))
+
+-- temporal operator narrowing
 
  & (path$s ===> nxt(path)$s)
  & (F(P)$s <=== P$s | nxt(F$P)$s)			-- finally
@@ -125,12 +125,6 @@ axioms:
  & ((P`W`Q)$s ===> Q$s | P$s & nxt(P`W`Q)$s)		-- weak until
  & ((P`R`Q)$s ===> Q$s & (P$s | nxt(P`R`Q)$s)) 	   	-- release
  & ((P`H`Q)$s ===> P$s & nxt((P`H`Q)\/(Q`H`P)\/G(Q))$s)	-- alternate
-
--- LINEAR-TIME bisimilarity 
-
- & (eqpath <==> NU X.rel((s,s'),out$head$s=out$head$s' & nxt2(X)(s,s')))
-
--- LINEAR-TIME bisimilarity as a Horn clause
 
  & (eqpath(s,s') ===> out$head$s=out$head$s' & nxt2(eqpath)(s,s'))
 
@@ -144,4 +138,3 @@ theorems:
  & (not(G$P)$s <=== (F$not$P)$s)
  & (not(P`R`Q)$s <=== (not(P)`U`not(Q))$s) 
 
--}

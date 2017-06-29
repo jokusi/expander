@@ -1,75 +1,131 @@
--- MUTEX
+-- mutex
 
 specs:		modal
-preds:   	crits crit' live nonBlock noSeq idle wait crit
-defuncts:   	procs start lg diffpairs drawI drawL
+constructs:  	idle wait crit
+preds:   	live nonBlock noSeq crit' crits Idle Wait Crit Live NonBlock NoSeq 
+		Crit' Crits  check
+defuncts:   	procs start pairs diffpairs pair drawI drawL drawK drawO drawS 			drawC
 fovars:		st i c is ws cs k n
 
 axioms:
 
 states == [start] &
 start == (procs,[],[]) & 
-lg == length$states &
+atoms == map($)$pairs & 
+pairs == prodL[[idle,wait,crit],procs] &
 
-(NOTnull$is 
- ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & -- i waits
-(NOTnull$ws 
- ==> (is,ws,[]) -> (is,init(ws),[last(ws)])) & 		     -- last(ws) enters
-(is,ws,[c]) -> (insert(c)(is),ws,[]) &			     -- c leaves
+(is =/= [] ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & 
+								-- i waits
+(ws =/= [] ==> (is,ws,[]) -> (is,init(ws),[last(ws)])) &     	-- last(ws) enters
+(is,ws,[c]) -> (insert(c)(is),ws,[]) &			     	-- c leaves
 
 -- 2 processes yield 9 states
 -- 3 processes yield 31 states
 -- 4 processes yield 129 states
 -- 5 processes yield 651 states
 
-(idle$i <==> pred$(i`in`).get0) &
-(wait$i <==> pred$(i`in`).get1) &
-(crit$i <==> pred$(i`in`).get2) &
+idle$i -> branch$filter(Idle$i)$states &
+wait$i -> branch$filter(Wait$i)$states &
+crit$i -> branch$filter(Crit$i)$states &
 
-(live$i     <==> wait(i) `then` AF$crit$i) &
-(nonBlock$i <==> idle(i) `then` EX$wait$i) &
-(noSeq$i    <==> EF $ crit(i) /\ (crit(i) `EU` (not(crit$i) /\ 
-                                                (crit'(i) `EU` crit$i)))) &
+(Idle(i)(is,ws,cs) <==> i `in` is) &
+(Wait(i)(is,ws,cs) <==> i `in` ws) &
+(Crit(i)(is,ws,cs) <==> i `in` cs) &
 
-(crit'$i <==> and$map(not.crit)$procs-[i]) & 
+-- modal operator simplification
+
+(live$i <==> (wait$i) `then` AF$crit$i) &
+
+(nonBlock$i <==> (idle$i) `then` EX$wait$i) &
+
+(noSeq$i <==> EF $ (crit$i) /\ ((crit$i) `EU` 
+			        ((not$crit$i) /\ ((crit'$i) `EU` crit$i)))) &
+
+(crit'$i <==> all(not.crit)$procs-[i]) & 
 
 (crits <==> map(crit)$procs) &
 
-diffpairs == filter(=/=)$prodL$[procs,procs] &
+-- modal operator simplification outside eval
 
-drawI == wtree $ fun(st,ite(st`in`states,
-                            color(index(st,states),lg)$circ$11,
-			    st)) &
+(Live$i <==> (Wait$i) `then` AF$crit$i) &
 
-drawL  == wtree(1,fun((st,k,n),color(k,n)$circ$11))
+(NonBlock$i <==> (Idle$i) `then` EX$Wait$i) &
+
+(NoSeq$i <==> EF $ (Crit$i) /\ ((Crit$i) `EU` 
+			        ((not$Crit$i) /\ ((Crit'$i) `EU` Crit$i)))) &
+
+(Crit'$i <==> all(not.Crit)$procs-[i]) & 
+
+(Crits <==> map(Crit)$procs) &
+
+-- widget interpreters
+
+drawI == wtree $ fun(st,color(index(st,states),length$states)$circ$11) &
+
+drawL == wtree(2,fun((st,k,n),color(k,n)$circ$11)) &
+
+drawK == wtree $ fun(st,matrix$filter(check$st)$pairs) &
+
+(check(is,ws,cs)(idle,i) <==> i `in` is) &
+(check(is,ws,cs)(wait,i) <==> i `in` ws) &
+(check(is,ws,cs)(crit,i) <==> i `in` cs) &
+
+drawO == wtree $ fun(st,matrix$map(pair)$st) &
+
+pair(idle$i) == (idle,i) &
+pair(wait$i) == (wait,i) &
+pair(crit$i) == (crit,i) &
+
+drawS == wtree $ fun(sat$st,frame$text$st) &
+
+drawC == wtree $ fun(sat$st,green$circ$11,st,red$circ$11) &
+
+diffpairs == filter(=/=)$prodL$[procs,procs] 
+
 
 conjects:
 
-crit(1)$start &   						--> False
-(EF$crit$1)$start &				        	--> True
-(or$crits)$start &					 	--> False
-(EF$or$crits)$start &						--> True
-(EF$and$crits)$start &				 		--> False
-(and$map(EF.crit)$procs)$start &				--> True
-(or$map(rel((x,y),EF$crit(x)/\crit$y))$diffpairs)$start &	--> False
-(and$map(rel((x,y),EF$crit(x)\/crit$y))$diffpairs)$start &	--> True
-(and$map(live)$procs)$start &					--> True
-(and$map(nonBlock)$procs)$start &				--> True
-noSeq(1)$start &						--> True
-start `in` eval(noSeq$1) &					--> True
-(and$map(noSeq)$procs)$start &					--> True
-(and$map($)$prodL[[live,nonBlock,noSeq],procs])$start 	 	--> True
+(Crit$1)$start &   						--> False
+(EF$Crit$1)$start &						--> True
+(or$Crits)$start &						--> False
+
+(Live$1)$start &						--> True
+(NonBlock$1)$start &						--> True
+(NoSeq$1)$start &						--> True ?
+(EF$or$Crits)$start &						--> True
+
+(EF$and$Crits)$start &						--> False ?
+(and$map(EF.Crit)$procs)$start &				--> True
+(or$map(rel((x,y),EF$Crit(x)/\Crit$y))$diffpairs)$start & 	--> False ?
+(and$map(rel((x,y),EF$Crit(x)\/Crit$y))$diffpairs)$start &      --> True
+
+(and$map(Live)$procs)$start &					--> True
+(and$map(NonBlock)$procs)$start &				--> True
+(and$map(NoSeq)$procs)$start &					--> True ?
+(and$map($)$prodL[[Live,NonBlock,NoSeq],procs])$start		--> True ?
 
 terms: 
 
-eval(live$1) <+>		--> states
-eval$and(map(live)$procs) <+>	--> states
-eval(nonBlock$1) <+>		--> states
-eval(noSeq$1) <+>		--> states
-eval$or$crits <+>  		--> [([1],[],[0]),([],[1],[0]),([0],[],[1]),
+eval(or$crits) <+>  		--> [([1],[],[0]),([],[1],[0]),([0],[],[1]),
 				--   ([],[0],[1])]
-eval(idle(1) `EU` wait(1)) <+>	--> [([0],[1],[]),([],[1,0],[]),([],[0,1],[]),
+eval(live$1) <+>						--> states
+eval(nonBlock$1) <+>						--> states
+eval(noSeq$1) <+>						--> states
+
+eval(EF$or$crits) <+>						--> states
+eval(EF$and$crits) <+>						--> []
+eval(and$map(EF.crit)$procs) <+>				--> states
+eval(or$map(rel((x,y),EF$crit(x)/\crit$y))$diffpairs) <+>	--> []
+eval(and$map(rel((x,y),EF$crit(x)\/crit$y))$diffpairs) <+>	--> states
+
+eval(and$map(live)$procs) <+>					--> states
+eval(and$map(nonBlock)$procs) <+>				--> states
+eval(and$map(noSeq)$procs) <+>					--> states
+eval(and$map($)$prodL[[live,nonBlock,noSeq],procs]) <+>		--> states
+
+eval((idle$1)`EU`wait$1) <+>	--> [([0],[1],[]),([],[1,0],[]),([],[0,1],[]),
 				--   ([],[1],[0]),([0,1],[],[]),([1],[0],[]),
 				--   ([1],[],[0])]
-eval(idle(1)`EU`(wait(1)`EU`crit(1))) <+>	--> states
-eval$(idle(1)`EU`wait(1))`EU`crit(1) 		--> states
+eval((idle$1)`EU`((wait$1)`EU`crit$1)) <+>			--> states
+eval(((idle$1)`EU`(wait$1))`EU`crit$1)				--> states
+

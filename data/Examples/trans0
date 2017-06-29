@@ -1,15 +1,14 @@
--- TRANS0
+-- trans0
 
 specs:		modal
 preds:	 	is less
 constructs:	a b c 
-defuncts:   	lg drawR drawI drawL drawR drawS
+defuncts:       drawR drawI drawL drawR drawS
 fovars:     	st k n
 
 axioms:     
 
   states == [0,22] 
-& lg == length$states	
 		 
 & (st < 6 ==> st -> st+1<+>ite(st`mod`2 = 0,st,()))
 & 6 -> branch$[1..5]++[7..10]	  
@@ -20,17 +19,19 @@ axioms:
 & (is$x <==> atom(=x))
 & (less$x <==> atom(<x))
 
+-- widget interpreters
+ 
 & drawI == wtree $ fun(st,ite(st`in`states,
-			      color(index(st,states),lg)$circ$11,
+			      color(index(st,states),length$states)$circ$11,
 			      frame$blue$text$st))
 
 & drawL == wtree (1,fun((st,k,n),ite(Int$st,
 				     color(k,n)$circ$11,
 				     frame$blue$text$st)))
 
-& drawR == wtree $ fun(eps,gif(cat,11,11))
+& drawR == wtree $ fun(eps,gif(cat,11,11)) 
 
-& drawS == wtree $ fun(sat(st),frame$text$st)
+& drawS == wtree $ fun(sat$st,frame$text$st)
 
 conjects:  
 

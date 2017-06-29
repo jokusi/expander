@@ -199,7 +199,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (June 17, 2017)"
+start = "Welcome to Expander3 (June 25, 2017)"
 
 startF :: String
 startF = "Load and parse a formula!"
@@ -600,12 +600,13 @@ wrongArity f lg = "The number in the entry field is too big. " ++ f ++
                   " has only " ++ show lg ++ " arguments."
 
 enumerators :: [String]
-enumerators = words "alignment dissection palindrome partition"
+enumerators  = words "alignment palindrome dissection" ++ ["level partition",
+                     "preord partition","heap partition","hill partition"]
 
 interpreters :: [String]
-interpreters = words "tree widgets overlay matrices alignment dissection" ++
+interpreters = words "tree widgets overlay matrices" ++
                ["matrix solution","linear equations","level partition",
-                "preorder partition","heap partition","hill partition"]
+                "preord partition","heap partition","hill partition"]
 
 specfiles1 :: [String]
 specfiles1 =
@@ -1060,7 +1061,7 @@ solver this solveRef enum paint = do
             mkBut nodesMenu "cycle targets" showCycleTargets
             
             interpreterMenu <- getMenu "interpreterMenu"
-            mapM_ (mkButF interpreterMenu setInterpreter) interpreters
+            mapM_ (mkButF interpreterMenu setInterpreter') interpreters
 
             sigMenu <- getMenu "sigMenu"
             mkBut sigMenu "admit all simplifications" $ setAdmitted' True []
@@ -1202,18 +1203,13 @@ solver this solveRef enum paint = do
                 modifyIORef simplRulesRef $ \simplRules ->
                     simplRules ++ trips ["==","<==>"] axs
                 simplRules <- readIORef simplRulesRef
-                writeIORef iniStatesRef $ [t | (F "states" _,_,t) <- simplRules]
                 modifyIORef transRulesRef
                     $ \transRules -> transRules ++ trips ["->"] axs
+                writeIORef iniStatesRef $ [t | (F "states" _,_,t) <- simplRules]
                 labGreen' $ newCls "axioms" file
             else do
                 enterFormulas' cls
                 labRed' "The clauses in the text field are not axioms."
-            where trips xs axs = foldr f [] axs where
-                      f (F x [t,u]) trips | x `elem` xs  = (t,[],u):trips
-                      f (F "==>" [c,F x [t,u]]) trips | x `elem` xs 
-                                                       = (t,mkFactors c,u):trips
-                      f _ trips                        = trips
 
         -- | Used by 'createClsMenu'.
         addClauses :: Int -> FilePath -> Action
@@ -1961,7 +1957,7 @@ solver this solveRef enum paint = do
         -- | Called by all menu items from /call enumerators/ sub menu of the
         -- tree menu.
         callEnum :: String -> Action
-        callEnum str = do
+        callEnum obj = do
             writeIORef formulaRef False
             writeIORef joinedRef False
             writeIORef wtreeRef False
@@ -1972,15 +1968,14 @@ solver this solveRef enum paint = do
             mapM_ (`setBackground` blueback)
                 [deriveBut,narrowBut,simplButD,simplButB]
             clearTreeposs
-            let eval = if str == "palindrome" then "alignment" else str
-            setInterpreter eval
+            setInterpreter' obj
             sig <- getSignature
             let ts = case simplifyIter sig $ F "compl" [] of F "[]" us -> us
                                                              _ -> []
                 compl = curry $ setToFun $ zipWith f (evens ts) $ odds ts
                       where f t u = (showTerm0 t,showTerm0 u)
-                compl' = if eval == "alignment" then compl else const2 False
-            buildEnum enum str compl'
+            (enum&buildEnum) obj $ if obj `elem` ["alignment","palindrome"]
+                                   then compl else const2 False
         
         -- | Initialize the 'moveNode' action. Called if the right mouse
         -- button is clicked on a node inside the canvas.
@@ -2290,7 +2285,7 @@ solver this solveRef enum paint = do
                 setBackground quit redback
                 replaceCommandButton quitSignalRef quit setDeriveMode
                 labGreen' $ proofLoaded file
-                unless checkingP $ setInterpreter "tree"
+                unless checkingP $ setInterpreter' "tree"
                 runChecker False
               _ -> labRed' $ "There is no proof term in " ++ file ++ "."
         
@@ -3146,35 +3141,37 @@ solver this solveRef enum paint = do
             sig <- getSignature
             picEval <- readIORef picEvalRef
             return $ case picEval of
-                "alignment"          -> alignment
-                "dissection"         -> dissection
-                "tree"               -> widgetTree
-                "linear equations"   -> linearEqs
-                "level partition"    -> partition 0
-                "preorder partition" -> partition 1
-                "heap partition"     -> partition 2
-                "hill partition"     -> partition 3
-                "matrices"           -> searchPic matrix
-                "matrix solution"    -> solPic sig matrix
-                _                          -> searchPic widgets
+                "tree"             -> widgetTree
+                "widgets"          -> searchPic widgets
+                "overlay"          -> searchPic widgets
+                "matrices"         -> searchPic matrix
+                "matrix solution"  -> solPic sig matrix
+                "linear equations" -> linearEqs
+                "level partition"  -> searchPic $ partition 0
+                "preord partition" -> searchPic $ partition 1
+                "heap partition"   -> searchPic $ partition 2
+                "hill partition"   -> searchPic $ partition 3
+                "alignment"        -> searchPic alignment
+                "palindrome"       -> searchPic alignment
+                _                  -> searchPic dissection
         
         getInterpreterT = do
           sig <- getSignature
           picEval <- readIORef picEvalRef
           return $ case picEval of 
-            "alignment"          -> alignmentT
-            "dissection"         -> dissectionT
-            "tree"               -> widgetTreeT
-            "linear equations"   -> linearEqsT
-            "level partition"    -> partitionT 0
-            "preorder partition" -> partitionT 1
-            "heap partition"     -> partitionT 2
-            "hill partition"     -> partitionT 3
-            "matrix solution"    -> solPicT sig matrixT
-            "tree solution"      -> solPicT sig widgetTreeT
-            "widget solution"    -> solPicT sig widgetsT
-            "matrices"           -> searchPicT matrixT
-            _                    -> searchPicT widgetsT
+              "tree"               -> widgetTreeT
+              "widgets"            -> searchPicT widgetsT
+              "overlay"            -> searchPicT widgetsT
+              "matrices"           -> searchPicT matrixT
+              "matrix solution"    -> solPicT sig matrixT
+              "linear equations"   -> linearEqsT
+              "level partition"    -> searchPicT (partitionT 0)
+              "preord partition"   -> searchPicT (partitionT 1)
+              "heap partition"     -> searchPicT (partitionT 2)
+              "hill partition"     -> searchPicT (partitionT 3)
+              "alignment"          -> searchPicT alignmentT
+              "palindrome"         -> searchPicT alignmentT
+              _                    -> searchPicT dissectionT
         
         -- | Get value of 'treeSize' scale. Used by 'drawThis'.
         getMaxHeap :: Request Int
@@ -4323,6 +4320,9 @@ solver this solveRef enum paint = do
             if null axs then labRed' $ noAxiomsFor xs
             else do
                 writeIORef axiomsRef $  removeTerms axioms axs
+                axioms <- readIORef axiomsRef
+                writeIORef simplRulesRef $ trips ["==","<==>"] axioms
+                writeIORef transRulesRef $ trips ["->"] axioms
                 labGreen' $ axsRemovedFor xs
         
         -- | Called by menu item /remove in entry field/ from /axioms/ menu
@@ -4338,22 +4338,25 @@ solver this solveRef enum paint = do
                 Just ns | all (< length exps) ns -> do
                     let ts = map (exps!!) ns
                     case n of
-                        0 -> do
-                            modifyIORef axiomsRef
-                                $ \axioms -> removeTerms axioms ts
-                            showAxioms True
-                        1 -> do
-                            modifyIORef theoremsRef
-                                $ \theorems -> removeTerms theorems ts
-                            showTheorems True
-                        2 -> do
-                            modifyIORef conjectsRef
-                                $ \conjects -> removeTerms conjects ts
-                            showConjects
-                        _ -> do
-                            modifyIORef termsRef
-                                $ \terms -> removeTerms terms ts
-                            showTerms
+                      0 -> do
+                          modifyIORef axiomsRef
+                              $ \axioms -> removeTerms axioms ts
+                          axioms <- readIORef axiomsRef
+                          writeIORef simplRulesRef $ trips ["==","<==>"] axioms
+                          writeIORef transRulesRef $ trips ["->"] axioms
+                          showAxioms True
+                      1 -> do
+                          modifyIORef theoremsRef
+                              $ \theorems -> removeTerms theorems ts
+                          showTheorems True
+                      2 -> do
+                          modifyIORef conjectsRef
+                              $ \conjects -> removeTerms conjects ts
+                          showConjects
+                      _ -> do
+                          modifyIORef termsRef
+                              $ \terms -> removeTerms terms ts
+                          showTerms
                 _ -> labMag enterNumbers
         
         -- | Called by menu item /remove conjects/ from menu /theorems/.
@@ -5136,8 +5139,8 @@ solver this solveRef enum paint = do
         -- | Changes the picture interpreter. This determines how the painter is
         -- handling the graph on a call.
         -- Used by 'callEnum' and 'checkProof'. Called by interpreter button.
-        setInterpreter :: String -> Action
-        setInterpreter eval = do
+        setInterpreter' :: String -> Action
+        setInterpreter' eval = do
             sig <- getSignature
             writeIORef wtreeRef $ take 4 eval == "tree"
             writeIORef picEvalRef eval
@@ -5631,7 +5634,6 @@ solver this solveRef enum paint = do
                              fast <- readIORef fastRef
                              sizes <- mkSizes canv font
                                       $ stringsInPict $ fromJust pict
-                             (paint&setFast) fast
                              (paint&setEval) "tree" spread
                              let pict = fromJust $ widgetTree sizes spread u
                              (paint&callPaint) [pict] [curr] False True 
@@ -5792,7 +5794,6 @@ solver this solveRef enum paint = do
                     font <- readIORef fontRef
                     sizes <- mkSizes canv font $ stringsInPict $ fromJust pict'
                     fast <- readIORef fastRef
-                    setFast paint fast
                     spread <- readIORef spreadRef
                     setEval paint "" spread
                     let pict' = fromJust $ matrix sizes spread u
@@ -6025,7 +6026,6 @@ solver this solveRef enum paint = do
             sizes <- mkSizes canv font
                 $ concatMap (stringsInPict . fromJust) $ mkJust picts
             fast <- readIORef fastRef
-            setFast paint fast
             setTime
             back <- ent `get` entryText
             spread <- readIORef spreadRef
@@ -6121,7 +6121,6 @@ solver this solveRef enum paint = do
             sizes <- mkSizes canv font
               $ concatMap (stringsInPict . fromJust) $ mkJust picts
             fast <- readIORef fastRef
-            setFast paint fast
             setTime
             back <- ent `get` entryText
             checkingP <- readIORef checkingPRef
@@ -6565,6 +6564,7 @@ solver this solveRef enum paint = do
         , setCurrInSolve  = setCurrInSolve'
         , setForw         = setForw'
         , setQuit         = setQuit'
+        , setInterpreter  = setInterpreter'
         , setNewTrees     = setNewTrees'
         , setSubst        = setSubst'
         , simplify        = simplify'
@@ -6636,6 +6636,7 @@ enumerator solveRef = do
                 solve&setQuit $ \quit signal -> do
                   quit `set` [ buttonLabel := "quit" ]
                   replaceCommandButton signal quit mainQuit
+                solve&setInterpreter $ "tree"
                     
             getInput "alignment" = do
                 solve <- readIORef solveRef

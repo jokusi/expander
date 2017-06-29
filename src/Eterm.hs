@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, May 2017
-                  Jos Kusiek, May 2017
+Copyright   : (c) Peter Padawitz, June 2017
+                  Jos Kusiek, June 2017
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -3337,6 +3337,12 @@ mkInvs hoare loop as bs cs inits d conc = F "&" [factor1,factor2]
                                    else (mkImpl (inv (bs++inits++[d])) conc,
                                          mkImpl eq (inv (ys++[d])))
 
+trips xs axs = foldr f [] axs where
+               f (F x [t,u]) trips | x `elem` xs  = (t,[],u):trips
+               f (F "==>" [c,F x [t,u]]) trips | x `elem` xs 
+                                                  = (t,mkFactors c,u):trips
+               f _ trips = trips
+
 -- transClosure ts applies rules to ts that employ the transitivity of the
 -- relation between the elements of ts. 
 transClosure :: [TermS] -> Maybe TermS
@@ -4120,9 +4126,7 @@ mkAtGraphL sts labs ats out outL = g where
                           else enterAtoms x $ relLToFunI sts labs ats outL x lab
 
 enterAtoms :: String -> [String] -> String
-enterAtoms x ats
-  | null ats  = "o" 
-  | otherwise = init $ tail $ showTerm0 $ mkList $ map leaf ats
+enterAtoms x ats = showTerm0 $ mkList $ map leaf ats
 
 -- colorClasses{L} colors equivalent states of a transition graph with the same
 -- color and equivalent states with different colors unless they belong to 

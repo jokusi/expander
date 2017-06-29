@@ -1,0 +1,76 @@
+-- MUTEX
+
+specs:		modal
+preds:   	crits crit' live nonBlock noSeq idle wait crit
+defuncts:   	procs start lg diffpairs drawI drawL
+fovars:		st i c is ws cs k n
+
+axioms:
+
+states == [start] &
+start == (procs,[],[]) & 
+lg == length$states &
+
+(NOTnull$is 
+ ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & -- i waits
+(NOTnull$ws 
+ ==> (is,ws,[]) -> (is,init(ws),[last(ws)])) & 		     -- last(ws) enters
+(is,ws,[c]) -> (insert(c)(is),ws,[]) &			     -- c leaves
+
+-- 2 processes yield 9 states
+-- 3 processes yield 31 states
+-- 4 processes yield 129 states
+-- 5 processes yield 651 states
+
+(idle$i <==> atom$(i`in`).get0) &
+(wait$i <==> atom$(i`in`).get1) &
+(crit$i <==> atom$(i`in`).get2) &
+
+(live$i     <==> wait(i) `then` AF$crit$i) &
+(nonBlock$i <==> idle(i) `then` EX$wait$i) &
+(noSeq$i    <==> EF $ crit(i) /\ (crit(i) `EU` (not(crit$i) /\ 
+                                                (crit'(i) `EU` crit$i)))) &
+
+(crit'$i <==> and$map(not.crit)$procs-[i]) & 
+
+(crits <==> map(crit)$procs) &
+
+diffpairs == filter(=/=)$prodL$[procs,procs] &
+
+
+drawI == wtree $ fun(st,ite(st`in`states,
+                            color(index(st,states),lg)$circ$11,
+			    st)) &
+
+drawL == wtree(1,fun((st,k,n),color(k,n)$circ$11))
+
+conjects:
+
+crit(1)$start &   						--> False
+(EF$crit$1)$start &				        	--> True
+(or$crits)$start &					 	--> False
+(EF$or$crits)$start &						--> True
+(EF$and$crits)$start &				 		--> False
+(and$map(EF.crit)$procs)$start &				--> True
+(or$map(rel((x,y),EF$crit(x)/\crit$y))$diffpairs)$start &	--> False
+(and$map(rel((x,y),EF$crit(x)\/crit$y))$diffpairs)$start &	--> True
+(and$map(live)$procs)$start &					--> True
+(and$map(nonBlock)$procs)$start &				--> True
+noSeq(1)$start &						--> True
+start `in` eval(noSeq$1) &					--> True
+(and$map(noSeq)$procs)$start &					--> True
+(and$map($)$prodL[[live,nonBlock,noSeq],procs])$start 	 	--> True
+
+terms: 
+
+eval(live$1) <+>		--> states
+eval$and(map(live)$procs) <+>	--> states
+eval(nonBlock$1) <+>		--> states
+eval(noSeq$1) <+>		--> states
+eval$or$crits <+>  		--> [([1],[],[0]),([],[1],[0]),([0],[],[1]),
+				--   ([],[0],[1])]
+eval(idle(1) `EU` wait(1)) <+>	--> [([0],[1],[]),([],[1,0],[]),([],[0,1],[]),
+				--   ([],[1],[0]),([0,1],[],[]),([1],[0],[]),
+				--   ([1],[],[0])]
+eval(idle(1)`EU`(wait(1)`EU`crit(1))) <+>			--> states
+eval$(idle(1)`EU`wait(1))`EU`crit(1) 				--> states

@@ -727,11 +727,7 @@ data-files:          Examples/abp
                    , Examples/microAlt/micro3T
                    , Examples/microAlt/microS2
                    , Examples/microAlt/microSpec
-                   , Examples/mutexAlt/mutex2
-                   , Examples/mutexAlt/mutex3
-                   , Examples/mutexAlt/mutex3proof
-                   , Examples/mutexAlt/mutex3term
-                   , Examples/mutexAlt/mutexco
+                   , Examples/mutexAlt
                    , Examples/transProofs/NOTthree2P
                    , Examples/transProofs/NOTthree2PT
                    , Examples/transProofs/NOTthreeP
