@@ -1,34 +1,64 @@
--- TRANS2
+-- trans2
 
-specs:		CTL
-constructs: 	a b A
-defuncts:   	states labels atoms
-preds:		three six seven'
+-- Steffen, Logische Prozessspezifikationen, 1995
+-- Beispiele 1.48, 1.50, 1.51
+
+specs:		modal
+preds:		X Y three six five' seven' 
 copreds:	NOTthree four five seven eight
+constructs: 	a A B
+defuncts:   	drawGR
+hovars:		X Y
 
 axioms:
 
-states == [1] & labels == [a] & atoms == [A] &
+states == [1] & labels == [a] & atoms == [A,B] &
 
 (1,a) -> 1<+>2 & (2,a) -> 3 & (3,a) -> 1<+>4 & (4,a) -> 4 &
 
-A -> branch[2,3,4] &
+A -> branch[2,3,4] & (B,a) -> 3 &
 
-(three(st) <=== (a#(atom(A)\/three))(st)) &
-(NOTthree(st) ===> (a<>(not(atom(A))/\NOTthree))(st)) &
-(four(st) ===> (a#(atom(A)/\four))(st)) &
+(three(st) <=== (a#(A\/three))(st)) &			
+(NOTthree(st) ===> (a<>(not(A)/\NOTthree))(st)) &	
+(four(st) ===> (a#(A/\four))(st)) &
 (five(st) ===> ((a#five)/\six)(st)) &
-(six(st) <=== (atom(A)\/(a#six))(st)) &
+(six(st) <=== (A\/(a#six))(st)) &
 (eight(st) ===> (a#eight)(st)) &
 
 (seven(st) ===> seven'(st)) &			-- alternating fixpoints
-(seven'(st) <=== (a#((atom(A)/\seven)\/seven'))(st)) 
+(seven'(st) <=== (a#((A/\seven)\/seven'))(st)) &
+
+-- as second-order simplifications:
+
+(three    <==> MU X.(a#(A\/X))) &		-- (1)
+(NOTthree <==> NU X.(a<>(not(A)/\X))) &		-- (2)
+(four     <==> NU X.(a#(A/\X))) &
+(five     <==> NU X.((a#X)/\six)) &
+(six      <==> MU X.(A\/(a#X))) &
+(seven    <==> NU X.(MU Y.(a#((A/\X)\/Y)))) &
+(eight    <==> NU X.(a#X)) &
+
+drawGR == wtree $ fun(sat$x,green$text$x,x,ite(Int$x,red$text$x,x)) 
 
 conjects: 
 
-all(three)[2,4] & 		        --> True   narrow match
-all(NOTthree)[1,3] &			--> True   coinduction + narrow match
+map(eval)[three,NOTthree,four,five,six,seven,eight] &
+   	--> [[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]
+
+map(evalG)[three,NOTthree,four,five,six,seven,eight] &
+   	--> [[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]
+
+map(stateflow)[three,NOTthree,four,five,six,seven,eight] &
+   	--> [[2,4],[1,3],[4],[4],[2,3,4],[2,4],[1,2,3,4]]
+
+--  stateflow$seven yields a wrong result because seven is alternating
+
+-- if (1) and (2) are removed, then:
+
+all(three)[2,4] & 		--> True   match&narrow
+all(NOTthree)[1,3] &		--> True   match&narrow + coinduction
 (three(st) & st `in` states ==> st = 2 | st = 4) &   
-					--> True   fixpoint induction + narrow match
+				--> True   match&narrow + induction
 (NOTthree(st) & st `in` states ==> st = 1 | st = 3)  
-					--> True   narrow match
+				--> True   match&narrow
+
