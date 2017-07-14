@@ -23,7 +23,7 @@ import Control.Monad (void, msum, when, unless)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.IORef
-import Data.Char (toLower)
+import Data.Char (toLower,isDigit)
 import qualified Data.Text as Text
 import Data.Maybe (isJust, fromJust, isNothing, fromMaybe)
 import Data.List (find)
@@ -199,7 +199,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (June 25, 2017)"
+start = "Welcome to Expander3 (July 6, 2017)"
 
 startF :: String
 startF = "Load and parse a formula!"
@@ -1321,10 +1321,11 @@ solver this solveRef enum paint = do
          where addNo :: Int -> [String] -> [String]
                addNo _ []               = []
                addNo n ([]:ls)          = []:addNo n ls
-               addNo 0 ((' ':l):ls)     = (" 0> " ++ l):addNo 1 ls
-               addNo n ((' ':l):ls)     = ("    " ++ l):addNo n ls
-               addNo n (('.':l):ls)     = ("   ." ++ l):addNo n ls
-               addNo n (l:ls) | n < 10  = (' ':show n ++ '>':l):f n
+               -- addNo 0 ((' ':l):ls)     = (" 0> " ++ l):addNo 1 ls
+               -- addNo n ((' ':l):ls)     = ("    " ++ l):addNo n ls
+               -- addNo n (('.':l):ls)     = ("   ." ++ l):addNo n ls
+               addNo n (l:ls) | n < 10  = (' ':' ':show n ++ '>':l):f n
+                              | n < 100 = (' ':show n ++ '>':l):f n
                               | True    = (show n ++ '>':l):f n
                                           where f n = addNo (n+1) ls
                split []                  = []
@@ -3136,25 +3137,6 @@ solver this solveRef enum paint = do
         getFont' = readIORef fontRef
         
         -- | Used by 'showSubtreePicts' and 'showTreePicts'.
-        getInterpreter :: Request Interpreter
-        getInterpreter = do
-            sig <- getSignature
-            picEval <- readIORef picEvalRef
-            return $ case picEval of
-                "tree"             -> widgetTree
-                "widgets"          -> searchPic widgets
-                "overlay"          -> searchPic widgets
-                "matrices"         -> searchPic matrix
-                "matrix solution"  -> solPic sig matrix
-                "linear equations" -> linearEqs
-                "level partition"  -> searchPic $ partition 0
-                "preord partition" -> searchPic $ partition 1
-                "heap partition"   -> searchPic $ partition 2
-                "hill partition"   -> searchPic $ partition 3
-                "alignment"        -> searchPic alignment
-                "palindrome"       -> searchPic alignment
-                _                  -> searchPic dissection
-        
         getInterpreterT = do
           sig <- getSignature
           picEval <- readIORef picEvalRef
@@ -3240,11 +3222,14 @@ solver this solveRef enum paint = do
         -- 'generalize', 'parseText', 'replaceText' and 'specialize'. Exported
         -- by public 'Epaint.Solver' method 'Epaint.getText'.
         getTextHere :: Request String
-        getTextHere = do
-            buffer <- tedit `get` textViewBuffer
-            text <- buffer `get` textBufferText
-            return $ removeDot $ unlines $ map f $ lines text
-           where f = removeCommentL . drop3
+        getTextHere = do 
+          buffer <- tedit `get` textViewBuffer
+          strs <- lines <$> buffer `get` textBufferText
+          return $ removeDot $ unlines $ map (removeCommentL . f) strs
+          where f (' ':' ':x:'>':str) | isDigit x           = str
+                f (' ':x:y:'>':str)   | all isDigit [x,y]   = str
+                f (x:y:z:'>':str)     | all isDigit [x,y,z] = str
+                f str = str
         
         -- | Exported by public 'Epaint.Solver' method 'Epaint.getTree'.
         getTree' :: Request (Maybe TermS)
@@ -5626,7 +5611,7 @@ solver this solveRef enum paint = do
                            drawFun <- readIORef drawFunRef
                            spread <- readIORef spreadRef
                            let u = head $ applyDrawFun sig drawFun [t]
-                               pict = widgetTree sizes0 spread u
+                           pict <- runMaybeT $ widgetTreeT sizes0 spread u
                            if isNothing pict then labMag "The tree is empty."
                            else do
                              curr <- readIORef currRef
@@ -5635,7 +5620,7 @@ solver this solveRef enum paint = do
                              sizes <- mkSizes canv font
                                       $ stringsInPict $ fromJust pict
                              (paint&setEval) "tree" spread
-                             let pict = fromJust $ widgetTree sizes spread u
+                             Just pict <- runMaybeT $ widgetTreeT sizes spread u
                              (paint&callPaint) [pict] [curr] False True 
                                                              curr "white"
             when (m < 14) $ setZcounter zn'
@@ -5770,8 +5755,8 @@ solver this solveRef enum paint = do
                 t = getSubterm1 (trees!!curr) p
                 f = if null ps then id else drop $ length p
                 is = [i | [i,1] <- map f ps]
-                pict = matrix sizes0 spread t
-                u = case m of 0 -> Hidden $ BoolMat sts sts $ mkPairs sts sts 
+            pict <- runMaybeT $ matrixT sizes0 spread t
+            let u = case m of 0 -> Hidden $ BoolMat sts sts $ mkPairs sts sts 
                                                     (sig&trans)
                               1 -> Hidden $ BoolMat ats sts $ mkPairs ats sts
                                           (sig&value)
@@ -5786,19 +5771,19 @@ solver this solveRef enum paint = do
                               _ -> case parseRegEqs t of
                                       Just eqs -> mat m $ eqsToGraph is eqs
                                       _ -> if isJust pict then t else mat m t
-                pict' = matrix sizes0 spread u
+            pict <- runMaybeT $ matrixT sizes0 spread u
             if m > 5 && null trees then labBlue' start
             else
-                if isNothing pict' then labMag "The matrix is empty."
+                if isNothing pict then labMag "The matrix is empty."
                 else do
                     font <- readIORef fontRef
-                    sizes <- mkSizes canv font $ stringsInPict $ fromJust pict'
+                    sizes <- mkSizes canv font $ stringsInPict $ fromJust pict
                     fast <- readIORef fastRef
                     spread <- readIORef spreadRef
                     setEval paint "" spread
-                    let pict' = fromJust $ matrix sizes spread u
+                    Just pict <- runMaybeT $ matrixT sizes spread u
                     curr <- readIORef currRef
-                    callPaint paint [pict'] [curr] False True curr "white"
+                    callPaint paint [pict] [curr] False True curr "white"
             where mat 6 t = Hidden $ BoolMat dom1 dom2 ps
                            where ps = graphToRel t
                                  (dom1,dom2) = sortDoms $ deAssoc0 ps

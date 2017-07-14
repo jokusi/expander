@@ -173,10 +173,10 @@ minmax4 (x1,y1,x2,y2) (x1',y1',x2',y2') = (min x1 x1',min y1 y1',
 mkArray :: Ix a => (a,a) -> (a -> b) -> Array a b
 mkArray bounds f = array bounds [(i,f i) | i <- range bounds]
 
--- a monad transformer (used in parseListT below and the widget interpreters ..T 
--- of Epaint.hs)
-returnT :: Monad m => Maybe a -> MaybeT m a
-returnT = MaybeT . return
+-- The following monad transformer MaybeT is used in parseListT below and the 
+-- widget interpreters of Epaint.hs.
+lift' :: Monad m => Maybe a -> MaybeT m a
+lift' = MaybeT . return
 
 -- * Coloring
 
@@ -286,12 +286,6 @@ removeDot ('\n':'\n':'.':str) = removeDot str
 removeDot ('\n':'.':str)      = removeDot str
 removeDot (x:str)             = x:removeDot str
 removeDot _                   = []
-
-drop3 :: String -> String
-drop3 (' ':x:'>':str) | isDigit x              = str
-drop3 (x:y:'>':str)   | isDigit x && isDigit y = str
-drop3 (' ':' ':' ':str)                         = str
-drop3 str                                         = str
 
 showStr :: Show a => a -> String
 showStr x = show x `minus1` '\"'

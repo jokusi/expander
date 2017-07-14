@@ -120,6 +120,7 @@ data-files:          Examples/abp
                    , Examples/derecExp
                    , Examples/derecJava
                    , Examples/dissect
+                   , Examples/distest2-2
                    , Examples/DIVproof
                    , Examples/DIVterm
                    , Examples/DNA

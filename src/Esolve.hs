@@ -1580,9 +1580,7 @@ simplifyT1 (F "light" [i,n,c]) = do i <- parseNat i; n <- parseNat n
                                     c <- parseColor c
                                     jConst $ nextLight n (-n`div`3+i) c
 
-simplifyT1 (F x@('p':'a':'t':'h':_) [F "[]" ts]) = Just $ F x ts 
-
-simplifyT1 (F x@('p':'a':'t':'h':_) ts) 
+simplifyT1 (F x@('p':'a':'t':'h':_) [F "[]" ts])
                                | all isJust ps && length qs < length ps =
                                  Just $ F x $ map mkConstPair qs
                                  where ps = map parseRealReal ts
