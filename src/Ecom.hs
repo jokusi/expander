@@ -199,7 +199,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (July 6, 2017)"
+start = "Welcome to Expander3 (August 26, 2017)"
 
 startF :: String
 startF = "Load and parse a formula!"
@@ -882,8 +882,8 @@ solver this solveRef enum paint = do
                     _ -> return ()
                 return False
 
-            matchBut `on` buttonActivated $ setMR True False
-            randomBut `on` buttonActivated $ setMR False True
+            matchBut `on` buttonActivated $ setNarrow True False
+            randomBut `on` buttonActivated $ setNarrow False True
             
             narrowBut `set` [ buttonLabel := "" ]
             narrowBut `on` buttonActivated $ narrow'
@@ -2079,7 +2079,7 @@ solver this solveRef enum paint = do
                 treeSlider `set` [ widgetSensitive := False ]
                 setCurrInPaint paint 0
                 termBut `set` [ labelText := str ]
-                setMR False False
+                setNarrow False False
             else do
                 curr <- readIORef currRef
                 trees <- readIORef treesRef
@@ -4985,10 +4985,10 @@ solver this solveRef enum paint = do
         setCollapse = do
             modifyIORef collSimplsRef not
             collSimpls <- readIORef collSimplsRef
-            simplButD `set`[ buttonLabel := if collSimpls then "simplifyDFC"
-                                            else "simplifyDF"]
-            simplButB `set` [ buttonLabel :=  if collSimpls then "simplifyBFC"
-                                              else "simplifyBF"]
+            simplButD `set`[ buttonLabel := if collSimpls then "simplifyDC"
+                                            else "simplifyD"]
+            simplButB `set` [ buttonLabel :=  if collSimpls then "simplifyBC"
+                                              else "simplifyB"]
         
         -- | Used by 'buildSolve'', 'checkForward', 'incrCurr',
         -- 'setCurrInSolve'' and 'simplify'''.
@@ -5037,10 +5037,10 @@ solver this solveRef enum paint = do
                                                _ -> set' "derive"
                 quit `set` [ buttonLabel := "quit" ]
                 replaceCommandButton quitSignalRef quit mainQuit
-                setMR False False
+                setNarrow False False
                 setButtons paint (f "narrow/rewrite" narrow')
-                                 (f "simplifyDF" $ simplify' True)
-                                 (f "simplifyBF" $ simplify' False)
+                                 (f "simplifyD" $ simplify' True)
+                                 (f "simplifyB" $ simplify' False)
                 modifyIORef proofTermRef
                     $ \proofTerm -> take proofTPtr proofTerm
                 proofTerm <- readIORef proofTermRef
@@ -5139,8 +5139,8 @@ solver this solveRef enum paint = do
         
         -- | Used by 'changeMode', 'setDeriveMode' and 'setTreeposs'. Called by
         -- button 'matchBut'.
-        setMR :: Bool -> Bool -> Action
-        setMR chgMatch chgRandom = do
+        setNarrow :: Bool -> Bool -> Action
+        setNarrow chgMatch chgRandom = do
           treeposs <- readIORef treepossRef
           trees <- readIORef treesRef
           curr <- readIORef currRef
@@ -5376,7 +5376,7 @@ solver this solveRef enum paint = do
                                     Replace ps -> ps
 
             setProofTerm $ Mark treeposs
-            setMR False False
+            setNarrow False False
         
         -- | Used by 'simplify''', 'splitTree', 'applyInd', 'applyTheorem',
         -- 'changeState', 'enterTree'', 'narrowLoop', 'narrowPar',
@@ -5532,7 +5532,7 @@ solver this solveRef enum paint = do
             if null axs then labRed' $ noAxiomsFor xs
             else do
                 enterFormulas' axs
-                labGreen' $ see "axioms for " ++ showStrList xs
+                labGreen' $ see $ "axioms for " ++ showStrList xs
         
         -- | Called by menu item /show changed/ from tree menu.
         showChanged :: Action
@@ -5945,8 +5945,8 @@ solver this solveRef enum paint = do
 
             enterText' $ showSignature (minus6 symbols iniSymbols) ""
             let (block,xs) = constraints
-            labGreen' $ see "signature" ++ '\n':admitted block xs
-                                      ++ '\n':equationRemoval safe
+            labGreen' $ see $ "signature" ++ '\n':admitted block xs
+                                          ++ '\n':equationRemoval safe
         
         -- | Called by menu item /show map/ from menu /signature/.
         showSigMap :: Action
@@ -6009,14 +6009,14 @@ solver this solveRef enum paint = do
             picts <- mapM runMaybeT picts        -- return ()
             font <- readIORef fontRef
             sizes <- mkSizes canv font
-                $ concatMap (stringsInPict . fromJust) $ mkJust picts
+                $ concatMap (stringsInPict . fromJust) $ getJust picts
             fast <- readIORef fastRef
             setTime
             back <- ent `get` entryText
             spread <- readIORef spreadRef
             let picts = map (eval sizes spread) ts
             picts <- mapM runMaybeT picts     -- return ()
-            (paint&callPaint) [concatMap fromJust $ mkJust picts] [] True True
+            (paint&callPaint) [concatMap fromJust $ getJust picts] [] True True
                 curr back
         
         -- | Called by menu item /successors/ from menu /nodes/.
@@ -6089,7 +6089,7 @@ solver this solveRef enum paint = do
             then labRed' $ "There are no theorems for " ++ showStrList xs ++ "."
             else do
                 enterFormulas' cls
-                labGreen' $ see "theorems for " ++ showStrList xs
+                labGreen' $ see $ "theorems for " ++ showStrList xs
         
         -- | Used by 'stopRun'', 'runChecker', 'setDeriveMode' and 'showPicts''.
         showTreePicts :: Action
@@ -6104,7 +6104,7 @@ solver this solveRef enum paint = do
             picts <- mapM runMaybeT picts           -- return ()
             font <- readIORef fontRef
             sizes <- mkSizes canv font
-              $ concatMap (stringsInPict . fromJust) $ mkJust picts
+              $ concatMap (stringsInPict . fromJust) $ getJust picts
             fast <- readIORef fastRef
             setTime
             back <- ent `get` entryText
@@ -6113,8 +6113,10 @@ solver this solveRef enum paint = do
             curr <- readIORef currRef
             let picts = map (eval sizes spread) ts
             picts <- mapM runMaybeT picts           -- return ()
-            (paint&callPaint) (map fromJust $ mkJust picts) (indices_ ts) 
-                False (checkingP || not checking) curr back
+            let picts' = map fromJust $ getJust picts
+            -- writeFile (expanderLib "testPic") $ show picts'
+            (paint&callPaint) picts' (indices_ ts) False 
+                (checkingP || not checking) curr back
         
         -- | Called by menu item /values/ from menu /nodes/.
         showVals :: Action

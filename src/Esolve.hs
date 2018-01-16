@@ -1,8 +1,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, June 2017
-                  Jos Kusiek, June 2017
+Copyright   : (c) Peter Padawitz, July 2017
+                  Jos Kusiek, July 2017
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -481,7 +481,8 @@ applyDrawFun sig draw = map $ mkPict . fst . simplifyLoop sig True 1 .
                                    | oneWidg v = F "widg" [v] where v = h t k
                  g t _ = t
        mkPict t = simplifyIter sig t
-       oneWidg v = isJust $ do [_] <- widgets sizes0 (0,0) v; Just ()
+       oneWidg v = isJust $ do [_] <- widgets sizes0 (0,0) v
+                               Just ()
                         
 -- wtree(f)(t) replaces each subgraph x(t1,..,tm) of t by the subgraph 
 -- widg(t1,...,tm,f(x)).

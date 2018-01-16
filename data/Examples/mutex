@@ -4,7 +4,8 @@ specs:		modal
 constructs:  	idle wait crit
 preds:   	live nonBlock noSeq crit' crits Idle Wait Crit Live NonBlock NoSeq 
 		Crit' Crits  check
-defuncts:   	procs start pairs diffpairs pair drawI drawL drawK drawO drawS 			drawC
+defuncts:   	procs start pairs diffpairs pair drawN drawI drawL drawK drawO 
+		drawS drawC
 fovars:		st i c is ws cs k n
 
 axioms:
@@ -16,13 +17,15 @@ pairs == prodL[[idle,wait,crit],procs] &
 
 (is =/= [] ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & 
 								-- i waits
-(ws =/= [] ==> (is,ws,[]) -> (is,init(ws),[last(ws)])) &     	-- last(ws) enters
-(is,ws,[c]) -> (insert(c)(is),ws,[]) &			     	-- c leaves
+(ws =/= [] ==> (is,ws,[]) -> (is,init$ws,[last$ws])) &     	-- last$ws enters
+(is,ws,[c]) -> (insert(c)$is,ws,[]) &			     	-- c leaves
 
 -- 2 processes yield 9 states
 -- 3 processes yield 31 states
 -- 4 processes yield 129 states
 -- 5 processes yield 651 states
+-- 6 processes yield 3913 states
+-- 7 processes yield 27399 states
 
 idle$i -> branch$filter(Idle$i)$states &
 wait$i -> branch$filter(Wait$i)$states &
@@ -59,6 +62,8 @@ crit$i -> branch$filter(Crit$i)$states &
 (Crits <==> map(Crit)$procs) &
 
 -- widget interpreters
+
+drawN == wtree $ fun(st,text$index(st,states)) &
 
 drawI == wtree $ fun(st,color(index(st,states),length$states)$circ$11) &
 

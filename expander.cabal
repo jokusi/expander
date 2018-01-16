@@ -119,8 +119,10 @@ data-files:          Examples/abp
                    , Examples/derec1T
                    , Examples/derecExp
                    , Examples/derecJava
-                   , Examples/dissect
+                   , Examples/dissW
                    , Examples/distest2-2
+                   , Examples/distest17F
+                   , Examples/distestG
                    , Examples/DIVproof
                    , Examples/DIVterm
                    , Examples/DNA
@@ -292,8 +294,6 @@ data-files:          Examples/abp
                    , Examples/LISTREVproof
                    , Examples/listsols
                    , Examples/log
-                   , Examples/log2
-                   , Examples/log3
                    , Examples/log4
                    , Examples/log4actsP
                    , Examples/log4actsT
@@ -493,8 +493,8 @@ data-files:          Examples/abp
                    , Examples/quad2
                    , Examples/quad3
                    , Examples/queens
-                   , Examples/queens4
-                   , Examples/queens5
+                   , Examples/queens5sol
+                   , Examples/queens5solM
                    , Examples/queensE4
                    , Examples/queensE5
                    , Examples/queensE6

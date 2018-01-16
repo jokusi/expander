@@ -26,8 +26,9 @@ $ apt install libgtk-3-dev
 The [official download page](https://wiki.gnome.org/Projects/GTK+/OSX/Building) recommends to use jhbuild. [Homebrew](http://brew.sh/) is also known as a good alternative.
 ```
 $ brew install gtk+3
+$ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 ```
-
+The last command is needed everytime the Expander3 package is build.
 
 **Windows**
 Needs stack to be installed.
@@ -43,7 +44,9 @@ Install expander with:
 ```
 git clone git@github.com:jokusi/expander.git
 cd expander-3.0.0.0
-stack --install-ghc build
+stack setup
+stack install gtk2hs-buildtools
+stack build
 ```
 
 Run expander with:
