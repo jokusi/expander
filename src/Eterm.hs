@@ -46,7 +46,8 @@ import Control.Monad
   (MonadPlus, guard, ap, liftM, liftM2, replicateM, mzero, zipWithM, zipWithM_)
 import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Maybe
-import Control.Monad.State (StateT(..), state, get, put)
+import qualified Control.Monad.State as State (get, put)
+import Control.Monad.State (StateT(..), state)
 import Data.Char (isLower, isDigit, ord)
 import Data.Array (Array, Ix, array, (!), range)
 import Data.Maybe (isJust, fromJust, fromMaybe, catMaybes)
@@ -1249,15 +1250,15 @@ parseE parser str = case applyPa parser str of Just (x,[]) -> Correct x
 
 haskell :: Read a => Parser a
 haskell = P $ do
-    str <- get
+    str <- State.get
     let (t, str'):_ = reads str
-    put str'
+    State.put str'
     return t
 
 item :: Parser Char
 item = P $ do
-    (c:cs) <- get
-    put cs
+    (c:cs) <- State.get
+    State.put cs
     return c
 
 char :: Char -> Parser Char

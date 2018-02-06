@@ -1,17 +1,24 @@
--- LAZY
+-- lazy
 
-specs:      BOOL
+specs:      bool
 
 constructs: leaf #
-defuncts:   mergesort1 split1 merge1 mergesort2 split2 merge2
-	    mergesort3 split3 merge3 repBy1 repBy2 rep0 rep1 rep2 rep3 pal1 pal2 	    
-	    pal3 reveq0 reveq1 reveq2 reveq3 sort1 sort2 represttips1    
+defuncts:   is_even mergesort1 split1 merge1 mergesort2 split2 merge2
+	    mergesort3 split3 merge3 repBy1 repBy2 rep0 rep1 rep2 rep3 pal1 pal2 	    	    pal3 reveq0 reveq1 reveq2 reveq3 sort1 sort2 represttips1 ||   
             represttips2 f g foo goo nats nats' fibs tfibs fibs' client server   
 	    Server Client1 Requests1 Client2 Requests2 CSR
+preds:      even odd 
 fovars:     x y z s s' t u t1 t2 u1 u2 r s1 s2 ls ls1 ls2 ls3 ls4 n a b requests
 hovars:     f g client server
 
 axioms:
+
+is_even == fun(x||bool$even$x,true,x||bool$odd$x,false) &
+
+(even(0) <==> True) &
+(even(suc(x)) <==> odd(x)) &
+
+(odd(x) <==> Not(even(x))) &
 
 -- MERGESORT
 
@@ -77,20 +84,15 @@ rep3(f) == fun((leaf(x),y),(x,leaf(y)),
 
 -- PALINDROMES
 
-(pal1(s) = b <=== reveq1(s)(r) = (r,b)) &  -- reveq1(s1)(s2) = (reverse s1,s1=s2)
+(pal1(s) = b <=== reveq1(s)(r) = (r,b)) &      -- reveq1(s1)(s2) = (reverse s1,s1=s2)
 
 reveq1[][]          = ([],true) &
 (reveq1(x:s1)(y:s2) = (r++[x],eq(x,y)`and`b) <=== reveq1(s1)(s2) = (r,b)) &
 
-(pal2(s) = f(r) <=== reveq2(s) = (r,f)) &
+(reveq2(s) = (r,f) ==> pal2(s) == f(r)) &
 
 reveq2[] == ([],fun(s,true)) &
-(reveq2(s1) = (r,f) ==> reveq2(x:s1) == (r++[x],fun(~(y:s2),eq(x,y)`and`f(s2)))) &
-
-pal3(s) == get1(mu r b.reveq3(s)(r)) &
-
-reveq3[]     == fun(~[],([],true)) &
-reveq3(x:s1) == fun(~(y:s2),fun((r,b),(r++[x],eq(x,y)`and`b)))$reveq3(s1)(s2) &     
+(reveq2(s1) = (r,f) ==> reveq2(x:s1) == (r++[x],fun(y:s2,eq(x,y)`and`f(s2)))) &
 
 -- TREE SORTING
 
@@ -115,7 +117,7 @@ nats == 0:map(+1)$nats &
 
 nats' == mu s.(0:map(+1)$s) &
 	     
-natsf == mu f.fun(n,n:f$n+1) &
+natsf == mu f.fun(n,n:f$n+1) &			-- nats = natsf$0
 
 fibs  == 0:tfibs &
 tfibs == 1:zipWith(+)(fibs)$tfibs &
@@ -123,14 +125,14 @@ tfibs == 1:zipWith(+)(fibs)$tfibs &
 fibs' == get0(mu s s'.(0:s',1:zipWith(+)(s)$s')) &
 
 Server(a:s) == mkResponse(a):Server(s) &
-
-(Client1(a)(s) = a:Client1(mkRequest$b)(s') <=== s = b:s') &
 					
 Requests1 = Client1(0)$Server$Requests1 &
 
-Client2(a) == fun(~(b:s),a:Client2(mkRequest$b)(s)) &
+(Client1(a)(s) = a:Client1(mkRequest$b)(s') <=== s = b:s') &
 			 
 Requests2 == Client2(0)$Server$Requests2 &
+
+Client2(a) == fun(~(b:s),a:Client2(mkRequest$b)(s)) &
 
 CSR == mu client server requests.(fun(a,fun(~(b:s),a:client(mkRequest$b)(s))),
 	    			  fun(~(a:s),mkResponse(a):server(s)),
@@ -168,12 +170,10 @@ pal1[2,3,1,2] = b				 & -- 6 unify-nar&simpl steps,
 sort1(leaf(3)#(leaf(2)#leaf(6))) = t		 & -- 6 match-nar&simpl steps, 
 						   -- 13 sec           (30.5.09)
 
-take(3) $ Requests1 = requests                     --> .. & [0,2,6]=requests
+take(3) $ Requests1 = requests                     --> [0,2,6]=requests & ...
 					   	   -- 10 steps, 34 sec (23.7.11)
 						   -- 10 steps, 38 sec (random)
 terms: 
-
-take(6)$nats <+>
 
 mergesort2[3,2,1,4] <+>
 
@@ -185,18 +185,22 @@ repBy2(rep2)(min)(leaf(3)#(leaf(2)#leaf(6)))   <+> -- 16 steps         (30.5.09)
 
 repBy2(rep3)(min)(leaf(3)#(leaf(2)#leaf(6)))   <+> -- 23 steps         (30.5.09)
 
-pal2[2,3,2] 			       	       <+> -- 28 steps         (30.5.09)
+pal2[2,3,2] 			       	       <+> -- 12 steps         (1.11.17)
 						   
-pal2[2,3,1,2] 			       	       <+> -- 27 steps         (30.5.09)
+pal2[2,3,1,2] 			       	       <+> -- 9 steps          (1.11.17)
 						   
 sort2(leaf(3)#(leaf(2)#leaf(6)))	       <+> -- 28 steps         (30.5.09)
 						   
-take(3) $ nats(5)			       <+> -- 13 steps         (30.5.09)
+take(3) $ nats			      	       <+> -- 21 steps         (1.11.17)
 
-take(3) $ nats'(5)			       <+> -- 17 steps         (30.5.09)
+take(3) $ nats'  			       <+> -- 22 steps         (1.11.17)
 
 take(3) $ Requests2			       <+> --> [0,2,6]
-						   -- 50 steps         (23.7.11)
+						   -- 50 steps        (31.10.17)
+take(4) $ Requests2			       <+> --> [0,2,6,14]
+						   -- 95 steps        (31.10.17)
+take(5) $ Requests2			       <+> --> [0,2,6,14,30]
+						   -- 161 steps       (31.10.17)
 take(3) $ get2 $ CSR			       <+> --> [0,2,6]
 						   -- 66 steps 	       (23.7.11)
 foo(3)					       <+> --> 0

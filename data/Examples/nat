@@ -1,7 +1,8 @@
--- NAT
+-- nat
 
 preds:      X Nat even odd
-defuncts:   div fib loop fibL loop1 loop2 sum
+constructs: ||
+defuncts:   sum div fib fact loop fibL loop1 loop2
 fovars:     q r n
 hovars:     f X
 
@@ -14,6 +15,8 @@ axioms:
 & fib(0) == 0
 & fib(1) == 1
 & fib(suc(suc(n))) == fib(n)+fib(n+1)
+
+& fact == fun(0,1,n||bool$Nat$n,n*fact(n-1))
 
 & Nat(0)
 & (Nat(suc(x)) <=== Nat(x))

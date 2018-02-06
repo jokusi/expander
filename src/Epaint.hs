@@ -31,7 +31,9 @@ import Data.List (find)
 import Data.Maybe (isJust, isNothing, fromJust, fromMaybe)
 import Data.Array ((!))
 import qualified Data.Text as Text
-import Graphics.UI.Gtk hiding (Color, Point, Dot, Action, Font, Fill, Arrow)
+import Graphics.UI.Gtk
+  hiding (Color, Point, Dot, Action, Font, Fill, Arrow, get, set)
+import qualified Graphics.UI.Gtk as Gtk (get,set)
 import qualified Graphics.UI.Gtk as Gtk (Color(..))
 import System.FilePath ((</>), (<.>), splitExtension, takeExtension)
 
@@ -408,7 +410,7 @@ painter pheight solveRef solve2Ref = do
     
     let
         addOrRemove = do
-            file <- saveEnt `get` entryText
+            file <- saveEnt `Gtk.get` entryText
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
             edges <- readIORef edgesRef
@@ -454,7 +456,7 @@ painter pheight solveRef solve2Ref = do
                 scaleAndDraw msg
         
         arrangeButton graph@(pict,arcs) = do 
-            mode <- modeEnt `get` entryText
+            mode <- modeEnt `Gtk.get` entryText
             case mode of
                 "perm" -> do
                     old <- readIORef permutationRef
@@ -475,7 +477,7 @@ painter pheight solveRef solve2Ref = do
                             writeIORef gradeRef
                                 $ fromMaybe 0 angle
                         _ -> writeIORef arrangeModeRef mode
-                    d <- spaceEnt `get` entryText
+                    d <- spaceEnt `Gtk.get` entryText
                     arrangeMode <- readIORef arrangeModeRef
                     let dist = parse real d; x = head arrangeMode
                     if notnull arrangeMode
@@ -564,14 +566,14 @@ painter pheight solveRef solve2Ref = do
                     writeIORef edgesRef [arcs]
                     writeIORef noOfGraphsRef 1
                     writeIORef currRef 0
-                    pictSlider `set` [widgetSensitive := False ]
+                    pictSlider `Gtk.set` [widgetSensitive := False ]
                     arrangeButton graph
         
         buildPaint = do
             solve <- readIORef solveRef
             solver <- getSolver solve
             icon <- iconPixbuf
-            win `set` [ windowTitle := "Painter" ++ [last solver]
+            win `Gtk.set` [ windowTitle := "Painter" ++ [last solver]
                       , windowDefaultHeight := pheight
                       , windowIcon := Just icon
                       ]
@@ -584,7 +586,7 @@ painter pheight solveRef solve2Ref = do
             edgeBut `on` buttonActivated $ switchConnect
             
             fast <- readIORef fastRef
-            fastBut `set` [ buttonLabel := if fast then "slow" else "fast" ]
+            fastBut `Gtk.set` [ buttonLabel := if fast then "slow" else "fast" ]
             fastBut `on` buttonActivated $ switchFast
             
             font <- fontDescriptionFromString $ sansSerif ++ " italic 12"
@@ -613,7 +615,7 @@ painter pheight solveRef solve2Ref = do
             solveName2 <- getSolver solve2
             
             closeBut <- getButton "closeBut"
-            closeBut `set` [ buttonLabel := "back to " ++ solveName]
+            closeBut `Gtk.set` [ buttonLabel := "back to " ++ solveName]
             closeBut `on` buttonActivated $ close
             
             colorSlider `on` valueChanged $ moveColor
@@ -627,7 +629,7 @@ painter pheight solveRef solve2Ref = do
                 return False
             
             -- delaySlider `on` valueChanged
-            --    $ writeIORef delayRef =<< delaySlider `get` rangeValue
+            --    $ writeIORef delayRef =<< delaySlider `Gtk.get` rangeValue
             delaySlider `on` buttonReleaseEvent $ do
                 mb <- eventButton
                 liftIO $ when (mb == LeftButton) setDelay
@@ -636,7 +638,7 @@ painter pheight solveRef solve2Ref = do
             modeBut `on` buttonActivated $ arrangeOrCopy
             
             pictSlider `on` valueChanged $ do
-                n <- truncate <$> pictSlider `get` rangeValue
+                n <- truncate <$> pictSlider `Gtk.get` rangeValue
                 writeIORef currRef n
             pictSlider `on` buttonReleaseEvent $ do
                 mb <- eventButton
@@ -664,7 +666,7 @@ painter pheight solveRef solve2Ref = do
                 return False
             
             solBut <- getButton "solBut"
-            solBut `set` [ buttonLabel := "show in "++ solveName2 ]
+            solBut `Gtk.set` [ buttonLabel := "show in "++ solveName2 ]
             solBut `on` buttonActivated $ showInSolver
             widgetOverrideFont spaceEnt
                 =<< Just <$> fontDescriptionFromString (monospace ++ " 14")
@@ -752,7 +754,7 @@ painter pheight solveRef solve2Ref = do
         changeCanvasBackground c@(RGB r g b) = do
             let f n = fromIntegral $ n * 256
                 (r', g' , b') = (f r, f g, f b)
-            canv `set` [ canvasBackground := c ]
+            canv `Gtk.set` [ canvasBackground := c ]
             widgetModifyBg scrollCanv StateNormal $ Gtk.Color r' g' b'
             
         close = do
@@ -767,11 +769,11 @@ painter pheight solveRef solve2Ref = do
             drawCurr solve
         
         combis = do
-            str <- spaceEnt `get` entryText
+            str <- spaceEnt `Gtk.get` entryText
             modifyIORef drawModeRef $ \drawMode -> case parse nat str of
                 Just n | n < 16 -> n
                 _ -> (drawMode+1) `mod` 16
-            spaceEnt `set` [ entryText :=  "" ]
+            spaceEnt `Gtk.set` [ entryText :=  "" ]
             drawMode <- readIORef drawModeRef
             setBackground combiBut
                 $ if drawMode == 0 then blueback else redback
@@ -918,24 +920,24 @@ painter pheight solveRef solve2Ref = do
                      | isPict w        = drawPict $ mkPict w
         drawWidget _                   = return ()
         
-        getDelay = truncate <$> delaySlider `get` rangeValue
+        getDelay = truncate <$> delaySlider `Gtk.get` rangeValue
         
         interrupt b = 
             if b then do
                 scans <- readIORef scansRef
                 mapM_ stopScan scans
-                stopBut `set` [ buttonLabel := "go" ]
+                stopBut `Gtk.set` [ buttonLabel := "go" ]
                 replaceCommandButton stopButSignalRef stopBut $ interrupt False
             else do
                 delay <- getDelay
                 scans <- readIORef scansRef
                 mapM_ (`startScan` delay) scans 
-                stopBut `set` [ buttonLabel := "runnableStop" ]
+                stopBut `Gtk.set` [ buttonLabel := "runnableStop" ]
                 replaceCommandButton stopButSignalRef stopBut $ interrupt True
         
         labColor :: String -> Background -> Action
         labColor str color = do
-            lab `set` [ labelText := str ]
+            lab `Gtk.set` [ labelText := str ]
             setBackground lab color
         
         labGreen = flip labColor greenback
@@ -956,7 +958,7 @@ painter pheight solveRef solve2Ref = do
                     _ -> return nil2
         
         mkPlanar = do
-            n <- saveEnt `get` entryText  
+            n <- saveEnt `Gtk.get` entryText  
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
             edges <- readIORef edgesRef
@@ -1060,7 +1062,7 @@ painter pheight solveRef solve2Ref = do
 
         
         moveColor = do
-            n <- truncate <$> colorSlider `get` rangeValue
+            n <- truncate <$> colorSlider `Gtk.get` rangeValue
             when (n /= 0) $ do
                 modifyIORef colorScaleRef $ \(_, csSnd) -> (n,csSnd)
                 (_,ws) <- readIORef changedWidgetsRef
@@ -1069,7 +1071,7 @@ painter pheight solveRef solve2Ref = do
                     draw55 $ map (shiftCol n) ws
         
         moveScale = do 
-            n <- truncate <$> scaleSlider `get` rangeValue
+            n <- truncate <$> scaleSlider `Gtk.get` rangeValue
             when (n /= 0) $ do
                 rect <- readIORef rectRef
                 rscale <- readIORef rscaleRef
@@ -1101,19 +1103,19 @@ painter pheight solveRef solve2Ref = do
             setBackground narrowBut back
             setBackground simplifyD back
             setBackground simplifyB back
-            stopBut `set` [buttonLabel := "runnableStop"]
+            stopBut `Gtk.set` [buttonLabel := "runnableStop"]
             replaceCommandButton stopButSignalRef stopBut $ interrupt True
             noOfGraphs <- readIORef noOfGraphsRef
             rangeSetRange pictSlider 0 $ fromIntegral $ noOfGraphs-1
             curr <- readIORef currRef
-            pictSlider `set` [ rangeValue := fromIntegral curr ]
+            pictSlider `Gtk.set` [ rangeValue := fromIntegral curr ]
             writeIORef rectRef Nothing
             writeIORef rectIndicesRef []
             writeIORef changedWidgetsRef nil2
             writeIORef gradeRef 0
             writeIORef colsRef 6
             picEval <- readIORef picEvalRef
-            modeEnt  `set`
+            modeEnt  `Gtk.set`
                 [entryText := if picEval == "tree" then "s" else "m16"]
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
@@ -1159,13 +1161,13 @@ painter pheight solveRef solve2Ref = do
                                 rscale <- readIORef rscaleRef
                                 writeIORef changedWidgetsRef
                                     (rectIndices,f rscale)
-                                canv `set` [ canvasCursor := Dotbox ]
+                                canv `Gtk.set` [ canvasCursor := Dotbox ]
                             _ -> do
                                 scale <- readIORef scaleRef
                                 case getWidget p' scale pict of
                                     (Just (n,w)) -> do
                                         writeIORef changedWidgetsRef ([n],[w])
-                                        canv `set` [ canvasCursor := Hand2]
+                                        canv `Gtk.set` [ canvasCursor := Hand2]
                                     _ -> return ()             -- move widget
                     2 -> do
                         rect <- readIORef rectRef
@@ -1181,7 +1183,7 @@ painter pheight solveRef solve2Ref = do
                             writeIORef rectIndicesRef []   
                         else do -- create selection
                             writeIORef rectRef $ Just (Rect (p',0,black,0) 0 0)
-                            canv `set` [ canvasCursor := Icon ]
+                            canv `Gtk.set` [ canvasCursor := Icon ]
                         writeIORef rscaleRef scale
                     _ -> do
                         rscale <- readIORef rscaleRef
@@ -1191,7 +1193,7 @@ painter pheight solveRef solve2Ref = do
                         writeIORef changedWidgetsRef $ 
                             if isJust rect then (rectIndices,f rscale)
                             else (indices_ pict,scalePict scale pict)
-                        canv `set` [ canvasCursor := Exchange] -- rotate
+                        canv `Gtk.set` [ canvasCursor := Exchange] -- rotate
         
         pressColorScale = do 
             scans <- readIORef scansRef
@@ -1302,7 +1304,7 @@ painter pheight solveRef solve2Ref = do
                 writeIORef sourceRef Nothing
                 writeIORef targetRef Nothing
                 writeIORef changedWidgetsRef nil2
-                canv `set` [canvasCursor := LeftPtr]
+                canv `Gtk.set` [canvasCursor := LeftPtr]
             where nada = scaleAndDraw "Nothing can be done."
                   setDrawSwitch graph str = do
                                     setCurrGraph graph
@@ -1320,10 +1322,10 @@ painter pheight solveRef solve2Ref = do
                 setCurrGraph (zipWith f [0..] pict,arcs)
                 scaleAndDraw ""
                 writeIORef changedWidgetsRef nil2
-                colorSlider `set` [ rangeValue := 0 ]
+                colorSlider `Gtk.set` [ rangeValue := 0 ]
         
         releaseScale = do
-            mode <- modeEnt `get` entryText
+            mode <- modeEnt `Gtk.get` entryText
             (n,_) <- readIORef colorScaleRef
             rscale <- readIORef rscaleRef
             scale <- readIORef scaleRef
@@ -1353,7 +1355,7 @@ painter pheight solveRef solve2Ref = do
                       | otherwise   -> writeIORef scaleRef sc
                 scaleAndDraw ""
                 writeIORef changedWidgetsRef nil2
-                scaleSlider `set` [rangeValue := 0 ]
+                scaleSlider `Gtk.set` [rangeValue := 0 ]
         
         remote' = do
             subtrees <- readIORef subtreesRef
@@ -1378,7 +1380,7 @@ painter pheight solveRef solve2Ref = do
             pictures <- readIORef picturesRef
             if null pictures then labRed' "Enter pictures!"
             else do
-                file <- saveEnt `get` entryText
+                file <- saveEnt `Gtk.get` entryText
                 curr <- readIORef currRef
                 edges <- readIORef edgesRef
                 rectIndices <- readIORef rectIndicesRef
@@ -1421,7 +1423,7 @@ painter pheight solveRef solve2Ref = do
                      _ -> do
                        renewDir dirPath
                        let f n = do writeIORef currRef n
-                                    pictSlider `set`
+                                    pictSlider `Gtk.set`
                                       [ rangeValue := fromIntegral n ]
                                     remoteDraw
                                     let act = mkHtml canv dir dirPath n
@@ -1436,9 +1438,9 @@ painter pheight solveRef solve2Ref = do
             clear canv
             sc <- scanner drawWidget
             writeIORef scansRef [sc]
-            stopBut `set` [ buttonLabel := "runnableStop" ]
+            stopBut `Gtk.set` [ buttonLabel := "runnableStop" ]
             replaceCommandButton stopButSignalRef stopBut $ interrupt True
-            n <- saveEnt `get` entryText
+            n <- saveEnt `Gtk.get` entryText
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
             edges <- readIORef edgesRef
@@ -1471,7 +1473,7 @@ painter pheight solveRef solve2Ref = do
             modifyIORef picturesRef $ \pictures ->
                 updList pictures curr $ zipWith g [0..] pict2
             modifyIORef edgesRef $ \edges -> updList edges curr arcs
-            canv `set` [ canvasSize := size]
+            canv `Gtk.set` [ canvasSize := size]
             arrangeMode <- readIORef arrangeModeRef
             treeNumbers <- readIORef treeNumbersRef
             curr <- readIORef currRef
@@ -1540,7 +1542,7 @@ painter pheight solveRef solve2Ref = do
             pictures <- readIORef picturesRef
             when (n < length pictures) $ do
                 writeIORef currRef n
-                pictSlider `set` [ rangeValue := fromIntegral n ]
+                pictSlider `Gtk.set` [ rangeValue := fromIntegral n ]
                 scaleAndDraw ""
         
         setDelay = do 
@@ -1568,7 +1570,7 @@ painter pheight solveRef solve2Ref = do
             writeIORef fastRef b
             isNew <- readIORef isNewRef
             unless isNew
-                $ fastBut `set` [ buttonLabel := if b then "slow" else "fast"]
+                $ fastBut `Gtk.set` [ buttonLabel := if b then "slow" else "fast"]
         
         showInSolver = do
             pictures <- readIORef picturesRef
@@ -1942,9 +1944,13 @@ slope (x1,y1) (x2,y2) = if x1 == x2 then fromInt maxBound else (y2-y1)/(x2-x1)
 
 successor :: Floating a => (a,a) -> a -> a -> (a,a)
 successor (x,y) r a = (x+r*c,y+r*s) where (s,c) = sincos a               
+                                 -- successor p 0 _ = p
+                                 -- successor (x,y) r 0 = (x+r,y) 
+                                 -- successor (x,y) r a = rotate (x,y) a (x+r,y)
+
 
 sincos :: Floating t => t -> (t, t)
-sincos a = (sin rad,cos rad) where rad = a*pi/180
+sincos a = (sin rad,cos rad) where rad = a*pi/180       -- sincos 0 = (0,1)
 
 -- | successor2 moves on an ellipse.
 successor2 :: Floating a => (a,a) -> a -> a -> a -> (a,a)
@@ -2000,8 +2006,8 @@ mkLines ps = zip qs $ tail qs where qs = reduceP ps
 -- rotate q a p rotates p clockwise by a around q on the axis (0,0,1).
 
 rotate :: Point -> Double -> Point -> Point
-rotate _ 0 p             = p         -- sincos 0 = (0,1)
-rotate q@(i,j) a p@(x,y) = if p == q then p else (c*x1-s*y1+i,s*x1+c*y1+j)
+rotate _ 0 p             = p         
+rotate q@(i,j) a p@(x,y) = if p == q then p else (i+x1*c-y1*s,j+x1*s+y1*c)
                            where (s,c) = sincos a; x1 = x-i; y1 = y-j
 
 -- rotateA q (a,nx,ny,nz) p rotates p clockwise by a around q on the axis
@@ -2009,10 +2015,11 @@ rotate q@(i,j) a p@(x,y) = if p == q then p else (c*x1-s*y1+i,s*x1+c*y1+j)
 
 rotateA :: Point -> Double -> Point3 -> Point -> Point
 rotateA _ 0 _ p                       = p
-rotateA q@(i,j) a (nx,ny,nz) p@(x,y) =
-                     if p == q then p else ((t*nx*nx+c)*x1+(t*nx*ny-s*nz)*y1+i,
-                                            (t*nx*ny+s*nz)*x1+(t*ny*ny+c)*y1+j)
-                     where (s,c) = sincos a; x1 = x-i; y1 = y-j; t = 1-c
+rotateA q@(i,j) a (nx,ny,nz) p@(x,y) = if p == q then p      
+                                       else (f i (c'*nx*nx+c) (c'*nx*ny-s*nz),
+                                             f j (c'*nx*ny+s*nz) (c'*ny*ny+c))
+                                       where (s,c) = sincos a; c' = 1-c
+                                             f i a b = i+(x-i)*a+(y-j)*b
 
 mkActs :: Picture -> [(Point,Double)] -> TurtleActs
 mkActs pict = (++[Close]) . fst . fold2 f ([open],p0) pict

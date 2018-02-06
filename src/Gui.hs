@@ -11,7 +11,8 @@ import Data.IORef
 import Data.List (isPrefixOf, foldl1')
 import Data.Maybe (isJust, isNothing, fromJust)
 import Graphics.UI.Gtk
-  hiding (Color, Action, Font, ArrowType, Arrow, Fill, ArrowClass, Image)
+  hiding (Color, Action, Font, ArrowType, Arrow, Fill, ArrowClass, Image,get,set)
+import qualified Graphics.UI.Gtk as Gtk (get,set)
 import qualified Graphics.UI.Gtk as Gtk (Color(..))
 import Graphics.Rendering.Cairo as Cairo
 import Graphics.UI.Gtk.General.CssProvider
@@ -19,6 +20,13 @@ import Graphics.UI.Gtk.General.StyleContext
 import Graphics.UI.Gtk.General.Enums (PathPriorityType(PathPrioApplication))
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeExtension, (<.>), (</>), takeDirectory)
+
+-- | Helper from Expander 2
+just :: Maybe a -> Bool
+just = isJust
+
+get :: Maybe a -> a
+get = fromJust
 
 -- | Main window icon file.
 iconFile, cssFile :: FilePath
@@ -583,7 +591,7 @@ canvas = do
             writeIORef sizeRef size
             background <- readIORef backgroundRef
             surface <- createImageSurface FormatRGB24 width height
-            drawingArea `set` [ widgetWidthRequest  := width
+            drawingArea `Gtk.set` [ widgetWidthRequest  := width
                               , widgetHeightRequest := height
                               ]
             renderWith surface $ do
@@ -669,7 +677,7 @@ cascade menu label MenuOpt{ font = menuFont, background = bg } = do
   doMaybe (addContextClass item) menuFont
   doMaybe (setBackground item) bg
   subMenu <- menuNew
-  item `set` [ menuItemSubmenu := subMenu, widgetVisible := True ]
+  item `Gtk.set` [ menuItemSubmenu := subMenu, widgetVisible := True ]
   return subMenu
   where
     doMaybe act (Just v) = act v
@@ -839,13 +847,13 @@ mkPack = SinglePack PackNatural 0 . toWidget
 
 pack :: Window -> Packable -> Action
 pack win SinglePack{ packableWidget = w } = do
-        win `set` [ containerChild := w ]
+        win `Gtk.set` [ containerChild := w ]
         widgetShowAll win
 pack win MultiPack{ packableType = pt, defaultSpacing = ds, packableList = ps }
     = do
         box <- newBox pt ds
         mapM_ (append box) ps
-        win `set` [ containerChild := box ]
+        win `Gtk.set` [ containerChild := box ]
         widgetShowAll win
     where newBox pt  = case pt of
                         Row -> fmap toBox . hBoxNew False

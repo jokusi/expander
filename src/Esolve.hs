@@ -1,8 +1,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, July 2017
-                  Jos Kusiek, July 2017
+Copyright   : (c) Peter Padawitz, October 2017
+                  Jos Kusiek, October 2017
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -907,61 +907,38 @@ subsumeConj sig (t:ts) rest = if subsumes sig u t then Just u
                                     f v = mkConjunct [v,u]
 subsumeConj _ _ _           = Nothing
 
--- * __Simplification of lambda applications__
+-- LAMBDA APPLICATIONS as presented in 
+-- https://fldit-www.cs.uni-dortmund.de/~peter/CTL.pdf (page 102 ff.)
 
--- fun(~(x1,...,xn),t)(u1,...,un) --> t>>>[ui/xi | 1<=i<=n]
--- fun(~(x1,...,xn),t)(u)         --> t>>>[geti(u)/xi | 1<=i<=n] 
---                                      if u =/= (u1,...,un)
-
-simplifyA (F "$" [F x [F "~" [F "()" xs],t],u]) sig
- | lambda x && all (isVar sig) zs = Just $ renameAll f t>>>h
-                      where ys = sigVars sig u
-                            f = getSubAwayFrom (frees sig u) ys t
-                            zs = map root xs
-                            g z = case u of 
-                                    F "()" us | length xs == length us -> us!!i
-                                    _ -> F ("get"++show i) [u]
-                                    where i = fromJust $ search (== z) zs
-                            h = forL (map g zs) zs
-
--- fun(~(x:xs),t)(u:us) --> t>>>[u/x,us/xs]
--- fun(~(x:xs),t)(u)    --> t>>>[head(u)/x,tail(u)/xs] if u =/= v:us
-
-simplifyA (F "$" [F x [F "~" [F ":" [y,z]],t],u]) sig
- | lambda x && all (isVar sig) zs = Just $ renameAll f t>>>forL ts zs where
-                                  ys = sigVars sig u
-                                  f = getSubAwayFrom (frees sig u) ys t
-                                  zs = [root y,root z]
-                                  ts = case u of 
-                                            F ":" us@[_,_] -> us
-                                            _ -> [F "head" [u],F "tail" [u]]
-
--- fun(~p,t)(p>>>f) --> t>>>f
--- fun(~p,t)(u)     --> t[fun(p,x)(u)/x | x in var(p)] if not (p <= u)
-
-simplifyA (F "$" [F x [F "~" [p],t],u]) sig 
- | lambda x = Just $ renameAll f t>>>h
+simplifyA (F "$" [F x [F "~" [p],t],u]) sig
+  | lambda x = Just $ renameAll f t>>>sub'
               where ys = sigVars sig u
                     f = getSubAwayFrom (frees sig u) ys t
                     zs = frees sig p
-                    f' = match sig zs u p
+                    sub = match sig zs u p
                     g z = apply (F x [p,mkVar sig z]) u
-                    h = fromMaybe (forL (map g zs) zs) f'
+                    sub' = if just sub then get sub else forL (map g zs) zs
 
--- fun(z,t,...)(u)     --> t[u/z]
--- fun(p,t,...)(p>>>f) --> t>>>f              
--- fun(p,t,...)(u)     --> fun(...)(u) if u does not match p and u is simplified
 
-simplifyA (F "$" [c@(F x (p:t:ts)),u]) sig 
- | lambda x = Just $ if isVar sig z && null (subterms p)
-                     then renameAll f t>>>for u z
-                     else maybe (if k == 0 then apply (F x ts) u else apply c v)
-                            ((>>>) t) f'
-              where ys = sigVars sig u
-                    f = getSubAwayFrom (frees sig u) ys t
-                    z = root p
-                    f' = match sig (frees sig p) u p
-                    (v,k) = simplifyLoop sig True 1 u
+simplifyA (F "$" [F x [p,t],u]) sig
+  | lambda x && just sub = Just $ renameAll f t>>>get sub
+                           where ys = sigVars sig u
+                                 f = getSubAwayFrom (frees sig u) ys t
+                                 zs = frees sig p
+                                 sub = match sig zs u p
+
+simplifyA (F "$" [F x ts,u]) sig 
+  | lambda x && lg > 2 && even lg = Just $ F "CASE" cases where
+                   lg = length ts
+                   cases = [get t | t <- zipWith f (evens ts) $ odds ts, just t]
+                   f p t =   do let xs = sigVars sig u
+                                    g = getSubAwayFrom (frees sig u) xs t
+                                    v = renameAll g t
+                                concat [do F "||" [p,F "bool" [b]] <- Just p
+                                           sub <- match sig (frees sig p) u p
+                                           Just $ F "->" [b>>>sub,v>>>sub],
+                                        do sub <- match sig (frees sig p) u p
+                                           Just $ F "->" [mkTrue,v>>>sub]]
 
 -- distribute a relation over a sum
 
@@ -1239,6 +1216,10 @@ simplifyS t _ = simplifyT t
 -- * __Signature-independent simplification__
 
 simplifyT :: TermS -> Maybe TermS
+
+simplifyT (F "CASE" (F "->" [F "True" [],t]:_))   = Just t
+simplifyT (F "CASE" (F "->" [F "False" [],_]:ts)) = Just $ F "CASE" ts
+simplifyT (F "CASE" [])                            = Just $ F "undefined" []
 
 simplifyT (F "string" [t])     = Just $ leaf $ showTree False t
 
