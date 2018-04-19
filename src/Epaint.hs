@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, August 2017
-                  Jos Kusiek, August 2017
+Copyright   : (c) Peter Padawitz, February 2018
+                  Jos Kusiek, April 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -2688,10 +2688,10 @@ widgetsT sizes@(n,width) spread t = f black t where
         f c (F "$" [F x (n:s),t]) | x `elem` ["shelf","tower","shelfS","towerS"]
                       = do n <- lift' $ parsePnat n
                            pict <- fs c t
-                           let k = if last x == 'S' then square pict else n
-                               c = if take 5 x == "shelf" then '1' else '2'
-                               h d a b = return $ fst $ shelf (pict,[]) k 
-                                                         (d,d) a b False ['m',c]
+                           let cols = if last x == 'S' then square pict else n
+                               mode = if take 5 x == "shelf" then "m1" else "m2"
+                               h d a b = return $ fst $ shelf (pict,[]) cols 
+                                                            (d,d) a b False mode
                            case s of 
                              d:s -> do
                                 d <- lift' $ parseReal d        -- spacing
@@ -2702,9 +2702,9 @@ widgetsT sizes@(n,width) spread t = f black t where
                                         b:s -> do
                                              b <- lift' $ parseChar b
                                              h d a $ b == 'C'
-                                        _ -> h d a False
-                                  _ -> h d 'M' False
-                             _ -> h 0 'M' False 
+                                        _ -> h d a False  -- no centering 
+                                  _ -> h d 'M' False      -- alignment 'M'
+                             _ -> h 0 'M' False           -- spacing 0
         f _ (F "skip" [])       = return [Skip]
         f c (F "slice" [r,a])   = lift' $ do r <- parseReal r
                                              a <- parseReal a
@@ -3659,14 +3659,13 @@ table pict d n = turtle0B $ concatMap g $ f pict
                        g pict = open:concatMap h pict++[Close,down,Jump d,up]
                                 where h w = [widg w,Jump d]
 
-{- |
-shelf graph n (dh,dv) align scaled ... mode displays graph as a matrix with n 
-columns and a horizontal/vertical spacing of dh/dv units between the BORDERS
-of adjacent widgets. shelf returns a picture (scaled = True) or an action
-sequence (scaled = False). If mode = "m2", the widget anchors are aligned
-vertically and the columns according to the value of align (L/M/R). Otherwise
-the widget anchors are aligned horizontally and the rows according to align.
--}
+-- | shelf graph cols (dh,dv) align scaled ... mode displays graph as a matrix 
+-- with cols columns and a horizontal/vertical spacing of dh/dv units between 
+-- the borders of adjacent widgets. shelf returns a picture (scaled = True) or 
+-- an action sequence (scaled = False). If mode = "m2", the widget anchors are 
+-- aligned vertically and the columns according to the value of align (L/M/R). 
+-- Otherwise the widget anchors are aligned horizontally and the rows according 
+-- to align.
 shelf :: Graph -> Int -> Point -> Char -> Bool -> Bool -> String -> Graph
 shelf graph@([],_) _ _ _ _ _ _ = graph
 shelf graph@(pict,_) cols (dh,dv) align centered scaled mode = 
@@ -3674,7 +3673,8 @@ shelf graph@(pict,_) cols (dh,dv) align centered scaled mode =
               "m2" -> sh graph False False
               "c"  -> sh graph True True 
               _    -> graph
- where lg = length pict; is = [0..lg-1]
+ where lg = length pict
+       is = [0..lg-1]
        rows = lg `div` cols
        upb
           | isCenter mode = maximum levels
@@ -3682,7 +3682,7 @@ shelf graph@(pict,_) cols (dh,dv) align centered scaled mode =
           | otherwise = rows
        rowIndices = [0..upb]
        levels = nodeLevels True graph
-       levelRow i = [k | k <- is, levels!!k == i]
+       levelRow i = [j | j <- is, levels!!j == i]
        sh (pict,arcs) b center =
         if center 
         then case searchGet isSkip ws of

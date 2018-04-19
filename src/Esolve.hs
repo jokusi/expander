@@ -2,7 +2,7 @@
 Module      : Esolve
 Description : TODO
 Copyright   : (c) Peter Padawitz, October 2017
-                  Jos Kusiek, October 2017
+                  Jos Kusiek, April 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -907,8 +907,8 @@ subsumeConj sig (t:ts) rest = if subsumes sig u t then Just u
                                     f v = mkConjunct [v,u]
 subsumeConj _ _ _           = Nothing
 
--- LAMBDA APPLICATIONS as presented in 
--- https://fldit-www.cs.uni-dortmund.de/~peter/CTL.pdf (page 102 ff.)
+-- LAMBDA APPLICATIONS
+-- see: https://fldit-www.cs.uni-dortmund.de/~peter/CTL.pdf, page 102 ff.
 
 simplifyA (F "$" [F x [F "~" [p],t],u]) sig
   | lambda x = Just $ renameAll f t>>>sub'

@@ -1,11 +1,11 @@
 -- modal
 
-preds:   	atom X P Q true false not \/ /\ `then` or and path 
+preds:    	Atom X P Q true false not \/ /\ `then` or and path 
 		EX XE <> >< EF AF FE FA `EU` `AU` F `U` `leadsto` nxt nxt2 
 		allanytrans allanytransL
 copreds: 	AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR` path G `W` `R` `H` 
 		`~` `~L` eqpath eqstate eqstateL 
-fovars:  	s s' st st' lab
+fovars:  	s s' st st' lab at
 hovars:  	X P Q
 
 axioms:
@@ -40,10 +40,7 @@ axioms:
  & ((P\/Q)$st <==> P$st | Q$st)
  & ((P`then`Q)$st <==> (P$st ==> Q$st))
 
- & (atom(P)$st <==> P$st)
- & (atom(P(lab))$st <==> P(lab)$st)
--- & (P `in` atoms & st `in` states ==> (P$st <==> P `in` out$st))
--- & (P `in` atoms & st `in` states ==> (P(lab)$st <==> P `in` outL(st)$lab))
+ & (Atom(at)$st <==> at `in` out$st)
 
  & (EX(P)$st <==> any(P)$trans$st)
  & (AX(P)$st <==> all(P)$trans$st)

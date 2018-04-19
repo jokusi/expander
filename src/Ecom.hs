@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, June 2017
-                  Jos Kusiek, June 2017
+Copyright   : (c) Peter Padawitz, February 2018
+                  Jos Kusiek, April 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -200,7 +200,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (October 28, 2017)"
+start = "Welcome to Expander3 (February 22, 2018)"
 
 startF :: String
 startF = "Load and parse a formula!"
@@ -1005,7 +1005,7 @@ solver this solveRef enum paint = do
             mkMenu subMenu 8 9 10
             subMenu <- mkSub graphMenu ".. of labelled output"
             mkMenu subMenu 11 12 13
-            mkBut graphMenu "show (solved) equations" $ showEqsOrGraph 17
+            mkBut graphMenu "show iterative equations" $ showEqsOrGraph 17
             let mkMenu m cmd n1 n2 n3 n4 = do
                     mkBut m "of canvas" $ cmd n1
                     mkBut m "of transitions" $ cmd n2
@@ -5279,18 +5279,18 @@ solver this solveRef enum paint = do
                         , peSafe = safe
                         }
                 writeIORef proofRef $ take proofPtr proof'++[next]
-                {-case u of
+                case u of
                   F x ts | isJust cycle && permutative x -> do
                     let n = length ts
                     when (n > 1) $ do
-                      modify IORef permsRef $ \perms
+                      modifyIORef permsRef $ \perms
                          -> upd perms n $ nextPerm $ perms n
                       perms <- readIORef permsRef
                       writeIORef treesRef $ [F x [ts!!i | i <- perms n]]
                       -- writeIORef treesRef $ [F x $ tail ts++[head ts]]
-                      --writeIORef treesRef [F x $ reverse ts]
+                      -- writeIORef treesRef [F x $ reverse ts]
                       writeIORef currRef 0
-                  _ -> return ()-}
+                  _ -> return ()
             else modifyIORef picNoRef pred
             writeIORef newTreesRef False
             writeIORef ruleStringRef ""

@@ -1,0 +1,33 @@
+-- trans3
+
+constructs: a b final q qa qb qab qbb qabb 
+
+preds:   <> unfold 
+copreds: #
+
+fovars: st st' x w 
+hovars: P
+
+axioms:
+
+states == [q] & labels == [a,b] & atoms == [final] &
+
+(q,a) -> qa     & (q,b) -> qb & 
+(qa,a) -> q     & (qa,b) -> qab &
+(qb,a) -> qab   & (qb,b) -> qbb & 
+(qab,a) -> qb   & (qab,b) -> qabb &
+(qbb,a) -> qabb & (qbb,b) -> q &
+(qabb,a) -> qbb & (qabb,b) -> qa &
+
+final -> q &
+
+((x<>P)$st <==> any(P)$transL(st)$x) &
+((x#P)$st  <==> all(P)$transL(st)$x) &
+
+(unfold(st)[] <==> final `in` out$st) &
+(unfold(st)(x:w) <==> (x<>rel(st,unfold(st)(w)))$st)
+
+conjects:
+
+unfold(q)[a,b,a,b,a,b,a] &	--> True
+unfold(q)[a,b,a,b,b,a,b,a]	--> False

@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, June 2017
-                  Jos Kusiek, June 2017
+Copyright   : (c) Peter Padawitz, February 2018
+                  Jos Kusiek, April 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -369,8 +369,15 @@ domain f s s' = [x | x <- s, f x `elem` s']
 context :: Int -> [a] -> [a]
 context i s = take i s++drop (i+1) s
 
+
+indices_ :: [a] -> [Int]
+indices_ s = [0..length s-1]
+
 contextM :: [Int] -> [t] -> [t]
 contextM is s = [s!!i | i <- indices_ s, i `notElem` is]
+
+restInd :: [a] -> [[Int]] -> [a]
+restInd ts ps = map (ts!!) $ indices_ ts `minus` map last ps
 
 updMax :: (Eq a, Ord b) => (a -> b) -> a -> [b] -> a -> b
 updMax f x = upd f x . maximum
@@ -493,12 +500,6 @@ emptyOrAll ss = if null ss then [[]] else ss
 
 emptyOrLast :: [[t]] -> [t]
 emptyOrLast ss = if null ss then [] else last ss
-
-indices_ :: [a] -> [Int]
-indices_ s = [0..length s-1]
-
-restInd :: [a] -> [[Int]] -> [a]
-restInd ts ps = map (ts!!) $ indices_ ts `minus` map last ps
 
 subset, supset, shares :: Eq a => [a] -> [a] -> Bool
 xs `subset` ys = all (`elem` ys) xs
@@ -1803,7 +1804,7 @@ actTable sig (i,k) = if k `elem` nonterminals || length acts /= 1 then Error
                        nonterminals = [k | k <- ks, all (null . h k) is]
                        h k i = outL!!i!!k
 
--- * Linear functions and equations
+-- * Linear functions (polynomials) and linear equations
 
 type LinFun = ([(Double,String)],Double)
 type LinEq  = LinFun
