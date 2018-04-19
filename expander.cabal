@@ -837,7 +837,7 @@ executable expander
   if (os(windows))
     ld-options: -mwindows win/icon.o
   
-  ghc-options:         -threaded -with-rtsopts=-N
+  ghc-options:         -threaded -with-rtsopts=-N -O2
   if flag(more-warnings)
     ghc-options:        -Wall
                         -fno-warn-name-shadowing
@@ -869,7 +869,7 @@ executable hilbs
   
   other-extensions:    BangPatterns
   
-  ghc-options:         -threaded -with-rtsopts=-N
+  ghc-options:         -threaded -with-rtsopts=-N -O2
   if flag(more-warnings)
     ghc-options:        -Wall
                         -fno-warn-name-shadowing
@@ -921,7 +921,7 @@ benchmark expander-bench
   else
     hs-source-dirs: srcpath/unbundled
   
-  ghc-options:         -threaded -with-rtsopts=-N -rtsopts=all
+  ghc-options:         -threaded -with-rtsopts=-N -rtsopts=all -O2
 
   -- Base language which the package is written in.
   default-language:    Haskell2010

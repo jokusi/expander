@@ -42,7 +42,7 @@ stack exec -- pacman -S pkg-config mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolch
 ## Installation ##
 Install expander with:
 ```
-git clone git@github.com:jokusi/expander.git
+git clone https://github.com/jokusi/expander.git
 cd expander-3.0.0.0
 stack setup
 stack install gtk2hs-buildtools
