@@ -300,12 +300,12 @@ foldModal sig = f $ const Nothing where
                                     Just $ (alg&box) (parentsL sig) k a
   f g (F ('M':'U':' ':x) [t])      = fixptM subset (step g x t) (alg&false)
   f g (F ('N':'U':' ':x) [t])      = fixptM supset (step g x t) (alg&true)
-  f _ (F "atom" [F "$" [phi,lab]]) = do k <- searchL lab
-                                        Just $ h $ apply $ apply phi lab
-  f _ (F "atom" [phi])             = Just $ h $ apply phi
   f _ (F "$" [at,lab])             = do i <- searchA at; k <- searchL lab
                                         Just $ (sig&valueL)!!i!!k
   f _ at                           = do i <- searchA at; Just $ (sig&value)!!i
+{-f _ (F "atom" [F "$" [phi,lab]]) = do k <- searchL lab
+                                        Just $ h $ apply $ apply phi lab
+  f _ (F "atom" [phi])             = Just $ h $ apply phi-}
 
   searchA,searchL :: Term String -> Maybe Int
   searchA at  = search (== at) (sig&atoms)
@@ -314,8 +314,8 @@ foldModal sig = f $ const Nothing where
   step :: (String -> Maybe [Int]) -> String -> TermS -> [Int] -> Maybe [Int]
   step g x t a = f (upd g x $ Just a) t
 
-  h :: (TermS -> TermS) -> [Int]
-  h app = getIndices (isTrue . simplifyIter sig . app) (sig&states)
+{-h :: (TermS -> TermS) -> [Int]
+  h app = getIndices (isTrue . simplifyIter sig . app) (sig&states)-}
 
 -- | partial evaluation
 evaluate :: Sig -> TermS -> TermS
@@ -1444,7 +1444,8 @@ simplifyT (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) =
                                Just $ mkEq (mkBag $ context n ts) $ mkBag us'
                                                 
 simplifyT (F x [F "-" p@[_,_],t]) | arithmetical x && isZero t = Just $ F x p
-                                                
+
+-- Pattern match warning
 simplifyT (F x [t,F "-" [u,v]]) | arithmetical x && isZero t = Just $ F x [v,u]
 
 simplifyT t = simplifyT1 t

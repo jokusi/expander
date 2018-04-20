@@ -1,7 +1,7 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, February 2018
+Copyright   : (c) Peter Padawitz, April 2018
                   Jos Kusiek, April 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
@@ -200,7 +200,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (February 22, 2018)"
+start = "Welcome to Expander3 (April 18, 2018)"
 
 startF :: String
 startF = "Load and parse a formula!"
@@ -4855,7 +4855,7 @@ solver this solveRef enum paint = do
         saveFile :: FilePath -> String -> Action
         saveFile file str = do
             createDirectoryIfMissing True <$> home
-            path <- expanderLib file
+            path <- userLib file
             writeFile path $ "-- " ++ file ++'\n':str
         
         -- | Called by button "save pic" ('saveBut').
@@ -4917,7 +4917,7 @@ solver this solveRef enum paint = do
                 proofTerm <- readIORef proofTermRef
                 -- TODO use filechooser widget instead.
                 file <- ent `Gtk.get` entryText
-                filePath <- expanderLib file
+                filePath <- userLib file
                 let pfile = filePath ++ "P"
                     tfile = filePath ++ "T"
                 write pfile $ '\n':showDeriv proof trees solPositions
@@ -5606,9 +5606,9 @@ solver this solveRef enum paint = do
                 trGraphL = eqsToGraph [] eqsL
                 atGraph = if all null (sig&trans) || all null (sig&value) 
                           then emptyGraph
-                          else mkAtGraph sts ats (out sig) trGraph
+                          else outGraph sts ats (out sig) trGraph
                 atGraphL = if null (sig&labels) then emptyGraph
-                           else mkAtGraphL sts labs ats (out sig) (outL sig) 
+                           else outGraphL sts labs ats (out sig) (outL sig) 
                                            trGraphL
                 inPainter t = do
                            drawFun <- readIORef drawFunRef
@@ -6117,7 +6117,7 @@ solver this solveRef enum paint = do
             let picts = map (eval sizes spread) ts
             picts <- mapM runMaybeT picts           -- return ()
             let picts' = map fromJust $ getJust picts
-            -- writeFile (expanderLib "testPic") $ show picts'
+            -- writeFile (userLib "testPic") $ show picts'
             (paint&callPaint) picts' (indices_ ts) False 
                 (checkingP || not checking) curr back
         

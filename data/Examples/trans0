@@ -1,14 +1,14 @@
 -- trans0
 
 specs:		modal
-preds:	 	is less
-constructs:	a b c 
-defuncts:       drawR drawI drawL drawR drawS
-fovars:     	st k n
+constructs:	a b c is less
+defuncts:       drawI drawL drawR drawS
+fovars:     	st st' k n
 
 axioms:     
 
   states == [0,22] 
+& atoms == map($)$prodL[[is,less],[1,2,4,14]]
 		 
 & (st < 6 ==> st -> st+1<+>ite(st`mod`2 = 0,st,()))
 & 6 -> branch$[1..5]++[7..10]	  
@@ -16,8 +16,8 @@ axioms:
 & 22 -> 33<+>44
 & 44 -> ()
 
-& (is$x <==> atom(=x))
-& (less$x <==> atom(<x))
+& is$st -> st
+& less$st -> branch$filter(<st)$states
 
 -- widget interpreters
  
@@ -44,18 +44,17 @@ terms:
     eval(is$4)		--> [4]
 <+> eval(EX$is$4)	--> [3,4,6]
 <+> eval(EF$is$4)	--> [4,0,1,2,3,5,6]
-
 <+> eval(EF$less$4)	--> [0..6]	
 <+> eval(AF$less$4)	--> [0..3]	
 <+> eval(EG$less$4)	--> [0..2]	
 <+> eval(AG$less$4)	--> []
 <+> eval(AG$less$14)	--> [8..10]
 
-<+> eval $ (is$4) `then` EF(less$2)		--> [0..10,14,22,33,44]
-<+> eval $ (is$4) `then` EF(less$1)		--> [0..3,5..10,14,22,33,44]
-<+> eval $ AG $ (is$4) `then` EF(less$1)	--> [7..10,14,22,33,44]
+<+> eval $ is(4) `then` EF(less$2)	--> [0..10,14,22,33,44]
+<+> eval $ is(4) `then` EF(less$1)	--> [0..3,5..10,14,22,33,44]
+<+> eval $ AG $ is(4) `then` EF(less$1)	--> [7..10,14,22,33,44]
 
-<+> trans(6) `meet` eval(less$2)	       	--> [1]
+<+> trans(6) `meet` eval(less$2)	--> [1]
 
 <+> auto$star$plus(a)+plus(b*c)		--> recognizer of (a+|(bc)+)*
 			 

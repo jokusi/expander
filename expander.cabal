@@ -685,6 +685,7 @@ data-files:          Examples/abp
                    , Examples/trans2S
                    , Examples/trans2sols
                    , Examples/trans2SP
+                   , Examples/trans3
                    , Examples/transDesc
                    , Examples/transDescT
                    , Examples/transIn

@@ -1,7 +1,8 @@
--- micro
+-- micro  (see Clarke, Grumberg, Peled, Section 4.1)
 
 specs:      	modal
 constructs: 	start close heat error
+preds:		Sat 
 
 axioms:
    
@@ -16,21 +17,22 @@ axioms:
 & heat -> branch[4,7]
 & error -> branch[2,5]
 
+& (Sat(at)$st <==> at `in` out$st)
+
 conjects: 
 
-  EF(Atom$heat)$5						--> True 	
-& EG(Atom$heat)$7						--> True	
-& AF(Atom$heat)$6						--> True	
-& all(EF$Atom$heat)$states 					--> True
-& all(AF$Atom$heat)[4,6,7]					--> True
-& (G(Atom(error).head)$s ==> G(not(Atom$heat).head)$s)   	--> True      	(errorHeat)
+  EF(Sat$heat)$5			--> True 	
+& EG(Sat$heat)$7			--> True	
+& AF(Sat$heat)$6			--> True	
+& all(EF$Sat$heat)$states		--> True
+& all(AF$Sat$heat)[4,6,7]		--> True
 
 terms:
 
-    eval$EF(heat)			--> states
-<+> eval$EG(heat)			--> [4,7]
-<+> stateflow$EG(heat)			--> [4,7]
-<+> eval$AF(heat)			--> [4,6,7]
+    eval(EF$heat)			--> states
+<+> eval(EG$heat)			--> [4,7]
+<+> stateflow(EG$heat)			--> [4,7]
+<+> eval(AF$heat)			--> [4,6,7]
 <+> eval(start`then`heat)		--> [1,3,4,7]
 <+> eval(EX$start`then`heat)		--> [1,3,4,5,6,7]
 <+> eval(error`then`AG$not$heat)	--> [1,3,4,6,7]

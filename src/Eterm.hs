@@ -2,7 +2,7 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, February 2018
+Copyright   : (c) Peter Padawitz, April 2018
                   Jos Kusiek, April 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
@@ -3207,7 +3207,7 @@ mkEqsConjunct xs ts   = f $ F "&" $ zipWith (mkEq . V) xs ts
                          f (V x) | isPos x = mkPos $ i:1:s where i:s = getPos x
                          f t               = t
 
--- separateTerms is used by eqsToGraph (see below) and showEqsOrGraph 15 
+-- separateTerms is used by eqsToGraph (see below) and showEqsOrGraph 17 
 -- (see Ecom).
 separateTerms :: TermS -> [Int] -> TermS
 separateTerms t is = if isConjunct t then moreTree $ foldl f t is else t
@@ -4097,6 +4097,21 @@ boundedGraph x n t = if null ps then t else h u
                                           = F (label t p) [] where p = getPos x
                            h t               = t
 
+-- outGraph{L} ... out {outL} t adds out!!x to each state node x of t and 
+-- outL!!x!!y to each label node y of t with state predecessor x. 
+-- outGraph{L} is used by showEqsOrGraph (see Ecom).
+ 
+outGraph :: [String] -> [String] -> [[Int]] -> TermS -> TermS
+outGraph sts ats out = mapT $ extendNode sts ats out 
+
+outGraphL :: [String] -> [String] -> [String] -> [[Int]] -> [[[Int]]] -> TermS 
+          -> TermS
+outGraphL sts labs ats out outL = g where
+             g (F x ts) = F (extendNode sts ats out x) $ map (h x) ts
+             g t        = t
+             h x (F lab ts) = F (extendNodeL sts labs ats outL x lab) $ map g ts
+             h _ t          = t
+
 -- mkAtGraph{L} ... out {outL} t adds out!!x to each state node x of t and 
 -- outL!!x!!y to each label node y of t with state predecessor x. 
 -- mkAtGraph{L} is used by showEqsOrGraph (see Ecom).
@@ -4106,20 +4121,13 @@ extendNode sts ats out x = if isPos x || x == "<+>" then x
                            else if null out then "o"
                                 else enterAtoms x $ relToFunI sts ats out x
 
-mkAtGraph :: [String] -> [String] -> [[Int]] -> TermS -> TermS
-mkAtGraph sts ats out = mapT $ extendNode sts ats out
-
-mkAtGraphL :: [String] -> [String] -> [String] -> [[Int]] -> [[[Int]]] -> TermS 
-           -> TermS
-mkAtGraphL sts labs ats out outL = g where
-        g (F x ts) = F (new x) $ map (h x) ts
-        g t        = t
-        h x (F lab ts) = F (newL x lab) $ map g ts
-        h _ t          = t
-        new = extendNode sts ats out
-        newL x lab = if isPos x || x == "<+>" then x
-                     else if null outL then "o" 
+extendNodeL :: [String] -> [String] -> [String] -> [[[Int]]] -> String 
+            -> String -> String
+extendNodeL sts labs ats outL x lab = 
+                     if isPos x || x == "<+>" then x
+                     else if null outL then "o"
                           else enterAtoms x $ relLToFunI sts labs ats outL x lab
+
 
 enterAtoms :: String -> [String] -> String
 enterAtoms x ats = showTerm0 $ mkList $ map leaf ats

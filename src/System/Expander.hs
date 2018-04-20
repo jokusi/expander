@@ -14,42 +14,42 @@ import Graphics.UI.Gtk (pixbufNewFromFile)
 
 infixl 6 &=
 
--- | Program name.
-prog, examplesFolder :: String
-prog = "expander"
-examplesFolder = "Examples"
-pixFolder = "Pix"
 
 -- | Program folder.
 home :: IO FilePath
-home = getAppUserDataDirectory prog
+home = getAppUserDataDirectory "expander"
 
--- | Files from user folder.
--- Unix: $HOME/.expander
--- Windows: $APPDATA\\expander
-expanderLib :: FilePath -> IO FilePath
-expanderLib file = do
-  lib <- home
-  return $ lib </> file
-
--- | User library example files.
--- Unix: $HOME/.expander/Examples
--- Windows: $APPDATA\\expander\\Examples
-userLib :: FilePath -> IO FilePath
-userLib file = do
-  lib <- expanderLib examplesFolder
-  return $ lib </> file
+-- | Builtin library/example folder.
+builtinLibDir :: IO FilePath
+builtinLibDir = do
+    dataDir <- getDataDir
+    return $ dataDir </> "Examples"
 
 -- | Builtin library/example files.
 builtinLib :: FilePath -> IO FilePath
 builtinLib file = do
-    dataDir <- getDataDir
-    return $ dataDir </> examplesFolder </> file
+    dir <- builtinLibDir
+    return $ dir  </> file
+
+-- | User library example folder.
+-- Unix: $HOME/.expander/Examples
+-- Windows: $APPDATA\\expander\\Examples
+userLibDir :: IO FilePath
+userLibDir = do
+  dir <- home
+  return $ dir </> "ExpanderLib"
+
+-- | User library example files.
+userLib :: FilePath -> IO FilePath
+userLib file = do
+  dir <- userLibDir
+  return $ dir </> file
+
 
 pixpath :: FilePath -> IO FilePath
 pixpath file = do
-    lib <- home
-    return $ lib </> pixFolder </> file
+    dir <- userLibDir
+    return $ dir </> "Pix" </> file
 
 mkFile :: FilePath -> Int -> FilePath
 mkFile dir i | i < 10    = dir </> ('0':'0':show i)

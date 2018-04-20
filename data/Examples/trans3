@@ -1,33 +1,48 @@
--- trans3
+-- trans3  (acceptor of words with an even number of a's  and an odd number of b's)
 
-constructs: a b final q qa qb qab qbb qabb 
-
-preds:   <> unfold 
-copreds: #
-
-fovars: st st' x w 
-hovars: P
+specs: 		modal
+constructs: 	a b final q qa qb qab qbb qabb 
+preds:   	<> unfold UNFOLD Sat
+copreds: 	#
+fovars: 	w 
+hovars: 	P
 
 axioms:
 
 states == [q] & labels == [a,b] & atoms == [final] &
 
-(q,a) -> qa     & (q,b) -> qb & 
-(qa,a) -> q     & (qa,b) -> qab &
-(qb,a) -> qab   & (qb,b) -> qbb & 
+(q,a) -> qa     & (q,b) -> qb     & 
+(qa,a) -> q     & (qa,b) -> qab   &
+(qb,a) -> qab   & (qb,b) -> qbb   & 
 (qab,a) -> qb   & (qab,b) -> qabb &
-(qbb,a) -> qabb & (qbb,b) -> q &
-(qabb,a) -> qbb & (qabb,b) -> qa &
+(qbb,a) -> qabb & (qbb,b) -> q    &
+(qabb,a) -> qbb & (qabb,b) -> qa  &
 
-final -> q &
+final -> q <+> qb &
 
-((x<>P)$st <==> any(P)$transL(st)$x) &
-((x#P)$st  <==> all(P)$transL(st)$x) &
+(Sat(at)$st <==> at `in` out$st) &
 
-(unfold(st)[] <==> final `in` out$st) &
-(unfold(st)(x:w) <==> (x<>rel(st,unfold(st)(w)))$st)
+(unfold(st)[] <==> Sat(final)$st) &	
+(unfold(st)(x:w) <==> (x<>rel(st,unfold(st)(w)))$st) & 
+
+UNFOLD(q)[] &
+UNFOLD(qb)[] &
+(UNFOLD(st)(x:w) <=== (st,x) -> st' & UNFOLD(st')(w))
 
 conjects:
 
+unfold(q)[] &			--> True	-- simplify
+unfold(q)[b] &			--> True
+unfold(q)[b,b] &		--> False
 unfold(q)[a,b,a,b,a,b,a] &	--> True
-unfold(q)[a,b,a,b,b,a,b,a]	--> False
+unfold(q)[a,b,a,b,b,a,b,a] &	--> False
+unfold(qb)[a,b,a,a,b,a] &	--> True
+unfold(qab)[a,b,a,b,a] &	--> True
+
+UNFOLD(q)[] &			--> True	-- unify&narrow&
+UNFOLD(q)[b] &			--> True	-- derive&simplify&refute
+UNFOLD(q)[b,b] &		--> False
+UNFOLD(q)[a,b,a,b,a,b,a] &	--> True	
+UNFOLD(q)[a,b,a,b,b,a,b,a] &	--> False
+UNFOLD(qb)[a,b,a,a,b,a] &	--> True
+UNFOLD(qab)[a,b,a,b,a]		--> True

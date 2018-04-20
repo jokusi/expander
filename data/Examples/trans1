@@ -1,8 +1,8 @@
 -- trans1
 
 specs:		modal
-preds:          two X Y
-copreds:        one
+preds:          two TWO X Y
+copreds:        one ONE
 constructs: 	a b
 hovars:		X Y
 
@@ -12,21 +12,17 @@ states == [2] & labels == [a,b] &
 
 (2,b) -> 1<+>3 & (3,b) -> 3 & (3,a) -> 4 & (4,b) -> 3 &
 
-(one(st) ===> (two/\(b#one))(st)) &
-(two(st) <=== ((a<>true)\/(b<>two))(st)) &
+(one <==> NU X.(two/\(b#X))) &			
+(two <==> MU Y.((a<>true)\/(b<>Y))) &		
 
--- as second-order simplifications:
-
-(one <==> NU X.(two/\(b#X))) &			-- (1)
-(two <==> MU Y.((a<>true)\/(b<>Y))) 		-- (2)
+(ONE(st) ===> (TWO/\(b#ONE))(st)) &
+(TWO(st) <=== ((a<>true)\/(b<>TWO))(st)) 
 
 conjects: 
 
 all(one)[1,2] &	    	--> False  	simplify
 all(two)[2,3,4] &	--> True	simplify
-
--- switch off (1) and (2):
-all(one)[3,4]   	--> True 	match&narrow + coinduction 
+all(ONE)[3,4]   	--> False 	match&narrow + coinduction 
 
 terms: 
 

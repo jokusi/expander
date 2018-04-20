@@ -1,6 +1,6 @@
 -- modal
 
-preds:    	Atom X P Q true false not \/ /\ `then` or and path 
+preds:          X P Q true false not \/ /\ `then` or and path 
 		EX XE <> >< EF AF FE FA `EU` `AU` F `U` `leadsto` nxt nxt2 
 		allanytrans allanytransL
 copreds: 	AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR` path G `W` `R` `H` 
@@ -10,39 +10,9 @@ hovars:  	X P Q
 
 axioms:
 
--- modal operator simplification
+-- simplification of first-order state formulas
 
-   (or <==> foldl(\/)$false)
- & (and <==> foldl(/\)$true)
-
- & (EF$P <==> MU X.(P\/EX$X))		     -- forward finally on some path
- & (FE$P <==> MU X.(P\/XE$X))		     -- backwards finally on some path
- & (AF$P <==> MU X.(P\/(AX(X)/\EX$true)))    -- forward finally on each path 	
- & (FA$P <==> MU X.(P\/(XA(X)/\XE$true)))    -- backwards finally on each path 	
- & (EG$P <==> NU X.(P/\(EX(X)\/AX$false)))   -- forward generally on some path
- & (GE$P <==> NU X.(P/\(XE(X)\/XA$false)))   -- backwards generally on some path
- & (AG$P <==> NU X.(P/\AX$X))		     -- forward generally on each path
- & (GA$P <==> NU X.(P/\XA$X))		     -- backwards generally on each path
-
- & ((P`EU`Q) <==> MU X.(Q\/(P/\EX$X)))	     -- until
- & ((P`AU`Q) <==> MU X.(Q\/(P/\AX$X)))		
- & ((P`EW`Q) <==> NU X.(Q\/(P/\EX$X)))       -- weak until
- & ((P`AW`Q) <==> NU X.(Q\/(P/\AX$X)))
- & ((P`ER`Q) <==> NU X.(Q/\(P\/EX$X)))       -- release
- & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
-
--- modal operator simplification outside eval
-
- & (true$st <==> True)
- & (false$st <==> False)
- & (not(P)$st <==> Not(P$st))
- & ((P/\Q)$st <==> P$st & Q$st)
- & ((P\/Q)$st <==> P$st | Q$st)
- & ((P`then`Q)$st <==> (P$st ==> Q$st))
-
- & (Atom(at)$st <==> at `in` out$st)
-
- & (EX(P)$st <==> any(P)$trans$st)
+   (EX(P)$st <==> any(P)$trans$st)
  & (AX(P)$st <==> all(P)$trans$st)
  & ((lab<>P)$st <==> any(P)$transL(st)$lab)
  & ((lab#P)$st <==> all(P)$transL(st)$lab)
@@ -51,6 +21,13 @@ axioms:
  & (XA(P)$st <==> all(P)$parents$st)
  & ((lab><P)$st <==> any(P)$parentsL(st)$lab)
  & ((lab##P)$st <==> all(P)$parentsL(st)$lab)
+
+ & (true$st <==> True)
+ & (false$st <==> False)
+ & (not(P)$st <==> Not(P$st))
+ & ((P/\Q)$st <==> P$st & Q$st)
+ & ((P\/Q)$st <==> P$st | Q$st)
+ & ((P`then`Q)$st <==> (P$st ==> Q$st))
 
  & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & 
 				   allanytrans(X,st,st') &
@@ -64,19 +41,40 @@ axioms:
 
  & (allanytransL(P,st,st') 
         <==> all(rel(lab,allany(P)(transL(st)$lab)(transL(st')$lab)))$labels)
+
+-- simplification of second-order state formulas
+
+ & (or <==> foldl(\/)$false)
+ & (and <==> foldl(/\)$true)
+
+ & (EF$P <==> MU X.(P\/EX$X))		     -- forward finally on some path
+ & (FE$P <==> MU X.(P\/XE$X))		     -- backwards finally on some path
+ & (AF$P <==> MU X.(P\/(AX(X)/\EX$true)))    -- forward finally on all paths 	
+ & (FA$P <==> MU X.(P\/(XA(X)/\XE$true)))    -- backwards finally on all paths 	
+ & (EG$P <==> NU X.(P/\(EX(X)\/AX$false)))   -- forward generally on some path
+ & (GE$P <==> NU X.(P/\(XE(X)\/XA$false)))   -- backwards generally on some path
+ & (AG$P <==> NU X.(P/\AX$X))		     -- forward generally on all paths
+ & (GA$P <==> NU X.(P/\XA$X))		     -- backwards generally on all paths
+
+ & ((P`EU`Q) <==> MU X.(Q\/(P/\EX$X)))	     -- until
+ & ((P`AU`Q) <==> MU X.(Q\/(P/\AX$X)))		
+ & ((P`EW`Q) <==> NU X.(Q\/(P/\EX$X)))       -- weak until
+ & ((P`AW`Q) <==> NU X.(Q\/(P/\AX$X)))
+ & ((P`ER`Q) <==> NU X.(Q/\(P\/EX$X)))       -- release
+ & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
  
--- modal operator narrowing
+-- narrowing of first-order state formulas
 
  & (EF(P)$st <=== P$st | EX(EF$P)$st)	     -- forward finally on some path  	   
- & (AG(P)$st ===> P$st & AX(AG(P))$st)	     -- forward generally on each path
+ & (AG(P)$st ===> P$st & AX(AG(P))$st)	     -- forward generally on all paths
  & (AF(P)$st <=== P$st | AX(AF(P))$st & EX(true)$st)	
-					     -- forward finally on each path   	
+					     -- forward finally on all paths   	
  & (EG(P)$st ===> P$st & (EX(EG(P))$st | AX(false)$st)) 	
 					     -- forward generally on some path
  & (FE(P)$st <=== P$st | XE(FE$P)$st)	     -- backwards finally on some path	 
- & (GA(P)$st ===> P$st & XA(GA(P))$st)	     -- backwards generally on each path
+ & (GA(P)$st ===> P$st & XA(GA(P))$st)	     -- backwards generally on all paths
  & (FA(P)$st <=== P$st | XA(FA(P))$st & XE(true)$st)		
-					     -- backwards finally on each path
+					     -- backwards finally on all paths
  & (GE(P)$st ===> P$st & (XE(GE(P))$st | XA(false)$st)) 	
 					     -- backwards generally on some path
 	
@@ -94,26 +92,28 @@ axioms:
 		   allany(`~L`)(trans(st)$lab)(trans(st')$lab) &
 		   allany(`~L`)(trans(st')$lab)(trans(st)$lab))
 
--- temporal operator simplification
+{- simplification of first-order path formulas
 
- & (head$tail$s = s' ==>
-      (nxt(P)$s <==> s' `in` trans$head$s & (P(tail$s) | s' = head$s)))
+ & (head$tail$s = x ==>
+      (nxt(P)$s <==> x `in` trans$head$s & (P(tail$s) | x = head$s)))
 
  & (nxt2(Q)(s,s') <==> head$tail$s `in` trans$head$s & 
 		       head$tail$s' `in` trans$head$s' & Q(tail$s,tail$s'))
 
- & (P`leadsto`Q <==> G(P`then`F$Q))
+-- simplification of second-order path formulas
 
- & (path <==> NU X.nxt$X)
  & (F(P) <==> MU X.(P\/nxt$X))			-- finally
  & (G(P) <==> NU X.(P/\nxt$X))			-- generally
  & (P`U`Q <==> MU X.(Q\/(P/\nxt$X)))		-- until
  & (P`W`Q <==> NU X.(Q\/(P/\nxt$X)))		-- weak until
  & (P`R`Q <==> NU X.(Q/\(P\/nxt$X)))		-- release
+ & (P`leadsto`Q <==> G(P`then`F$Q))
+
+ & (path <==> NU X.nxt$X)
 
  & (eqpath <==> NU X.rel((s,s'),out$head$s=out$head$s' & nxt2(X)(s,s')))
-
--- temporal operator narrowing
+ 
+-- narrowing of first-order path formulas
 
  & (path$s ===> nxt(path)$s)
  & (F(P)$s <=== P$s | nxt(F$P)$s)			-- finally
@@ -123,7 +123,7 @@ axioms:
  & ((P`R`Q)$s ===> Q$s & (P$s | nxt(P`R`Q)$s)) 	   	-- release
  & ((P`H`Q)$s ===> P$s & nxt((P`H`Q)\/(Q`H`P)\/G(Q))$s)	-- alternate
 
- & (eqpath(s,s') ===> out$head$s=out$head$s' & nxt2(eqpath)(s,s'))
+ & (eqpath(s,s') ===> out$head$s=out$head$s' & nxt2(eqpath)(s,s')) 
 
 theorems:
 
@@ -133,5 +133,5 @@ theorems:
  & ((P`W`Q)$s <=== (P`U`Q)$s | G(P)$s)
  & (not(F$P)$s <=== (G$not$P)$s)
  & (not(G$P)$s <=== (F$not$P)$s)
- & (not(P`R`Q)$s <=== (not(P)`U`not(Q))$s) 
+ & (not(P`R`Q)$s <=== (not(P)`U`not(Q))$s) -}
 

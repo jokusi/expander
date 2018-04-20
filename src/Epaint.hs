@@ -1400,7 +1400,7 @@ painter pheight solveRef solve2Ref = do
                   dirPath <- pixpath dir
                   if null dir then do
                     rect <- readIORef rectRef
-                    filePath <- expanderLib file
+                    filePath <- userLib file
                     let msg str = labGreen $ savedCode str filePath
                     if isJust rect then
                       case pict3 of 
@@ -2344,7 +2344,7 @@ loadWidget file = do
 
 saveWidget :: Widget_ -> String -> Cmd ()
 saveWidget w file = do
-  path <- expanderLib file
+  path <- userLib file
   writeFile path $ show w
 
 concatJust :: [Maybe [a]] -> Maybe [a]

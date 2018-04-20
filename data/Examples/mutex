@@ -50,7 +50,7 @@ crit$i -> branch$filter(Crit$i)$states &
 
 -- modal operator simplification outside eval
 
-(Live$i <==> (Wait$i) `then` AF$crit$i) &
+(Live$i <==> (Wait$i) `then` AF$Crit$i) &
 
 (NonBlock$i <==> (Idle$i) `then` EX$Wait$i) &
 
