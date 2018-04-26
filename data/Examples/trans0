@@ -56,5 +56,5 @@ terms:
 
 <+> trans(6) `meet` eval(less$2)	--> [1]
 
-<+> auto$star$plus(a)+plus(b*c)		--> recognizer of (a+|(bc)+)*
+<+> auto$star$plus(a)+plus(b*c)		--> recognizer of ((a^+)+(bc)^+)^*
 			 

@@ -2659,16 +2659,6 @@ isSum :: TermS -> Bool
 isSum (F "<+>" _)   = True
 isSum _             = False
 
-isZero :: TermS -> Bool
-isZero (F "0" [])   = True
-isZero (F "0.0" []) = True
-isZero _            = False
-
-isOne :: TermS -> Bool
-isOne (F "1" [])    = True
-isOne (F "1.0" [])  = True
-isOne _             = False
-
 projection :: String -> Bool
 projection          = isJust . parse (strNat "get")
 
@@ -4583,50 +4573,6 @@ graphToEqs n t p = (map f $ indices_ ps,n+length ps)
                   g _ _ t        = t
                   h p = V $ 'z':show (n+getInd p ps)
 
--- fixToEqs replaces the bounded variables of fixpoint formulas by pointers to
--- the respective subformulas. fixToEqs is used by simplifyS "stateflow"
--- (see Esolve). Alternating fixpoints may lead to wrong results.
-fixToEqs :: TermS -> Int -> (TermS,[RegEq],Int)
-fixToEqs (F x [t]) n | isFixF x = (F z [],Equal z (F mu [u]):eqs,k)
-                           where mu:y:_ = words x
-                                 b = y `elem` foldT f t
-                                 f x xss = if isFixF x then joinM xss `join1` y
-                                                       else joinM xss
-                                           where _:y:_ = words x
-                                 z = if b then y++show n else y
-                                 (u,eqs,k) = if b then fixToEqs (t>>>g) $ n+1
-                                                  else fixToEqs t n
-                                 g = F z [] `for` y
-fixToEqs (F x ts) n = (F x us,eqs,k)
-                      where (us,eqs,k) = f ts n
-                            f (t:ts) n = (u:us,eqs++eqs',k')
-                                         where (u,eqs,k) = fixToEqs t n
-                                               (us,eqs',k') = f ts k
-                            f _ n      = ([],[],n)
-fixToEqs t n        = (t,[],n)
-
--- | @parseRegEqs@ is used by 'Esolve.simplifyS'
--- @postflow\/stateflow\/subsflow@,
--- 'Esolve.simplReducts', 'Ecom.showEqsOrGraph', 'Ecom.showMatrix' and 
--- 'Ecom.showRelation'.
-parseRegEqs :: TermS -> Maybe [RegEq]
-parseRegEqs t = parseSol parseRegEq t ++
-                do F x ts <- Just t; guard $ isFixT x
-                   let _:zs = words x
-                   case ts of [t] -> Just $ case zs of 
-                                                 [z] -> [Equal z t]
-                                                 _ -> zipWith (f t) [0..] zs
-                              _ -> do guard $ length zs == length ts
-                                      Just $ zipWith Equal zs ts
-                where parseRegEq (F x [t,u])
-                            | b x && null ts && isF u = Just $ Equal (root t) u
-                            | b x && null us && isF t = Just $ Equal (root u) t
-                                                        where ts = subterms t
-                                                              us = subterms u
-                      parseRegEq _ = Nothing
-                      b x = x == "=" || x == "<=>"
-                      f u i z = Equal z $ F ("get"++show i) [u]
-
 -- | @relToEqs n rel@ transforms a binary relation into an equivalent set of
 -- regular equations and is used by 'Ecom.showEqsOrGraph'.
 relToEqs
@@ -4664,19 +4610,6 @@ relLToEqs n rel = (map g $ indices_ ts,n+length ts)
                                              Just i -> V $ 'z':show (n+i)
                                              _ -> F c []
 
-{-|
-    @connectEqs xs ts@ replaces each occurrence in @ts@ of a variable @xs@
-    'Prelude.!!' @i@ by a pointer to @ts@ 'Prelude.!!' @i@. @connectEqs@ is
-    used by 'eqsToGraph' and 'Ecom.showEqsOrGraph' @7@.
--}
-connectEqs
-    :: [String] -- ^ xs
-    -> [TermS] -- ^ ts
-    -> [TermS]
-connectEqs [x] [t] = [mkArc x [] t]
-connectEqs xs ts   = f 0 xs $ addNatsToPoss ts
-                     where f n (x:xs) ts = f (n+1) xs $ map (mkArc x [n]) ts
-                           f _ _ ts      = ts
 
 mkArc :: String -> [Int] -> TermS -> TermS
 mkArc x p = f where f (F z ts) = if x == z then if null ts then mkPos p
@@ -4685,30 +4618,70 @@ mkArc x p = f where f (F z ts) = if x == z then if null ts then mkPos p
                     f t@(V z)  = if x == z then mkPos p else t
                     f t        = t
 
-{-|
-@eqsToGraph is eqs@ selects the maximal elements of the separated right-hand 
-sides of @eqs@. 
-@eqsToGraph@ is used by 'Epaint.graphToTree', 'Esolve.simplifyS' @"stateflow"@, 
-'Esolve.simplifyT' @"auto"/"postflow"/"subsflow"@, 'Ecom.buildKripke',
-'Ecom.showEqsOrGraph', 'Ecom.showMatrix' and 'Ecom.showRelation'.
--}
-eqsToGraph
-    :: [Int] -- ^ is
-    -> [RegEq] -- ^ eqs
-    -> TermS
+-- fixToEqs replaces the bounded variables of fixpoint formulas by pointers to
+-- the respective subformulas. fixToEqs is used by simplifyS "stateflow"
+-- (see Esolve). Alternating fixpoints may lead to wrong results.
+fixToEqs :: TermS -> Int -> (TermS,[RegEq],Int)
+fixToEqs (F x [t]) n | isFixF x = (F z [],Equal z (F mu [u]):eqs,k)
+                           where mu:y:_ = words x
+                                 b = y `elem` foldT f t
+                                 f x xss = if isFixF x then joinM xss `join1` y
+                                                       else joinM xss
+                                           where _:y:_ = words x
+                                 z = if b then y++show n else y
+                                 (u,eqs,k) = if b then fixToEqs (t>>>g) $ n+1
+                                                  else fixToEqs t n
+                                 g = F z [] `for` y
+fixToEqs (F x ts) n = (F x us,eqs,k)
+                      where (us,eqs,k) = f ts n
+                            f (t:ts) n = (u:us,eqs++eqs',k')
+                                         where (u,eqs,k) = fixToEqs t n
+                                               (us,eqs',k') = f ts k
+                            f _ n      = ([],[],n)
+fixToEqs t n        = (t,[],n)
+
+
+-- | eqsToGraph is eqs selects the maximal elements of the separated right-hand 
+-- sides of eqs. 
+-- eqsToGraph is used by graphToTree (see Epaint), simplifyS stateflow, 
+-- simplifyT auto/postflow/subsflow (see Esolve), buildKripke, showEqsOrGraph, 
+-- showMatrix and showRelation (see Ecom).
+eqsToGraph :: [Int] -> [RegEq] -> TermS
 eqsToGraph [] []  = emptyGraph
 eqsToGraph [] eqs = collapse True $ eqsToGraph (indices_ eqs) eqs
-eqsToGraph is eqs = case maxis subGraph vs of [t] -> t
+eqsToGraph is eqs = case maxis subGraph us of [t] -> t
                                               ts -> F "<+>" $ addNatsToPoss ts
-                where (zs,ts) = unzipEqs eqs
-                      t = mkEqsConjunct zs $ connectEqs zs ts
-                      us = subterms $ separateTerms t is
-                      vs = case t of F "&" _ -> map (f . (us!!)) is
-                                     _ -> [dropHeadFromPoss $ getSubterm t [1]]
-                      f t = drop2FromPoss $ getSubterm t [1]
+                     where t = connectEqs eqs
+                           ts = subterms $ separateTerms t is
+                           us = case t of 
+                                F "&" _ -> map (drop2FromPoss . rhs . (ts!!)) is
+                                _ -> [dropHeadFromPoss $ rhs t]
+                           rhs t = getSubterm t [1]
+
+-- | eqsToGraphs t transforms the equations of t into connectd components and is 
+-- used by showEqsOrGraph 17 (see Ecom).
+eqsToGraphs :: TermS -> TermS
+eqsToGraphs (t@(F "&" eqs)) = F "&" $ addNatsToPoss us
+                              where is = indices_ eqs
+                                    g i = getSubterm (separateTerms t is) [i]
+                                    ts = map g is
+                                    us = map (dropHeadFromPoss . (ts!!)) is
+eqsToGraphs t = t
 
 emptyGraph = leaf "This graph is empty."
-                      
+
+-- connectEqs is used by eqsToGraph (see above) and showEqsOrGraph 7 (see Ecom).
+connectEqs :: [RegEq] -> TermS
+connectEqs eqs = mkEqsConjunct xs $ f xs ts where
+                  (xs,ts) = unzipEqs eqs
+               -- f xs ts replaces each occurrence in ts of a variable xs!!i by 
+               -- a pointer to ts!!i. 
+                  f [x] [t] = [mkArc x [] t]
+                  f xs ts   = g 0 xs $ addNatsToPoss ts where
+                              g n (x:xs) ts = g (n+1) xs $ map (mkArc x [n]) ts
+                              g _ _ ts      = ts
+
+
 eqsToGraphx :: String -> [RegEq] -> TermS
 eqsToGraphx x eqs = eqsToGraph is eqs where
                     is = case search ((== x) . root) $ snd $ unzipEqs eqs of 

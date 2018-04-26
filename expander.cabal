@@ -99,6 +99,7 @@ data-files:          Examples/abp
                    , Examples/circtabBSR
                    , Examples/cobintree
                    , Examples/coin
+                   , Examples/coin1
                    , Examples/coin2
                    , Examples/colorhull
                    , Examples/combsp

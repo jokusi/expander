@@ -1466,7 +1466,9 @@ painter pheight solveRef solve2Ref = do
                 (x1,y1,x2,y2) = if isJust rect 
                                 then minmax4 (widgFrame $ fromJust rect) bds
                                 else bds
-                size = apply2 (max 100 . round . (+10)) (x2-x1,y2-y1)
+                -- Expander2: Size does not fit. Added size to avoid crop.
+                sizefix = 100
+                size = apply2 (max 100 . round . (+(10+sizefix))) (x2-x1,y2-y1)
                 translate = transXY (-x1,-y1)
                 pict2 = map translate pict1
                 g = scaleWidg . recip . sc

@@ -699,6 +699,7 @@ solver this solveRef enum paint = do
     joinedRef <- newIORef True
     safeRef <- newIORef True
     wtreeRef <- newIORef True
+    firstClickRef <- newIORef True
 
     checkingRef <- newIORef False
     checkingPRef <- newIORef False
@@ -2626,7 +2627,9 @@ solver this solveRef enum paint = do
             clear canv
             writeIORef ctreeRef $ Just ct
             let (_,_,maxx,maxy) = minmax $ foldT (bds sizeState) ct
-                size@(_,h) = (max 100 maxx,max 100 maxy)
+                -- Expander2: Size does not fit. Added size to avoid crop.
+                sizefix = 100
+                size@(_,h) = (max 100 (maxx+sizefix),max 100 (maxy+sizefix))
             writeIORef canvSizeRef size
             -- TODO check
             when (h > 100) $ tedit `Gtk.set` [ widgetHeightRequest := 0]
@@ -5597,8 +5600,8 @@ solver this solveRef enum paint = do
             sig <- getSignature
             varCounter <- readIORef varCounterRef
             kripke <- readIORef kripkeRef
-            let [sts,ats,labs] 
-                    = map (map showTerm0) [sig&states,sig&atoms,sig&labels]
+            let [sts,ats,labs] = map (map showTerm0)
+                                     [sig&states,sig&atoms,sig&labels]
                 vcz = varCounter "z"
                 (eqs,zn) = relToEqs vcz $ mkPairs sts sts (sig&trans)
                 (eqsL,zn') = relLToEqs zn $ mkTriples sts labs sts (sig&transL)
@@ -5676,7 +5679,7 @@ solver this solveRef enum paint = do
                                     Just rel -> do
                                         let (eqs,zn) = relToEqs3 rel
                                         finish zn p $ eqsToGraphx x eqs
-                                    _ -> case parseRegEqs u of
+                                    _ -> case parseEqs u of
                                         -- from equations to a graph
                                         Just eqs ->
                                             finish vcz p $ eqsToGraph is eqs
@@ -5692,25 +5695,26 @@ solver this solveRef enum paint = do
                                     Just rel -> do
                                         let (eqs,zn) = relToEqs3 rel
                                         finish zn p $ eqsTerm eqs
-                                    _ -> case parseRegEqs u of
+                                    _ -> case parseEqs u of
                                         -- from equations to equations
-                                        Just eqs -> do
-                                            substitution <- readIORef
-                                                                substitutionRef
-                                            let (xs,ts) = unzipEqs eqs
-                                                (f,zs) = substitution
-                                            if "eqs" `elem` zs then do
-                                                finish vcz p $ separateTerms
-                                                              (f "eqs") is
-                                                writeIORef substitutionRef
-                                                    (upd f "eqs" $ V "eqs",
-                                                     zs `minus1` "eqs")
-                                            else do
-                                                let t = mkEqsConjunct xs
-                                                            $ connectEqs xs ts
+                                        Just eqs -- from equations to equations
+                                          -> do
+                                             let t = connectEqs eqs
+                                             firstClick
+                                                <- readIORef firstClickRef
+                                             if firstClick then do
                                                 finish vcz p t
                                                 writeIORef substitutionRef
-                                                    (upd f "eqs" t,"eqs":zs)
+                                                        (\"x" -> t,[])
+                                                writeIORef firstClickRef False
+                                             else do
+                                                (f,_) <- readIORef
+                                                           substitutionRef
+                                                let u = eqsToGraphs $ f "x"
+                                                finish vcz p u
+                                                writeIORef substitutionRef
+                                                      (V,[])
+                                                writeIORef firstClickRef True
                                         -- from a graph to equations
                                         _ -> finish vcz q $ eqsTerm eqs
           where eqsTerm :: [RegEq] -> TermS
@@ -5771,7 +5775,7 @@ solver this solveRef enum paint = do
                                           $ mkTriples ats labs sts (sig&valueL)
                               5 -> Hidden $ ListMat sts labs 
                                           $ mkTriples sts labs ats $ outL sig
-                              _ -> case parseRegEqs t of
+                              _ -> case parseEqs t of
                                       Just eqs -> mat m $ eqsToGraph is eqs
                                       _ -> if isJust pict then t else mat m t
             pict <- runMaybeT $ matrixT sizes0 spread u
@@ -5924,7 +5928,7 @@ solver this solveRef enum paint = do
                4 -> act1 $ mkRel2ConstsI ats labs sts (sig&valueL)
                5 -> act1 $ mkRel2ConstsI sts labs ats $ outL sig
                _ -> if null trees then labBlue' start
-                    else act2 t p $ case parseRegEqs u of
+                    else act2 t p $ case parseEqs u of
                                          Just eqs -> eqsToGraph is eqs
                                          _ -> u
          where act1 ts = enterTree' False $ h ts

@@ -1,7 +1,6 @@
 -- auto1
 
 constructs: D E dot plus minus final
-defuncts:   states labels atoms
 
 axioms:
 
@@ -25,6 +24,8 @@ axioms:
 
 & final -> branch[2,3,4,5,6,9]
 
-terms: eval$atom$(5~)                 -->  [2,3,5]
+terms: 
 
--- specification->state equivalence  -->  [(2,3),(2,5),(3,5),(4,6)]
+filter(5~)$states              	      -->  [2,3,5]
+
+-- specification > state equivalence  -->  [(2,3),(2,5),(3,5),(4,6)]

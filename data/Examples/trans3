@@ -2,7 +2,7 @@
 
 specs: 		modal
 constructs: 	a b final q qa qb qab qbb qabb 
-preds:   	<> unfold UNFOLD Sat
+preds:   	unfold UNFOLD Sat
 copreds: 	#
 fovars: 	w 
 hovars: 	P
@@ -46,3 +46,5 @@ UNFOLD(q)[a,b,a,b,a,b,a] &	--> True
 UNFOLD(q)[a,b,a,b,b,a,b,a] &	--> False
 UNFOLD(qb)[a,b,a,a,b,a] &	--> True
 UNFOLD(qab)[a,b,a,b,a]		--> True
+
+terms: auto$b+star(a*a+b*b*b)

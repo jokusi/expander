@@ -1442,11 +1442,6 @@ simplifyT (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) =
                        Just n -> Just $ mkEq (mkBag ts') $ mkBag $ context n us
                        _ -> do n <- search (eqTerm u) ts
                                Just $ mkEq (mkBag $ context n ts) $ mkBag us'
-                                                
-simplifyT (F x [F "-" p@[_,_],t]) | arithmetical x && isZero t = Just $ F x p
-
--- Pattern match warning
-simplifyT (F x [t,F "-" [u,v]]) | arithmetical x && isZero t = Just $ F x [v,u]
 
 simplifyT t = simplifyT1 t
 
