@@ -1,12 +1,16 @@
-# Expander #
+# Expander3 #
 
-*Expander* is a flexible multi-purpose workbench for interactive term rewriting, graph transformation, theorem proving, constraint solving, flow graph analysis and other procedures that build up proofs or computation sequences.
+[Expander2](https://fldit-www.cs.tu-dortmund.de/~peter/Expander2.html) is a flexible multi-purpose workbench for interactive term rewriting, graph transformation, theorem proving, constraint solving, flow graph analysis and other procedures that build up proofs or other symbolic derivations. Moreover, tailor-made interpreters display terms and formulas as two-dimensional structures ranging from trees and rooted graphs to a variety of pictorial representations such as tables, matrices, alignments, partitions and fractals.
+  
+Expander2 is implemented in [O'Haskell](http://fldit-www.cs.tu-dortmund.de/~peter/OhugsSurvey.html), an extension of [Haskell](http://www.haskell.org/) that admits object-oriented reactive programming and provides an interface to Tcl/Tk for GUI programming.
+
+In Expander3, the special O'Haskell constructs are replaced by more or less equivalent "native" Haskell features and the GUI part is based on GTK+ instead of Tcl/Tk.
 
 ## Dependencies ##
 
 Before compiling and installing *Expander* the following tools are needed:
-* stack (tested with version 1.0.0)
-* Gtk+3 (tested with version 3.18.6)
+* stack
+* Gtk+3
 
 ### Stack ###
 Follow the installation guide [here](http://docs.haskellstack.org/en/stable/install_and_upgrade).
