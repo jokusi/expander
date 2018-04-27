@@ -1,7 +1,7 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, February 2018
+Copyright   : (c) Peter Padawitz, April 2018
                   Jos Kusiek, April 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
@@ -2377,7 +2377,8 @@ solPicT sig eval sizes spread t =
                                              concatJustT $ map f sol
                               _ -> mzero
 
--- searchPic and solPic are used by Ecom.
+-- searchPicT and solPicT are used by Ecom.
+
 partitionT :: Int -> InterpreterT
 partitionT mode sizes _ t = do guard $ not $ isSum t
                                rturtle $ drawPartition sizes mode t
@@ -2409,26 +2410,26 @@ matrixT sizes spread = f where
                            where g (a,b,cs) = (a,b,map leaf cs)
                                  dom = mkSet [b | (_,b,_:_) <- trips]
         f (Hidden (ListMatL dom trips@(_:_))) 
-                         = rturtle $ matrixList sizes dom dom $ map g trips
-                           where g (a,b,cs) = (a,b,map mkStrLPair cs)
-        f t | isJust u   = lift' $ do bins@(bin:_) <- u
-                                      let (arr,k,m) = karnaugh (length bin)
-                                          g = binsToBinMat bins arr
-                                          ts = [(show i,show j,F (g i j) []) | 
-                                                i <- [1..k], j <- [1..m]]
-                                      jturtle $ matrixTerm sizes ts
-                           where u = parseBins t
+                              = rturtle $ matrixList sizes dom dom $ map g trips
+                                where g (a,b,cs) = (a,b,map mkStrLPair cs)
+        f t | just u          = do bins@(bin:_) <- lift' u
+                                   let (arr,k,m) = karnaugh (length bin)
+                                       g = binsToBinMat bins arr
+                                       ts = [(show i,show j,F (g i j) [])  
+                                                     | i <- [1..k], j <- [1..m]]
+                                   rturtle $ matrixTerm sizes ts
+                                where u = parseBins t
         f (F _ [])            = mzero
-        f (F "pict" [F _ ts]) = lift' $ do ts <- mapM parseConsts2Term ts
-                                           jturtle $ matrixWidget sizes spread 
-                                                   $ deAssoc3 ts
-        f (F _ ts) | isJust us= rturtle $ matrixBool sizes dom1 dom2 ps 
+        f (F "pict" ts)       = do ts <- mapM (lift' . parseConsts2Term) ts
+                                   rturtle $ matrixWidget sizes spread 
+                                           $ deAssoc3 ts
+        f (F _ ts) | just us  = rturtle $ matrixBool sizes dom1 dom2 ps
                                 where us = mapM parseConsts2 ts
-                                      ps = deAssoc2 $ fromJust us
+                                      ps = deAssoc2 $ get us
                                       (dom1,dom2) = sortDoms ps
         f (F _ ts) | isJust us= rturtle $ matrixList sizes dom1 dom2 trs 
                                 where us = mapM parseConsts2Terms ts
-                                      trs = deAssoc3 $ fromJust us
+                                      trs = deAssoc3 $ get us
                                       (dom1,dom2) = sortDoms2 trs
         f _                   = mzero
 
@@ -2839,43 +2840,7 @@ widgTrans _                      = Nothing
 
 type Interpreter = Sizes -> Pos -> TermS -> Maybe Picture
 
-matrix :: Interpreter
-matrix sizes spread = f where
-        f :: TermS -> Maybe Picture
-        f (Hidden (BoolMat dom1 dom2 pairs@(_:_)))
-                                   = jturtle $ matrixBool sizes dom1 dom2 
-                                             $ deAssoc0 pairs
-        f (Hidden (ListMat dom1 dom2 trips@(_:_)))
-                                   = jturtle $ matrixList sizes dom1 dom 
-                                             $ map g trips
-                                     where g (a,b,cs) = (a,b,map leaf cs)
-                                           dom = mkSet [b | (_,b,_:_) <- trips]
-        f (Hidden (ListMatL dom trips@(_:_)))
-                                   = jturtle $ matrixList sizes dom dom 
-                                             $ map g trips
-                                     where g (a,b,cs) = (a,b,map mkStrLPair cs)
-        f t | isJust u             = do bins@(bin:_) <- u
-                                        let (arr,k,m) = karnaugh (length bin)
-                                            g = binsToBinMat bins arr
-                                            ts = [(show i,show j,F (g i j) []) 
-                                                     | i <- [1..k], j <- [1..m]]
-                                        jturtle $ matrixTerm sizes ts
-                                     where u = parseBins t
-        f (F _ [])                 = Nothing
-        f (F "pict" [F _ ts])      = do ts <- mapM parseConsts2Term ts
-                                        jturtle $ matrixWidget sizes spread 
-                                                $ deAssoc3 ts
-        f (F _ ts) | isJust us     = jturtle $ matrixBool sizes dom1 dom2 ps
-                                     where us = mapM parseConsts2 ts
-                                           ps = deAssoc2 $ fromJust us
-                                           (dom1,dom2) = sortDoms ps
-        f (F _ ts) | isJust us     = jturtle $ matrixList sizes dom1 dom2 trs
-                                     where us = mapM parseConsts2Terms ts
-                                           trs = deAssoc3 $ fromJust us
-                                           (dom1,dom2) = sortDoms2 trs
-        f _                        = Nothing
-
--- widgets is used by matrixWidget (see below) and applyDrawFun (see Esolve).
+-- is used by matrixWidget (see below).
 widgets sizes@(n,width) spread t = f black t where   
         next = nextColor 1 $ depth t
         fs,f :: Color -> TermS -> Maybe Picture
@@ -2957,7 +2922,6 @@ widgets sizes@(n,width) spread t = f black t where
                                  where (y,mode) = splitAt 4 x
         f c (F "light" [t])    = do pict <- fs c t
                                     Just $ map (shiftLight 21) pict
-        f _ (F "matrix" [t])   = matrix sizes (0,0) t
         f c (F "$" [F x [n],t]) | z == "morph" 
                                = do hue:mode <- Just mode
                                     hue <- parse nat [hue]
@@ -4565,17 +4529,13 @@ rectRow entry ht btf = concatMap f
                                  where bt = btf j
 
 matrixBool :: Sizes -> [String] -> [String] -> [(String,String)] -> TurtleActs
-matrixBool sizes@(n,width) dom1 dom2 ps = 
-                     rectMatrix sizes entry dom1 dom2 btf $ const ht
-                    where entry i j = [widg $ Oval (st0 red) m m
-                                            | (i, j) `elem` ps] 
-                          m = minimum (ht:map btf dom2)-1
-                          btf j = halfmax width [j]+3
-                          ht = fromInt n/2+3
-
-delBrackets :: TermS -> String
-delBrackets = f . showTerm0 where f ('(':a@(_:_)) | last a == ')' = init a
-                                  f a                                   = a
+matrixBool sizes@(n,width) dom1 dom2 ps =
+                      rectMatrix sizes entry dom1 dom2 btf $ const ht
+                      where entry i j = if (i,j) `elem` ps 
+                                        then [widg $ Oval (st0 red) m m] else [] 
+                            m = minimum (ht:map btf dom2)-1
+                            btf j = halfmax width [j]+3
+                            ht = fromInt n/2+3
 
 matrixList :: Sizes -> [String] -> [String] -> [(String,String,[TermS])] 
                      -> TurtleActs
@@ -4595,7 +4555,7 @@ matrixTerm sizes@(n,width) ts = rectMatrix sizes entry dom1 dom2 btf htf
                  where (dom1,dom2) = sortDoms2 ts
                        entry i j = [act str] where (act,str) = f i j
                        f i = colTerm . g i
-                       g i j = case lookupL i j ts of Just t -> t; _ -> V""
+                       g i j = case lookupL i j ts of Just t -> t; _ -> V ""
                        btf j = halfmax width (j:map (snd . flip f j) dom1)+3
                        htf _ = fromInt n/2+3
                        colTerm t = (colText col sizes,delBrackets t) 
@@ -4608,13 +4568,17 @@ matrixWidget sizes spread ts = rectMatrix sizes entry dom1 dom2
               where (dom1,dom2) = sortDoms2 ts
                     entry i j = [widg $ f i j]
                     f i j = mkWidg $ case lookupL i j ts of Just t -> t
-                                                            _ -> V""
+                                                            _ -> V ""
                     btf j = (x2-x1)/2+3 
                             where (x1,_,x2,_) = pictFrame $ map (`f` j) dom1
                     htf i = (y2-y1)/2+3 
                             where (_,y1,_,y2) = pictFrame $ map (f i) dom2
                     mkWidg t = case widgets sizes spread t of
-                               Just [v] -> v; _ -> text0 sizes $ showTerm0 t
+                                     Just [w] -> w
+                                     _ -> text0 sizes $ showTerm0 t
+
+delBrackets = f . showTerm0 where f ('(':a@(_:_)) | last a == ')' = init a
+                                  f a                              = a
 
 -- * partitions
 

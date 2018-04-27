@@ -2,13 +2,14 @@
 
 specs:		modal
 constructs:	a b c is less
-defuncts:       drawI drawL drawR drawS
-fovars:     	st st' k n
+defuncts:       drawI drawL drawC drawS reg
+fovars:     	st k n
 
 axioms:     
 
   states == [0,22] 
 & atoms == map($)$prodL[[is,less],[1,2,4,14]]
+& reg == star$plus(a)+plus(b*c)
 		 
 & (st < 6 ==> st -> st+1<+>ite(st`mod`2 = 0,st,()))
 & 6 -> branch$[1..5]++[7..10]	  
@@ -25,13 +26,14 @@ axioms:
 			      color(index(st,states),length$states)$circ$11,
 			      frame$blue$text$st))
 
-& drawL == wtree (1,fun((st,k,n),ite(Int$st,
+& drawL == wtree (1,fun((eps,k,n),text$eps,
+                        (st,k,n),ite(Int$st,
 				     color(k,n)$circ$11,
 				     frame$blue$text$st)))
 
-& drawR == wtree $ fun(eps,gif(cat,11,11)) 
+& drawC == wtree $ fun(eps,gif(cat,11,11),x,text$x) 
 
-& drawS == wtree $ fun(sat$st,frame$text$st)
+& drawS == wtree $ fun(sat$st,frame$text$st,st,text$x)
 
 conjects:  
 
@@ -53,8 +55,7 @@ terms:
 <+> eval $ is(4) `then` EF(less$2)	--> [0..10,14,22,33,44]
 <+> eval $ is(4) `then` EF(less$1)	--> [0..3,5..10,14,22,33,44]
 <+> eval $ AG $ is(4) `then` EF(less$1)	--> [7..10,14,22,33,44]
-
 <+> trans(6) `meet` eval(less$2)	--> [1]
 
-<+> auto$star$plus(a)+plus(b*c)		--> recognizer of ((a^+)+(bc)^+)^*
-			 
+<+> auto$reg  	--> non-deterministic acceptor of (a^++(bc)^+)* 
+<+> pauto$reg	--> deterministic acceptor of (a^++(bc)^+)*   (see below)

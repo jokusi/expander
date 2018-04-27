@@ -1,7 +1,7 @@
 -- MWGC
 
 constructs: 	m w g c
-defuncts:     	goods draw pic river triple
+defuncts:     	goods draw1 draw2 pic river triple
 fovars:	  	left
 
 axioms:
@@ -20,12 +20,16 @@ states == [labels] &
 (x `in` goods & [m,x] `NOTshares` left 
                 ==> (left,x) -> m:insertL(x)(left)(goods)) &
 
-draw == wtree $ fun(x,ite(List$x,frameS$shelf(1)$triple$x,x)) &
+-- widget interpreters:
+
+draw1 == wtree $ fun(x,ite(List$x,frameS$shelf(1)$triple$x,text$x)) &
+
+draw2 == wtree $ fun(x,ite(List$x,frameS$text$x,text$x)) &
 
 triple(left) == [shelf(4)$map(pic)$left,river,
                  shelf(4)$map(pic)$labels-left] &
 
-pic(m) == gif(man,8,10) &
+pic(m) == gif(man,8,15) &
 pic(w) == gif(wolf,30,25) &
 pic(g) == gif(goat,28,25) &
 pic(c) == gif(cabbage,22,22) &
@@ -40,10 +44,6 @@ terms:
 
 insertL(c)[w,g]$goods <+>
 
-frameS$shelf(11)[pic(m),pic(w),pic(g),pic(c)] <+>
+frameS$shelf(1)$triple[m,g,c] <+>
 
-frameS$shelf(1)$map(shelf(4))[[pic(m),pic(c)],river,
-                              [pic(w),pic(c)]] <+>
-
-frameS$shelf(1)$map(shelf(4))[[],river,
-			      [pic(m),pic(w),pic(g),pic(c)]]
+fun(x,ite(List$x,frameS$shelf(1)$triple$x,x))[m,g,c]

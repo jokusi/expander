@@ -382,23 +382,11 @@ restInd ts ps = map (ts!!) $ indices_ ts `minus` map last ps
 updMax :: (Eq a, Ord b) => (a -> b) -> a -> [b] -> a -> b
 updMax f x = upd f x . maximum
 
-updL :: (Eq a,Eq b) => (a -> [b]) -> a -> b -> a -> [b]
-updL f a = upd f a . join1 (f a)
-
 updList :: [a] -> Int -> a -> [a]
 updList s i x = take i s++x:drop (i+1) s
 
 updListM :: [a] -> Int -> [a] -> [a]
 updListM s i xs = take i s ++ xs ++ drop (i + 1) s
-
--- | @upd2L@ is used by 'regToAuto' and 'graphToRel2'.
-upd2L :: (Eq a,Eq b,Eq c) => (a -> b -> [c]) -> a -> b -> c -> a -> b -> [c]
-upd2L f a b = upd f a . upd (f a) b . join1 (f a b)
-
-updAssoc :: (Eq a,Eq b) => [(a,[b])] -> a -> [b] -> [(a,[b])]
-updAssoc s a bs = case searchGet ((== a) . fst) s of 
-                       Just (i,(_,cs)) -> updList s i (a,bs`join`cs)
-                       _ -> (a,bs):s
 
 inverse :: Eq a => (a -> a) -> [a] -> a -> a
 inverse f s = h s id where h (x:s) g = h s (upd g (f x) x)
@@ -542,6 +530,11 @@ deAssoc3 :: [([a], [b], c)] -> [(a, b, c)]
 deAssoc3 = concatMap f where f (xs,ys,z) = concatMap g xs
                                         where g x = map (\y -> (x,y,z)) ys
 
+powerset :: Eq a => [a] -> [[a]]
+powerset (a:s) = if a `elem` s then ps else ps++map (a:) ps
+                 where ps = powerset s
+powerset _     = [[]]
+
 join1 :: Eq a => [a] -> a -> [a]
 join1 s@(x:s') y = if x == y then s else x:join1 s' y
 join1 _ x        = [x]
@@ -551,6 +544,18 @@ join = foldl join1
 
 mkSet :: Eq a => [a] -> [a]
 mkSet = join []
+
+updL :: (Eq a,Eq b) => (a -> [b]) -> a -> b -> a -> [b]
+updL f a = upd f a . join1 (f a)
+
+-- | @upd2L@ is used by 'regToAuto' and 'graphToRel2'.
+upd2L :: (Eq a,Eq b,Eq c) => (a -> b -> [c]) -> a -> b -> c -> a -> b -> [c]
+upd2L f a b = upd f a . upd (f a) b . join1 (f a b)
+
+updAssoc :: (Eq a,Eq b) => [(a,[b])] -> a -> [b] -> [(a,[b])]
+updAssoc s a bs = case searchGet ((== a) . fst) s of 
+                       Just (i,(_,cs)) -> updList s i (a,bs`join`cs)
+                       _ -> (a,bs):s
 
 distinct :: Eq a => [a] -> Bool
 distinct (x:xs) = x `notElem` xs && distinct xs
@@ -1705,6 +1710,8 @@ parseRegExp (F "refl" [t]) = do (e,as) <- parseRegExp t
                                 Just (Sum_ e $ Const "eps",as `join1` "eps")
 parseRegExp _              = Nothing
 
+-- regToAuto e builds a nondeterministic acceptor of L(e).
+
 type NDA = Int -> String -> [Int]
 
 regToAuto :: RegExp -> ([Int],NDA)
@@ -1721,6 +1728,21 @@ regToAuto e = ([0..nextq-1],delta)
                                (delta1,nextq1) = eval e nextq q1 delta $ q1+1
                                delta2 = upd2L delta1 q "eps" nextq
                                delta3 = upd2L delta2 q1 "eps" nextq
+
+-- powerAuto nda builds the power automaton induced by nda.
+
+type PDA = [Int] -> String -> [Int]
+
+powerAuto :: NDA -> [String] -> ([[Int]],PDA)
+powerAuto nda as = (reachables,deltaP)
+                where delta qs a = joinMap (flip nda a) qs 
+                      deltaP qs = epsHull . delta qs
+                      epsHull :: [Int] -> [Int]
+                      epsHull qs = if qs' `subset` qs then qs 
+                                   else epsHull $ qs `join` qs'
+                                   where qs' = delta qs "eps"
+                      reachables = fixpt subset deltaM [epsHull [0]]
+                      deltaM qss = qss `join` [deltaP qs a | qs <- qss, a <- as]
 
 -- * Minimization with the Paull-Unger algorithm
 
@@ -2561,9 +2583,9 @@ parseLin t = do F "lin" [t] <- Just t; ps <- parseProds t; Just (ps,0)
 
 parseProds :: TermS -> Maybe [(Double, String)]
 parseProds (F "+" [ts,t]) = do ps <- parseProds ts; p <- parseProd t
-                               Just (ps++[p])
+                               Just $ ps++[p]
 parseProds (F "-" [ts,t]) = do ps <- parseProds ts; (a,x) <- parseProd t
-                               Just (ps++[(-a,x)])
+                               Just $ ps++[(-a,x)]
 parseProds t              = do p <- parseProd t; Just [p]
 
 parseProd :: TermS -> Maybe (Double, String)

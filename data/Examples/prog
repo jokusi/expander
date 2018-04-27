@@ -6,8 +6,29 @@ seq(assign(fact,int(1)),
     loop(greater(var(x),int(0)),
          seq(assign(fact,mul(var(fact),var(x))),
              assign(x,sub(var(x),int(1))))))
+
 <+> seq(assign(fact,int(1)),       loop(greater(var(x),int(pos 1 1)),            seq(assign(fact,mul(var(pos 1 1 1),var(pos 1))),                assign(x,sub(var(x),int(1))))))
+
 <+> seq(assign(fact,int(1)),       loop(greater(var(x),int(pos 1 1 1 1)),            seq(assign(fact,mul(var(fact),var(x))),                assign(x,sub(var(pos 1 0 0),int(pos 1 1 1 1))))))
+
+<+> seq(assign(pos 1 0 1,int(pos 0)),        loop(greater(var(x),int(0)),             seq(assign(pos 1 1 0 1,mul(var(fact),var(pos 1 1 0 1))),                 assign(pos 1 1 1 1,sub(var(pos 1 0 1),int(pos 1 0 0 0))))))
+
+<+> seq(assign(pos 1 0 1,int(pos 0)),        loop(greater(var(x),int(pos 1 1 1)),             seq(assign(pos 1 1 0 1,mul(var(fact),var(pos 1 1 0 1))),                 assign(pos 1 1 1 1,sub(var(pos 1 0 1),int(pos 1 1 1 1))))))
+
+<+> seq(assign(pos 1 1 1,int(pos 1 1)),        loop(greater(var(x),int(0)),             seq(assign(pos 1 1 1 0,mul(var(pos 1 1 0),var(x))),                 assign(x,sub(var(pos 1 0 0 0),int(1))))))
+<+>
+
+seq(assign(fact,int(pos 0)),
+    loop(greater(var(x),
+                 int(var(sub(var(assign(pos 1 0 1 0 0 0 0 1,
+                                        mul(var(sub(var(x),int(pos 1 0 0 0))),
+                                            var(pos 1 0 1 0 0 0 0 1 0 0)))),
+                             int(pos 1 0 0 0))))),
+         seq(assign(pos 1 0 1 0 0 0 0 1,
+                    mul(var(sub(var(x),int(pos 1 0 0 0))),
+                        var(pos 1 0 1 0 0 0 0 1 0 0))),
+             assign(x,sub(var(x),int(pos 1)))))) 
+
 <+> appC(assign("fact",intE(1)),
          oneC(loop(greater(var("x"),intE(0)),
                    appC(assign ("fact",prodF(appP(var("fact"),
@@ -32,20 +53,6 @@ ite(lt(i,j),assign(x,(i*k)+1),
                (ite(lt(i,j),assign(x,(i*k)+1),
 			    ite(gt(i,j),assign(y,(i*k)+1),assign(y,(x-(i*k))/j)))*k)+1),
 					assign(y,(x-(i*k))/j))) 
-
-<+>
-
-seq(assign(fact,int(pos 0)),
-    loop(greater(var(x),
-                 int(var(sub(var(assign(pos 1 0 1 0 0 0 0 1,
-                                        mul(var(sub(var(x),int(pos 1 0 0 0))),
-                                            var(pos 1 0 1 0 0 0 0 1 0 0)))),
-                             int(pos 1 0 0 0))))),
-         seq(assign(pos 1 0 1 0 0 0 0 1,
-                    mul(var(sub(var(x),int(pos 1 0 0 0))),
-                        var(pos 1 0 1 0 0 0 0 1 0 0))),
-             assign(x,sub(var(x),int(pos 1)))))) 
-
 <+>
 
 0(2(4,6(pos 0)),

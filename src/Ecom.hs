@@ -200,7 +200,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (April 18, 2018)"
+start = "Welcome to Expander3 (April 25, 2018)"
 
 startF :: String
 startF = "Load and parse a formula!"
@@ -1876,26 +1876,29 @@ solver this solveRef enum paint = do
           case parseE (term sig) str of
            Correct t -> case parseRegExp t of
              Just (e,as) -> do
-                let (sts,delta) = regToAuto e
-                    f (st,a) = (mkPair (mkConst st) $ leaf a,[],
-                                mkSum $ map mkConst $ delta st a)
-                    states' = map mkConst sts
-                    labels' = map leaf as
+                let (_,nda) = regToAuto e
+                    as' = as `minus1` "eps"
+                    (sts,delta) = powerAuto nda as' 
+                    finals = searchAll (elem 1) sts
+                    mkTerm = mkList . map mkConst
+                    f (st,a) = (mkPair (mkTerm st) $ leaf a,[],
+                                mkTerm $ delta st a)
+                    states' = map mkTerm sts
+                    labels' = map leaf as'
                     atom' = leaf "final"
                 changeSimpl "states" $ mkList states'
                 changeSimpl "atoms" $ mkList [atom']
                 changeSimpl "labels" $ mkList labels'
-                writeIORef transRulesRef $ map f $ prod2 sts as
+                writeIORef transRulesRef $ map f $ prod2 sts as'
                 writeIORef kripkeRef (states',[atom'],labels',[],[],[],[])
                 sig <- getSignature
                 let (_,rsL) = rewriteSig sig (sig&states)
                     trL = tripsToInts states' labels' rsL states'
-                    final = fromJust $ search (== (mkConst 1)) (sig&states)
                 writeIORef kripkeRef
-                  (states',[atom'],labels',[],trL,[[final]],[])
+                  (states',[atom'],labels',[],trL,[finals],[])
                 enterKripke 5
                 delay $ setProof True False kripkeMsg []
-                      $ kripkeBuilt 2 0 (length sts) (length as) 1
+                      $ kripkeBuilt 2 0 (length sts) (length as') 1
              _ -> labMag "Enter a regular expression into the text field!"
            p -> incorrect p str illformed
 
@@ -5697,7 +5700,7 @@ solver this solveRef enum paint = do
                                         finish zn p $ eqsTerm eqs
                                     _ -> case parseEqs u of
                                         -- from equations to equations
-                                        Just eqs -- from equations to equations
+                                        Just eqs
                                           -> do
                                              let t = connectEqs eqs
                                              firstClick
@@ -5705,12 +5708,12 @@ solver this solveRef enum paint = do
                                              if firstClick then do
                                                 finish vcz p t
                                                 writeIORef substitutionRef
-                                                        (\"x" -> t,[])
+                                                        (const t,[])
                                                 writeIORef firstClickRef False
                                              else do
                                                 (f,_) <- readIORef
                                                            substitutionRef
-                                                let u = eqsToGraphs $ f "x"
+                                                let u = eqsToGraphs $ f ""
                                                 finish vcz p u
                                                 writeIORef substitutionRef
                                                       (V,[])

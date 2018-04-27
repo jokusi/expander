@@ -457,37 +457,31 @@ applyDrawFun _ ""     = id
 applyDrawFun sig draw = map $ mkPict . fst . simplifyLoop sig True 1 . 
                                         F draw . single . addToPoss [0]
  where mkPict (F "$" [F "wtree" [f],t]) = g t
-        where g (F x ts) | isJust u && oneWidg v = F "widg" $ vs++[v]
-                            | True                = F x vs 
-                                             where vs = map g ts
-                                                   u = parse (term sig) x
-                                                   v = sapply sig f $ fromJust u
-              g t@(V x) | isPos x   = mkPos $ tail $ getPos x
-                        | oneWidg v = F "widg" [v] where v = sapply sig f t
-              g t = t
+         where g (F x ts) | just u = F "widg" $ vs++[sapply sig f $ get u]
+                          | True   = F x vs where vs = map g ts
+                                                  u = parse (term sig) x
+               g t@(V x) | isPos x = mkPos $ tail $ getPos x
+                         | True    = F "widg" [sapply sig f t]
+               g t = t
        mkPict (F "$" [F "wtree" [m,f],t]) | isJust m' = g t pt
-           where m' = parsePnat m
-                 order = case fromJust m' of 1 -> levelTerm; 2 -> preordTerm
-                                             3 -> heapTerm;  _ -> hillTerm
-                 (pt,n) = order black (const id) t
-                 h t k = sapplyL sig f [t,mkConst k,mkConst n]
-                 g (F x ts) (F k us) | isJust u && oneWidg v
-                                        = F "widg" $ vs++[v] 
-                                     | True                    = F x vs
+               where m' = parsePnat m
+                     order = case get m' of 1 -> levelTerm; 2 -> preordTerm
+                                            3 -> heapTerm;  _ -> hillTerm
+                     (pt,n) = order black (const id) t
+                     h t k = sapplyL sig f [t,mkConst k,mkConst n]
+                     g (F x ts) (F k us) | just u = F "widg" $ vs++[h (get u) k] 
+                                         | True   = F x vs
                                                    where vs = zipWith g ts us
                                                          u = parse (term sig) x
-                                                         v = h (fromJust u) k
-                 g t@(V x) (F k _) | isPos x   = mkPos $ tail $ getPos x
-                                   | oneWidg v = F "widg" [v] where v = h t k
-                 g t _ = t
+                     g t@(V x) (F k _) | isPos x = mkPos $ tail $ getPos x
+                                       | True    = F "widg" [h t k]
+                     g t _ = t
        mkPict t = simplifyIter sig t
-       oneWidg v = isJust $ do [_] <- widgets sizes0 (0,0) v
-                               Just ()
                         
 -- wtree(f)(t) replaces each subgraph x(t1,..,tm) of t by the subgraph 
 -- widg(t1,...,tm,f(x)).
 
--- wtree(f,i)(t) replaces each subtree x(t1,...,tm) of t by the subtree 
+-- wtree(i,f)(t) replaces each subtree x(t1,...,tm) of t by the subtree 
 -- widg(t1,...,tm,f(x,k,n)) where k is the position of x within t with respect
 -- to level order (i=1), prefix order (i=2), heap order (i=3) or hill order 
 -- (i>3) and n is the maximum of positions of t.
@@ -667,7 +661,7 @@ simplCoInd (F "==>" [u,F "$" [F x [t],arg]]) sig
 
 simplCoInd _ _ = Nothing
 
-simplifyF (F "tree" [F x []]) sig = parse (implication sig) x
+simplifyF (F "tree" [F x []]) sig = parse (term sig) x
 
 simplifyF (F "subst" [t,u,v]) sig | isVar sig x = Just $ v>>>for t x
                                                    where x = root u
@@ -985,9 +979,9 @@ simplifyA (F "Int" [t]) sig  | isValue sig t  = jConst $ isJust $ parseInt t
 
 simplifyA (F "Real" [t]) sig | isValue sig t  = jConst $ isJust $ parseDouble t
 
-simplifyA (F "List" [t]) sig | isValue sig t  = jConst $ isList t
+simplifyA (F "List" [t]) sig  = jConst $ isList t
 
-simplifyA (F "Value" [t]) sig                 = jConst $ isValue sig t
+simplifyA (F "Value" [t]) sig = jConst $ isValue sig t
 
 simplifyA t sig = simplifyS t sig
 
@@ -1234,14 +1228,23 @@ simplifyT (F "$" [F "lsec" [t,F x []],u]) = Just $ F x [t,u]
 
 simplifyT (F "$" [F "rsec" [F x [],t],u]) = Just $ F x [u,t]
 
--- construction of a recognizer for a REGULAR EXPRESSION
+-- acceptors of regular languages
 
-simplifyT (F "auto" [t]) | isJust e = Just $ eqsToGraph [] eqs
-          where e = parseRegExp t
-                (e',as) = fromJust e
-                (states,delta) = regToAuto e'
-                (eqs,_) = relLToEqs 0 [(show x,a,map show $ delta x a)
-                                      | x <- states, a <- as]
+simplifyT (F "auto" [t]) | just e = Just $ eqsToGraph [] 
+                                         $ fst $ relLToEqs 0 trips
+               where e = parseRegExp t
+                     (e',as) = get e
+                     (sts,nda) = regToAuto e'
+                     trips = [(show q,a,map show $ nda q a) | q <- sts, a <- as]
+
+simplifyT (F "pauto" [t]) | just e = Just $ eqsToGraph []
+                                          $ fst $ relLToEqs 0 trips
+              where e = parseRegExp t
+                    (e',as) = get e
+                    (_,nda) = regToAuto e'
+                    as' = as `minus1` "eps"
+                    (sts,delta) = powerAuto nda as' 
+                    trips = [(show q,a,[show $ delta q a]) | q <- sts, a <- as']
 
 -- projection
 
@@ -1499,15 +1502,14 @@ simplifyT1 (F "minimize" [t]) | isJust bins = jConsts $ minDNF $ fromJust bins
 simplifyT1 (F "minimize" [t]) | isObdd t = Just $ drop0FromPoss $ collapse True
                                                  $ removeVar t
 
-simplifyT1 (F "gauss" [t])
-          | isJust eqs = Just $ F "bool" [mkLinEqs $ f eqs]
-       where eqs = parseLinEqs t; f eqs = fromJust $ gauss $ fromJust eqs
+simplifyT1 (F "gauss" [t]) | just eqs =
+                              Just $ F "bool" [mkLinEqs $ get $ gauss $ get eqs]
+                              where eqs = parseLinEqs t
 
-simplifyT1 (F x@"gaussI" [t]) 
-          | isJust eqs = case gauss1 $ fromJust eqs of 
-                            Just eqs -> f eqs
-                            _ -> do eqs <- gauss2 $ fromJust eqs
-                                    f eqs
+simplifyT1 (F x@"gaussI" [t]) | just eqs =
+                        case gauss1 $ get eqs of Just eqs -> f eqs
+                                                 _ -> do eqs <- gauss2 $ fromJust eqs
+                                                         f eqs
                        where eqs = parseLinEqs t
                              f eqs = Just $ F x [mkLinEqs $ gauss3 eqs]
 
@@ -1515,11 +1517,11 @@ simplifyT1 (F "obdd" [t])   = do bins <- parseBins t; Just $ binsToObdd bins
 
 simplifyT1 (F "pascal" [t]) = do n <- parseNat t; jConsts $ pascal n
 
-simplifyT1 (F "concept" [F "[]" ts,F "[]" us,F "[]" vs]) 
-                           | f us && f vs = Just $ h $ concept ts (g us) $ g vs
-                                       where f = all $ (== "()") . root
-                                             g = map $ map root . subterms
-                                             h = mkSum . map (mkTup . map leaf)
+simplifyT1 (F "concept" [F "[]" ts,F "[]" us,F "[]" vs]) | f us && f vs =
+                               Just $ h $ concept ts (g us) $ g vs
+                               where f = all $ (== "()") . root
+                                     g = map $ map root . subterms
+                                     h = mkSum . map (mkTup . map leaf)
 
 simplifyT1 (F x ts) | (x == "[]" || x == "{}") && length us < length ts = 
                   Just $ F x us where us = if head x == '[' then mergeActs ts

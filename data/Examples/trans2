@@ -41,7 +41,8 @@ A -> branch[2,3,4] & (B,a) -> 3 &
 
 -- widget interpreter:
 
-drawGR == wtree $ fun(sat$x,green$text$x,x,ite(Int$x,red$text$x,x)) 
+drawGR == wtree $ fun(sat$x,green$text$x,
+		      x,ite(Int$x,red$text$x,text$x)) 
 
 conjects: 
 
