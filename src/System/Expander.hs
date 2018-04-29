@@ -89,7 +89,7 @@ lookupLibs file = do
 
 
 pix :: FilePath -> [String] -> [FilePath]
-pix dir files = [dir </> file | file <- files, isPic file]
+pix dir files = [dir ++ "/" ++ file | file <- files, isPic file]
     where isPic file = lg > 4 && 
                        drop (lg-4) file `elem` words ".eps .gif .jpg .png .svg"
                        where lg = length file
@@ -99,7 +99,8 @@ x &= val = x ++ "=\"" ++ val ++ "\""
 
 html :: String -> String -> [String] -> IO ()
 html dirPath dir files
-  | null files = writeFile (dirPath ++ ".html") $
+  | null files  = return ()
+  | otherwise = writeFile (dirPath ++ ".html") $
     "<html>\n<head>\n<title>" ++ dir ++ 
     "</title>\n<script type"&="text/javascript" ++
     ">\nvar images = new Array(" ++ '\"':first ++ '\"':concatMap f rest ++ 
@@ -123,7 +124,6 @@ html dirPath dir files
     ">30</span> millisecs\n<br><br><br>\n<iframe id"&="img" ++ " src"&=first ++
     " width"&="1800" ++ " height"&="900" ++ " frameborder"&="0" ++
     ">\n</iframe>\n</body>\n</html>"
-  | otherwise  = return ()
   where first:rest = files
         n = length files
         f file = ",\"" ++ file ++ "\""
@@ -139,7 +139,7 @@ mkSecs t1 t2 = (t2-t1)`div`1001500
 
 installJavaScript :: IO ()
 installJavaScript = do
-    userDir <- home
+    userDir <- userLibDir
     dataDir <- getDataDir
     let dest = userDir </> path
         src = dataDir </> path
