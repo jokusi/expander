@@ -903,11 +903,6 @@ painter pheight solveRef solve2Ref = do
             where act f opts = mapM_ (flip f opts . map round2) $ splitPath ps
                          -- do flip f opts $ map round2 ps; done
         drawWidget (Repeat w) = drawWidget w
-
-        drawWidget (Saved file hull) = do
-          w <- loadWidget file
-          let f st = if st == getState w then getState hull else st
-          drawWidget $ updCol (getCol w) $ updState f w
         drawWidget Skip = return ()
         drawWidget (Text_ (p,_,c,i) n strs lgs) = zipWithM_ f [0..] strs
             where (_,_,ps) = textblock p n lgs
@@ -1662,17 +1657,17 @@ type State = (Point,Double,Color,Int) -- (center,orientation,hue,lightness)
 -- ([w1,...,wn],[as1,...,asn]) :: Graph represents a graph with node set 
 -- {w1,...,wn} and edge set {(wi,wj) | j in asi, 1 <= i,j <= n}.
 
-data Widget_ = Arc State ArcStyleType Double Double | Bunch Widget_ [Int] | 
-               -- Bunch w is denotes w together with outgoing arcs to the 
+data Widget_ = Arc State ArcStyleType Double Double | Bunch Widget_ [Int] |
+               -- Bunch w is denotes w together with outgoing arcs to the
                -- widgets at positions is.
-               Dot Color Point | Fast Widget_ | Gif String Widget_ | New | 
+               Dot Color Point | Fast Widget_ | Gif String Widget_ | New |
                Oval State Double Double | Path State Int Path | 
-               Path0 Color Int Int Path | Poly State Int [Double] Double | 
-               Rect State Double Double | Repeat Widget_ |
-               Saved String Widget_ | Skip | Text_ State Int [String] [Int] | 
-               Tree State Int Color (Term (String,Point,Int)) | 
+               Path0 Color Int Int Path | Poly State Int [Double] Double |
+               Rect State Double Double | Repeat Widget_ | Skip |
+               Text_ State Int [String] [Int] |
+               Tree State Int Color (Term (String,Point,Int)) |
                -- The center of Tree .. ct agrees with the root of ct.
-               Tria State Double | Turtle State Double TurtleActs | 
+               Tria State Double | Turtle State Double TurtleActs |
                WTree TermW deriving (Show,Eq)
 
 instance Root Widget_ where undef = Skip
@@ -2096,7 +2091,6 @@ getState (Path st _ _)    = st
 getState (Poly st _ _ _)  = st
 getState (Rect st _ _)    = st
 getState (Repeat w)       = getState w
-getState (Saved _ hull)   = getState hull
 getState (Text_ st _ _ _) = st
 getState (Tree st _ _ _)  = st
 getState (Tria st _)      = st
@@ -2131,7 +2125,6 @@ updState f (Path st m ps)        = Path (f st) m ps
 updState f (Poly st m rs a)      = Poly (f st) m rs a
 updState f (Rect st b h)         = Rect (f st) b h
 updState f (Repeat w)            = Repeat $ updState f w
-updState f (Saved file hull)     = Saved file $ updState f hull
 updState f (Text_ st n strs lgs) = Text_ (f st) n strs lgs
 updState f (Tree st n c ct)      = Tree st' n (if d == white then white else c)
                                          ct where st'@(_,_,d,_) = f st
@@ -2286,7 +2279,6 @@ hulls edgy = f
        f w@(Path0 c i m ps)            = [if edgy || even m 
                                           then w else Path0 c i m $ spline ps]
        f (Repeat w)                    = f w
-       f (Saved _ hull)                = f hull
        f (Text_ (p,a,c,i) n _ lgs)     = concatMap f $ zipWith g ps lgs
                                          where (_,_,ps) = textblock p n lgs
                                                g p = mkRects (p,a,c,i) n
@@ -2446,469 +2438,137 @@ widgetTreeT sizes spread t = do t <- f [] t; return [WTree t] where
         f _ (V x)    = return $ V $ if isPos x then posWidg x else text0 sizes x
         f _ _        = return $ F (text0 sizes "blue_hidden") []
 
-widgetsT sizes@(n,width) spread t = f black t where
-        next = nextColor 1 $ depth t
-        fs,f :: Color -> TermS -> MaybeT Cmd Picture
-        fs c t                            = do picts <- parseListT' (f c) t
-                                               return $ concat picts
-        f c (F "$" [t,u]) | isJust tr     = do [w] <- fs c u
-                                               return [fromJust tr w]
-                                            where tr = widgTrans t
-        f c (F x [n]) | x `elem` fractals = lift' $ do n <- parsePnat n
-                                                       jturtle $ fractal x n c
-        f c (F x [])  | x `elem` trunks   = return [mkTrunk c x]
-        f c (F "anim" [t])     = do pict <- fs c t
-                                    rturtle $ init $ init $ concatMap onoff pict
-        f c (F "arc" [r,a])    = lift' $ do r <- parseReal r; a <- parseReal a
-                                            Just [Arc (st0 c) Perimeter r a]
-        f c (F "bar" [i,h])    = lift' $ do i <- parseNat i; h <- parsePnat h
-                                            guard $ i <= h
-                                            jturtle $ bar sizes n i h c
-        f c (F x [t]) | z == "base" 
-                               = do [w] <- fs c t 
-                                    w' <- lift' $ mkBased (notnull mode) c w
-                                    return [w']
-                                 where (z,mode) = splitAt 4 x
+widgetsT :: InterpreterT
+widgetsT = widgetsCT black 
+
+widgetsCT :: Color -> InterpreterT
+widgetsCT c sizes spread (F "load" [F file []]) 
+                                        = do w <- lift $ loadWidget file
+                                             return [w]
+widgetsCT c sizes spread (F "load" [F file [],sc]) 
+                                        = do w <- lift $ loadWidget file
+                                             sc <- lift' $ parseReal sc
+                                             return [scaleWidg sc w]
+widgetsCT c sizes spread (F "save" [t,F file []]) 
+                                       = do [w] <- widgetsCT c sizes spread t
+                                            lift $ saveWidget w file
+                                            return [w]
+widgetsCT c sizes spread t          = lift' $ widgetsC c sizes spread t
+
+type Interpreter = Sizes -> Pos -> TermS -> Maybe Picture
+
+widgets :: Interpreter 
+widgets = widgetsC black 
+
+widgetsM,widgetsC :: Color -> Interpreter
+widgetsM c sizes spread t = do picts <- parseList' (widgetsC c sizes spread) t
+                               Just $ concat picts
+ 
+widgetsC c sizes@(n,width) spread t = f t where           
+
+        fs  = widgetsM c sizes spread
+        fs' = widgetsM (nextColor 1 (depth t) c) sizes spread
+        
+        f (F "$" [t,u]) | just tr       = do [w] <- fs u; Just [get tr w]
+                                          where tr = widgTrans t
+        f (F x [n]) | x `elem` fractals = do n <- parsePnat n
+                                             jturtle $ fractal x n c
+        f (F x [])  | x `elem` trunks   = Just [mkTrunk c x]
+        f (F "anim" [t])      = do pict <- fs t
+                                   jturtle $ init $ init $ concatMap onoff pict
+        f (F "arc" [r,a])     = do r <- parseReal r; a <- parseReal a
+                                   Just [Arc (st0 c) Perimeter r a]
+        f (F "bar" [i,h])     = do i <- parseNat i; h <- parsePnat h
+                                   guard $ i <= h; jturtle $ bar sizes n i h c
+        f (F x [t]) | z == "base" = do [w] <- fs t 
+                                       w' <- mkBased (notnull mode) c w
+                                       Just [w']
+                                    where (z,mode) = splitAt 4 x
 
         -- Based widgets are polygons with a horizontal line of 90 pixels 
         -- starting in (90,0) and ending in (0,0). mkBased and mkTrunk generate
         -- based widgets.
 
-        f c (F x [n,r,a]) | z == "blos"
-                     = lift' $ do (hue,m,n,r,a) <- blosParse x n r a mode
-                                  let next1 = nextColor hue n
-                                      next2 = nextColor hue $ 2*n
-                                  jturtle $ if m < 4
-                                            then blossom next1 n c $
-                                                 case m of 
-                                                      0 -> \c -> leafD r a c c
-                                                      1 -> \c -> leafA r a c c
-                                                      2 -> \c -> leafC r a c c
-                                                      _ -> leafS r a
-                                            else blossomD next2 n c $
-                                                 case m of 4 -> leafD r a
-                                                           5 -> leafA r a
-                                                           _ -> leafC r a
-                       where (z,mode) = splitAt 4 x
-        f c (F x [n]) | z == "cantP"   
-                      = lift' $ do mode <- search (== mode) pathmodes
-                                   n <- parsePnat n
-                                   Just [path0 c mode $ map fromInt2 $
-                                        take (n*n) $ iterate (cantor n) (0,0)]
-                        where (z,mode) = splitAt 5 x
-        f c (F "center" [t])   = do [w] <- fs c t
-                                    return [shiftWidg (center w) w]
-        f c (F "chord" [r,a])  = lift' $ do r <- parseReal r; a <- parseReal a
-                                            Just [Arc (st0 c) Chord r a]
-        f c (F "chordL" [h,b]) = lift' $ do h <- parseReal h; b <- parseReal b
-                                            jturtle $ chord True h b c
-        f c (F "chordR" [h,b]) = lift' $ do h <- parseReal h; b <- parseReal b
-                                            jturtle $ chord False h b c
-        f c (F "circ" [r])     = lift' $ do r <- parseReal r
-                                            Just [Oval (st0 c) r r]
-        f _ (F "colbars" [c])  = lift' $ do c <- parseColor c
-                                            jturtle $ colbars sizes n c
-        f c (F "dark" [t])     = do pict <- fs c t
-                                    return $ map (shiftLight $ -16) pict
-        f c (F "$" [F "dots" [n],t]) = do pict <- fs c t
-                                          lift' $ do n <- parsePnat n
-                                                     Just $ dots n pict
-        f c (F "fadeB" [t])     = do [w] <- fs c t; rturtle $ fade False w
-        f c (F "fadeW" [t])     = do [w] <- fs c t; rturtle $ fade True w
-        f c (F "fast" [t])      = do pict <- fs c t; return $ map fast pict
-        f c (F "fern2" [n,d,r]) = lift' $ do n <- parsePnat n
-                                             d <- parseReal d
-                                             r <- parseReal r
-                                             jturtle $ fern2 n c d r
-        f c (F "file" [F file []]) 
-                                = do w <- lift $ loadWidget file
-                                     let rect = Rect (st0 c) (midx w) $ midy w
-                                     return [Saved file rect] 
-        f c (F "flash" [t])     = do [w] <- fs c t; rturtle $ flash w
-        f c (F "flipH" [t])     = do pict <- fs c t
-                                     return $ flipPict True pict
-        f c (F "flipV" [t])     = do pict <- fs c t
-                                     return $ flipPict False pict
-        f c (F "$" [F "flower" [mode],u])
-                                 = do pict <- fs (next c) t
-                                      lift' $ do mode <- parseNat mode
-                                                 jturtle $ flower c mode pict
-        f c (F "fork" [t])      = do pict <- fs c t
-                                     guard $ all isTurtle pict
-                                     rturtle $ tail $ concatMap h pict
-                                  where h (Turtle _ _ as) = widg New:as
-                                        h _               = []
-        f c (F x [t]) | z == "frame" 
-                               = do pict <- fs c t
-                                    mode <- lift' $ search (== mode) pathmodes
-                                    return $ map (addFrame 5 c mode) pict
-                                 where (z,mode) = splitAt 5 x
-        f c (F "gif" [F file [],b,h]) = lift' $ do
-            b <- parseReal b
-            h <- parseReal h
-            Just [Gif file $ Rect (st0 c) b h]
-        f c (F "gifs" [d,n,b,h]) 
-                       = lift' $ do d <- parseConst d; n <- parsePnat n
+        f (F x [n,r,a]) | z == "blos"
+                               = do (hue,m,n,r,a) <- blosParse x n r a mode
+                                    let next1 = nextColor hue n
+                                        next2 = nextColor hue $ 2*n
+                                    jturtle $ if m < 4
+                                              then blossom next1 n c $
+                                                   case m of 
+                                                        0 -> \c -> leafD r a c c
+                                                        1 -> \c -> leafA r a c c
+                                                        2 -> \c -> leafC r a c c
+                                                        _ -> leafS r a
+                                              else blossomD next2 n c $
+                                                   case m of 4 -> leafD r a
+                                                             5 -> leafA r a
+                                                             _ -> leafC r a
+                                 where (z,mode) = splitAt 4 x
+        f (F "center" [t])     = do [w] <- fs t; Just [shiftWidg (center w) w]
+        f (F "chord" [r,a])    = do r <- parseReal r; a <- parseReal a
+                                    Just [Arc (st0 c) Chord r a]
+        f (F "chordL" [h,b])   = do h <- parseReal h; b <- parseReal b
+                                    jturtle $ chord True h b c
+        f (F "chordR" [h,b])   = do h <- parseReal h; b <- parseReal b
+                                    jturtle $ chord False h b c
+        f (F "circ" [r])       = do r <- parseReal r; Just [Oval (st0 c) r r]
+        f (F "colbars" [c])    = do c <- parseColor c
+                                    jturtle $ colbars sizes n c
+        f (F "dark" [t])       = do pict <- fs t
+                                    Just $ map (shiftLight $ -16) pict
+        f (F "$" [F "dots" [n],t]) = do n <- parsePnat n; pict <- fs t
+                                        Just $ dots n pict
+        f (F "fadeB" [t])      = do [w] <- fs t; jturtle $ fade False w
+        f (F "fadeW" [t])      = do [w] <- fs t; jturtle $ fade True w
+        f (F "fast" [t])       = do pict <- fs t; Just $ map fast pict
+        f (F "flash" [t])      = do [w] <- fs t; jturtle $ flash w
+        f (F "fern2" [n,d,r])  = do n <- parsePnat n; d <- parseReal d
+                                    r <- parseReal r; jturtle $ fern2 n c d r
+        f (F "flipH" [t])      = do pict <- fs t; Just $ flipPict True pict
+        f (F "flipV" [t])      = do pict <- fs t; Just $ flipPict False pict
+        f (F "$" [F "flower" [mode],u])
+                               = do pict <- fs' t; mode <- parseNat mode
+                                    jturtle $ flower c mode pict
+        f (F "fork" [t])       = do pict <- fs t; guard $ all isTurtle pict
+                                    jturtle $ tail $ concatMap h pict
+                                 where h (Turtle _ _ as) = widg New:as
+                                       h _               = []
+        f (F x [t]) | z == "frame"  = do pict <- fs t
+                                         mode <- search (== mode) pathmodes
+                                         Just $ map (addFrame 5 c mode) pict
+                                      where (z,mode) = splitAt 5 x
+        f (F "gif" [F file [],b,h]) = do b <- parseReal b; h <- parseReal h
+                                         Just [Gif file $ Rect (st0 c) b h]
+        f (F "gifs" [d,n,b,h]) = do d <- parseConst d; n <- parsePnat n
                                     b <- parseReal b; h <- parseReal h
                                     let str i = d </> (d ++ '_':show i)
                                         gif i = Gif (str i) $ Rect (st0 c) b h
                                     Just $ map gif [1..n]
-        f c (F "grav" [t])           = do [w] <- fs c t
-                                          return [shiftWidg (gravity w) w]
-        f c (F "$" [F "grow" [t],u]) = do [w] <- fs c t
-                                          pict <- fs (next c) u
-                                          rturtle $ grow id (updCol c w) 
-                                                  $ map getActs pict
-        f c (F "$" [F "growT" [t,u],v]) = do tr <- lift' $ widgTrans t
-                                             [w] <- fs c u
-                                             pict <- fs (next c) v
-                                             rturtle $ grow tr (updCol c w) 
-                                                     $ map getActs pict
-        f c (F x [n]) | z == "hilbP" 
-                                 = lift' $ do mode <- search (== mode) pathmodes
-                                              n <- parsePnat n
-                                              Just [turtle0 c $ hilbert n East]
-                                 where (z,mode) = splitAt 5 x
-        f c (F x [t]) | z == "hue"     
-                               = do acts <- parseActs c t
-                                    hue <- lift' $ search (== hue) huemodes
-                                    let acts' = mkHue (nextColor $ hue+1) c acts
-                                    return [turtle0 c acts']
-                                 where (z,hue) = splitAt 3 x
-        f c (F x [t]) | z == "join"
-                               = do mode <- lift' $ parse pnat mode
-                                    guard $ mode `elem` [6..14]
-                                    pict <- fs c t
-                                    return [mkTurt p0 1 $ extendPict mode pict]
-                                 where (z,mode) = splitAt 4 x
-        f c (F x [r,a]) | y == "leaf" 
-                           = lift' $ do m <- search (== mode) leafmodes
-                                        r <- parseReal r; a <- parseReal a
-                                        let c' = complColor c
-                                        jturtle $ case m of 0 -> leafD r a c c
-                                                            1 -> leafA r a c c
-                                                            2 -> leafC r a c c
-                                                            3 -> leafS r a c
-                                                            4 -> leafD r a c c'
-                                                            5 -> leafA r a c c'
-                                                            _ -> leafC r a c c'
-                             where (y,mode) = splitAt 4 x
-        f c (F "light" [t])        = do pict <- fs c t
-                                        return $ map (shiftLight 21) pict
-        f c (F "load" [F file []]) = do w <- lift $ loadWidget file
-                                        return [w]
-        f _ (F "matrix" [t])       = matrixT sizes (0,0) t
-        f c (F "$" [F x [n],t]) | z == "morph" 
-                               = do hue:mode <- return mode
-                                    hue <- lift' $ parse nat [hue]
-                                    guard $ hue `elem` [1,2,3]
-                                    mode <- lift' $ search (== mode) pathmodes
-                                    n <- lift' $ parsePnat n
-                                    pict <- fs c t
-                                    return $ morphPict mode hue n pict 
-                                 where (z,mode) = splitAt 5 x 
-        f _ (F "new" [])       = return [New]
-        f c (F "oleaf" [n])    = do n <- lift' $ parsePnat n
-                                    rturtle $ oleaf n c
-        f c (F x [n,d,m]) | z == "owave" 
-                               = lift' $ do mode <- search (== mode) pathmodes
-                                            n <- parsePnat n; d <- parseReal d
-                                            m <- parseInt m
-                                            jturtle $ owave mode n d m c
-                                 where (z,mode) = splitAt 5 x
-        f c (F "outline" [t])  = do pict <- fs c t; return $ outline pict
-        f c (F "oval" [rx,ry]) = lift' $ do rx <- parseReal rx
-                                            ry <- parseReal ry
-                                            Just [Oval (st0 c) rx ry]
-        f c (F x ps) | z == "path"    
-                            = lift' $ do mode <- search (== mode) pathmodes
-                                         ps@((x,y):_) <- mapM parseRealReal ps
-                                         let h (i,j) = (i-x,j-y)
-                                         Just [path0 c mode $ map h ps]
-                              where (z,mode) = splitAt 4 x
-        f c (F x rs@(_:_)) | z == "peaks" 
-                            = lift' $ do m:mode <- Just mode
-                                         mode <- search (== mode) polymodes
-                                         rs <- mapM parseReal rs
-                                         guard $ head rs /= 0
-                                         jturtle $ peaks (m == 'I') mode c rs
-                              where (z,mode) = splitAt 5 x
-        f c (F x (n:rs@(_:_))) | z == "pie" 
-                            = lift' $ do mode:hue <- Just mode
-                                         let m = case mode of 'A' -> Perimeter
-                                                              'C' -> Chord
-                                                              _ -> Pie
-                                         hue <- search (== hue) huemodes
-                                         n <- parsePnat n
-                                         rs <- mapM parseReal rs
-                                         jturtle $ pie m (nextColor $ hue+1) c 
-                                                 $ concat $ replicate n rs
-                              where (z,mode) = splitAt 3 x
-        f _ (F "pile" [h,i])  = lift' $ do h <- parsePnat h; i <- parseNat i
-                                           guard $ i <= h; jturtle $ pile h i
-        f _ (F "pileR" [t])   = lift' $ do h:is <- parseList parseNat t
-                                           guard $ all (< h) is
-                                           jturtle $ pileR h is
-        f c (F "$" [F "place" [t],p]) = do [w] <- fs c t
-                                           p <- lift' $ parseRealReal p
-                                           rturtle $ jumpTo p ++ [widg w]
-        f c (F x [n,d,m]) | z == "plait" 
-                              = lift' $ do mode <- search (== mode) pathmodes
-                                           n <- parsePnat n; d <- parseReal d
-                                           m <- parsePnat m
-                                           jturtle $ plait mode n d m c
-                                where (z,mode) = splitAt 5 x
-        f c (F "$" [F "planar" [n],t])   
-                              = do maxmeet <- lift' $ parsePnat n
-                                   [w] <- fs c t
-                                   return [planarWidg maxmeet w]
-        f c (F x (n:rs@(_:_))) | z == "poly"
-                              = lift' $ do mode <- search (== mode) polymodes
+        f (F "grav" [t])       = do [w] <- fs t; Just [shiftWidg (gravity w) w]
+        f (F "$" [F "grow" [t],u])    = do [w] <- fs t; pict <- fs' u
+                                           jturtle $ grow id (updCol c w) 
+                                                   $ map getActs pict
+        f (F "$" [F "growT" [t,u],v]) = do tr <- widgTrans t; [w] <- fs u
+                                           pict <- fs' v
+                                           jturtle $ grow tr (updCol c w) 
+                                                   $ map getActs pict
+        f (F x [n]) | z == "hilbP"    = do mode <- search (== mode) pathmodes
                                            n <- parsePnat n
-                                           rs <- mapM parseReal rs
-                                           let k = n*length rs
-                                               inc = 360/fromInt k
-                                           guard $ k > 1
-                                           Just [Poly (st0 c) mode 
-                                                      (take k $ cycle rs) inc] 
-                                where (z,mode) = splitAt 4 x
-        f c (F "pulse" [t])  = do pict <- fs c t; rturtle $ pulse pict
-        f c (F "rect" [b,h]) = lift' $ do b <- parseReal b; h <- parseReal h
-                                          Just [Rect (st0 c) b h]
-        f c (F "repeat" [t])   = do pict <- fs c t
-                                    return [Repeat $ turtle0B $ map widg pict]
-        f c (F "revpic" [t])   = do pict <- fs c t; return $ reverse pict
-        f c (F "rhomb" [])     = return [rhombV c]
-        f c (F "$" [F "rotate" [a],t]) 
-                               = do a <- lift' $ parseReal a; guard $ a /= 0
-                                    pict <- fs c t; rturtle $ rotatePict a pict
-        f c (F "save" [t,F file []]) 
-                               = do [w] <- f c t; lift $ saveWidget w file
-                                    return [w]
-        f c (F "$" [F "scale" [sc],t]) 
-                               = do sc <- lift' $ parseReal sc; pict <- fs c t
-                                    return $ scalePict sc pict
-        f c (F "$" [F x (n:s),t]) | x `elem` ["shelf","tower","shelfS","towerS"]
-                      = do n <- lift' $ parsePnat n
-                           pict <- fs c t
-                           let cols = if last x == 'S' then square pict else n
-                               mode = if take 5 x == "shelf" then "m1" else "m2"
-                               h d a b = return $ fst $ shelf (pict,[]) cols 
-                                                            (d,d) a b False mode
-                           case s of 
-                             d:s -> do
-                                d <- lift' $ parseReal d        -- spacing
-                                case s of 
-                                  a:s -> do
-                                     a <- lift' $ parseChar a -- alignment
-                                     case s of                  -- centering
-                                        b:s -> do
-                                             b <- lift' $ parseChar b
-                                             h d a $ b == 'C'
-                                        _ -> h d a False  -- no centering 
-                                  _ -> h d 'M' False      -- alignment 'M'
-                             _ -> h 0 'M' False           -- spacing 0
-        f _ (F "skip" [])       = return [Skip]
-        f c (F "slice" [r,a])   = lift' $ do r <- parseReal r
-                                             a <- parseReal a
-                                             Just [Arc (st0 c) Pie r a]
-        f c (F "smooth" [t])    = do pict <- fs c t; return $ smooth pict
-        f c (F x [d,m,n,k,t]) | z == "snow"
-                                = do hue <- lift' $ search (== mode) huemodes
-                                     d <- lift' $ parseReal d
-                                     m <- lift' $ parsePnat m
-                                     n <- lift' $ parsePnat n
-                                     k <- lift' $ parsePnat k
-                                     [w] <- fs c t
-                                     return [mkSnow True (hue+1) d m n k w]
-                                  where (z,mode) = splitAt 4 x
-        f c (F "spline" [t])    = do pict <- fs c t; return $ splinePict pict
-        f c (F "star" [n,r,r']) = lift' $ do n <- parsePnat n
-                                             r <- parseReal r
-                                             r' <- parseReal r'
-                                             jturtle $ star n c r r'
-        f c (F "$" [F "table" [n,d],t]) = do n <- lift' $ parsePnat n
-                                             d <- lift' $ parseReal d
-                                             pict <- fs c t
-                                             return [table pict d n]
-        f c (F "taichi" s) = rturtle $ taichi sizes s c
-        f c (F "text" ts)  = do guard $ notnull strs
-                                return [Text_ (st0 c) n strs $ map width strs]
-                             where strs = words $ showTree False 
-                                                 $ colHidden $ mkTup ts
-        f c (F "tree" [t]) = return [Tree st0B n c $ mapT h ct]
-                             where ct = coordTree width spread (20,20) $ 
-                                                  colHidden t
-                                   (_,(x,y)) = root ct
-                                   h (a,(i,j)) = (a,fromInt2 (i-x,j-y),width a)
-        f c (F "tria" [r]) = do r <- lift' $ parseReal r
-                                return [Tria (st0 c) r]
-        f c (F "$" [F "turn" [a],t]) = do a <- lift' $ parseReal a
-                                          pict <- fs c t
-                                          return $ turnPict a pict
-        f c (F "turt" [t])           = do acts <- parseActs c t
-                                          return [turtle0 c acts]
-        f c (F x [n,d,a]) | z == "wave" 
-                               = lift' $ do mode <- search (== mode) pathmodes
-                                            n <- parsePnat n; d <- parseReal d
-                                            a <- parseReal a
-                                            jturtle $ wave mode n d a c
-                                 where (z,mode) = splitAt 4 x
-        f _ (F x [t]) | isJust c = f (fromJust c) t where c = parse color x
-        f _ _                  = mzero
-
-        parseActs,g :: Color -> TermS -> MaybeT Cmd TurtleActs
-        parseActs c t       = do acts <- parseListT' (g c) t
-                                 return $ concat acts
-        g c (V x) | isPos x = g c $ getSubterm t $ getPos x
-        g c (F "A" [t])     = widgAct True c t
-        g _ (F "B" [])      = return [back]
-        g _ (F "C" [])      = return [Close]
-        g _ (F "D" [])      = return [Draw]
-        g _ (F "J" [d])     = do d <-lift' $ parseReal d; return [Jump d]
-        g _ (F "J" p@[x,y]) = do [x,y] <- mapM (lift' . parseReal) p
-                                 return $ jumpTo (x,y) 
-        g _ (F "L" [])      = return [up]
-        g _ (F "M" [d])     = do d <- lift' $ parseReal d; return [Move d]
-        g _ (F "M" p@[x,y]) = do [x,y] <- mapM (lift' . parseReal) p
-                                 return $ moveTo (x,y) 
-        g c (F "O" [])      = return [Open c 0]
-        g _ (F "O" [c])     = do c <- lift' $ parseColor c; return [Open c 0]
-        g c (F "OS" [])     = return [Open c 1]
-        g _ (F "OS" [c])    = do c <- lift' $ parseColor c; return [Open c 1]
-        g c (F "OF" [])     = return [Open c 2]
-        g c (F "OFS" [])    = return [Open c 3]
-        g _ (F "OF" [c])    = do c <- lift' $ parseColor c; return [Open c 4]
-        g _ (F "OFS" [c])   = do c <- lift' $ parseColor c; return [Open c 5]
-        g _ (F "R" [])      = return [down]
-        g _ (F "SC" [sc])   = do sc <- lift' $ parseReal sc; return [Scale sc]
-        g _ (F "T" [a])     = do a <- lift' $ parseReal a; return [Turn a]
-        g c t               = widgAct False c t
-
-        widgAct :: Bool -> Color -> TermS -> MaybeT Cmd TurtleActs
-        widgAct b c t = do [w] <- fs c t ++ return [text0 sizes $ showTerm0 t]
-                           return [Widg b w]
-
-
-huemodes, pathmodes, polymodes, trackmodes, leafmodes, fractals :: [String]
-huemodes   = "":words "2 3 4 5 6"
-pathmodes  = "":words "S W SW F SF"        
-polymodes  = pathmodes ++ words "R R1 R2 L L1 L2 T T1 T2 LT LT1 LT2"
-trackmodes = words "asc sym ang slo"
-leafmodes  = words "D A C S D2 A2 C2"
-fractals = words "bush bush2 cant cactus dragon fern gras grasL grasA grasC" ++
-           words "grasR hexa hilb koch penta pentaS pytree pytreeA wide"
-trunks   = words "TR SQ PE PY CA HE LB RB LS RS PS"
-
-depth :: (Num a, Ord a) => TermS -> a
-depth (F "$" [F "flower" _,t]) = depth t+1
-depth (F "$" [F "grow" _,t])   = depth t+1
-depth (F "$" [F "growT" _,t])  = depth t+1
-depth (F _ ts)                 = maximum $ 1:map depth ts
-depth _                            = 1
-
--- | The following widget transformations may occur as arguments of growT (see 
--- widgets). They do not modify the outline of a widget and can thus be applied 
--- to based widgets. 
-widgTrans :: TermS -> Maybe WidgTrans
-widgTrans (F "." [t,u])      = do tr1 <- widgTrans t; tr2 <- widgTrans u
-                                  Just $ tr1 . tr2
-widgTrans (F x [F mode []]) | init z == "trac" 
-                             = do guard $ typ `elem` trackmodes
-                                  m <- search (== m) pathmodes 
-                                  hue <- search (== hue) huemodes
-                                  let center = if last z == 'c' then coords
-                                                                else gravity
-                                  Just $ track center typ m $ nextColor $ hue+1
-                               where (z,hue) = splitAt 5 x
-                                     (typ,m) = splitAt 3 mode
-widgTrans (F x (n:s)) | z == "rainbow" 
-                             = do n <- parsePnat n
-                                  hue <- search (== hue) huemodes
-                                  let next = nextColor (hue+1) n
-                                  if null s then Just $ rainbow n 0 0 next
-                                  else do [a,d] <- mapM parseReal s
-                                          Just $ rainbow n a d next
-                               where (z,hue) = splitAt 7 x
-widgTrans (F "shine" (i:s))  = do i <- parseInt i
-                                  guard $ abs i `elem` [1..42]
-                                  if null s then Just $ shine i 0 0
-                                            else do [a,d] <- mapM parseReal s
-                                                    Just $ shine i a d
-widgTrans (F "inCenter" [tr]) = do tr <- widgTrans tr; Just $ inCenter tr
-widgTrans _                      = Nothing
-
-type Interpreter = Sizes -> Pos -> TermS -> Maybe Picture
-
--- is used by matrixWidget (see below).
-widgets sizes@(n,width) spread t = f black t where   
-        next = nextColor 1 $ depth t
-        fs,f :: Color -> TermS -> Maybe Picture
-        fs c t                            = do picts <- parseList' (f c) t
-                                               Just $ concat picts
-        f c (F "$" [t,u]) | isJust tr     = do [w] <- fs c u
-                                               Just [fromJust tr w]
-                                            where tr = widgTrans t
-        f c (F x [n]) | x `elem` fractals = do n <- parsePnat n
-                                               jturtle $ fractal x n c
-        f c (F x [])  | x `elem` trunks   = Just [mkTrunk c x]
-        f c (F "arc" [r,a])     = do r <- parseReal r; a <- parseReal a
-                                     Just [Arc (st0 c) Perimeter r a]
-        f c (F "bar" [i,h])     = do i <- parseNat i; h <- parsePnat h
-                                     guard $ i <= h; jturtle $ bar sizes n i h c
-        f c (F "center" [t])    = do [w] <- fs c t
-                                     Just [shiftWidg (center w) w]
-        f c (F "chord" [r,a])   = do r <- parseReal r; a <- parseReal a
-                                     Just [Arc (st0 c) Chord r a]
-        f c (F "chordL" [h,b])  = do h <- parseReal h; b <- parseReal b
-                                     jturtle $ chord True h b c
-        f c (F "chordR" [h,b])  = do h <- parseReal h; b <- parseReal b
-                                     jturtle $ chord False h b c
-        f c (F "circ" [r])      = do r <- parseReal r; Just [Oval (st0 c) r r]
-        f _ (F "colbars" [c])   = do c <- parseColor c
-                                     jturtle $ colbars sizes n c
-        f c (F "dark" [t])      = do pict <- fs c t
-                                     Just $ map (shiftLight $ -16) pict
-        f c (F "$" [F "dots" [n],t]) = do n <- parsePnat n; pict <- fs c t
-                                          Just $ dots n pict
-        f c (F "fadeB" [t])     = do [w] <- fs c t; jturtle $ fade False w
-        f c (F "fadeW" [t])     = do [w] <- fs c t; jturtle $ fade True w
-        f c (F "fast" [t])      = do pict <- fs c t; Just $ map fast pict
-        f c (F "fern2" [n,d,r]) = do n <- parsePnat n; d <- parseReal d
-                                     r <- parseReal r; jturtle $ fern2 n c d r
-        f c (F "flipH" [t])     = do pict <- fs c t
-                                     Just $ flipPict True pict
-        f c (F "flipV" [t])     = do pict <- fs c t
-                                     Just $ flipPict False pict
-        f c (F "$" [F "flower" [mode],u])
-                                = do pict <- fs (next c) t
-                                     mode <- parseNat mode
-                                     jturtle $ flower c mode pict
-        f c (F "fork" [t])      = do pict <- fs c t
-                                     guard $ all isTurtle pict
-                                     jturtle $ tail $ concatMap h pict
-                                  where h (Turtle _ _ as) = widg New:as
-                                        h _               = []
-        f c (F x [t]) | z == "frame" = do pict <- fs c t
-                                          mode <- search (== mode) pathmodes
-                                          Just $ map (addFrame 5 c mode) pict
-                                       where (z,mode) = splitAt 5 x
-        f c (F "gif" [F file [],b,h]) = do b <- parseReal b; h <- parseReal h
-                                           Just [Gif file $ Rect (st0 c) b h]
-        f c (F "gifs" [d,n,b,h]) = do d <- parseConst d; n <- parsePnat n
-                                      b <- parseReal b; h <- parseReal h
-                                      let str i = (d </> (d++ '_':show i))
-                                          gif i = Gif (str i) $ Rect (st0 c) b h
-                                      Just $ map gif [1..n]
-        f c (F "grav" [t])       = do [w] <- fs c t
-                                      Just [shiftWidg (gravity w) w]
-        f c (F x [t]) | z == "hue"     
-                               = do acts <- parseActs c t
+                                           Just [turtle0 c $ hilbert n East]
+                                        where (z,mode) = splitAt 5 x
+        f (F x [t]) | z == "hue"     
+                               = do acts <- parseActs t
                                     hue <- search (== hue) huemodes
                                     let acts' = mkHue (nextColor $ hue+1) c acts
                                     Just [turtle0 c acts']
                                  where (z,hue) = splitAt 3 x
-        f c (F x [r,a]) | y == "leaf" 
+        f (F x [t]) | z == "join" 
+                               = do mode <- parse pnat mode
+                                    guard $ mode `elem` [6..14]; pict <- fs t
+                                    Just [mkTurt p0 1 $ extendPict mode pict]
+                                 where (z,mode) = splitAt 4 x
+        f (F x [r,a]) | y == "leaf" 
                                = do m <- search (== mode) leafmodes
                                     r <- parseReal r; a <- parseReal a
                                     let c' = complColor c
@@ -2920,47 +2580,46 @@ widgets sizes@(n,width) spread t = f black t where
                                                         5 -> leafA r a c c'
                                                         _ -> leafC r a c c'
                                  where (y,mode) = splitAt 4 x
-        f c (F "light" [t])    = do pict <- fs c t
+        f (F "light" [t])      = do pict <- fs t
                                     Just $ map (shiftLight 21) pict
-        f c (F "$" [F x [n],t]) | z == "morph" 
+        f (F "$" [F x [n],t]) | z == "morph"
                                = do hue:mode <- Just mode
                                     hue <- parse nat [hue]
                                     guard $ hue `elem` [1,2,3]
                                     mode <- search (== mode) pathmodes
-                                    n <- parsePnat n
-                                    pict <- fs c t
+                                    n <- parsePnat n; pict <- fs t
                                     Just $ morphPict mode hue n pict 
                                  where (z,mode) = splitAt 5 x
-        f _ (F "new" [])       = Just [New]
-        f c (F "oleaf" [n])    = do n <- parsePnat n; jturtle $ oleaf n c
-        f c (F x [n,d,m]) | z == "owave" 
+        f (F "new" [])         = Just [New]
+        f (F "oleaf" [n])      = do n <- parsePnat n; jturtle $ oleaf n c
+        f (F x [n,d,m]) | z == "owave" 
                                = do mode <- search (== mode) pathmodes
                                     n <- parsePnat n; d <- parseReal d
                                     m <- parseInt m
                                     jturtle $ owave mode n d m c
                                  where (z,mode) = splitAt 5 x
-        f c (F "outline" [t])  = do pict <- fs c t; Just $ outline pict
-        f c (F "oval" [rx,ry]) = do rx <- parseReal rx; ry <- parseReal ry
+        f (F "outline" [t])    = do pict <- fs t; Just $ outline pict
+        f (F "oval" [rx,ry])   = do rx <- parseReal rx; ry <- parseReal ry
                                     Just [Oval (st0 c) rx ry]
-        f c (F x [t]) | z == "path"    
+        f (F x [t]) | z == "path"
                                = do mode <- search (== mode) pathmodes
                                     ps <- parseList parseRealReal t
                                     Just [path0 c mode ps]
                                  where (z,mode) = splitAt 4 x
-        {- f c (F x ps) | z == "path"    
+        {- f (F x ps) | z == "path"
                                = do mode <- search (== mode) pathmodes
                                     ps@((x,y):_) <- mapM parseRealReal ps
                                     let h (i,j) = (i-x,j-y)
                                     Just [path0 c mode $ map h ps]
                                  where (z,mode) = splitAt 4 x -}
-        f c (F x rs@(_:_)) | z == "peaks" 
+        f (F x rs@(_:_)) | z == "peaks"
                                = do m:mode <- Just mode
                                     mode <- search (== mode) polymodes
                                     rs <- mapM parseReal rs
                                     guard $ head rs /= 0
                                     jturtle $ peaks (m == 'I') mode c rs
                                  where (z,mode) = splitAt 5 x
-        f c (F x (n:rs@(_:_))) | z == "pie" 
+        f (F x (n:rs@(_:_))) | z == "pie"
                                = do mode:hue <- Just mode
                                     let m = case mode of 'A' -> Perimeter
                                                          'C' -> Chord
@@ -2970,19 +2629,22 @@ widgets sizes@(n,width) spread t = f black t where
                                     jturtle $ pie m (nextColor $ hue+1) c 
                                             $ concat $ replicate n rs
                                   where (z,mode) = splitAt 3 x
-        f _ (F "pile" [h,i])   = do h <- parsePnat h; i <- parseNat i
+        f (F "pile" [h,i])     = do h <- parsePnat h; i <- parseNat i
                                     guard $ i <= h; jturtle $ pile h i
-        f _ (F "pileR" [t])    = do h:is <- parseList parseNat t
+        f (F "pileR" [t])      = do h:is <- parseList parseNat t
                                     guard $ all (< h) is; jturtle $ pileR h is
-        f c (F "$" [F "place" [t],p]) = do [w] <- fs c t; p <- parseRealReal p
-                                           jturtle $ jumpTo p ++ [widg w]
-        f c (F x [n,d,m]) | z == "plait" 
+        f (F "$" [F "place" [t],p]) = do [w] <- fs t; p <- parseRealReal p
+                                         jturtle $ jumpTo p ++ [widg w]
+        f (F x [n,d,m]) | z == "plait" 
                                = do mode <- search (== mode) pathmodes
                                     n <- parsePnat n; d <- parseReal d
                                     m <- parsePnat m
                                     jturtle $ plait mode n d m c
                                  where (z,mode) = splitAt 5 x
-        f c (F x (n:rs@(_:_))) | z == "poly"
+        f (F "$" [F "planar" [n],t])   
+                               = do maxmeet <- parsePnat n; [w] <- fs t
+                                    Just [planarWidg maxmeet w]
+        f (F x (n:rs@(_:_))) | z == "poly"
                                = do mode <- search (== mode) polymodes
                                     n <- parsePnat n; rs <- mapM parseReal rs
                                     let k = n*length rs; inc = 360/fromInt k
@@ -2990,85 +2652,162 @@ widgets sizes@(n,width) spread t = f black t where
                                     Just [Poly (st0 c) mode 
                                                (take k $ cycle rs) inc] 
                                  where (z,mode) = splitAt 4 x
-        f c (F "rect" [b,h])   = do b <- parseReal b; h <- parseReal h
+        f (F "pulse" [t])      = do pict <- fs t; jturtle $ pulse pict
+        f (F "rect" [b,h])     = do b <- parseReal b; h <- parseReal h
                                     Just [Rect (st0 c) b h]
-        f c (F "revpic" [t])   = do pict <- fs c t; Just $ reverse pict
-        f c (F "rhomb" [])     = Just [rhombV c]
-        f c (F "$" [F "rotate" [a],t]) 
+        f (F "repeat" [t])     = do pict <- fs t
+                                    Just [Repeat $ turtle0B $ map widg pict]
+        f (F "revpic" [t])     = do pict <- fs t; Just $ reverse pict
+        f (F "rhomb" [])       = Just [rhombV c]
+        f (F "$" [F "rotate" [a],t])
                                = do a <- parseReal a; guard $ a /= 0
-                                    pict <- fs c t; jturtle $ rotatePict a pict
-        f c (F "$" [F "scale" [sc],t]) 
-                               = do sc <- parseReal sc; pict <- fs c t
+                                    pict <- fs t; jturtle $ rotatePict a pict
+        f (F "$" [F "scale" [sc],t]) 
+                               = do sc <- parseReal sc; pict <- fs t
                                     Just $ scalePict sc pict
-        f _ (F "skip" [])      = Just [Skip]
-        f c (F "slice" [r,a])  = do r <- parseReal r; a <- parseReal a
+        f (F "$" [F x (n:s),t]) | x `elem` ["shelf","tower","shelfS","towerS"]
+                           = do n <- parsePnat n
+                                pict <- fs t
+                                let k = if last x == 'S' then square pict else n
+                                    c = if take 5 x == "shelf" then '1' else '2'
+                                    h d a b = Just $ fst $ shelf (pict,[]) k 
+                                                         (d,d) a b False ['m',c]
+                                case s of 
+                                     d:s -> do
+                                            d <- parseReal d        -- spacing
+                                            case s of 
+                                             a:s -> do
+                                                   a <- parseChar a -- alignment
+                                                   case s of        -- centering
+                                                     b:s -> do
+                                                          b <- parseChar b
+                                                          h d a $ b == 'C'
+                                                     _ -> h d a False
+                                             _ -> h d 'M' False
+                                     _ -> h 0 'M' False
+        f (F "skip" [])        = Just [Skip]
+        f (F "slice" [r,a])    = do r <- parseReal r; a <- parseReal a
                                     Just [Arc (st0 c) Pie r a]
-        f c (F "smooth" [t])   = do pict <- fs c t; Just $ smooth pict
-        f c (F x [d,m,n,k,t]) | z == "snow"
+        f (F "smooth" [t])     = do pict <- fs t; Just $ smooth pict
+        f (F x [d,m,n,k,t]) | z == "snow"
                                = do hue <- search (== mode) huemodes
                                     d <- parseReal d; m <- parsePnat m
                                     n <- parsePnat n; k <- parsePnat k
-                                    [w] <- fs c t
+                                    [w] <- fs t
                                     Just [mkSnow True (hue+1) d m n k w]
                                  where (z,mode) = splitAt 4 x
-        f c (F "spline" [t])   = do pict <- fs c t; Just $ splinePict pict
-        f c (F "star" [n,r,r'])         
-                               = do n <- parsePnat n; r <- parseReal r
+        f (F "spline" [t])     = do pict <- fs t; Just $ splinePict pict
+        f (F "star" [n,r,r'])  = do n <- parsePnat n; r <- parseReal r
                                     r' <- parseReal r'; jturtle $ star n c r r'
-        f c (F "taichi" s)     = jturtle $ taichi sizes s c
-        f c (F "text" ts)      = do guard $ notnull strs
+        f (F "$" [F "table" [n,d],t]) 
+                               = do n <- parsePnat n; d <- parseReal d
+                                    pict <- fs t; Just [table pict d n]
+        f (F "taichi" s)       = jturtle $ taichi sizes s c
+        f (F "text" ts)        = do guard $ notnull strs
                                     Just [Text_ (st0 c) n strs $ map width strs]
                                  where strs = words $ showTree False 
                                                     $ colHidden $ mkTup ts
-        f c (F "tree" [t])     = Just [Tree st0B n c $ mapT h ct]
+        f (F "tree" [t])       = Just [Tree st0B n c $ mapT h ct]
                                  where ct = coordTree width spread 
                                                       (20,20) $ colHidden t
                                        (_,(x,y)) = root ct
                                        h (a,(i,j)) = (a,fromInt2 (i-x,j-y),
                                                       width a)
-        f c (F "tria" [r])     = do r <- parseReal r; Just [Tria (st0 c) r]
-        f c (F "$" [F "turn" [a],t])    
-                               = do a <- parseReal a; pict <- fs c t
+        f (F "tria" [r])       = do r <- parseReal r; Just [Tria (st0 c) r]
+        f (F "$" [F "turn" [a],t])    
+                               = do a <- parseReal a; pict <- fs t
                                     Just $ turnPict a pict
-        f c (F "turt" [t])     = do acts <- parseActs c t
+        f (F "turt" [t])       = do acts <- parseActs t
                                     Just [turtle0 c acts]
-        f c (F x [n,d,a]) | z == "wave" 
+        f (F x [n,d,a]) | z == "wave"
                                = do mode <- search (== mode) pathmodes
                                     n <- parsePnat n; d <- parseReal d
                                     a <- parseReal a
                                     jturtle $ wave mode n d a c
                                  where (z,mode) = splitAt 4 x
-        f _ (F x [t]) | isJust c = f (fromJust c) t where c = parse color x
-        f _ _                    = Nothing
+        f (F x [t]) | just c   = widgetsC (get c) sizes spread t
+                                 where c = parse color x
+        f _                    = Nothing
          
-        parseActs,g :: Color -> TermS -> Maybe TurtleActs
-        parseActs c t       = do acts <- parseList' (g c) t; Just $ concat acts
-        g c (V x) | isPos x = g c $ getSubterm t $ getPos x
-        g c (F "A" [t])     = widgAct True c t
-        g _ (F "B" [])      = Just [back]
-        g _ (F "C" [])      = Just [Close]
-        g _ (F "D" [])      = Just [Draw]
-        g _ (F "J" [d])     = do d <- parseReal d; Just [Jump d]
-        g _ (F "J" p@[x,y]) = do [x,y] <- mapM parseReal p; Just $ jumpTo (x,y) 
-        g _ (F "L" [])      = Just [up]
-        g _ (F "M" [d])     = do d <- parseReal d; Just [Move d]
-        g _ (F "M" p@[x,y]) = do [x,y] <- mapM parseReal p; Just $ moveTo (x,y)
-        g c (F "O" [])      = Just [Open c 0]
-        g _ (F "O" [c])     = do c <- parseColor c; Just [Open c 0]
-        g c (F "OS" [])     = Just [Open c 1]
-        g _ (F "OS" [c])    = do c <- parseColor c; Just [Open c 1]
-        g c (F "OF" [])     = Just [Open c 2]
-        g c (F "OFS" [])    = Just [Open c 3]
-        g _ (F "OF" [c])    = do c <- parseColor c; Just [Open c 4]
-        g _ (F "OFS" [c])   = do c <- parseColor c; Just [Open c 5]
-        g _ (F "R" [])      = Just [down]
-        g _ (F "SC" [sc])   = do sc <- parseReal sc; Just [Scale sc]
-        g _ (F "T" [a])     = do a <- parseReal a; Just [Turn a]
-        g c t               = widgAct False c t
+        parseActs,g :: TermS -> Maybe TurtleActs
+        parseActs t       = do acts <- parseList' g t; Just $ concat acts
+        g (V x) | isPos x = g $ getSubterm t $ getPos x
+        g (F "A" [t])     = widgAct True t
+        g (F "B" [])      = Just [back]
+        g (F "C" [])      = Just [Close]
+        g (F "D" [])      = Just [Draw]
+        g (F "J" [d])     = do d <- parseReal d; Just [Jump d]
+        g (F "J" p@[x,y]) = do [x,y] <- mapM parseReal p; Just $ jumpTo (x,y) 
+        g (F "L" [])      = Just [up]
+        g (F "M" [d])     = do d <- parseReal d; Just [Move d]
+        g (F "M" p@[x,y]) = do [x,y] <- mapM parseReal p; Just $ moveTo (x,y) 
+        g (F "O" [])      = Just [Open c 0]
+        g (F "O" [c])     = do c <- parseColor c; Just [Open c 0]
+        g (F "OS" [])     = Just [Open c 1]
+        g (F "OS" [c])    = do c <- parseColor c; Just [Open c 1]
+        g (F "OF" [])     = Just [Open c 2]
+        g (F "OFS" [])    = Just [Open c 3]
+        g (F "OF" [c])    = do c <- parseColor c; Just [Open c 4]
+        g (F "OFS" [c])   = do c <- parseColor c; Just [Open c 5]
+        g (F "R" [])      = Just [down]
+        g (F "SC" [sc])   = do sc <- parseReal sc; Just [Scale sc]
+        g (F "T" [a])     = do a <- parseReal a; Just [Turn a]
+        g t               = widgAct False t
 
-        widgAct :: Bool -> Color -> TermS -> Maybe TurtleActs
-        widgAct b c t = do [w] <- fs c t ++ Just [text0 sizes $ showTerm0 t]
-                           Just [Widg b w]
+        widgAct :: Bool -> TermS -> Maybe TurtleActs
+        widgAct b t = do [w] <- fs t ++ Just [text0 sizes $ showTerm0 t]
+                         Just [Widg b w]
+  
+huemodes   = "":words "2 3 4 5 6"
+pathmodes  = "":words "S W SW F SF"
+polymodes  = pathmodes ++ words "R R1 R2 L L1 L2 T T1 T2 LT LT1 LT2"
+trackmodes = words "asc sym ang slo"
+leafmodes  = words "D A C S D2 A2 C2"
+
+fractals = words "bush bush2 cant cactus dragon fern gras grasL grasA grasC" ++
+           words "grasR hexa hilb koch penta pentaS pytree pytreeA wide"
+trunks   = words "TR SQ PE PY CA HE LB RB LS RS PS"
+
+depth (F "$" [F "flower" _,t]) = depth t+1
+depth (F "$" [F "grow" _,t])   = depth t+1
+depth (F "$" [F "growT" _,t])  = depth t+1
+depth (F _ ts)                 = maximum $ 1:map depth ts
+depth _                        = 1
+
+-- The following widget transformations may occur as arguments of growT (see 
+-- widgets). They do not modify the outline of a widget and can thus be applied 
+-- to based widgets. 
+
+widgTrans :: TermS -> Maybe WidgTrans
+widgTrans t = f t where
+    f (F "." [t,u])           = do tr1 <- widgTrans t; tr2 <- widgTrans u
+                                   Just $ tr1 . tr2
+    f (F x [F mode []]) | init z == "trac" 
+                              = do guard $ typ `elem` trackmodes
+                                   m <- search (== m) pathmodes 
+                                   hue <- search (== hue) huemodes
+                                   let center = if last z == 'c' then coords
+                                                                 else gravity
+                                   Just $ track center typ m $ nextColor $ hue+1
+                                where (z,hue) = splitAt 5 x
+                                      (typ,m) = splitAt 3 mode
+    f (F x (n:s)) | z == "rainbow" 
+                              = do n <- parsePnat n
+                                   hue <- search (== hue) huemodes
+                                   let next = nextColor (hue+1) n
+                                   if null s then Just $ rainbow n 0 0 next
+                                   else do
+                                        [a,d] <- mapM parseReal s
+                                        Just $ rainbow n a d next
+                                where (z,hue) = splitAt 7 x
+    f (F "shine" (i:s))       = do i <- parseInt i
+                                   guard $ abs i `elem` [1..42]
+                                   if null s then Just $ shine i 0 0
+                                             else do
+                                                  [a,d] <- mapM parseReal s
+                                                  Just $ shine i a d
+    f (F "inCenter" [tr])     = do tr <- widgTrans tr; Just $ inCenter tr
+    f _                       = Nothing
 
 
 -- | wTreeToBunches is used by 'arrangeGraph', 'concatGraphs' and 'newPaint'
@@ -3874,7 +3613,6 @@ hullCross line@(p1@(x1,y1),p2@(x2,y2)) w =
                                         else (x2+rx*cos rad,y2+ry*sin rad) 
                                         where rad = atan2' (y1-y2) (x1-x2)
                Path _ _ ps   -> head $ f $ mkLines ps
-               Saved _ w     -> hullCross line w
                Text_{}       -> mindist p1 hull
                Tree{}        -> mindist p1 hull
                _ | isWidg w  -> head hull
@@ -4649,8 +4387,6 @@ widgString   = msum [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
                         return $ Rect ((x',y'),a',c,i) b' h',
                      do symbol "Repeat"; w <- enclosed widgString
                         return $ Repeat w,
-                     do symbol "Saved"; file <- token quoted
-                        hull <- enclosed widgString; return $ Saved file hull,
                      do symbol "Skip"; return Skip,
                      do symbol "Text_"; ((x,y),a,c,i) <- state 
                         n <- enclosed nat; strs <- list (token quoted)

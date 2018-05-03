@@ -174,8 +174,9 @@ minmax4 (x1,y1,x2,y2) (x1',y1',x2',y2') = (min x1 x1',min y1 y1',
 mkArray :: Ix a => (a,a) -> (a -> b) -> Array a b
 mkArray bounds f = array bounds [(i,f i) | i <- range bounds]
 
--- The following monad transformer MaybeT is used in parseListT below and the 
--- widget interpreters of Epaint.hs.
+-- The following monad transformer MaybeT is used in the widget interpreters of 
+-- Epaint.hs.
+
 lift' :: Monad m => Maybe a -> MaybeT m a
 lift' = MaybeT . return
 
@@ -2497,14 +2498,6 @@ parseList parser t  = do F "[]" ts <- Just t; mapM parser ts
 
 parseList' :: (TermS -> Maybe a) -> TermS -> Maybe [a]
 parseList' parser t = parseList parser t ++ do a <- parser t; Just [a]
-
-parseListT :: Monad m => (TermS -> MaybeT m a) -> TermS -> MaybeT m [a]
-parseListT parserT t  = case t of F "[]" ts -> mapM parserT ts
-                                  _ -> mzero
-
-parseListT' :: Monad m => (TermS -> MaybeT m a) -> TermS -> MaybeT m [a]
-parseListT' parserT t = parseListT parserT t ++ do a <- parserT t; return [a]
-
 
 parseColl :: (TermS -> Maybe b) -> TermS -> Maybe [b]
 parseColl parser t  = do F x ts <- Just t; guard $ collector x; mapM parser ts

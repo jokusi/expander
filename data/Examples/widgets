@@ -5,22 +5,30 @@ axioms:
 &   turtle2 == turt[T(44),red$oval(111,55),J(222),blue$circ(44)]
 
 terms:
-    repeat$gifs(lars,8,88,44)
+    pict((b,u,red$circ$22),(4,6,[h,kk]),(bb,7,[1..4]),		-- matrices
+	 (cc,p,frame$tria(-33)))
+<+> pict(([zz,ww],[uu,yy],circ$22),(zzz,uuu,center$tria$55),	
+         (aaa,bbb,center$tree$zz(uu,pp,pp)))    		
+<+> [pict((4,6,[h,kk]),(bb,7,[1..4]),(cc,p,center$tria$33),(cc,u,circ(11))),
+     pict((b,u,red(circ(22))),(4,6,[h,kk]))]			
+<+> f$widg(gg(h,kk),zzzz(h,kk),frame$green$tree(zz(uu,pp,pp)))	-- tree
+<+> [load$tattooW,load(tattooW,2)]				-- widgets
+<+> repeat$gifs(lars,8,88,44)					
 <+> turt[pile(33,11),J$20,pile(22,5),J$20,pileR[7,5,4,3,2,3,4,5]]
 <+> scale(22)$track(asc)$red$hilb$3
-<+> scale(2)$red$rainbow(55)$track(ascF)$HE
+<+> red$rainbow(55)$track(ascF)$HE
 <+> scale(2)$red$rainbow(55)$grav$track(ascF)$PE
 <+> scale(4)$red$track(ascF)$tria$22
+<+> save(scale(4)$red$track(ascF)$tria$22,test)
+<+> widg(hh,widg(gg,load$test),load$test)
 <+> scale(4)$red$track(ascF)$poly(33,28,55,22)
 <+> scale(4)$red$track(symF)$poly(33,28,55,22)
 <+> scale(4)$red$track(angF)$poly(33,28,55,22)
 <+> scale(4)$red$track(sloF)$poly(33,28,55,22)
-<+> file(river)<+>blue(waveSF(5,20,45))
+<+> blue(waveSF(5,20,45))
 <+> center$blue$waveSF(5,20,45)
 <+> grav(blue(waveSF(5,20,45)))
 <+> red$frameS$center$blue$waveSF(5,20,45)
-<+> shelf(1)$[circ$33,file$river,circ$44]
-<+> shelf(1)$[circ(33),center(blue(waveSF(5,20,45))),circ(44)]
 <+> planar(111)$turt[rect(111,55),J$166,rect(55,111)]
 <+> turt$T(-120):M(90):concat(replicate(5)[T$60,M$90])   -- hexagon
 <+> turt$T(-108):M(90):concat(replicate(4)[T$72,M$90])   -- pentagon
@@ -55,7 +63,7 @@ terms:
 <+> red$snow(1,1,4,4,grav$pytree$3)
 <+> rect(222,111)+oval(111,222)
 <+> repeat$concat$map(fun(x,[gif(x,66),white$circ$111])) 
-                  [nemo,nemo2,turtle,tweety]
+                     [nemo,nemo2,turtle,tweety]
 <+> repeat[fast$pytree$2,skip,fast$white$pytree$2]
 <+> yellow$scale(4)$trackF$hilb$4
 <+> planar$red$growH[budH,budH,skip,budH,budH,skip]
@@ -151,7 +159,6 @@ terms:
          blue$cframe$text$div end,L,J$66,R,red$cframe$text$div end]
 <+> turt$concat$map(fun(x,[text$x,J$55]))[aaa ddd,
                                           bbb vvv mmmmmmmmmmmmmmm,ccc]
-<+> shelf(3,22)$map(text)[aaa ddd,bbb vvv mmmmmmmmmmmmmmm,ccc]
 <+> hdots[red$circ(200),green$oval(100,300)]
 <+> frame(0)$turt[red$rect(55,111),green$rect(111,55)]
 <+> frame(0)[red$poly(5,33,55),green$center$poly(5,33,55),
@@ -184,14 +191,21 @@ terms:
 <+> green$frameF$matrix[(1,4),(2,2),(3,5),(4,3),(5,1)] 
 <+> red$scale(33)$hilb$3
 <+> place(rect(44,22),111,222,66)+place(rect(44,22),222,111,22)
+<+> shine(-21,5,5)$green$oval(111,55)
+<+> shine(-21,0,5)$green$oval(111,55)
+<+> shine(-21,0,-5)$green$oval(111,55)
+<+> shine(-21,11,0)$green$oval(111,55)
+<+> shine(21)$red$grav$pathF[(0,0),(55,222),(333,-22),(55,-22)]
 <+> shine(21,0,0.8)$red$tria$111
 <+> shine(21,0,0.8)$red$trackF$tria$111
 <+> shine(21)$red$pieP(10,100)
 <+> shine(42,0,3)$dark blue$slice(222,60)
-<+> scale(4)$shine(21)$blue$polyR(9,16,16,28,16) 
-<+> scale(4)$shine(-21)$blue$polyR(10,16,16,28,16) 
-<+> scale(4)$shine(21,11,0)$blue$polyR(9,16,16,28,16) 
-<+> scale(4)$shine(-21,0,11)$blue$polyR(10,16,16,28,16) 
+<+> shine(21)$blue$polyR(9,16,16,28,16) 
+<+> shine(-21)$blue$polyR(10,16,16,28,16) 
+<+> shine(21,11,0)$blue$polyR(9,16,16,28,16) 
+<+> shine(-21,0,11)$blue$polyR(10,16,16,28,16) 
+<+> shine(12)$grav$RGB 255 0 128$pathF[(0.0,0.0),(60.0,0.0),(30.0,66.0)]
+<+> shine(12)$center$RGB 255 0 128$pathF[(0.0,0.0),(60.0,0.0),(30.0,66.0)]
 <+> text$hans hanshanshanshanshans hanshanshanshans hanshanshans
 <+> repeat[osciL(33,green)]
 <+> repeat[osciP(5,33,red,green)] 

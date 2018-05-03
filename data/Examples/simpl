@@ -163,7 +163,3 @@ terms:
 
 {- <+> f(f(a,f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,a)))),a) -}
 
-<+> bb(f(_),g(h(_)))
-<+> f$widg(gg(h,kk),zzzz(h,kk),frame$green$tree(zz(uu,pp,pp)))
-<+> pict(([zz,ww],[uu,yy],circ$22),(zzz,uuu,center$tria$55))  -- for matrices
-

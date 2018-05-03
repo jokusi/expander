@@ -1,7 +1,8 @@
--- MWGC
+-- mwgc
 
 constructs: 	m w g c
-defuncts:     	goods draw1 draw2 pic river triple
+defuncts:     	goods draw1 draw2 draw3 draw4 pic river river1 pair triple mkFile 
+preds:		final 
 fovars:	  	left
 
 axioms:
@@ -10,31 +11,48 @@ goods  == [w,g,c] &
 labels == m:goods &
 states == [labels] &
 
-(m `in` left    ==> (left,m) -> left-[m]) &
+(final$left <==> null$left | any(`in`[[m],[w,g],[g,c]])[left,labels-left]) & 
 
-(m `NOTin` left ==> (left,m) -> m:left) &
+(m `in` left & Not(final$left) ==> (left,m) -> left-[m]) &
 
-(x `in` goods & [m,x] `subset` left 
+(m `NOTin` left & Not(final$left) ==> (left,m) -> m:left) &
+
+(x `in` goods & [m,x] `subset` left & Not(final$left)
                 ==> (left,x) -> left-[m,x]) &
 
-(x `in` goods & [m,x] `NOTshares` left 
+(x `in` goods & [m,x] `NOTshares` left & Not(final$left)
                 ==> (left,x) -> m:insertL(x)(left)(goods)) &
 
 -- widget interpreters:
 
-draw1 == wtree $ fun(x,ite(List$x,frameS$shelf(1)$triple$x,text$x)) &
+draw1 == wtree $ fun(x,ite(List$x,pair$x,text$x)) &
 
-draw2 == wtree $ fun(x,ite(List$x,frameS$text$x,text$x)) &
+draw2 == wtree $ fun(x,ite(List$x,triple$x,text$x)) &
 
-triple(left) == [shelf(4)$map(pic)$left,river,
-                 shelf(4)$map(pic)$labels-left] &
+draw3 == wtree $ fun(x,ite(List$x,load$string$x,text$x)) &	-- lieber nicht
 
-pic(m) == gif(man,8,15) &
-pic(w) == gif(wolf,30,25) &
-pic(g) == gif(goat,28,25) &
-pic(c) == gif(cabbage,22,22) &
+draw4 == wtree $ fun(m,pic$m,
+		     w,shelf(2)[pic$m,pic$w],
+		     g,shelf(2)[pic$m,pic$g],
+		     c,shelf(2)[pic$m,pic$c],
+		     x,text$x) &
 
-river == blue$waveSF(5,20,45)
+pair$x == center$shelf(1)[shelf(4)$map(pic)$x,
+		          shelf(4)$map(pic)$labels-x] &
+
+triple$x == center$shelf(1)[shelf(4)$map(pic)$x,
+		            river,
+		            shelf(4)$map(pic)$labels-x] &
+
+pic$m == gif(man,8,15) &
+pic$w == gif(wolf,30,25) &
+pic$g == gif(goat,28,25) &
+pic$c == gif(cabbage,22,20) &
+river == gif(wave,77,17) &
+
+river1 == blue$waveSF(5,20,45) &				-- lieber nicht
+
+(List$x ==> mkFile$x == string$x)
 
 conjects: 
 
@@ -44,6 +62,12 @@ terms:
 
 insertL(c)[w,g]$goods <+>
 
-frameS$shelf(1)$triple[m,g,c] <+>
+triple[m,g,c] <+>
 
-fun(x,ite(List$x,frameS$shelf(1)$triple$x,x))[m,g,c]
+fun(x,ite(List$x,triple$x,x))[m,g,c] <+>
+
+save(triple[w,c],mkFile[w,c]) <+> 
+
+load$string[w,c] <+>
+
+branch$map(fun(left,save(triple$left,mkFile$left)))$states

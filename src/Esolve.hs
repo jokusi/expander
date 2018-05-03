@@ -1,7 +1,7 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, October 2017
+Copyright   : (c) Peter Padawitz, April 2018
                   Jos Kusiek, April 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
@@ -973,11 +973,11 @@ simplifyA (F "`NOTsubset`" [F x ts,F y us]) sig
   | collectors x y && all f ts && all f us = jConst $ not $ subsetTerm ts us
                                                   where f = isValue sig
 
-simplifyA (F "Nat" [t]) sig  | isValue sig t  = jConst $ isJust $ parseNat t
+simplifyA (F "Nat" [t]) sig   = jConst $ just $ parseNat t
 
-simplifyA (F "Int" [t]) sig  | isValue sig t  = jConst $ isJust $ parseInt t
+simplifyA (F "Int" [t]) sig   = jConst $ just $ parseInt t
 
-simplifyA (F "Real" [t]) sig | isValue sig t  = jConst $ isJust $ parseDouble t
+simplifyA (F "Real" [t]) sig  = jConst $ just $ parseDouble t
 
 simplifyA (F "List" [t]) sig  = jConst $ isList t
 

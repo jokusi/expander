@@ -542,6 +542,7 @@ data-files:          Examples/abp
                    , Examples/recttabB
                    , Examples/recttabBS
                    , Examples/regeqs
+                   , Examples/reglangs
                    , Examples/relalg
                    , Examples/RELALG1proof
                    , Examples/RELALG2proof
@@ -700,6 +701,8 @@ data-files:          Examples/abp
                    , Examples/updeq
                    , Examples/UPDproof
                    , Examples/UPDterm
+                   , Examples/wave
+                   , Examples/waveG
                    , Examples/widgets
                    , Examples/wirth
                    , Examples/WIRTHproof
