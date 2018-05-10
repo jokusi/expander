@@ -1,0 +1,39 @@
+-- eosum
+
+constructs: 	esum osum elab olab final unfold
+defuncts:	parity
+preds: 		even odd
+
+axioms:
+
+parity$n == ite(even$n,elab,olab) &
+
+(even$0 <==> True) &
+(even$suc$x <==> odd$x) &
+(odd$0 <==> False) &
+(odd$suc$x <==> even$x) &
+
+-- acceptor of number sequences whose sum is even
+
+states == [esum] & labels == [elab,olab] & atoms == [final] &
+
+(esum,elab) -> esum &
+(esum,olab) -> osum &
+(osum,olab) -> esum &
+(osum,elab) -> osum &
+
+final -> esum &
+
+unfold$s == out <=< (kfold(flip$transL)$s) . map(parity) 
+
+terms:
+
+unfold[esum][1..4] <+>	--> [final]
+unfold[esum][1..5] <+>	--> []
+unfold[osum][1..4] <+>	--> []
+unfold[osum][1..5] <+>	--> [final]
+
+sum[1..4] <+> 		--> 10
+sum[1..5]		--> 15
+
+

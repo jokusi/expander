@@ -18,7 +18,7 @@ Esolve contains:
 -}
 module Esolve where
 
-import Gui
+import Gui.Base
 import Eterm
 import Epaint
 
@@ -240,79 +240,79 @@ foldArith alg = f
 
 -- * a signature for state formulas
 
-data Modal a rel relL label = Modal
+data Modal a label = Modal
     { true, false :: a
     , modalNeg :: a -> a
     , modalOr, modalAnd :: a -> a -> a
-    , ax, ex :: rel -> relL -> a -> a
-    , box, dia :: relL -> label -> a -> a
+    , ex,ax,xe,xa :: a -> a
+    , dia,box,aid,xob :: label -> a -> a
     }
 
 -- * the Modal-algebra of state sets
 
-ctlAlg :: Sig -> Modal [Int] [[Int]] [[[Int]]] Int
+ctlAlg :: Sig -> Modal [Int] Int
 ctlAlg sig = Modal
-  { true        = sts
-  , false       = []
-  , modalNeg    = minus sts 
-  , modalOr     = join
-  , modalAnd    = meet
-  , ex          = \rel relL -> imgsShares sts $ f rel relL
-  , ax          = \rel relL -> imgsSubset sts $ f rel relL
-  , dia         = \relL -> imgsShares sts . flip (g relL)
-  , box         = \relL -> imgsSubset sts . flip (g relL)
+  { true  = sts
+  , false = []
+  , modalNeg   = minus sts 
+  , modalOr    = join
+  , modalAnd   = meet
+  , ex    = imgsShares sts $ f (sig&trans) (sig&transL)
+  , ax    = imgsSubset sts $ f (sig&trans) (sig&transL)
+  , xe    = imgsShares sts $ f (parents sig) (parentsL sig)
+  , xa    = imgsSubset sts $ f (parents sig) (parentsL sig)
+  , dia   = imgsShares sts . flip (g (sig&transL))
+  , box   = imgsSubset sts . flip (g (sig&transL))
+  , aid   = imgsShares sts . flip (g $ parentsL sig)
+  , xob   = imgsSubset sts . flip (g $ parentsL sig)
   }
-  where sts = indices_ (sig&states)
-        f rel relL i = join (rel!!i) $ joinMap (g relL i) 
-                                     $ indices_ (sig&labels)
-        g relL i k   = relL!!i!!k
+              where sts = indices_ (sig&states)
+                    f trans transL i = join (trans!!i) $ joinMap (g transL i) 
+                                                       $ indices_ (sig&labels)
+                    g transL i k = transL!!i!!k
 
 -- | the interpreter of state formulas in ctlAlg
-foldModal :: Sig -> TermS -> Maybe [Int]
+type States = Maybe [Int]
+
+foldModal :: Sig -> TermS -> States
 foldModal sig = f $ const Nothing where
-  alg = ctlAlg sig
-  f :: (String -> Maybe [Int]) -> TermS -> Maybe [Int]
-  f g (F x []) | isJust a          = a where a = g x
-  f _ (F "true" [])                = Just (true alg)
-  f _ (F "false" [])               = Just (false alg)
-  f g (F "not" [t])                = do a <- f g t; Just $ (alg&modalNeg) a
-  f g (F "\\/" [t,u])              = do a <- f g t; b <- f g u
-                                        Just $ modalOr alg a b
-  f g (F "/\\" [t,u])              = do a <- f g t; b <- f g u
-                                        Just $ modalAnd alg a b
-  f g (F "`then`" [t,u])       = do a <- f g t; b <- f g u
-                                    Just $ (alg&modalOr) ((alg&modalNeg) a) b
-  f g (F "EX" [t])             = do a <- f g t
-                                    Just $ (alg&ex) (sig&trans) (sig&transL) a
-  f g (F "XE" [t])             = do a <- f g t; Just $ (alg&ex) (parents sig) 
-                                                       (parentsL sig) a
-  f g (F "AX" [t])             = do a <- f g t
-                                    Just $ (alg&ax) (sig&trans) (sig&transL) a
-  f g (F "XA" [t])             = do a <- f g t; Just $ (alg&ax) (parents sig) 
-                                                           (parentsL sig) a
-  f g (F "<>" [lab,t])         = do a <- f g t; k <- searchL lab
-                                    Just $ (alg&dia) (sig&transL) k a        
-  f g (F "><" [lab,t])         = do a <- f g t; k <- searchL lab
-                                    Just $ (alg&dia) (parentsL sig) k a        
-  f g (F "#" [lab,t])          = do a <- f g t; k <- searchL lab
-                                    Just $ (alg&box) (sig&transL) k a
-  f g (F "##" [lab,t])         = do a <- f g t; k <- searchL lab
-                                    Just $ (alg&box) (parentsL sig) k a
-  f g (F ('M':'U':' ':x) [t])      = fixptM subset (step g x t) (alg&false)
-  f g (F ('N':'U':' ':x) [t])      = fixptM supset (step g x t) (alg&true)
-  f _ (F "$" [at,lab])             = do i <- searchA at; k <- searchL lab
-                                        Just $ (sig&valueL)!!i!!k
-  f _ at                           = do i <- searchA at; Just $ (sig&value)!!i
-{-f _ (F "atom" [F "$" [phi,lab]]) = do k <- searchL lab
-                                        Just $ h $ apply $ apply phi lab
-  f _ (F "atom" [phi])             = Just $ h $ apply phi-}
+           alg = ctlAlg sig
+           f :: (String -> States) -> TermS -> States
+           f g (F x []) | just a       = a where a = g x
+           f _ (F "true" [])           = Just (alg&true)
+           f _ (F "false" [])          = Just (alg&false)
+           f g (F "not" [t])           = do a <- f g t; Just $ (alg&modalNeg) a
+           f g (F "\\/" [t,u])         = do a <- f g t; b <- f g u
+                                            Just $ (alg&modalOr) a b
+           f g (F "/\\" [t,u])         = do a <- f g t; b <- f g u
+                                            Just $ (alg&modalAnd) a b
+           f g (F "`then`" [t,u])      = do a <- f g t; b <- f g u
+                                            Just $ (alg&modalOr) ((alg&modalNeg) a) b
+           f g (F "EX" [t])            = do a <- f g t; Just $ (alg&ex) a
+           f g (F "AX" [t])            = do a <- f g t; Just $ (alg&ax) a
+           f g (F "XE" [t])            = do a <- f g t; Just $ (alg&xe) a
+           f g (F "XA" [t])            = do a <- f g t; Just $ (alg&xa) a
+           f g (F "<>" [lab,t])        = do a <- f g t; k <- searchL lab
+                                            Just $ (alg&dia) k a
+           f g (F "#" [lab,t])         = do a <- f g t; k <- searchL lab
+                                            Just $ (alg&box) k a
+           f g (F "><" [lab,t])        = do a <- f g t; k <- searchL lab
+                                            Just $ (alg&aid) k a
+           f g (F "##" [lab,t])        = do a <- f g t; k <- searchL lab
+                                            Just $ (alg&xob) k a
+           f g (F ('M':'U':' ':x) [t]) = fixptM subset (step g x t) (alg&false)
+           f g (F ('N':'U':' ':x) [t]) = fixptM supset (step g x t) (alg&true)
+           f _ (F "$" [at,lab])        = do i <- searchA at; k <- searchL lab
+                                            Just $ (sig&valueL)!!i!!k
+           f _ at                      = do
+                                          i <- searchA at; Just $ (sig&value)!!i
 
-  searchA,searchL :: Term String -> Maybe Int
-  searchA at  = search (== at) (sig&atoms)
-  searchL lab = search (== lab) (sig&labels)
+           searchA,searchL :: Term String -> Maybe Int
+           searchA at  = search (== at) (sig&atoms)
+           searchL lab = search (== lab) (sig&labels)
 
-  step :: (String -> Maybe [Int]) -> String -> TermS -> [Int] -> Maybe [Int]
-  step g x t a = f (upd g x $ Just a) t
+           step :: (String -> States) -> String -> TermS -> [Int] -> States
+           step g x t a = f (upd g x $ Just a) t
 
 {-h :: (TermS -> TermS) -> [Int]
   h app = getIndices (isTrue . simplifyIter sig . app) (sig&states)-}
@@ -331,6 +331,9 @@ evaluate sig = eval
          eval (F ('A':'l':'l':x) [t])      = mkAll (words x`meet`frees sig u) u
                                              where u = eval t
          eval (F "Not" [t])                = mkNot sig $ eval t
+         eval (F "id" [t])                  = eval t
+         eval (F "ite" [t,u,v]) | isTrue t = eval u
+                                | isFalse t = eval v
          eval (F x p@[_,_]) | arithmetical x && isJust ip = mkRel $ fromJust ip
                             | arithmetical x && isJust rp = mkRel $ fromJust rp
                             | arithmetical x && isJust fp = mkRel $ fromJust fp
@@ -903,7 +906,6 @@ subsumeConj _ _ _           = Nothing
 
 -- LAMBDA APPLICATIONS
 -- see: https://fldit-www.cs.uni-dortmund.de/~peter/CTL.pdf, page 102 ff.
-
 simplifyA (F "$" [F x [F "~" [p],t],u]) sig
   | lambda x = Just $ renameAll f t>>>sub'
               where ys = sigVars sig u
@@ -942,36 +944,41 @@ simplifyA t sig | relational sig x && isJust n = Just $ mkDisjunct $ map g
                    n = search isSum ts; i = fromJust n
                    g u = updArgs t $ updList ts i u
 
-simplifyA (F "`in`" [t,F x ts]) sig
-  | collector x = if f t && all f ts then jConst $ inTerm t ts
-                                     else Just $ mkDisjunct $ map (mkEq t) ts
-                  where f = isValue sig
+simplifyA (F "`IN`" [t,F x ts]) sig    | collector x = jConst $ inTerm t ts
 
-simplifyA (F "`NOTin`" [t,F x ts]) sig
-  | collector x = if f t && all f ts then jConst $ notInTerm t ts
-                                     else Just $ mkConjunct $ map (mkNeq t) ts
-                  where f = isValue sig
+simplifyA (F "`NOTIN`" [t,F x ts]) sig | collector x = jConst $ notInTerm t ts
+
+simplifyA (F "`in`" [t,F x ts]) sig 
+   | collector x = do guard $ f t && all f ts; jConst $ inTerm t ts
+                   where f = isValue sig
+
+simplifyA (F "`NOTin`" [t,F x ts]) sig 
+   | collector x = do guard $ f t && all f ts; jConst $ notInTerm t ts
+                   where f = isValue sig
 
 simplifyA (F "`shares`" [F x ts,F y us]) sig
-  | collectors x y && all f ts && all f us = jConst $ sharesTerm ts us
-                                                  where f = isValue sig
+   | collectors x y = do guard $ all f ts && all f us; jConst $ sharesTerm ts us
+                      where f = isValue sig
 
 simplifyA (F "`NOTshares`" [F x ts,F y us]) sig
-  | collectors x y && all f ts && all f us = jConst $ disjointTerm ts us
-                                                  where f = isValue sig
+   | collectors x y = do guard $ all f ts && all f us
+                         jConst $ disjointTerm ts us
+                      where f = isValue sig
 
 simplifyA (F "disjoint" [F x ts]) sig 
-  | all collector (x:map root ts) && all f tss = jConst $ distinctTerms tss
-                                                 where f = all $ isValue sig
-                                                       tss = map subterms ts
+   | all collector (x:map root ts) = do guard $ all f tss 
+                                        jConst $ distinctTerms tss
+                                     where f = all $ isValue sig
+                                           tss = map subterms ts
 
 simplifyA (F "`subset`" [F x ts,F y us]) sig
-  | collectors x y && all f ts && all f us = jConst $ subsetTerm ts us
-                                                  where f = isValue sig
+   | collectors x y = do guard $ all f ts && all f us; jConst $ subsetTerm ts us
+                      where f = isValue sig
 
 simplifyA (F "`NOTsubset`" [F x ts,F y us]) sig
-  | collectors x y && all f ts && all f us = jConst $ not $ subsetTerm ts us
-                                                  where f = isValue sig
+   | collectors x y = do guard $ all f ts && all f us
+                         jConst $ not $ subsetTerm ts us
+                      where f = isValue sig
 
 simplifyA (F "Nat" [t]) sig   = jConst $ just $ parseNat t
 
@@ -994,6 +1001,13 @@ mkLabels sig = mkList . map ((sig&labels)!!)
 mkAtoms :: Sig -> [Int] -> TermS
 mkAtoms sig = mkList . map ((sig&atoms)!!)
 
+{-  
+ simplifyS (F "$" [F "<=<" [g,f],t]) sig
+            | all collector (x:map root ts) = Just $ F x $ concatMap subterms ts
+                                      where u = sapply sig f t; x = root u
+                                            ts = map (sapply sig g) $ subterms u
+-}
+
 -- distribute a function over a sum
 
 simplifyS t sig | functional sig x && isJust n = Just $ mkSum $ map g $ mkTerms 
@@ -1003,20 +1017,23 @@ simplifyS t sig | functional sig x && isJust n = Just $ mkSum $ map g $ mkTerms
            g u = updArgs t $ updList ts i u
 
 simplifyS (F "`meet`" [F x ts,F y us]) sig
- | collectors x y && all f ts && all f us = Just $ mkList $ meetTerm ts us
-                                               where f = isValue sig
+  | collectors x y = do guard $ all f ts && all f us
+                        Just $ mkList $ meetTerm ts us
+                     where f = isValue sig
 
 simplifyS (F "`join`" [F x ts,F y us]) sig
- | collectors x y && all f ts && all f us = Just $ mkList $ joinTerms ts us
-                                               where f = isValue sig
+  | collectors x y = do guard $ all f ts && all f us
+                        Just $ mkList $ joinTerms ts us
+                     where f = isValue sig
 
 simplifyS (F "-" [F x ts,F y us]) sig 
- | collectors x y && all f ts && all f us = Just $ mkList $ removeTerms ts us
-                                             where f = isValue sig
+  | collectors x y = do guard $ all f ts && all f us
+                        Just $ mkList $ removeTerms ts us
+                     where f = isValue sig
                                              
 simplifyS (F "-" [F x ts,u]) sig 
- | collector x && all f ts && f u         = Just $ mkList $ removeTerm ts u
-                                             where f = isValue sig
+  | collector x = do guard $ all f ts && f u; Just $ mkList $ removeTerm ts u
+                  where f = isValue sig
 
 simplifyS (F "$" [F "filter" _,F "[]" []]) _ = Just mkNil
        
@@ -1256,31 +1273,25 @@ simplifyT (F x [F "()" ts]) | isJust i && k < length ts = Just $ ts!!k
                                               where i = parse (strNat "get") x
                                                     k = fromJust i
                                              
-simplifyT (F "id" [t])                              = Just t
+simplifyT (F "height" [t])        = jConst $ height t
 
-simplifyT (F "height" [t])                      = jConst $ height t
-
-simplifyT (F "$" [F "." [f,g],t])            = Just $ apply f $ apply g t
+simplifyT (F "$" [F "." [g,f],t]) = Just $ apply g $ apply f t 
 
 simplifyT (F "$" [F "$" [F "flip" [f],t],u]) = Just $ apply (apply f u) t
 
-simplifyT (F "ite" [t,u,v]) | isTrue t  = Just u
-                            | isFalse t = Just v
+simplifyT (F "suc" [t])        | just i = jConst $ get i+1 where i = parseInt t
 
-simplifyT (F "suc" [t])     | isJust i = jConst $ fromJust i+1
-    where i = parseInt t
-
-simplifyT (F "range" [t,u]) | isJust i && isJust k = 
+simplifyT (F "range" [t,u])    | just i && just k = 
          jList $ map mkConst [fromJust i..fromJust k]
          where i = parseInt t; k = parseInt u
 
 simplifyT (F "list" [F x ts])  | collector x = Just $ drop0FromPoss $ mkList ts
 
-simplifyT (F "set" [F x ts])    | collector x = Just $ F "{}" $ joinTerms [] ts
+simplifyT (F "set" [F x ts])   | collector x = Just $ F "{}" $ joinTerms [] ts
 
-simplifyT (F "bag" [F x ts])    | collector x = Just $ drop0FromPoss $ mkBag ts
-         
-simplifyT (F "tup" [F x ts])    | collector x = Just $ drop0FromPoss $ mkTup ts
+simplifyT (F "bag" [F x ts])   | collector x = Just $ drop0FromPoss $ mkBag ts
+
+simplifyT (F "tup" [F x ts])   | collector x = Just $ drop0FromPoss $ mkTup ts
 
 simplifyT (F "branch" [F x ts]) | collector x = Just $ drop0FromPoss $ mkSum ts
 
@@ -1297,9 +1308,6 @@ simplifyT (F "!!" [F ":" [t,u],n]) | isJust i = Just $ if k == 0 then t
                                               else F "!!" [u,mkConst $ k-1]
                                            where i = parseNat n; k = fromJust i
 
-simplifyT (F "$" [F "mapS" [f@(F _ ts)],F x us]) | collector x 
-                                             = Just $ mkSum $ map (apply f) us
-
 simplifyT (F "$" [F "map" [f@(F _ ts)],F x us]) | collector x 
                                              = Just $ F x $ map (apply f) us
 
@@ -1308,6 +1316,8 @@ simplifyT (F "$" [F "map" [f],F ":" [t,ts]]) = Just $ F ":" [apply f t,
 
 simplifyT (F "$" [F "map" _,F "[]" _]) = Just mkNil
 
+simplifyT (F "$" [F "mapS" [f@(F _ ts)],F x us]) | collector x 
+                                              = Just $ mkSum $ map (apply f) us
 
 simplifyT (F "$" [F "$" [F "upd" [F x ts],n],u]) 
         | isJust i && collector x && k < length ts = Just $ F x $ updList ts k u 
@@ -1364,11 +1374,10 @@ simplifyT t | f == "curry" && notnull tss && length us == 1 =
                                          Just $ applyL (head us) $ concat uss
                                         where (f,tss) = unCurry t; us:uss = tss
 
-simplifyT (F "$" [F "uncurry" [_],F "()" ts]) =
-                            Just $ case ts of t:ts -> foldl apply (F "f" [t]) ts
-                                              _ -> F "f" ts
+simplifyT (F "$" [F "uncurry" [f],F "()" (t:ts@(_:_))]) =
+                                Just $ F "$" [F "uncurry" [apply f t],F "()" ts]
 
-simplifyT (F "$" [F "uncurry" [_],t]) = Just $ F "f" [t]
+simplifyT (F "$" [F "uncurry" [f],F "()" [t]]) = Just $ apply f t
 
 simplifyT (F "$" [F "$" [F "foldl" [f],a],F x ts]) | collector x = 
                                 Just $ foldl g a ts where g a t = applyL f [a,t]
@@ -1386,8 +1395,8 @@ simplifyT (F "$" [F "zip" [F x ts],F y us]) | collectors x y =
 simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y = 
                     Just $ mkList $ zipWith g ts us where g t u = applyL f [t,u]
 
-simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]])
-        = Just $ F ":" [applyL f [t,u],F "$" [F "$" [F "zipWith" [f],ts],us]]
+simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
+             Just $ F ":" [applyL f [t,u],F "$" [F "$" [F "zipWith" [f],ts],us]]
 
 simplifyT (F "$" [F "$" [F "zipWith" _,F "[]" _],F ":" _]) = Just mkNil
 
@@ -1449,12 +1458,7 @@ simplifyT (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) =
 simplifyT t = simplifyT1 t
 
 simplifyT1 :: TermS -> Maybe TermS
-{-
-simplifyT1 (F "suc" [t]) = Just $ F "+" [u,mkConst i] 
-                           where (i,u) = destruct 1 t
-                                 destruct i (F "suc" [t]) = destruct (i+1) t
-                                 destruct i t                   = (i,t)
--}
+
 simplifyT1 (F "`mod`" [t,u]) | isJust i && isJust j && k /= 0 = 
                                       Just $ mkConst $ mod (fromJust i) k
                             where i = parseInt t; j = parseInt u; k = fromJust j
@@ -1601,30 +1605,32 @@ simplReducts isTrans sig t
  where reds = concatMap f (simpls sig)
        f (u,cs,v) = case matchSubs sig xs t u of
                          Just (sub,ts,is,bag) | isJust sub'
-                           -> map (mkBag . h (`elem` is) 0 0 ts . toElems) 
+                           -> map (mkBag . h is ts . toElems)
                                   $ mkTerms $ reduce $ v>>>fromJust sub'
                               where sub' = g sub cs xs
                                     toElems = if bag then mkElems else single
                          _ -> []
-                    where xs = frees sig u
+                     where xs = frees sig u
+                           h is ts vs = g 0 0 ts 
+                                where g i k (u:us) = if i `elem` is
+                                                     then vs!!k:g (i+1) (k+1) us
+                                                     else ts!!i:g (i+1) k us
+                                      g _ _ _ = []
+                           reduce = if isTrans then simplifyIter sig else id
        g sub (c:cs) xs | isTrue $ simplifyIter sig $ c>>>sub = g sub cs xs
        g sub (F "=" [t,u]:cs) xs | frees sig t `subset` xs &&
                                        xs `disjoint` zs && isJust h
                         = g (sub `andThen` fromJust h) cs $ xs++zs
                           where zs = frees sig u
                                 h = match sig zs (simplifyIter sig $ t>>>sub) u
-       g sub cs _       = do guard $ null cs; Just sub
-       h f i k ts vs = g i k ts
-                       where g i k (_:us) = if f i then vs!!k:g (i+1) (k+1) us
-                                                   else ts!!i:g (i+1) k us
-                             g _ _ _      = []
-       reduce = if isTrans then simplifyIter sig else id
+       g sub [] _ = Just sub
+       g _ _ _    = Nothing
 
 -- | rewriteSig sig ts constructs the (labelled) relations generated by ts and
 -- the
 -- simplification and transition axioms of sig.
 -- rewriteSig is used by 'Ecom.buildKripke'.
-rewriteSig :: Sig -> [TermS] -> ([(TermS,[TermS])],[(TermS,TermS,[TermS])])
+rewriteSig :: Sig -> [TermS] -> (Pairs TermS,Triples TermS TermS)
 rewriteSig sig ts = (zip ts $ reduce ts,
                      zipL pairs $ reduce [mkPair t lab | (t,lab) <- pairs])
                   where reduce = map $ simplReducts True sig
@@ -1633,16 +1639,16 @@ rewriteSig sig ts = (zip ts $ reduce ts,
 -- | rewriteStates mode sig constructs the transition system generated by  
 -- sig.states and the simplification and transition axioms of sig.
 -- rewriteStates is used by 'Ecom.buildKripke'.
-rewriteStates :: Int -> Sig 
-                      -> ([TermS],[(TermS,[TermS])],[(TermS,TermS,[TermS])])
+rewriteStates :: Int -> Sig -> ([TermS],Pairs TermS,Triples TermS TermS)
 rewriteStates mode sig = h (sig&states) (sig&states) [] [] where
-                reduce = map $ simplReducts True sig
-                h sts ts ps psL = if null new then (sts,rs,rsL) 
-                                              else h (sts `join` new) new rs rsL
+                 -- h 0 sts ts ps psL = (sts,ps,psL) 
+                    h sts ts ps psL = if null new then (sts,rs,rsL) 
+                                      else h (sts `join` new) new rs rsL
                       where new = reds `minus` sts
+                            reds = joinM redss `join` joinM redssL
                             redss = reduce ts
                             redssL = reduce [mkPair t lab | (t,lab) <- pairs]
-                            reds = joinM redss `join` joinM redssL
+                            reduce = map $ simplReducts True sig
                             pairs = prod2 ts (sig&labels)
                             qs = zip ts redss
                             qsL = zipL pairs redssL
@@ -1654,11 +1660,11 @@ rewriteStates mode sig = h (sig&states) (sig&states) [] [] where
                             fL (t,u,ts) = (t,u,onlyNew ts)
                             onlyNew ts = minus ts $ meet reds sts
                            
-pairsToInts :: [TermS] -> [(TermS,[TermS])] -> [TermS] -> [[Int]]
+pairsToInts :: [TermS] -> Pairs TermS -> [TermS] -> [[Int]]
 pairsToInts us ps = map f where
   f t = searchAll (`elem` (fromJust $ lookup t ps)) us
 
-tripsToInts :: [TermS] -> [TermS] -> [(TermS,TermS,[TermS])] -> [TermS] 
+tripsToInts :: [TermS] -> [TermS] -> Triples TermS TermS -> [TermS] 
             -> [[[Int]]]
 tripsToInts us vs ps = map f
                 where f t = map (flip (g t) us) vs

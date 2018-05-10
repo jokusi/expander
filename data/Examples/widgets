@@ -5,22 +5,37 @@ axioms:
 &   turtle2 == turt[T(44),red$oval(111,55),J(222),blue$circ(44)]
 
 terms:
+
     pict((b,u,red$circ$22),(4,6,[h,kk]),(bb,7,[1..4]),		-- matrices
 	 (cc,p,frame$tria(-33)))
 <+> pict(([zz,ww],[uu,yy],circ$22),(zzz,uuu,center$tria$55),	
          (aaa,bbb,center$tree$zz(uu,pp,pp)))    		
 <+> [pict((4,6,[h,kk]),(bb,7,[1..4]),(cc,p,center$tria$33),(cc,u,circ(11))),
-     pict((b,u,red(circ(22))),(4,6,[h,kk]))]			
+     pict((b,u,red(circ(22))),(4,6,[h,kk]))]		
+	
 <+> f$widg(gg(h,kk),zzzz(h,kk),frame$green$tree(zz(uu,pp,pp)))	-- tree
+<+> h(1,map(widg.red.frame.text)[0..4])
+<+> h(1,map(widg.frame.red.text)[0..4])
+<+> h(1,map(fun(x,widg(x,frameS$red$text$x+1)))[0..4]) 
+<+> f(g(h,n),widg(widg(t,z,oval(22,44)),z,oval(22,44)))
+<+> f(g(h,n),widg(widg(t,z,red$oval(22,44)),z,light green$oval(44,22)))
+<+> widg(replicate(5)[1..4],center$turt[shine(11)$red$circ$22,J$33,
+					shine(11)$blue$circ$22])
+<+> widg(hh,widg(gg,load$test),load$test)
+<+> f(g(h,widg(t,z,gif(goat,28,25))),     widg(widg(t,z,gif(nemo,63,49)),z,light green(oval(44,22))))	
+<+> f(a,a,a,a,a,widg(a,a,a,a,a,a,a,a,a,a,a,green$circ$55),a,a,a,a,
+      widg(a,red$circ$33))
+<+> 
+f(f(f(4,4,4,4,4)),f(widg(g(g(5),g(5),g(5),g(5)),circ(22))),f(widg(g(g(5),g(5),g(5),g(5)),circ(22))),g(widg(g(g(5),g(5),g(5),g(5)),circ(22))),g(g(5),g(5),g(5),g(5)))
+
 <+> [load$tattooW,load(tattooW,2)]				-- widgets
-<+> repeat$gifs(lars,8,88,44)					
+<+> map(fun(x,frame(x$text$ff hhhhh ff$8)))[red,green,blue]
 <+> turt[pile(33,11),J$20,pile(22,5),J$20,pileR[7,5,4,3,2,3,4,5]]
 <+> scale(22)$track(asc)$red$hilb$3
 <+> red$rainbow(55)$track(ascF)$HE
 <+> scale(2)$red$rainbow(55)$grav$track(ascF)$PE
 <+> scale(4)$red$track(ascF)$tria$22
 <+> save(scale(4)$red$track(ascF)$tria$22,test)
-<+> widg(hh,widg(gg,load$test),load$test)
 <+> scale(4)$red$track(ascF)$poly(33,28,55,22)
 <+> scale(4)$red$track(symF)$poly(33,28,55,22)
 <+> scale(4)$red$track(angF)$poly(33,28,55,22)
@@ -77,6 +92,17 @@ terms:
 <+> meetL[red$tria$88,green$rect(44,111)]
 <+> turt[tria(88),R,rect(99,44),L,J$222,circ$77]
 <+> light blue$frameF$red$trackF$tria$111
+<+> turt[place(0,0)$red$circ$5,place(0,10)$green$circ$5,
+         place(10,10)$blue$circ$5,place(10,0)$yellow$circ$5]
+<+> turt$map(fun((x,y,H),place(x,y)$H$circ$5))[(0,0,red),(0,10,green), 
+	                                       (10,10,blue),(10,0,yellow)]
+
+-- gif(pic,m,n) loads pic.gif with size (2*m)x(2*n)
+
+<+> repeat$gifs(tweety,12,150,95)
+<+> repeat$gifs(lars,8,100,75)	
+<+> repeat$gifs(lars,8,88,44)	
+
 <+> repeat$flash$red$tria$111
 <+> repeat$rotate(10)$red$tria$111
 <+> repeat$rotate(10)$smooth$dragon$6
@@ -123,12 +149,11 @@ terms:
 <+> scale(11)$polyS(9,11,22,33,22,11)
 <+> green$tria(55)
 <+> turt[rect(22,11),J(11),tria(11,green),J(11),magenta$polyS(5,33,11)]
-<+> f(a,a,a,a,a,widg(a,a,a,a,a,a,a,a,a,a,a,green$circ$55),a,a,a,a,
-      widg(a,red$circ$33))
 <+> turt[blue$chord(90,30),J$222,light orange$chord1(90,60),J$222,
          dark grey$chord2(90,90),J$222,light grey$chord2(90,120)]
-<+> chord1(120,60)<+>red$chord2(120,60)
-<+> dots$red$polySF(5,33)
+<+> chord1(120,60)
+<+> red$chord2(120,60)
+<+> dots(44)$red$polySF(10,111)
 <+> red$polySR2C(5,222,111)
 <+> rainbow(51)$yellow$arc(51,180) 
 <+> rainbow(51)$yellow$circ$51
@@ -159,14 +184,13 @@ terms:
          blue$cframe$text$div end,L,J$66,R,red$cframe$text$div end]
 <+> turt$concat$map(fun(x,[text$x,J$55]))[aaa ddd,
                                           bbb vvv mmmmmmmmmmmmmmm,ccc]
-<+> hdots[red$circ(200),green$oval(100,300)]
+<+> dots(111)[red$circ(200),green$oval(100,300)]
 <+> frame(0)$turt[red$rect(55,111),green$rect(111,55)]
 <+> frame(0)[red$poly(5,33,55),green$center$poly(5,33,55),
              blue$grav$poly(5,33,55)]
 <+> [path((55,-22),(55,222),(555,-22)),
      grav$path((55,-22),(55,222),(555,-22)),
      center$path((55,-22),(55,222),(555,-22))]
-<+> dots[red$rect(111,55),green$rect(111,55)]
 <+> polySR(5,88,0,111,0,0,144,0,0,0)
 <+> polySRC(5,88,0,88,111,0,0,111,144,0,0,0,144)	-- poly1
 <+> polyR2(5,222,111,0,0,0,111)
@@ -211,3 +235,4 @@ terms:
 <+> repeat[osciP(5,33,red,green)] 
 <+> repeat[shuffle[osciW(5,33,blue),osciW(3,66,yellow),osciW(1, -99,red)]] 
 <+> table(52,22,22,hull[color(light red,rainbow(polySF(5,[22,44],yellow),51))])
+

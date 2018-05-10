@@ -12,9 +12,10 @@ Ecom contains the main program, the solver and the enumerator.
 -}
 module Ecom where
 
-import Gui hiding (delay)
-import qualified Gui (delay)
+import Gui.Base hiding (delay)
+import qualified Gui.Base as Gui (delay)
 import System.Expander
+import Gui.Canvas
 import Eterm
 import Epaint
 import Esolve
@@ -200,7 +201,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (April 25, 2018)"
+start = "Welcome to Expander3 (May 6, 2018)"
 
 startF :: String
 startF = "Load and parse a formula!"
@@ -1002,9 +1003,9 @@ solver this solveRef enum paint = do
                    mkBut m "in painter" (do initCanvas; cmd n2)
                    mkBut m ("in "++ other) $ cmd n3
                    where cmd = showEqsOrGraph
-            subMenu <- mkSub graphMenu ".. of output"
+            subMenu <- mkSub graphMenu ".. of Kripke model"
             mkMenu subMenu 8 9 10
-            subMenu <- mkSub graphMenu ".. of labelled output"
+            subMenu <- mkSub graphMenu ".. of labelled Kripke model"
             mkMenu subMenu 11 12 13
             mkBut graphMenu "show iterative equations" $ showEqsOrGraph 17
             let mkMenu m cmd n1 n2 n3 n4 = do
@@ -1905,7 +1906,9 @@ solver this solveRef enum paint = do
         buildKripke mode = do
           sig <- getSignature
           str <- ent `Gtk.get` entryText
-          let noProcs = case parse pnat str of Just n -> n; _ -> 0
+          let noProcs = if (sig&isDefunct) "procs" 
+                           then case parse pnat str of Just n -> n; _ -> 0
+                           else 0
           when (noProcs > 0) $ changeSimpl "procs" $ mkConsts [0..noProcs-1]
           iniStates <- readIORef iniStatesRef
           changeSimpl "states" $ if null iniStates then mkList [] 
@@ -4872,8 +4875,7 @@ solver this solveRef enum paint = do
                 [] -> labBlue' start
                 [_] -> do
                   dirPath <- pixpath dir
-                  let picType = if takeExtension dir == "" <.> "eps" then PS else PNG
-                  file <- canvasSave canv picType dirPath
+                  file <- canvasSave canv dirPath
                   lab2 `Gtk.set` [ labelText := saved "tree" file ]
                 _ -> do
                   dirPath <- pixpath dir
@@ -5610,12 +5612,11 @@ solver this solveRef enum paint = do
                 (eqsL,zn') = relLToEqs zn $ mkTriples sts labs sts (sig&transL)
                 trGraph = eqsToGraph [] eqs
                 trGraphL = eqsToGraph [] eqsL
-                atGraph = if all null (sig&trans) || all null (sig&value) 
-                          then emptyGraph
+                atGraph = if all null (sig&trans) then emptyGraph 
                           else outGraph sts ats (out sig) trGraph
-                atGraphL = if null (sig&labels) then emptyGraph
-                           else outGraphL sts labs ats (out sig) (outL sig) 
-                                           trGraphL
+                atGraphL = 
+                      if null (sig&labels) then emptyGraph
+                      else outGraphL sts labs ats (out sig) (outL sig) trGraphL
                 inPainter t = do
                            drawFun <- readIORef drawFunRef
                            spread <- readIORef spreadRef

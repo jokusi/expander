@@ -60,14 +60,19 @@ terms:
 <+> take(4)$iter(+3*2)$0 
 <+> take(4)$iter(f.g)$0
 
-<+> fun(x,fun(y,5+x))$3+y
+<+> fun((x,x),x,x,111)$(8,9)
+
+<+> (fun(x,[x,x])<=<fun(x,[x,x,x]))$5 	--> [5,5,5,5,5,5]
+
+<+> fun(x,fun(y,5+x))$3+y   		--> fun(y0,8+y)
+
 <+> concat[[1..4],[1..4]]
-<+> (suc.length)$get0$([1..5],99)       
+<+> (suc.length)$get0$([1..5],99)       --> 6
 
 <+> sort[5,6,3,1,3]
 <+> ((+1)**5)(66)
 <+> (suc**5)(66)
-<+> 1*2*3-4*5*6+7/8*9^1*2*3-4*5*6+7*8*9  -->  -114^390
+<+> 1*2*3-4*5*6+7/8*9^1*2*3-4*5*6+7*8*9	--> -114^390
 <+> f$g$h(y)$h(x)$z 
 <+> f[1,f[1..5],3,4,5]
 <+> 11*2-6*7*8*9*0+9/5+8*8*8^66+6^9*9-3*5
@@ -87,17 +92,16 @@ terms:
 <+> map(+3)[1..5] 
 <+> map(fun(x,x+1))[1..5] 
 <+> map(f(t).(+1))[1..5] 
-<+> concat$map(fun(x,[x,suc(x)]))[1..6]
+<+> concat$map(fun(x,[x,suc(x)]))[1..6]	--> [1,2,2,3,3,4,4,5,5,6,6,7]
 <+> map(fun(x,insert(x,[1..5]++[8..10])))[6,7]
+
+<+> foldl(+)(0)[1..9]				--> 45
+<+> length$kfold(fun(x,fun(y,[y,y])))[0][1..4]	--> 2^4
 
 <+> f$replicate(5)$6
 <+> concat$replicate(5)[1..5]
 <+> replicate(3)$map(fun(x,x$frame$black$text$ff hhhhh ff$88))  
                     [red,green,blue]
-
-<+> h(1,map(widg.red.frame.text)[0..4])
-<+> h(1,map(widg.frame.red.text)[0..4])
-<+> h(1,map(fun(x,widg(x,frameS$red$text$x+1)))[0..4]) 
 
 <+> fun(f(x),g(h(x)),r(x),h(g(x))) $ f(5)
 <+> fun(f(x),g(h(x)),r(x),h(g(x))) $ r(5)
@@ -133,7 +137,6 @@ terms:
 <+> fun(x,f(f(x,x,x),f(x,x,x)))(f(ggg,nnn,bbb))
 
 <+> map(+3)[3,6,4] 
-<+> map(fun(x,frame(x$text$ff hhhhh ff$8)))[red,green,blue] -- pict type: widget
 <+> mapfilterL(=/=)(+)[[1,2,3],[1,2,3]]
 <+> mapfilterL(=/=)(+)$replicate(2)[1..5]
 <+> [(0,[1]),(1,[2]),(2,[3]),(3,[4]),(4,[5]),(5,[0])]
@@ -141,21 +144,11 @@ terms:
 <+> concat$replicate(5)[1,2,f(pos 0 1 2 1,g(x)),3,4]
 
 <+> fun(st,ite(List(st),pic(st),pic(get1(st))))(666,[1,5,7])
-
-<+> f(g(h,n),widg(widg(t,z,oval(22,44)),z,oval(22,44)))
-
-<+> f(g(h,n),widg(widg(t,z,red$oval(22,44)),z,light green$oval(44,22)))
-<+> f(g(h,widg(t,z,gif(goat,44,22))),     widg(widg(t,z,gif(nemo,66,44)),z,light green(oval(44,22))))
-<+> widg(replicate(5)[1..4],center$turt[shine(11)$red$circ$22,J$33,
-					shine(11)$blue$circ$22])
-<+> turt[place(0,0)$red$circ$5,place(0,10)$green$circ$5,
-         place(10,10)$blue$circ$5,place(10,0)$yellow$circ$5]
-<+> turt$map(fun((x,y,H),place(x,y)$H$circ$5))[(0,0,red),(0,10,green),(10,10,blue),(10,0,yellow)]
-<+> gifs(tweety,12,155,155)
-
-<+> red_uuu(light blue_hhhh,magenta_uuu(bbbbbbb(light blue_hhhh,light green_xxxx),yellow_xxxx,cyan_ppp,iiiii))
-
-<+> f(f(f(4,4,4,4,4)),f(widg(g(g(5),g(5),g(5),g(5)),circ(22))),f(widg(g(g(5),g(5),g(5),g(5)),circ(22))),g(widg(g(g(5),g(5),g(5),g(5)),circ(22))),g(g(5),g(5),g(5),g(5)))
+	
+<+> red_uuu(light blue_hhhh,
+	     magenta_uuu(bbbbbbb(light blue_hhhh,
+				 light green_xxxx),
+			 yellow_xxxx,cyan_ppp,iiiii))
 
 <+> f(f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a))
 <+> f(a,f(a,a,a,a,a,a,a),a,a,f(a,a,a,a,a,a,a),a,f(a,a,a,a,a,a,a))

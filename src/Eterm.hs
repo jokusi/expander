@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, April 2018
-                  Jos Kusiek, April 2018
+Copyright   : (c) Peter Padawitz, May 2018
+                  Jos Kusiek, May 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -38,12 +38,11 @@ Eterm contains:
 module Eterm where
 
 import System.Expander
-import Gui
+import Gui.Base
 
 import Control.Applicative (Alternative((<|>), empty))
 import Control.Arrow (second)
-import Control.Monad
-  (MonadPlus, guard, ap, liftM, liftM2, replicateM, mzero, zipWithM, zipWithM_)
+import Control.Monad hiding (join)
 import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Maybe
 import qualified Control.Monad.State as State (get, put)
@@ -93,6 +92,9 @@ str `onlyif` b = if b then str else ""
 
 ifnot :: String -> Bool -> String
 str `ifnot` b  = if b then ""  else str
+
+kfold :: (a -> state -> [state]) -> [state] -> [a] -> [state]
+kfold f = foldl $ \sts a -> concatMap (f a) sts               
 
 seed :: Int
 seed = 17489   
@@ -945,14 +947,8 @@ setToFun = foldl g (const False) where g f x = upd f x True
 relToFun :: Eq a => [(a,[b])] -> a -> [b]
 relToFun s a = case lookup a s of Just bs -> bs; _ -> []
 
-relToFunI :: Eq a => [a] -> [b] -> [[Int]] -> a -> [b]
-relToFunI as bs s a = map (bs!!) $ s!!getInd a as
-
 relLToFun :: (Eq a,Eq b) => [(a,b,[c])] -> a -> b -> [c]
 relLToFun s a b = case lookupL a b s of Just cs -> cs; _ -> []
-
-relLToFunI :: (Eq a,Eq b) => [a] -> [b] -> [c] -> [[[Int]]] -> a -> b -> [c]
-relLToFunI as bs cs s a b = map (cs!!) $ s!!getInd a as!!getInd b bs
 
 -- traces
 
@@ -1463,6 +1459,10 @@ factor sig = concat [ do symbol "True"; return mkTrue
                   , do symbol "Not"; t <- factor sig; return $ F "Not" [t]
                   , do symbol "Any"; closure "Any"
                   , do symbol "All"; closure "All"
+                  , do symbol "ite"; tchar '('; t <- implication sig
+                       tchar ','; u <- implication sig; tchar ','
+                       v <- implication sig; tchar ')'
+                       return $ F "ite" [t,u,v]
                   , do t <- term sig; x <- sat (infixRel sig) arithmetical
                        u <- term sig; return $ F x [t,u]
                   , relTerm sig False
@@ -1730,7 +1730,8 @@ regToAuto e = ([0..nextq-1],delta)
                                delta2 = upd2L delta1 q "eps" nextq
                                delta3 = upd2L delta2 q1 "eps" nextq
 
--- powerAuto nda builds the power automaton induced by nda.
+-- powerAuto nda builds the power automaton induced by the LTS nda with label 
+-- set as.
 
 type PDA = [Int] -> String -> [Int]
 
@@ -2106,7 +2107,7 @@ neqTerm :: TermS -> TermS -> Bool
 neqTerm t = not . eqTerm t
 
 inTerm :: TermS -> [TermS] -> Bool
-inTerm = any . eqTerm
+inTerm    = any . eqTerm
 
 notInTerm :: TermS -> [TermS] -> Bool
 notInTerm = all . neqTerm
@@ -2124,10 +2125,10 @@ suffix ts@(_:_) us@(_:_) = eqTerm (last ts) (last us) &&
 suffix ts _              = null ts
 
 sharesTerm :: [TermS] -> [TermS] -> Bool
-sharesTerm ts = any (`inTerm` ts)
+sharesTerm = any . flip inTerm
 
 disjointTerm :: [TermS] -> [TermS] -> Bool
-disjointTerm ts = all (`notInTerm` ts)
+disjointTerm = all . flip notInTerm
 
 distinctTerms :: [[TermS]] -> Bool
 distinctTerms (ts:tss) = all (null . meetTerm ts) tss && distinctTerms tss
@@ -2603,13 +2604,14 @@ iniPreds :: [String]
 iniPreds = words "_ () [] : ++ $ . == -> -/-> ~ ~/~ <= >= < > >> true false" ++
            words "not /\\ \\/ `then` EX AX # <> nxt all any allany disjoint" ++
            words "filter filterL flip foldl foldr foldr1 `in` `NOTin` Int" ++
+           words "`IN` `NOTIN`" ++
            words "INV Nat List lsec map null NOTnull prodL Real `shares`" ++
            words "`NOTshares` single `subset` `NOTsubset` rsec Value zipWith"
 
 iniDefuncts :: [String]
-iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch" ++
-              words "color concat count curry dnf drop eval filter" ++
-              words "flip foldl foldr head height id init insert `join`" ++
+iniDefuncts = words "_ $ . <=< ; + ++ - * ** / !! atoms auto bag branch" ++
+              words "color concat count curry dnf drop eval filter flip" ++
+              words "foldl foldr head height id init insert `join`" ++
               words "labels lsec last length list map max `meet` min" ++
               words "minimize `mod` nextperm obdd out outL parseLR permute" ++
               words "prodE prodL product reverse rsec set shuffle states" ++
@@ -4123,19 +4125,18 @@ outGraphL sts labs ats out outL = g where
 
 extendNode :: [String] -> [String] -> [[Int]] -> String -> String
 extendNode sts ats out x = if isPos x || x == "<+>" then x
-                           else if null out then "o"
-                                else enterAtoms x $ relToFunI sts ats out x
+                           else enterAtoms x $ map (ats!!) $ out!!getInd x sts
 
 extendNodeL :: [String] -> [String] -> [String] -> [[[Int]]] -> String 
             -> String -> String
 extendNodeL sts labs ats outL x lab = 
-                     if isPos x || x == "<+>" then x
-                     else if null outL then "o"
-                          else enterAtoms x $ relLToFunI sts labs ats outL x lab
+         if isPos x || x == "<+>" then x
+         else enterAtoms lab $ map (ats!!) $ outL!!getInd x sts!!getInd lab labs
 
 
 enterAtoms :: String -> [String] -> String
-enterAtoms x ats = showTerm0 $ mkList $ map leaf ats
+enterAtoms x []  = x
+enterAtoms x ats = x ++ ':':showTerm0 (mkList $ map leaf ats)
 
 -- colorClasses{L} colors equivalent states of a transition graph with the same
 -- color and equivalent states with different colors unless they belong to 

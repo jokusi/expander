@@ -16,8 +16,9 @@ Epaint contains:
 -}
 module Epaint where
 
-import Gui hiding (smooth)
+import Gui.Base hiding (smooth)
 import System.Expander
+import Gui.Canvas
 import Eterm
 
 import Control.Monad
@@ -1390,7 +1391,7 @@ painter pheight solveRef solve2Ref = do
                 if null file then labRed' "Enter a file name!"
                 else do
                   let (prefix,suffix) = splitExtension file
-                      dir = if lg > 3 && suffix `elem` words ".eps .png"
+                      dir = if lg > 4 && suffix `elem` words ".eps .png .gif"
                             then prefix else ""
                   dirPath <- pixpath dir
                   if null dir then do
@@ -1412,8 +1413,7 @@ painter pheight solveRef solve2Ref = do
                       msg "entire graph"
                   else case pictures of 
                      [_] -> do
-                       let picType = if suffix == ".eps" then PS else PNG
-                       file <- canvasSave canv picType dirPath
+                       savePic suffix canv dirPath
                        labGreen $ saved "graph" file
                      _ -> do
                        renewDir dirPath

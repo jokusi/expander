@@ -1,7 +1,7 @@
 module Main where
 
+import Gui.Base
 import System.Expander
-import Gui
 import Epaint
 import Ecom
 

@@ -1,0 +1,79 @@
+-- brzozowski
+
+constructs: 	star mt eps a b c int final
+defuncts:	plus delta beta unfold reg1 reg2
+fovars: 	t u w
+
+axioms:
+
+plus$t == t*star(t) &
+
+delta(t+u,x) == fun((z,z),delta(t,x),
+		    (mt,z),delta(u,x),
+		    (z,mt),delta(t,x),
+		    z,delta(t,x)+delta(u,x))(t,u) &
+(beta$t=0 ==> delta(t*u,x) == fun((mt,z),mt,
+				  (z,mt),mt,
+				  (eps,z),delta(u,x),
+				  (z,eps),delta(t,x),
+		    		  z,delta(t,x)*u)(t,u)) &
+(beta$t=1 ==> delta(t*u,x) == fun((mt,z),mt,
+				  (z,mt),mt,
+				  (eps,z),delta(u,x),
+				  (z,eps),delta(t,x),
+		    		  z,delta(t,x)*u+delta(u,x))(t,u)) &
+delta(star$t,x) == delta(t,x)*star(t) &
+delta(a,x) == ite(a=x,eps,mt) &
+delta(b,x) == ite(b=x,eps,mt) &
+delta(c,x) == ite(c=x,eps,mt) &
+delta(eps,x) == mt &
+delta(mt,x) == mt &
+
+(beta$t=0 ==> beta$t+u == beta$u) &
+(beta$t=1 ==> beta$t+u == 1) &
+(beta$t=0 ==> beta$t*u == 0) &
+(beta$t=1 ==> beta$t*u == beta$u) &
+beta$star$t == 1 &
+beta(a) == 0 &
+beta(b) == 0 &
+beta(c) == 0 &
+beta(eps) == 1 &
+beta(mt) == 0 &
+
+unfold$t == beta . foldl(delta)$t &
+
+{-
+beta$t+u == max(beta(t),beta(u)) &
+beta$t*u == beta(t)*beta(u) &
+
+max(0,x) == x &
+max(1,x) == 1 &
+max(x,0) == x &
+max(x,1) == 1 &
+
+delta(t*u,x) == delta(t,x)*u+ite(beta$t=1,delta(u,x),mt) &
+
+basic == [a,b,c,eps,mt] &
+
+(Value$t & t`in`basic ==> delta(t,x) == ite(t=x,eps,mt)) &
+
+delta(x,x) == eps &
+(Value$t & t`in`basic & t=/=x ==> delta(t,x) == mt) &
+
+(Value$t & t`in`basic ==> beta$t == ite(t=eps,1,0)) &
+-}
+
+reg1 == star$plus(a)+plus(b*c) &
+
+-- Kripke model
+
+states == [reg1] & atoms == [final] &
+
+(t,x) -> delta(t,x) &
+
+final -> branch$filter(Beta)$states
+
+terms:
+
+unfold(reg1)[a,b,c,a] <+>	--> 1			-- 26 steps
+unfold(reg1)[b,c,a,c] <+>	--> 0			-- 22 steps

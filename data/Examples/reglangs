@@ -1,66 +1,68 @@
 -- reglangs
 
-specs: 		modal
 constructs: 	a b final q qa qb qab qbb qabb 
-defuncts:	drawL drawC reg
-preds:   	unfold UNFOLD Sat
-copreds: 	#
-fovars: 	w k
+defuncts:	delta beta unfoldet unfold reg drawL drawC
+preds:          Unfold
+fovars: 	st st' w k
 
 axioms:
 
-reg == star$plus(a)+plus(b*c) & 	-- regular expression (a^++(bc)^+)*
-
--- acceptor of words with an even number of a's  and an odd number of b's
+-- acceptor of words with an even number of a's and an odd number of b's
 
 states == [q] & labels == [a,b] & atoms == [final] &
 
-(q,a) -> qa     & (q,b) -> qb     & 
-(qa,a) -> q     & (qa,b) -> qab   &
-(qb,a) -> qab   & (qb,b) -> qbb   & 
-(qab,a) -> qb   & (qab,b) -> qabb &
-(qbb,a) -> qabb & (qbb,b) -> q    &
-(qabb,a) -> qbb & (qabb,b) -> qa  &
+(q,a) -> qa     & (q,b) -> qb      & 
+(qa,a) -> q     & (qa,b) -> qab    &
+(qb,a) -> qab   & (qb,b) -> qbb    & 
+(qab,a) -> qb   & (qab,b) -> qabb  &
+(qbb,a) -> qabb & (qbb,b) -> qb    &
+(qabb,a) -> qbb & (qabb,b) -> qab  &
 
-final -> q <+> qb &
+final -> qb &
 
-(Sat(at)$st <==> at `in` out$st) &
+delta(st,x) == head$transL(st)$x &
 
-(unfold(st)[] <==> Sat(final)$st) &	
-(unfold(st)(x:w) <==> (x<>rel(st,unfold(st)(w)))$st) & 
+beta$st == ite(null$out$st,0,1) &
 
-UNFOLD(q)[] &
-UNFOLD(qb)[] &
-(UNFOLD(st)(x:w) <=== (st,x) -> st' & UNFOLD(st')(w))
+unfoldet$st == beta . foldl(delta)$st &	 	-- deterministic unfold
+
+unfold$s == out <=< kfold(flip$transL)$s &	 
+
+(Unfold(st)[] <=== final -> st) &
+(Unfold(st)(x:w) <=== (st,x) -> st' & Unfold(st')$w) &
+
+reg == star$plus(a)+plus(b*c) & 	-- regular expression (a^++(bc)^+)*
 
 -- widget interpreters
 
-& drawL == wtree(1,fun((eps,k,n),text$eps,
-                       (st,k,n),ite(Int$st,
-				    color(k,n)$circ$11,
-				    frame$blue$text$st)))
+drawL == wtree(1,fun((eps,k,n),text$eps,
+                     (st,k,n),ite(Int$st,
+				  color(k,n)$circ$11,
+				  frame$blue$text$st))) &
 
-& drawC == wtree $ fun(eps,gif(cat,11,11),x,text$x) 
+drawC == wtree $ fun(eps,gif(cat,16,14),x,text$x) 
 
 conjects:
 
-unfold(q)[] &			--> True	-- simplify
-unfold(q)[b] &			--> True
-unfold(q)[b,b] &		--> False
-unfold(q)[a,b,a,b,a,b,a] &	--> True
-unfold(q)[a,b,a,b,b,a,b,a] &	--> False
-unfold(qb)[a,b,a,a,b,a] &	--> True
-unfold(qab)[a,b,a,b,a] &	--> True
-
-UNFOLD(q)[] &			--> True	-- unify&narrow&
-UNFOLD(q)[b] &			--> True	-- derive&simplify&refute
-UNFOLD(q)[b,b] &		--> False
-UNFOLD(q)[a,b,a,b,a,b,a] &	--> True	
-UNFOLD(q)[a,b,a,b,b,a,b,a] &	--> False
-UNFOLD(qb)[a,b,a,a,b,a] &	--> True
-UNFOLD(qab)[a,b,a,b,a]		--> True
+Unfold(q)[] &			--> False	-- unify&narrow&
+Unfold(q)[b] &			--> True	-- derive&simplify&refute
+Unfold(q)[b,b] &		--> False
+Unfold(q)[a,b,a,b,a,b,a] &	--> True	
+Unfold(q)[a,b,a,b,b,a,b,a] &	--> False
+Unfold(q)[a,b,a,a,b,a] &	--> False
+Unfold(q)[a,b,a,a,b,a,b]	--> True
 
 terms:
+
+unfold[q][] <+>			--> []		-- simplify
+unfold[q][b] <+>		--> [final]
+unfold[q][b,b] <+>		--> []
+unfold[q][a,b,a,b,a,b,a] <+>	--> [final]
+unfold[q][a,b,a,b,b,a,b,a] <+>	--> []
+unfold[q][a,b,a,a,b,a] <+>	--> []		-- 39 steps
+unfoldet(q)[a,b,a,a,b,a] <+>	--> 0		-- 25 steps
+unfold[q][a,b,a,a,b,a,b] <+>	--> [final]	-- 45 steps
+unfoldet(q)[a,b,a,a,b,a,b] <+>	--> 1		-- 28 steps
 
 auto$reg <+>	--> non-deterministic acceptor of reg 
 pauto$reg	--> deterministic acceptor of reg   

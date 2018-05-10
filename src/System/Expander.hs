@@ -1,7 +1,7 @@
 module System.Expander where
 
 import Paths (getDataDir)
-import Gui
+import Gui.Base
 
 import Control.Monad (when, unless)
 import System.Directory
@@ -76,6 +76,9 @@ loadPhoto file = do
         `catchIOError` \_ -> return Nothing
     where file' = if hasExtension file then file else file <.> "gif"
 
+savePic :: String -> Canvas -> String -> Cmd String
+savePic ext canv = canvasSave canv . (++ext)
+
 
 lookupLibs :: FilePath -> IO String
 lookupLibs file = do
@@ -130,7 +133,7 @@ html dirPath dir files
 
 mkHtml :: Canvas -> String -> String -> Int -> IO ()
 mkHtml screen dir dirPath n = do
-  file <- canvasSave screen PNG $ mkFile dirPath n
+  file <- savePic ".png" screen $ mkFile dirPath n
   files <- getDirectoryContents dirPath
   html dirPath dir $ pix dir files
 

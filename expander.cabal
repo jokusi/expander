@@ -83,6 +83,7 @@ data-files:          Examples/abp
                    , Examples/bottleP
                    , Examples/BOTTLEproof
                    , Examples/bottlePT
+                   , Examples/brzozowski
                    , Examples/btree
                    , Examples/bzipP
                    , Examples/bzipT
@@ -145,6 +146,7 @@ data-files:          Examples/abp
                    , Examples/EFatomheat5ST
                    , Examples/EFatomheat5T
                    , Examples/election
+                   , Examples/eosum
                    , Examples/eqtest
                    , Examples/errorheat
                    , Examples/errorheatS
@@ -795,7 +797,8 @@ library
                      , Epaint
                      , Esolve
                      , Eterm
-                     , Gui
+                     , Gui.Base
+                     , Gui.Canvas
                      , System.Expander
                      
   build-depends:       base  >=4.8 && < 5.0
@@ -808,6 +811,7 @@ library
                      , directory
                      , text
                      , deepseq
+                     , JuicyPixels
 
   default-language:    Haskell2010
   -- LANGUAGE extensions used by modules in this package.
@@ -897,11 +901,6 @@ benchmark expander-bench
   -- Modules included in this executable, other than Main.
   other-modules:       EtermBench
                      , GuiBench
-                     , Eterm
-                     , Gui
-                     , System.Expander
-                     , Paths_expander
-                     , Paths
   
   -- Other library packages from which modules are imported.
   build-depends:       base
