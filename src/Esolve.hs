@@ -1247,21 +1247,25 @@ simplifyT (F "$" [F "rsec" [F x [],t],u]) = Just $ F x [u,t]
 
 -- acceptors of regular languages
 
-simplifyT (F "auto" [t]) | just e = Just $ eqsToGraph [] 
-                                         $ fst $ relLToEqs 0 trips
-               where e = parseRegExp t
-                     (e',as) = get e
-                     (sts,nda) = regToAuto e'
-                     trips = [(show q,a,map show $ nda q a) | q <- sts, a <- as]
+simplifyT (F "auto" [t@(F x (_:_))]) | just e = 
+                                 Just $ eqsToGraph [] $ fst $ relLToEqs 0 trips
+           where e = parseRegExp t
+                 (e',labs) = get e
+                 (sts,nda) = regToAuto e'
+                 trips = [(show q,a,map show $ nda q a) | q <- sts, a <- labs]
 
-simplifyT (F "pauto" [t]) | just e = Just $ eqsToGraph []
-                                          $ fst $ relLToEqs 0 trips
-              where e = parseRegExp t
-                    (e',as) = get e
-                    (_,nda) = regToAuto e'
-                    as' = as `minus1` "eps"
-                    (sts,delta) = powerAuto nda as' 
-                    trips = [(show q,a,[show $ delta q a]) | q <- sts, a <- as']
+simplifyT (F "pauto" [t@(F x (_:_))]) | just e = 
+                                 Just $ eqsToGraph [] $ fst $ relLToEqs 0 trips
+           where e = parseRegExp t
+                 (e',labs) = get e
+                 (_,nda) = regToAuto e'
+                 labs' = labs `minus1` "eps"
+                 (sts,delta) = powerAuto nda labs' 
+                 trips = [(show q,a,[show $ delta q a]) | q <- sts, a <- labs']
+
+simplifyT (F "reduce" [t@(F x (_:_))]) | just e = 
+                          Just $ showRegExp $ fixpt (==) reduceRE $ fst $ get e 
+                          where e = parseRegExp t
 
 -- projection
 
@@ -1568,7 +1572,7 @@ simplifyT1 (F x@('p':'a':'t':'h':_) [F "[]" ts])
                                | all isJust ps && length qs < length ps =
                                  Just $ F x $ map mkConstPair qs
                                  where ps = map parseRealReal ts
-                                       qs = reduceP $ map fromJust ps
+                                       qs = reducePath $ map get ps
 
 simplifyT1 (F "reduce" [F "[]" ts,F "[]" us]) 
              | all isTup us = Just $ g $ reduceExas ts $ f us

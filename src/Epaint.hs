@@ -481,12 +481,11 @@ painter pheight solveRef solve2Ref = do
                     d <- spaceEnt `Gtk.get` entryText
                     arrangeMode <- readIORef arrangeModeRef
                     let dist = parse real d; x = head arrangeMode
-                    if notnull arrangeMode
-                    then when (isJust dist) $ writeIORef spreadRef
-                            $ apply2 (* fromJust dist) (10,10)
-                    else do
-                        when (x == 'm') $ writeIORef spreadRef (0,0)
-                        when (x `elem` "acmort") $ arrangeGraph False act graph
+                    when (notnull arrangeMode) $ do
+                      if just dist
+                        then writeIORef spreadRef $ apply2 (*(get dist)) (10,10)
+                        else when (x == 'm') $ writeIORef spreadRef (0,0)
+                      when (x `elem` "acmort") $ arrangeGraph False act graph
             where
                 act gr = do
                     setCurrGraph gr
@@ -1992,13 +1991,13 @@ straight3 (x1,y1) (x2,y2) (x3,y3) = x1 == x2 && x2 == x3 ||
                                      x1 /= x2 && x2 /= x3 &&
                                     (y2-y1)/(x2-x1) == (y3-y2)/(x3-x2)
              
-reduceP :: Path -> Path
-reduceP (p:ps@(q:r:s)) | straight3 p q r = reduceP $ p:r:s
-                       | otherwise       = p:reduceP ps
-reduceP ps                               = ps     
+reducePath :: Path -> Path
+reducePath (p:ps@(q:r:s)) | straight3 p q r = reducePath $ p:r:s
+                          | True            = p:reducePath ps
+reducePath ps                               = ps     
 
 mkLines :: Path -> Lines
-mkLines ps = zip qs $ tail qs where qs = reduceP ps
+mkLines ps = zip qs $ tail qs where qs = reducePath ps
 
 -- rotate q a p rotates p clockwise by a around q on the axis (0,0,1).
 
@@ -2218,10 +2217,10 @@ mkPict (Turtle (p,a,c,i) sc acts) =
                                Draw      -> (g pict c m ps,(a,c,m,sc,[p]):s)
                                Widg b w  -> (pict++[moveTurnScale b p a sc w],
                                              states)
-                               --_         -> (pict,states)
+                               -- _         -> (pict,states)
                    where p = last ps
                  g pict c m ps = if length ps < 2 then pict
-                                 else pict++[Path0 c i m $ reduceP ps]
+                                 else pict++[Path0 c i m $ reducePath ps]
 
 mkPict w = [w]
 

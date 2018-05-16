@@ -176,7 +176,7 @@ minmax4 (x1,y1,x2,y2) (x1',y1',x2',y2') = (min x1 x1',min y1 y1',
 mkArray :: Ix a => (a,a) -> (a -> b) -> Array a b
 mkArray bounds f = array bounds [(i,f i) | i <- range bounds]
 
--- The following monad transformer MaybeT is used in the widget interpreters of 
+-- The following monad transformer MaybeT is used in the widget interpreters of
 -- Epaint.hs.
 
 lift' :: Monad m => Maybe a -> MaybeT m a
@@ -494,9 +494,8 @@ emptyOrLast ss = if null ss then [] else last ss
 
 subset, supset, shares :: Eq a => [a] -> [a] -> Bool
 xs `subset` ys = all (`elem` ys) xs
-supset = flip subset
-
-shares s = any (`elem` s)
+supset         = flip subset
+shares s       = any (`elem` s)
 
 imgsSubset,imgsShares :: Eq a => [a] -> (a -> [a]) -> [a] -> [a]
 imgsSubset xs f ys = filter (supset ys . f) xs
@@ -547,6 +546,22 @@ join = foldl join1
 
 mkSet :: Eq a => [a] -> [a]
 mkSet = join []
+
+insertR :: Ord a => [a] -> a -> [a]
+insertR s@(x:s') y | y <= x = s 
+                   | x <= y = insertR s' y 
+                   | True   = x:insertR s' y
+insertR _ x = [x]
+
+joinR :: Ord a => [a] -> [a] -> [a]
+joinR = foldl insertR
+
+joinMapR :: Ord b => (a -> [b]) -> [a] -> [b]
+joinMapR f = foldl joinR [] . map f
+
+mkSetR :: Ord a => [a] -> [a]
+mkSetR = joinR []
+
 
 updL :: (Eq a,Eq b) => (a -> [b]) -> a -> b -> a -> [b]
 updL f a = upd f a . join1 (f a)
@@ -1134,7 +1149,7 @@ maxis = minis . flip
 -- maxima f s returns the subset of all x in s such that f(x) agrees with the 
 -- maximum of f(s).
 
-maxima, minima :: Ord b => (a -> b) -> [a] -> [a]
+maxima,minima :: Ord b => (a -> b) -> [a] -> [a]
 maxima f s = [x | x <- s, f x == maximum (map f s)]
 minima f s = [x | x <- s, f x == minimum (map f s)]
 
@@ -1690,12 +1705,21 @@ graphToTransRules = f [] where
                                            else ([mkConst p],[leaf x],[])
 
 
--- ** From REGULAR EXPRESSIONS to LABELLED TRANSITIONS
+-- ** From REGULAR EXPRESSIONS to LABELLED TRANSITIONS and back
 
-data RegExp = Const String | Sum_ RegExp RegExp | Prod RegExp RegExp | 
-               Plus RegExp
+data RegExp = Mt | Eps | Const String | Sum_ RegExp RegExp | 
+              Prod RegExp RegExp | Plus RegExp | Star RegExp deriving Eq
+              
+instance Ord RegExp where e <= Plus e'          = e <= e'
+                          e <= Star e'          = e <= e'
+                          e <= Sum_ e1 e2       = e <= e1 || e <= e2
+                          e <= Prod e' (Star _) = e == e'
+                          e <= Prod (Star _) e' = e == e'
+                          e <= e'               = e == e'
               
 parseRegExp :: TermS -> Maybe (RegExp,[String])
+parseRegExp (F "mt" [])    = Just (Mt,[])
+parseRegExp (F "eps" [])   = Just (Eps,["eps"])
 parseRegExp (F a [])       = Just (Const a,[a])
 parseRegExp (F "+" [t,u])  = do (e,as) <- parseRegExp t
                                 (f,bs) <- parseRegExp u
@@ -1705,13 +1729,29 @@ parseRegExp (F "*" [t,u])  = do (e,as) <- parseRegExp t
                                 Just (Prod e f,as `join` bs)
 parseRegExp (F "plus" [t]) = do (e,as) <- parseRegExp t; Just (Plus e,as)
 parseRegExp (F "star" [t]) = do (e,as) <- parseRegExp t
-                                Just (Sum_ (Plus e) $ Const "eps",
-                                      as `join1` "eps")
+                                Just (Star e,as `join1` "eps")
 parseRegExp (F "refl" [t]) = do (e,as) <- parseRegExp t
-                                Just (Sum_ e $ Const "eps",as `join1` "eps")
+                                Just (Sum_ e Eps,as `join1` "eps")
 parseRegExp _              = Nothing
 
--- regToAuto e builds a nondeterministic acceptor of L(e).
+showRegExp :: RegExp -> TermS
+showRegExp Mt           = leaf "mt"
+showRegExp Eps          = leaf "eps"
+showRegExp (Const a)    = leaf a
+showRegExp e@(Sum_ _ _) = F "+" $ map showRegExp $ summands e
+showRegExp e@(Prod _ _) = F "*" $ map showRegExp $ factors e
+showRegExp (Plus e)     = F "plus" [showRegExp e]
+showRegExp (Star e)     = F "star" [showRegExp e]
+
+summands,factors :: RegExp -> [RegExp]
+summands (Sum_ e e') = concatMap summands [e,e']
+summands e           = [e]
+factors (Prod e e')  = concatMap factors [e,e']
+factors e            = [e]
+
+-- regToAuto e builds a nondeterministic acceptor of the language of e.
+-- regToAuto is used by simplifyT (F "auto" [t]) (see Esolve.hs) and
+-- buildKripke 5 (see Ecom.hs).
 
 type NDA = Int -> String -> [Int]
 
@@ -1719,6 +1759,8 @@ regToAuto :: RegExp -> ([Int],NDA)
 regToAuto e = ([0..nextq-1],delta)
  where (delta,nextq) = eval e 0 1 (const2 []) 2
        eval :: RegExp -> Int -> Int -> NDA -> Int -> (NDA,Int)
+       eval Mt _ _ delta nextq           = (delta,nextq)
+       eval Eps q q' delta nextq         = (upd2L delta q "eps" q',nextq)
        eval (Const a) q q' delta nextq   = (upd2L delta q a q',nextq)
        eval (Sum_ e e') q q' delta nextq = eval e' q q' delta' nextq'
                          where (delta',nextq') = eval e q q' delta nextq
@@ -1729,22 +1771,104 @@ regToAuto e = ([0..nextq-1],delta)
                                (delta1,nextq1) = eval e nextq q1 delta $ q1+1
                                delta2 = upd2L delta1 q "eps" nextq
                                delta3 = upd2L delta2 q1 "eps" nextq
+       eval (Star e) q q' delta nextq    = eval (Sum_ (Plus e) Eps) q q' delta
+                                                                         nextq
 
--- powerAuto nda builds the power automaton induced by the LTS nda with label 
--- set as.
+-- powerAuto nda labs builds the (deterministic) power automaton induced by nda 
+-- with label set labs.
+-- powerAuto is used by simplifyT (F "pauto" [t]) (see Esolve.hs) and 
+-- buildKripke 5 (see Ecom.hs).
 
 type PDA = [Int] -> String -> [Int]
 
 powerAuto :: NDA -> [String] -> ([[Int]],PDA)
-powerAuto nda as = (reachables,deltaP)
-                where delta qs a = joinMap (flip nda a) qs 
-                      deltaP qs = epsHull . delta qs
-                      epsHull :: [Int] -> [Int]
-                      epsHull qs = if qs' `subset` qs then qs 
-                                   else epsHull $ qs `join` qs'
-                                   where qs' = delta qs "eps"
-                      reachables = fixpt subset deltaM [epsHull [0]]
-                      deltaM qss = qss `join` [deltaP qs a | qs <- qss, a <- as]
+powerAuto nda labs = (reachables,deltaP)
+             where delta qs a = joinMap (flip nda a) qs 
+                   deltaP qs = epsHull . delta qs
+                   epsHull :: [Int] -> [Int]
+                   epsHull qs = if qs' `subset` qs then qs 
+                                 else epsHull $ qs `join` qs'
+                                 where qs' = delta qs "eps"
+                   reachables = fixpt subset deltaM [epsHull [0]]
+                   deltaM qss = qss `join` [deltaP qs a | qs <- qss, a <- labs]
+ 
+-- autoToReg sig start builds a regular expression with the same language as the
+-- automaton contained in sig if started in start. 
+-- autoToReg is used by buildRegExp (see Ecom.hs).
+
+autoToReg :: Sig -> TermS -> RegExp
+autoToReg sig start = if null finals then Const "no final states"
+                                     else foldl1 Sum_ $ map (f lg i) finals
+     where finals = (sig&value)!!0
+           lg = length (sig&states)-1
+           Just i = search (== start) (sig&states)
+           f (-1) i j = if i == j then Sum_ (delta i i) Eps else delta i j
+           f k i j    = Sum_ (f' i j) $
+                             Prod (f' i k) $ Prod (Star $ f' k k) $ f' k j
+                        where f' = f $ k-1
+           delta :: Int -> Int -> RegExp
+           delta i j = if null labs then Mt else foldl1 Sum_ labs
+                       where labs = [Const $ showTerm0 $ (sig&labels)!!k |
+                                                     k <- indices_ (sig&labels),
+                                                     (sig&transL)!!i!!k == [j]]
+
+-- reduceRE is a step function for simplifying regular expressions.
+-- reduceRE is used by simplifyT (F "reduce" [t]) (see Esolve.hs).
+
+reduceRE :: RegExp -> RegExp
+reduceRE e = case e of
+                  Sum_ _ _ -> mkSum $ reduceS (Eps `elem` es) es
+                              where es = map reduceRE $ mkSetR $ summands e
+                  Prod _ _ -> if Mt `elem` es then Mt else mkProd $ reduceP es
+                              where es = map reduceRE $ factors e
+                  Plus Mt           -> Mt
+                  Plus Eps          -> Eps
+                  Plus (Sum_ e Eps) -> Star e
+                  Plus (Sum_ Eps e) -> Star e
+                  Plus (Plus e)     -> Plus e
+                  Plus (Star e)     -> Star e
+                  Plus e            -> Plus $ reduceRE e
+                  Star Mt           -> Eps
+                  Star Eps          -> Eps
+                  Star (Sum_ e Eps) -> Star e
+                  Star (Sum_ Eps e) -> Star e
+                  Star (Plus e)     -> Star e
+                  Star (Star e)     -> Star e
+                  Star e            -> Star $ reduceRE e
+                  _                 -> e
+                  where mkSum,mkProd :: [RegExp] -> RegExp
+                        mkSum []   = Mt
+                        mkSum [e]  = e
+                        mkSum es   = foldl1 Sum_ es
+                        mkProd []  = Eps
+                        mkProd [e] = e
+                        mkProd es  = foldl1 Prod es
+
+reduceS :: Bool -> [RegExp] -> [RegExp]                -- b <=> Eps in es
+reduceS True (Plus e:es) = Star e:reduceS False es     -- reduceS shifts Eps 
+reduceS True (Star e:es) = Star e:reduceS False es     -- to the right
+reduceS b (Mt:es)       = reduceS b es
+reduceS b (Eps:es)      = reduceS b es
+reduceS b (e:es)        = e:reduceS b es
+reduceS True _          = [Eps]
+reduceS _ _             = []
+
+reduceP :: [RegExp] -> [RegExp]
+-- e^*(e + eps) = e^*
+reduceP (Star e:Sum_ e' Eps:es) | e == e' = reduceP $ Star e:es
+-- e^+(e + eps) = e^*
+reduceP (Plus e:Sum_ e' Eps:es) | e == e' = reduceP $ Star e:es
+-- (e + eps)e^* = e^*
+reduceP (Sum_ e' Eps:Star e:es) | e == e' = reduceP $ Star e:es
+-- (e + eps)e^+ = e^*
+reduceP (Sum_ e' Eps:Plus e:es) | e == e' = reduceP $ Star e:es
+-- e^*e = e^+
+reduceP (Star e:e':es)          | e == e' = reduceP $ Plus e:es
+-- ee^* = e^+
+reduceP (e':Star e:es)          | e == e' = reduceP $ Plus e:es
+reduceP (Eps:es) = reduceP es 
+reduceP (e:es)   = e:reduceP es
+reduceP _        = []
 
 -- * Minimization with the Paull-Unger algorithm
 
@@ -2628,16 +2752,16 @@ data Sig = Sig { isPred
                , isHovar
                , blocked     :: String -> Bool
                , hovarRel    :: BoolFun String
+               , safeEqs     :: Bool
                , simpls
                , transitions :: [Simplification]
                , states
                , atoms
-               , labels      :: [TermS]
+               , labels      :: [TermS] -- types of Kripke model
                , trans
                , value       :: [[Int]]
                , transL
                , valueL      :: [[[Int]]]
-               , safeEqs     :: Bool
                }
 
 parents, out :: Sig -> [[Int]]
@@ -2673,8 +2797,8 @@ emptySig :: Sig
 emptySig = predSig []
 
 isSum :: TermS -> Bool
-isSum (F "<+>" _)   = True
-isSum _             = False
+isSum (F "<+>" _)  = True
+isSum _            = False
 
 projection :: String -> Bool
 projection          = isJust . parse (strNat "get")

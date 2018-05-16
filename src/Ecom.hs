@@ -1146,6 +1146,7 @@ solver this solveRef enum paint = do
             mkBut specMenu ".. pointer-free" $ buildKripke 1
             mkBut specMenu "state equivalence" stateEquiv
             mkBut specMenu "minimize" minimize
+            mkBut specMenu "build regular expression" buildRegExp
             mkBut specMenu "save to file" $ getFileAnd saveSpec
             subMenu <- mkSub specMenu "load text"
             createSpecMenu False subMenu
@@ -1945,6 +1946,14 @@ solver this solveRef enum paint = do
           delay $ setProof True False kripkeMsg []
                 $ kripkeBuilt mode noProcs (length states) (length labels)
                 $ length atoms'
+        
+        buildRegExp = do
+          start <- ent `Gtk.get` entryText
+          sig <- getSignature
+          case parse (term sig) start of 
+               Just start | start `elem` (sig&states)
+                 -> enterTree' False $ showRegExp $ autoToReg sig start
+               _ -> labRed' "Enter an initial state!"
         
         -- | Called by menu item /build unifier/ from menu
         -- /transform selection/.
@@ -4873,12 +4882,15 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             case trees of
                 [] -> labBlue' start
-                [_] -> do
-                  dirPath <- pixpath dir
-                  file <- canvasSave canv dirPath
-                  lab2 `Gtk.set` [ labelText := saved "tree" file ]
+                [_] -> if length dir < 4 then
+                          labMag "Enter a file name!"
+                       else do
+                            let suffix = drop (length dir-4) dir
+                            dirPath <- pixpath dir -- ohaskell where
+                            file <- savePic suffix canv dirPath
+                            lab2 `Gtk.set` [ labelText := saved "tree" file ]
                 _ -> do
-                  dirPath <- pixpath dir
+                  dirPath <- pixpath dir -- ohaskell where
                   renewDir dirPath
                   let f n = do
                             writeIORef currRef n
@@ -4911,7 +4923,7 @@ solver this solveRef enum paint = do
         saveGraphDH b screen dir dirPath n = do
           mkHtml screen dir dirPath n
           let pic = if b then "tree" else "graph in the painter"
-          lab2 `Gtk.set` [ labelText := saved pic $ mkFile dirPath n ++ ".png" ]
+          lab2 `Gtk.set` [ labelText := saved pic $ mkFile dirPath n]
         
         -- | Called by menu item /save proof to file/ from tree menu or by
         -- pressing key @s@ while left label ('lab') is active.

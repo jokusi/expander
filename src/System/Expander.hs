@@ -51,10 +51,11 @@ pixpath file = do
     dir <- userLibDir
     return $ dir </> "Pix" </> file
 
-mkFile :: FilePath -> Int -> FilePath
-mkFile dir i | i < 10    = dir </> ('0':'0':show i)
-             | i < 100   = dir </> ('0':show i)
-             | otherwise = dir </> show i
+mkFile :: String -> Int -> String
+mkFile dir i | i < 10  = enclose "00"
+             | i < 100 = enclose "0"
+             | True    = enclose ""
+               where enclose str = dir </> str ++ show i ++ ".png"
 
 renewDir :: FilePath -> IO ()
 renewDir dir = do
@@ -131,11 +132,10 @@ html dirPath dir files
         n = length files
         f file = ",\"" ++ file ++ "\""
 
-mkHtml :: Canvas -> String -> String -> Int -> IO ()
-mkHtml screen dir dirPath n = do
-  file <- savePic ".png" screen $ mkFile dirPath n
-  files <- getDirectoryContents dirPath
-  html dirPath dir $ pix dir files
+mkHtml :: Canvas -> String -> String -> Int -> Cmd ()
+mkHtml canv dir dirPath n = do file <- savePic ".png" canv $ mkFile dirPath n
+                               files <- getDirectoryContents dirPath
+                               html dirPath dir $ pix dir files
 
 mkSecs :: Integral a => a -> a -> a
 mkSecs t1 t2 = (t2-t1)`div`1001500
