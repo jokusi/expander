@@ -1,6 +1,6 @@
 -- auto2
 
-constructs: a b c final
+constructs: 	a b c final
 
 axioms:
 
@@ -12,12 +12,12 @@ axioms:
 & (3,a) -> 6 & (3,b) -> 2 & (3,c) -> 3 & (4,a) -> 3 & (4,b) -> 1 & (4,c) -> 6 
 & (5,a) -> 5 & (5,b) -> 2 & (5,c) -> 3 & (6,a) -> 5 & (6,b) -> 5 & (6,c) -> 1
 
--- & 5 -> branch[2,3]
+& 5 -> branch[2,3]
 
 & (final,a) -> branch[2,3,5,6] & (final,b) -> branch[1..6] 
 & (final,c) -> branch[1,4]
 
--- & final -> branch[3,4]
+-- final -> branch[3,4]
 
 -- specification > state equivalence  -->  [(1,4),(2,6)]
 

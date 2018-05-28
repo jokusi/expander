@@ -561,7 +561,7 @@ simplifyGraph (F "$" [F "mapG" [f@(F _ ts)],F x us]) | collector x =
                                      vs = changeLPoss p q us
                                      p i = [1,i]; q i = [i,1]
 
-simplifyGraph (F "$" [F "replicate" [t],u]) | isJust n =  
+simplifyGraph (F "$" [F "replicateG" [t],u]) | just n =
             jList $ changePoss [1] [0] u:replicate (fromJust n-1) (mkPos [0])
                    where n = parsePnat t
 
@@ -771,13 +771,17 @@ simplifyF (F "$" [F "all" [p],F x ts]) _ | collector x =
 simplifyF (F "$" [F "$" [F "allany" [r],F x ts],F y us]) _ 
                      | collector x && collector y = Just $ mkConjunct $ map q ts
                             where q t = mkDisjunct $ map (apply $ apply r t) us
-simplifyF (F "$" [F "prodE" ts,u]) _ = Just $ mkTup $ map (flip apply u) ts
+simplifyF (F "$" [F "prodE" ts,u]) _  = Just $ mkTup $ map (flip apply u) ts
                           
 simplifyF (F "$" [F "/\\" [t,u],v]) _ = Just $ F "&" [apply t v,apply u v]
                           
 simplifyF (F "$" [F "\\/" [t,u],v]) _ = Just $ F "|" [apply t v,apply u v]
 
-{-                           
+{-
+simplifyF (F "$" [F "&" (t:ts),u]) _  = Just $ F "&" $ apply t u:ts
+
+simplifyF (F "$" [F "|" ts,t]) _      = Just $ F "|" $ map (flip apply t) ts
+
 simplifyF (F x ts) _ | x `elem` words "\\/ /\\" && notnull is =
                           Just $ F x $ foldl f [] $ indices_ ts
                          where is = searchAll ((x==) . root) ts
@@ -1222,6 +1226,44 @@ simplifyS t sig | isJust flow = do guard changed
                   where ys = domSub xs f
                         g x = mkEq (V x) $ f x
 
+-- regular expressions and acceptors
+
+simplifyS (F "flatten" [t]) sig | just e = Just $ showRE $ fst $ get e 
+                                           where e = parseRE sig t
+                       
+simplifyS (F "reduce" [t]) sig  | just e
+                             = Just $ showRE $ reduceLoop $ fst $ get e
+                               where e = parseRE sig t
+                       
+simplifyS (F "$" [F "deltaBro" [cfg],F "()" [t,F x []]]) sig | just e && just f
+                             = Just $ showRE $ deltaBro (get f) (fst $ get e) x
+                               where e = parseRE sig t; f = parseCFG sig cfg
+                                               
+simplifyS (F "$" [F "betaBro" [cfg],t]) sig | just e && just f 
+                             = Just $ mkConst $ betaBro (get f) $ fst $ get e 
+                               where e = parseRE sig t; f = parseCFG sig cfg
+                                               
+simplifyS (F "$" [F "$" [F "unfoldBro" [cfg],t],F "[]" xs]) sig 
+               | just e && just f 
+               = Just $ mkConst $ unfoldBro (get f) (fst $ get e) $ map root xs 
+                 where e = parseRE sig t; f = parseCFG sig cfg
+
+simplifyS (F "auto" [t]) sig | just e = Just $ eqsToGraph [] $ fst 
+                                             $ relLToEqs 0 trips
+           where e = parseRE sig t
+                 (e',labs) = get e
+                 (sts,nda) = regToAuto e'
+                 trips = [(show q,a,map show $ nda q a) | q <- sts, a <- labs]
+
+simplifyS (F "pauto" [t]) sig | just e = Just $ eqsToGraph [] $ fst 
+                                              $ relLToEqs 0 trips
+           where e = parseRE sig t
+                 (e',labs) = get e
+                 (_,nda) = regToAuto e'
+                 labs' = labs `minus1` "eps"
+                 (sts,delta) = powerAuto nda labs' 
+                 trips = [(show q,a,[show $ delta q a]) | q <- sts, a <- labs']
+
 simplifyS t _ = simplifyT t
                                                 
 -- * __Signature-independent simplification__
@@ -1244,28 +1286,6 @@ simplifyT (F "getCols" [F x ts]) = Just $ if null z then F x $ map f ts
 simplifyT (F "$" [F "lsec" [t,F x []],u]) = Just $ F x [t,u]
 
 simplifyT (F "$" [F "rsec" [F x [],t],u]) = Just $ F x [u,t]
-
--- acceptors of regular languages
-
-simplifyT (F "auto" [t@(F x (_:_))]) | just e = 
-                                 Just $ eqsToGraph [] $ fst $ relLToEqs 0 trips
-           where e = parseRegExp t
-                 (e',labs) = get e
-                 (sts,nda) = regToAuto e'
-                 trips = [(show q,a,map show $ nda q a) | q <- sts, a <- labs]
-
-simplifyT (F "pauto" [t@(F x (_:_))]) | just e = 
-                                 Just $ eqsToGraph [] $ fst $ relLToEqs 0 trips
-           where e = parseRegExp t
-                 (e',labs) = get e
-                 (_,nda) = regToAuto e'
-                 labs' = labs `minus1` "eps"
-                 (sts,delta) = powerAuto nda labs' 
-                 trips = [(show q,a,[show $ delta q a]) | q <- sts, a <- labs']
-
-simplifyT (F "reduce" [t@(F x (_:_))]) | just e = 
-                          Just $ showRegExp $ fixpt (==) reduceRE $ fst $ get e 
-                          where e = parseRegExp t
 
 -- projection
 
@@ -1374,30 +1394,32 @@ simplifyT t@(F "++" ts) | allColls "[]" t ts = f $ mkList ts
                         | allColls "^" t ts  = f $ F "^" ts
                           where f t = Just $ addToPoss [0] $ F "concat" [t]
 
+simplifyT (F "$" [F "replicate" [t],u]) | just n =  
+                              jList $ replicate (get n) u where n = parsePnat t
+
 simplifyT t | f == "curry" && notnull tss && length us == 1 =
-                                         Just $ applyL (head us) $ concat uss
-                                        where (f,tss) = unCurry t; us:uss = tss
+                              Just $ applyL (head us) $ concat uss
+                              where (f,tss) = unCurry t; us:uss = tss
 
 simplifyT (F "$" [F "uncurry" [f],F "()" (t:ts@(_:_))]) =
-                                Just $ F "$" [F "uncurry" [apply f t],F "()" ts]
+                              Just $ F "$" [F "uncurry" [apply f t],F "()" ts]
 
 simplifyT (F "$" [F "uncurry" [f],F "()" [t]]) = Just $ apply f t
 
 simplifyT (F "$" [F "$" [F "foldl" [f],a],F x ts]) | collector x = 
-                                Just $ foldl g a ts where g a t = applyL f [a,t]
+                              Just $ foldl g a ts where g a t = applyL f [a,t]
 
 simplifyT (F "$" [F "$" [F "foldr" [f],a],F x ts]) | collector x = 
-                               Just $ foldr g a ts where g t a = applyL f [t,a]
+                              Just $ foldr g a ts where g t a = applyL f [t,a]
 
 simplifyT (F "$" [F "foldr1" [f],F x ts]) | collector x = 
-                               Just $ foldr1 g ts where g t u = applyL f [t,u]
+                              Just $ foldr1 g ts where g t u = applyL f [t,u]
                                       
 simplifyT (F "$" [F "zip" [F x ts],F y us]) | collectors x y = 
-                    Just $ mkList $ zipWith (curry g) ts us
-                    where g (t,u) = mkPair t u
+            Just $ mkList $ map g $ zip ts us where g (t,u) = mkPair t u
 
 simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y = 
-                    Just $ mkList $ zipWith g ts us where g t u = applyL f [t,u]
+            Just $ mkList $ zipWith g ts us where g t u = applyL f [t,u]
 
 simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
              Just $ F ":" [applyL f [t,u],F "$" [F "$" [F "zipWith" [f],ts],us]]
@@ -1412,32 +1434,36 @@ simplifyT (F "index" [t,F x ts]) | collector x = do i <- search (eqTerm t) ts
 simplifyT (F "singles" [F x ts]) | collector x = 
                                                 jList $ map (mkList . single) ts
 
-simplifyT (F "subsets" [F x ts]) | collector x = jList $ map (F x) subs
-                             where subs = [map (ts!!) ns | ns <- subsetsB lg lg]
-                                   lg = length ts
+simplifyT t = simplifyT1 t
 
-simplifyT (F "subsetsB" [F x ts,t]) | collector x && isJust i = 
+simplifyT1 :: TermS -> Maybe TermS
+simplifyT1 (F "subsets" [F x ts]) | collector x = jList $ map (F x) subs
+                       where subs = [map (ts!!) ns | ns <- subsetsB lg lg]
+                             lg = length ts
+
+simplifyT1 (F "subsetsB" [F x ts,t]) | collector x && just i = 
                         jList $ map (F x) subs
                    where lg = length ts; i = parseInt t
                          subs = [map (ts!!) ns | ns <- subsetsB lg $ fromJust i]
 
-simplifyT (F "perms" [F "[]" ts])   = jList $ map mkList $ perms ts
-          
-simplifyT (F "reverse" [F "[]" ts]) = jList $ reverse ts
+simplifyT1 (F "perms" [F "[]" ts])   = jList $ map mkList $ perms ts
 
-simplifyT (F "shuffle" [F _ ts]) 
+simplifyT1 (F "reverse" [F "[]" ts]) = jList $ reverse ts
+
+simplifyT1 (F "shuffle" [F _ ts]) 
         | all ((== "[]") . root) ts  = jList $ shuffle $ map subterms ts
-      
-simplifyT (F "sort" [F "[]" ts]) 
+
+simplifyT1 (F "sort" [F "[]" ts]) 
         | all isJust is = jConsts $ qsort (<=) $ map fromJust is
         | all isJust rs = jConsts $ qsort (<=) $ map fromJust rs
         | True        = jList $ sort (<) ts
                         where is = map (foldArith intAlg) ts
                               rs = map (foldArith realAlg) ts
 
-simplifyT (F "subperms" [F "[]" ts]) = jList $ map mkList $ subperms ts
+-- begin functions with pattern match checker problems
+simplifyT1 (F "subperms" [F "[]" ts]) = jList $ map mkList $ subperms ts
 
-simplifyT (F "$" [F x [n],F "[]" ts])
+simplifyT1 (F "$" [F x [n],F "[]" ts])
         | x `elem` words "cantor hilbert mirror snake transpose" && isJust k
                       = Just $ mkList $ f (fromJust k) $ changeLPoss p single ts
                         where k = parsePnat n
@@ -1448,20 +1474,17 @@ simplifyT (F "$" [F x [n],F "[]" ts])
                                                  _ -> transpose
                               p i = [1,i]
 
-simplifyT (F x [F "bool" [t],F "bool" [u]]) | isEq x = 
+simplifyT1 (F x [F "bool" [t],F "bool" [u]]) | isEq x = 
                                     Just $ if x == "=/=" then F "Not" [v] else v
                                where v = F "<==>" [changePoss [0,0] [0] t,
                                                       changePoss [1,0] [1] u]
                                            
-simplifyT (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) = 
+simplifyT1 (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) = 
                   case search (eqTerm t) us of
                        Just n -> Just $ mkEq (mkBag ts') $ mkBag $ context n us
                        _ -> do n <- search (eqTerm u) ts
                                Just $ mkEq (mkBag $ context n ts) $ mkBag us'
-
-simplifyT t = simplifyT1 t
-
-simplifyT1 :: TermS -> Maybe TermS
+-- end functions with pattern match checker problems
 
 simplifyT1 (F "`mod`" [t,u]) | isJust i && isJust j && k /= 0 = 
                                       Just $ mkConst $ mod (fromJust i) k

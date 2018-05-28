@@ -48,8 +48,6 @@ Install expander with:
 ```
 git clone https://github.com/jokusi/expander.git
 cd expander-3.0.0.0
-stack setup
-stack install gtk2hs-buildtools
 stack build
 ```
 

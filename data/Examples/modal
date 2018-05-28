@@ -2,7 +2,7 @@
 
 preds:          X P Q true false not \/ /\ `then` or and path 
 		EX XE <> >< EF AF FE FA `EU` `AU` F `U` `leadsto` nxt nxt2 
-		allanytrans allanytransL
+		allanytrans allanytransL alloutL
 copreds: 	AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR` path G `W` `R` `H` 
 		`~` `~L` eqpath eqstate eqstateL 
 fovars:  	s s' st st' lab at
@@ -29,18 +29,10 @@ axioms:
  & ((P\/Q)$st <==> P$st | Q$st)
  & ((P`then`Q)$st <==> (P$st ==> Q$st))
 
- & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & 
-				   allanytrans(X,st,st') &
-				   allanytrans(X,st',st)))
-
- & (eqstateL <==> NU X.rel((st,st'),outL$st=outL$st' &
-				    allanytransL(X,st,st') &
-				    allanytransL(X,st',st)))
-
  & (allanytrans(P,st,st') <==> allany(P)(trans$st)(trans$st'))
-
  & (allanytransL(P,st,st') 
         <==> all(rel(lab,allany(P)(transL(st)$lab)(transL(st')$lab)))$labels)
+ & (alloutL(st,st') <==> all(rel(lab,outL(st)$lab=outL(st')$lab))$labels)
 
 -- simplification of second-order state formulas
 
@@ -63,6 +55,13 @@ axioms:
  & ((P`ER`Q) <==> NU X.(Q/\(P\/EX$X)))       -- release
  & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
  
+ & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & 
+				   allanytrans(X,st,st') &
+				   allanytrans(X,st',st)))
+ & (eqstateL <==> NU X.rel((st,st'),alloutL(st,st')&
+				    allanytransL(X,st,st') &
+				    allanytransL(X,st',st)))
+
 -- narrowing of first-order state formulas
 
  & (EF(P)$st <=== P$st | EX(EF$P)$st)	     -- forward finally on some path  	   
@@ -87,7 +86,6 @@ axioms:
 
  & (st`~`st' ===> out$st=out$st' & allany(`~`)(trans$st)(trans$st')
 				 & allany(`~`)(trans$st')(trans$st))
-
  & (st`~L`st' ===> outL(st)$lab=outL(st')$lab & 
 		   allany(`~L`)(trans(st)$lab)(trans(st')$lab) &
 		   allany(`~L`)(trans(st')$lab)(trans(st)$lab))
@@ -96,7 +94,6 @@ axioms:
 
  & (head$tail$s = x ==>
       (nxt(P)$s <==> x `in` trans$head$s & (P(tail$s) | x = head$s)))
-
  & (nxt2(Q)(s,s') <==> head$tail$s `in` trans$head$s & 
 		       head$tail$s' `in` trans$head$s' & Q(tail$s,tail$s'))
 
@@ -110,12 +107,10 @@ axioms:
  & (P`leadsto`Q <==> G(P`then`F$Q))
 
  & (path <==> NU X.nxt$X)
-
  & (eqpath <==> NU X.rel((s,s'),out$head$s=out$head$s' & nxt2(X)(s,s')))
  
 -- narrowing of first-order path formulas
 
- & (path$s ===> nxt(path)$s)
  & (F(P)$s <=== P$s | nxt(F$P)$s)			-- finally
  & (G(P)$s ===> P$s & nxt(G$P)$s)			-- generally
  & ((P`U`Q)$s <=== Q$s | P$s & nxt(P`U`Q)$s)		-- until
@@ -123,6 +118,7 @@ axioms:
  & ((P`R`Q)$s ===> Q$s & (P$s | nxt(P`R`Q)$s)) 	   	-- release
  & ((P`H`Q)$s ===> P$s & nxt((P`H`Q)\/(Q`H`P)\/G(Q))$s)	-- alternate
 
+ & (path$s ===> nxt(path)$s)
  & (eqpath(s,s') ===> out$head$s=out$head$s' & nxt2(eqpath)(s,s')) 
 
 theorems:

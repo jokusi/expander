@@ -65,6 +65,8 @@ data-files:          Examples/abp
                    , Examples/ASSOCproof
                    , Examples/auto1
                    , Examples/auto2
+                   , Examples/auto3
+                   , Examples/auto4
                    , Examples/band
                    , Examples/base
                    , Examples/baseAlt
@@ -147,6 +149,10 @@ data-files:          Examples/abp
                    , Examples/EFatomheat5T
                    , Examples/election
                    , Examples/eosum
+                   , Examples/eosum1P
+                   , Examples/eosum1T
+                   , Examples/eosum2P
+                   , Examples/eosum2T
                    , Examples/eqtest
                    , Examples/errorheat
                    , Examples/errorheatS
@@ -253,6 +259,7 @@ data-files:          Examples/abp
                    , Examples/iter1iter2T
                    , Examples/iterate
                    , Examples/iterateT
+                   , Examples/itereqs
                    , Examples/iterloop
                    , Examples/iterloopT
                    , Examples/javaterm
@@ -342,7 +349,6 @@ data-files:          Examples/abp
                    , Examples/mergePalt
                    , Examples/mergePT
                    , Examples/micro
-                   , Examples/microS
                    , Examples/mirrorcoP
                    , Examples/mirrorcoPT
                    , Examples/mirrorP
@@ -543,8 +549,9 @@ data-files:          Examples/abp
                    , Examples/recttabAS
                    , Examples/recttabB
                    , Examples/recttabBS
-                   , Examples/regeqs
                    , Examples/reglangs
+                   , Examples/reglangs1P
+                   , Examples/reglangs1T
                    , Examples/relalg
                    , Examples/RELALG1proof
                    , Examples/RELALG2proof
@@ -684,9 +691,7 @@ data-files:          Examples/abp
                    , Examples/trans0code4
                    , Examples/trans0code5
                    , Examples/trans1
-                   , Examples/trans1S
                    , Examples/trans2
-                   , Examples/trans2S
                    , Examples/trans2sols
                    , Examples/trans2SP
                    , Examples/trans3
@@ -727,14 +732,6 @@ data-files:          Examples/abp
                    , Examples/fairblinkAlt/fairblinkP
                    , Examples/fairblinkAlt/fairblinkPT
                    , Examples/lars/*.gif
-                   , Examples/microAlt/micro1P
-                   , Examples/microAlt/micro1T
-                   , Examples/microAlt/micro2P
-                   , Examples/microAlt/micro2T
-                   , Examples/microAlt/micro3P
-                   , Examples/microAlt/micro3T
-                   , Examples/microAlt/microS2
-                   , Examples/microAlt/microSpec
                    , Examples/mutexAlt
                    , Examples/transProofs/NOTthree2P
                    , Examples/transProofs/NOTthree2PT

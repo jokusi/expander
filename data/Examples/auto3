@@ -1,0 +1,15 @@
+-- auto3
+
+constructs: a b final
+
+axioms:
+
+  states == [1]
+& labels == [a,b]
+& atoms  == [final]
+
+& (1,a) -> 2 & (1,b) -> 1 & (2,a) -> 2 & (2,b) -> 2
+
+& final -> 2
+
+

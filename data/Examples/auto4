@@ -1,0 +1,15 @@
+-- auto4
+
+constructs: a b final
+
+axioms:
+
+  states == [1]
+& labels == [a,b,c]
+& atoms  == [final]
+
+& (1,a) -> 1 & (1,b) -> 2 & (1,c) -> 1 & (2,a) -> 2 & (2,b) -> 2 & (2,c) -> 1
+
+& final -> 1
+
+

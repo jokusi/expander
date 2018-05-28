@@ -1,19 +1,12 @@
 -- eosum
 
-constructs: 	esum osum elab olab final unfold
-defuncts:	parity
+constructs: 	esum osum elab olab final 
+defuncts:	parity delta beta deltaEO betaEO deltaBeh betaBeh unfold h
 preds: 		even odd
+fovars:		st w
+hovars:		f
 
 axioms:
-
-parity$n == ite(even$n,elab,olab) &
-
-(even$0 <==> True) &
-(even$suc$x <==> odd$x) &
-(odd$0 <==> False) &
-(odd$suc$x <==> even$x) &
-
--- acceptor of number sequences whose sum is even
 
 states == [esum] & labels == [elab,olab] & atoms == [final] &
 
@@ -24,14 +17,58 @@ states == [esum] & labels == [elab,olab] & atoms == [final] &
 
 final -> esum &
 
-unfold$s == out <=< (kfold(flip$transL)$s) . map(parity) 
+delta(st,x) == head$transL(st)$x &		
+beta$st == ite(null$out$st,0,1) &
+
+unfold(st) == beta.foldl(delta)(st).map(parity) &
+
+parity$n == ite(even$n,elab,olab) &
+
+(even$0 <==> True) &
+(even$suc$x <==> odd$x) &
+(odd$0 <==> False) &
+(odd$suc$x <==> even$x) &
+
+-- acceptors of number sequences whose sum is even
+
+(deltaEO(esum)$x = esum <=== even$x) &
+(deltaEO(esum)$x = osum <=== odd$x) &
+(deltaEO(osum)$x = esum <=== odd$x) &
+(deltaEO(osum)$x = osum <=== even$x) &
+
+betaEO$esum = 1 &
+betaEO$osum = 0 &
+
+deltaBeh(f)(x)(w) == f$x:w &
+betaBeh(f) == f[] &
+
+h(esum)[] = 1 &
+(h(esum)(x:w) = h(esum)$w <=== even$x) & 
+(h(esum)(x:w) = h(osum)$w <=== odd$x) & 
+h(osum)[] = 0 &
+(h(osum)(x:w) = h(esum)$w <=== odd$x) & 
+(h(osum)(x:w) = h(osum)$w <=== even$x) 
+
+theorems:
+
+(even$x | odd$x) &
+(st=esum | st=osum) 
+
+conjects:
+
+-- h is DAut(Int,2)-homomorphic and thus equal to unfold:
+
+h(deltaEO(st)$x)$w = deltaBeh(h$st)(x)$w &	-- eosum1
+betaEO$st = betaBeh$h$st 			-- eosum2
 
 terms:
 
-unfold[esum][1..4] <+>	--> [final]
-unfold[esum][1..5] <+>	--> []
-unfold[osum][1..4] <+>	--> []
-unfold[osum][1..5] <+>	--> [final]
+unfold(esum)[1..4] <+>	--> 1
+h(esum)[1..4]	   <+>	--> 1
+unfold(esum)[1..5] <+>	--> 0
+h(esum)[1..5]	   <+>	--> 0
+unfold(osum)[1..4] <+>	--> 0
+unfold(osum)[1..5] <+>	--> 1
 
 sum[1..4] <+> 		--> 10
 sum[1..5]		--> 15

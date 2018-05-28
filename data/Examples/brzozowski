@@ -1,8 +1,8 @@
 -- brzozowski
 
-constructs: 	star mt eps a b c int final
-defuncts:	plus delta beta unfold reg1 reg2
-fovars: 	t u w
+constructs: 	star mt eps a b c S A B final 
+defuncts:	plus delta beta unfoldB1 unfoldB2 unfoldB3 reg1 SAB 
+fovars: 	t u w cfg
 
 axioms:
 
@@ -40,40 +40,29 @@ beta(c) == 0 &
 beta(eps) == 1 &
 beta(mt) == 0 &
 
-unfold$t == beta . foldl(delta)$t &
+unfoldB1$t == beta . foldl(delta)$t &					-- slow
 
-{-
-beta$t+u == max(beta(t),beta(u)) &
-beta$t*u == beta(t)*beta(u) &
+unfoldB2(cfg)$t == betaBro(cfg) . foldl(deltaBro$cfg)$t &		
 
-max(0,x) == x &
-max(1,x) == 1 &
-max(x,0) == x &
-max(x,1) == 1 &
-
-delta(t*u,x) == delta(t,x)*u+ite(beta$t=1,delta(u,x),mt) &
-
-basic == [a,b,c,eps,mt] &
-
-(Value$t & t`in`basic ==> delta(t,x) == ite(t=x,eps,mt)) &
-
-delta(x,x) == eps &
-(Value$t & t`in`basic & t=/=x ==> delta(t,x) == mt) &
-
-(Value$t & t`in`basic ==> beta$t == ite(t=eps,1,0)) &
--}
+unfoldB3(cfg)$t == betaBro(cfg) . foldl(reduce . deltaBro$cfg)$t &
 
 reg1 == star$plus(a)+plus(b*c) &
 
--- Kripke model
+-- CF grammar
 
-states == [reg1] & atoms == [final] &
-
-(t,x) -> delta(t,x) &
-
-final -> branch$filter(Beta)$states
+SAB == [(S,a*B+b*A+eps),(A,a*S+b*A*A),(B,b*S+a*B*B)] 
 
 terms:
 
-unfold(reg1)[a,b,c,a] <+>	--> 1			-- 26 steps
-unfold(reg1)[b,c,a,c] <+>	--> 0			-- 22 steps
+unfoldB1(reg1)[a,b,c,a]      	<+>	--> 1		-- 26 steps 
+unfoldB1(reg1)[b,c,a,c]     	<+>	--> 0		-- 22 steps 
+
+unfoldB2(SAB)(S)[a,b]   	<+>	--> 1		-- 9 steps
+unfoldB2(SAB)(S)[a,b,a]  	<+>	--> 0		-- 11 steps
+
+unfoldBro[](reg1)[a,b,c,a] 	<+>     --> 1	
+unfoldBro[](reg1)[b,c,a,c] 	<+>	--> 0	
+unfoldBro(SAB)(S)[a,b,a,b,a,a,b,a,b,b,a,b,a,a,b,a,b,b,b,a,b,a] <+>    --> 1
+unfoldBro(SAB)(S)$replicate(5)(a)++replicate(5)(b)		      --> 1
+
+

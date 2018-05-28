@@ -1,0 +1,48 @@
+-- /Users/Padawitz/ExpanderLib/eosum2P
+
+0. Derivation of
+
+betaEO(st) = betaBeh(h(st))
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. NARROWING the preceding formulas (one step) leads to 
+
+1 = betaBeh(h(esum)) & st = esum | 0 = betaBeh(h(osum)) & st = osum
+
+2. SIMPLIFYING the preceding formulas (2 steps) leads to 
+
+1 = (h(esum)[]) & st = esum | 0 = (h(osum)[]) & st = osum
+
+3. NARROWING the preceding formulas (one step) leads to 
+
+1 = 1 & st = esum | 0 = (h(osum)[]) & st = osum
+
+The axioms have been MATCHED against their redices.
+
+4. SIMPLIFYING the preceding formulas (one step) leads to 
+
+st = esum | 0 = (h(osum)[]) & st = osum
+
+5. NARROWING the preceding formulas (one step) leads to 
+
+st = esum | 0 = 0 & st = osum
+
+The axioms have been MATCHED against their redices.
+
+6. SIMPLIFYING the preceding formulas (one step) leads to 
+
+st = esum | st = osum
+
+7. Applying the theorem
+
+st = esum | st = osum
+
+at positions
+[0]
+[1]
+of the preceding formulas leads to 
+
+True
+

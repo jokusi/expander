@@ -109,7 +109,7 @@ data Step = ApplySubst | ApplySubstTo String TermS | ApplyTransitivity |
             ExpandTree Bool Int | FlattenImpl | Generalize [TermS] | 
             Induction Bool Int | Mark [[Int]] | Match Int | Minimize | 
             Narrow Int Bool | NegateAxioms [String] [String] | RandomLabels | 
-            RandomTree | ReleaseNode | ReleaseSubtree | ReleaseTree | 
+            RandomTree | ReduceRE | ReleaseNode | ReleaseSubtree | ReleaseTree |
             RemoveCopies | RemoveEdges Bool | RemoveNode | RemoveOthers | 
             RemovePath | RemoveSubtrees | RenameVar String | 
             ReplaceNodes String | ReplaceOther | 

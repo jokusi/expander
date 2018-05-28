@@ -152,6 +152,7 @@ command =   msum [do symbol "ApplySubst"; return ApplySubst,
                      cps <- list quoted; return $ NegateAxioms ps cps,
                   do symbol "RandomLabels"; return RandomLabels,
                   do symbol "RandomTree"; return RandomTree,
+                  do symbol "ReduceRE"; return ReduceRE,
                   do symbol "ReleaseNode"; return ReleaseNode,
                   do symbol "ReleaseSubtree"; return ReleaseSubtree,
                   do symbol "ReleaseTree"; return ReleaseTree,
@@ -201,7 +202,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (May 6, 2018)"
+start = "Welcome to Expander3 (May 27, 2018)"
 
 startF :: String
 startF = "Load and parse a formula!"
@@ -314,6 +315,9 @@ evaluated = "The selected trees have been evaluated."
 
 expanded :: String
 expanded = "The selected trees have been expanded."
+
+expReduced :: String
+expReduced = "The selected regular expression has been reduced."
 
 extendedSubst :: String
 extendedSubst =
@@ -786,410 +790,412 @@ solver this solveRef enum paint = do
         -- has to be called first.
         buildSolve' :: Action
         buildSolve' = do
-            icon <- iconPixbuf
-            win `Gtk.set` [ windowTitle := this
-                      , windowIcon := Just icon
-                      , windowDefaultWidth := 1200
-                      , windowDefaultHeight := 820
-                      ]
+          icon <- iconPixbuf
+          win `Gtk.set` [ windowTitle := this
+                    , windowIcon := Just icon
+                    , windowDefaultWidth := 1200
+                    , windowDefaultHeight := 820
+                    ]
 
-            let da = getDrawingArea canv
-            widgetAddEvents  da [ButtonMotionMask]
-            da `on` buttonPressEvent $ do
-                button <- eventButton
-                pt <- round2 <$> eventCoordinates
-                liftIO $ case button of
-                    LeftButton -> catchSubtree pt
-                    MiddleButton -> catchTree pt
-                    RightButton -> catchNode pt
-                    _ -> return ()
-                return False
-            da `on` motionNotifyEvent $ do
-                liftIO $ do
-                    dw <- widgetGetParentWindow da
-                    (_, x, y, modifier) <- drawWindowGetPointerPos dw
-                    let pt = (x, y)
-                        button = find (`elem` [Button1, Button2, Button3])
-                                      modifier
-                    case button of
-                        Just Button1 -> moveSubtree pt
-                        Just Button2 -> moveTree pt
-                        Just Button3 -> moveNode pt
-                        _ -> return ()
-                return False
-            da `on` buttonReleaseEvent $ do
-                button <- eventButton
-                liftIO $ case button of
-                    LeftButton -> releaseSubtree
-                    MiddleButton -> releaseTree
-                    RightButton -> releaseNode
-                    _ -> return ()
-                return False
+          let da = getDrawingArea canv
+          widgetAddEvents  da [ButtonMotionMask]
+          da `on` buttonPressEvent $ do
+              button <- eventButton
+              pt <- round2 <$> eventCoordinates
+              liftIO $ case button of
+                  LeftButton -> catchSubtree pt
+                  MiddleButton -> catchTree pt
+                  RightButton -> catchNode pt
+                  _ -> return ()
+              return False
+          da `on` motionNotifyEvent $ do
+              liftIO $ do
+                  dw <- widgetGetParentWindow da
+                  (_, x, y, modifier) <- drawWindowGetPointerPos dw
+                  let pt = (x, y)
+                      button = find (`elem` [Button1, Button2, Button3])
+                                    modifier
+                  case button of
+                      Just Button1 -> moveSubtree pt
+                      Just Button2 -> moveTree pt
+                      Just Button3 -> moveNode pt
+                      _ -> return ()
+              return False
+          da `on` buttonReleaseEvent $ do
+              button <- eventButton
+              liftIO $ case button of
+                  LeftButton -> releaseSubtree
+                  MiddleButton -> releaseTree
+                  RightButton -> releaseNode
+                  _ -> return ()
+              return False
 
-            let takeCurr = do
-                    curr1 <- truncate <$> (treeSlider `Gtk.get` rangeValue)
-                    setCurr newCurr curr1
-            treeSlider `on` valueChanged $ takeCurr
-            
-            widgetOverrideFont ent
-                =<< Just <$> fontDescriptionFromString (monospace ++ " 18")
-            ent `on` keyPressEvent $ do
-                name <- Text.unpack <$> eventKeyName
-                liftIO $ case name of
-                    "Up" -> getFileAnd $ loadText True
-                    "Down" -> getFileAnd saveTree
-                    "Right" -> applyClause False False False
-                    "Left" -> applyClause False True False
-                    "Return" -> getFileAnd addSpecWithBase
-                    _ -> return ()
-                return False
+          let takeCurr = do
+                  curr1 <- truncate <$> (treeSlider `Gtk.get` rangeValue)
+                  setCurr newCurr curr1
+          treeSlider `on` valueChanged $ takeCurr
+          
+          widgetOverrideFont ent
+              =<< Just <$> fontDescriptionFromString (monospace ++ " 18")
+          ent `on` keyPressEvent $ do
+              name <- Text.unpack <$> eventKeyName
+              liftIO $ case name of
+                  "Up" -> getFileAnd $ loadText True
+                  "Down" -> getFileAnd saveTree
+                  "Right" -> applyClause False False False
+                  "Left" -> applyClause False True False
+                  "Return" -> getFileAnd addSpecWithBase
+                  _ -> return ()
+              return False
 
-            font <- fontDescriptionFromString initialFont
-            writeIORef fontRef font
+          font <- fontDescriptionFromString initialFont
+          writeIORef fontRef font
 
-            hideBut `on` buttonActivated $ hideOrShow
-            
-            widgetOverrideFont lab =<< Just <$> labFont
-            setBackground lab blueback
-            lab `Gtk.set` [ labelLabel := start ]
-            lab `on` keyPressEvent $ do
-                name <- Text.unpack <$> eventKeyName
-                liftIO $ case name of
-                    "c" -> copySubtrees
-                    "i" -> replaceText
-                    "l" -> replaceNodes
-                    "n" -> negateAxioms
-                    "L" -> randomLabels
-                    "T" -> randomTree
-                    "p" -> removePath
-                    "r" -> removeSubtrees
-                    "s" -> saveProof
-                    "d" -> setPicDir False
-                    "x" -> showAxiomsFor
-                    "Left" -> incrCurr False
-                    "Right" -> incrCurr True
-                    _ -> return ()
-                return False
+          hideBut `on` buttonActivated $ hideOrShow
+          
+          widgetOverrideFont lab =<< Just <$> labFont
+          setBackground lab blueback
+          lab `Gtk.set` [ labelLabel := start ]
+          lab `on` keyPressEvent $ do
+              name <- Text.unpack <$> eventKeyName
+              liftIO $ case name of
+                  "c" -> copySubtrees
+                  "i" -> replaceText
+                  "l" -> replaceNodes
+                  "n" -> negateAxioms
+                  "L" -> randomLabels
+                  "T" -> randomTree
+                  "p" -> removePath
+                  "r" -> removeSubtrees
+                  "s" -> saveProof
+                  "d" -> setPicDir False
+                  "x" -> showAxiomsFor
+                  "Left" -> incrCurr False
+                  "Right" -> incrCurr True
+                  _ -> return ()
+              return False
 
-            widgetOverrideFont lab2 =<< Just <$> labFont
-            setBackground lab2 blueback
+          widgetOverrideFont lab2 =<< Just <$> labFont
+          setBackground lab2 blueback
 
-            widgetModifyFont tedit
-                =<< Just <$> fontDescriptionFromString "Courier 12"
+          widgetModifyFont tedit
+              =<< Just <$> fontDescriptionFromString "Courier 12"
 
-            tedit `on` keyPressEvent $ do
-                name <- Text.unpack <$> eventKeyName
-                liftIO $ case name of
-                    "Up" -> parseText
-                    "Down" -> parseTree
-                    _ -> return ()
-                return False
+          tedit `on` keyPressEvent $ do
+              name <- Text.unpack <$> eventKeyName
+              liftIO $ case name of
+                  "Up" -> parseText
+                  "Down" -> parseTree
+                  _ -> return ()
+              return False
 
-            matchBut `on` buttonActivated $ setNarrow True False
-            randomBut `on` buttonActivated $ setNarrow False True
-            
-            narrowBut `Gtk.set` [ buttonLabel := "" ]
-            narrowBut `on` buttonActivated $ narrow'
+          matchBut `on` buttonActivated $ setNarrow True False
+          randomBut `on` buttonActivated $ setNarrow False True
+          
+          narrowBut `Gtk.set` [ buttonLabel := "" ]
+          narrowBut `on` buttonActivated $ narrow'
 
-            backButSignal <- backBut `on` buttonActivated $ backProof
-            writeIORef backButSignalRef backButSignal
+          backButSignal <- backBut `on` buttonActivated $ backProof
+          writeIORef backButSignalRef backButSignal
 
-            writeIORef forwButSignalRef
-                =<< (forwBut `on` buttonActivated $ forwProof')
+          writeIORef forwButSignalRef
+              =<< (forwBut `on` buttonActivated $ forwProof')
 
-            picEval <- readIORef picEvalRef
-            spread <- readIORef spreadRef
-            setEval paint picEval spread
-            
-            setPicDir True
+          picEval <- readIORef picEvalRef
+          spread <- readIORef spreadRef
+          setEval paint picEval spread
+          
+          setPicDir True
 
-            
-            buildSolve1
+          
+          buildSolve1
 
         -- | Second half of 'buildSolve''.
         buildSolve1 :: Action
         buildSolve1 = do
-            solve <- readIORef solveRef
-            other <- getSolver solve
+          solve <- readIORef solveRef
+          other <- getSolver solve
 
-            deriveButSignal <- deriveBut `on` buttonActivated $ setDeriveMode
-            writeIORef deriveButSignalRef deriveButSignal
-            minusBut <- getButton "minusBut"
-            minusBut `on` buttonActivated $ incrEntry False
-            plusBut <- getButton "plusBut"
-            plusBut `on` buttonActivated $ incrEntry True
-            paintBut <- getButton "paintBut"
-            paintBut `on` buttonActivated $ showPicts'
-            downBut <- getButton "downBut"
-            downBut `on` buttonActivated $ parseTree
-            upBut <- getButton "upBut"
-            upBut `on` buttonActivated $ parseText
-            clearS <- getButton "clearS"
-            clearS `on` buttonActivated $ redrawTree
-            clearT <- getButton "clearT"
-            clearT `on` buttonActivated $ do
-                clearText
-                writeIORef numberedExpsRef ([],True)
-            quitSignal <- quit `on` buttonActivated $ mainQuit
-            writeIORef quitSignalRef quitSignal
-            saveBut <- getButton "saveBut"
-            saveBut `on` buttonActivated $ getFileAnd saveGraph
-            saveDBut <- getButton "saveDBut"
-            saveDBut `on` buttonActivated $ saveGraphD
-            dirBut <- getButton "dirBut"
-            dirBut `on` buttonActivated $ setPicDir False
-            simplButD `on` buttonActivated $ simplify' True
-            simplButB `on` buttonActivated $ simplify' False
-            fastBut `on` buttonActivated $ switchFast
-            splitBut `on` buttonActivated $ splitTree
+          deriveButSignal <- deriveBut `on` buttonActivated $ setDeriveMode
+          writeIORef deriveButSignalRef deriveButSignal
+          minusBut <- getButton "minusBut"
+          minusBut `on` buttonActivated $ incrEntry False
+          plusBut <- getButton "plusBut"
+          plusBut `on` buttonActivated $ incrEntry True
+          paintBut <- getButton "paintBut"
+          paintBut `on` buttonActivated $ showPicts'
+          downBut <- getButton "downBut"
+          downBut `on` buttonActivated $ parseTree
+          upBut <- getButton "upBut"
+          upBut `on` buttonActivated $ parseText
+          clearS <- getButton "clearS"
+          clearS `on` buttonActivated $ redrawTree
+          clearT <- getButton "clearT"
+          clearT `on` buttonActivated $ do
+              clearText
+              writeIORef numberedExpsRef ([],True)
+          quitSignal <- quit `on` buttonActivated $ mainQuit
+          writeIORef quitSignalRef quitSignal
+          saveBut <- getButton "saveBut"
+          saveBut `on` buttonActivated $ getFileAnd saveGraph
+          saveDBut <- getButton "saveDBut"
+          saveDBut `on` buttonActivated $ saveGraphD
+          dirBut <- getButton "dirBut"
+          dirBut `on` buttonActivated $ setPicDir False
+          simplButD `on` buttonActivated $ simplify' True
+          simplButB `on` buttonActivated $ simplify' False
+          fastBut `on` buttonActivated $ switchFast
+          splitBut `on` buttonActivated $ splitTree
 
-            axsMenu <- getMenu "axsMenu"
-            mkBut axsMenu "remove in entry field" $ removeClauses 0
-            mkBut axsMenu ".. for symbols" removeAxiomsFor
-            mkBut axsMenu "show axioms" $ showAxioms True
-            mkBut axsMenu (".. in text field of "++ other) $ showAxioms False
-            mkBut axsMenu ".. for symbols (x)" showAxiomsFor
-            mkBut axsMenu "combine for symbol" $ compressAxioms True
-            mkBut axsMenu ".. in entry field" compressClauses
-            mkBut axsMenu "invert for symbol" $ compressAxioms False
-            mkBut axsMenu "negate for symbols (n)" negateAxioms
-            mkBut axsMenu "Kleene axioms for symbols" kleeneAxioms
-            subMenu <- mkSub axsMenu "add"
-            createClsMenu 0 subMenu
-            
-            
-            fontBut <- getObject castToFontButton "fontBut"
-            fontBut `Gtk.set` [ fontButtonUseSize  := False
-                          , fontButtonFontName := initialFont
-                          ]
-            fontBut `onFontSet` do
-                fd <- fontDescriptionFromString
-                    =<< (fontBut `Gtk.get` fontButtonFontName :: IO String)
-                setFont fd
-            
-            Just size <- fontDescriptionGetSize =<< readIORef fontRef
-            fontSize `Gtk.set` [ rangeValue := size ]
-            fontSize `on` valueChanged $ setFontSize
-                
-            fontSize `on` buttonReleaseEvent $ do
-                button <- eventButton
-                when (button == LeftButton) $ liftIO drawCurr'
-                return False
-            
-            graphMenu <- getMenu "graphMenu"
-            mkBut graphMenu "expand" $ expandTree False
-            mkBut graphMenu "expand one" $ expandTree True
-            mkBut graphMenu "split cycles" $ removeEdges True
-            mkBut graphMenu "more tree arcs" $ removeEdges False
-            mkBut graphMenu "compose pointers" composePointers
-            mkBut graphMenu "collapse after simplify" setCollapse
-            mkBut graphMenu "collapse -->" $ showEqsOrGraph 14
-            mkBut graphMenu "collapse level" collapseStep
-            mkBut graphMenu "collapse <--" $ showEqsOrGraph 15
-            mkBut graphMenu "remove copies" removeCopies
-            mkBut graphMenu "show graph" $ showEqsOrGraph 16
-            let mkMenu m n1 n2 n3 n4 = do
-                   mkBut m "here" $ cmd n1
-                   mkBut m "with state equivalence" $ cmd n2
-                   mkBut m "in painter" (do initCanvas; cmd n3)
-                   mkBut m ("in "++ other) $ cmd n4
-                   where cmd = showEqsOrGraph
-            subMenu <- mkSub graphMenu ".. of transitions"
-            mkMenu subMenu 0 1 2 3
-            subMenu <- mkSub graphMenu ".. of labelled transitions"
-            mkMenu subMenu 4 5 6 7
-            let mkMenu m n1 n2 n3 = do
-                   mkBut m "here" $ cmd n1
-                   mkBut m "in painter" (do initCanvas; cmd n2)
-                   mkBut m ("in "++ other) $ cmd n3
-                   where cmd = showEqsOrGraph
-            subMenu <- mkSub graphMenu ".. of Kripke model"
-            mkMenu subMenu 8 9 10
-            subMenu <- mkSub graphMenu ".. of labelled Kripke model"
-            mkMenu subMenu 11 12 13
-            mkBut graphMenu "show iterative equations" $ showEqsOrGraph 17
-            let mkMenu m cmd n1 n2 n3 n4 = do
-                    mkBut m "of canvas" $ cmd n1
-                    mkBut m "of transitions" $ cmd n2
-                    mkBut m "of atom values" $ cmd n3
-                    mkBut m "of output" $ cmd n4
-            subMenu <- mkSub graphMenu "show Boolean matrix"
-            mkMenu subMenu (\x -> initCanvas >> showMatrix x) 6 0 1 2
-            subMenu <- mkSub graphMenu "show list matrix"
-            mkMenu subMenu (\x -> initCanvas >> showMatrix x) 7 3 4 5
-            subMenu <- mkSub graphMenu "show binary relation"
-            mkMenu subMenu showRelation 6 0 1 2
-            subMenu <- mkSub graphMenu "show ternary relation"
-            mkMenu subMenu showRelation 7 3 4 5
-            
-            treeMenu <- getMenu "treeMenu"
-            subMenu <- mkSub treeMenu "call enumerator"
-            mapM_ (mkButF subMenu callEnum) enumerators
-            mkBut treeMenu "remove other trees" removeOthers
-            mkBut treeMenu "show changed" showChanged
-            mkBut treeMenu "show proof" $ showProof True
-            mkBut treeMenu (".. in text field of "++ other) $ showProof False
-            mkBut treeMenu "save proof to file (s)" saveProof
-            mkBut treeMenu "show proof term" $ showProofTerm True
-            mkBut treeMenu (".. in text field of "++ other) $ showProofTerm False
-            mkBut treeMenu "check proof term from file" $ checkProofF False
-            mkBut treeMenu ".. in painter" $ checkProofF True
-            mkBut treeMenu ".. from text field" $ checkProofT False
-            mkBut treeMenu ".. in painter" $ checkProofT True
-            mkBut treeMenu "create induction hypotheses" createIndHyp
-            mkBut treeMenu "save tree to file" $ getFileAnd saveTree
-            mkBut treeMenu "load text from file" $ getFileAnd $ loadText True
-            mkBut treeMenu (".. in text field of "++ other) $ getFileAnd 
-                                                            $ loadText False
+          axsMenu <- getMenu "axsMenu"
+          mkBut axsMenu "remove in entry field" $ removeClauses 0
+          mkBut axsMenu ".. for symbols" removeAxiomsFor
+          mkBut axsMenu "show axioms" $ showAxioms True
+          mkBut axsMenu (".. in text field of "++ other) $ showAxioms False
+          mkBut axsMenu ".. for symbols (x)" showAxiomsFor
+          mkBut axsMenu "combine for symbol" $ compressAxioms True
+          mkBut axsMenu ".. in entry field" compressClauses
+          mkBut axsMenu "invert for symbol" $ compressAxioms False
+          mkBut axsMenu "negate for symbols (n)" negateAxioms
+          mkBut axsMenu "Kleene axioms for symbols" kleeneAxioms
+          subMenu <- mkSub axsMenu "add"
+          createClsMenu 0 subMenu
+          
+          
+          fontBut <- getObject castToFontButton "fontBut"
+          fontBut `Gtk.set` [ fontButtonUseSize  := False
+                        , fontButtonFontName := initialFont
+                        ]
+          fontBut `onFontSet` do
+              fd <- fontDescriptionFromString
+                  =<< (fontBut `Gtk.get` fontButtonFontName :: IO String)
+              setFont fd
+          
+          Just size <- fontDescriptionGetSize =<< readIORef fontRef
+          fontSize `Gtk.set` [ rangeValue := size ]
+          fontSize `on` valueChanged $ setFontSize
+              
+          fontSize `on` buttonReleaseEvent $ do
+              button <- eventButton
+              when (button == LeftButton) $ liftIO drawCurr'
+              return False
+          
+          graphMenu <- getMenu "graphMenu"
+          mkBut graphMenu "expand" $ expandTree False
+          mkBut graphMenu "expand one" $ expandTree True
+          mkBut graphMenu "split cycles" $ removeEdges True
+          mkBut graphMenu "more tree arcs" $ removeEdges False
+          mkBut graphMenu "compose pointers" composePointers
+          mkBut graphMenu "collapse after simplify" setCollapse
+          mkBut graphMenu "collapse -->" $ showEqsOrGraph 14
+          mkBut graphMenu "collapse level" collapseStep
+          mkBut graphMenu "collapse <--" $ showEqsOrGraph 15
+          mkBut graphMenu "remove copies" removeCopies
+          mkBut graphMenu "show graph" $ showEqsOrGraph 16
+          let mkMenu m n1 n2 n3 n4 = do
+                 mkBut m "here" $ cmd n1
+                 mkBut m "with state equivalence" $ cmd n2
+                 mkBut m "in painter" (do initCanvas; cmd n3)
+                 mkBut m ("in "++ other) $ cmd n4
+                 where cmd = showEqsOrGraph
+          subMenu <- mkSub graphMenu ".. of transitions"
+          mkMenu subMenu 0 1 2 3
+          subMenu <- mkSub graphMenu ".. of labelled transitions"
+          mkMenu subMenu 4 5 6 7
+          let mkMenu m n1 n2 n3 = do
+                 mkBut m "here" $ cmd n1
+                 mkBut m "in painter" (do initCanvas; cmd n2)
+                 mkBut m ("in "++ other) $ cmd n3
+                 where cmd = showEqsOrGraph
+          subMenu <- mkSub graphMenu ".. of Kripke model"
+          mkMenu subMenu 8 9 10
+          subMenu <- mkSub graphMenu ".. of labelled Kripke model"
+          mkMenu subMenu 11 12 13
+          mkBut graphMenu "show iterative equations" $ showEqsOrGraph 17
+          let mkMenu m cmd n1 n2 n3 n4 = do
+                  mkBut m "of canvas" $ cmd n1
+                  mkBut m "of transitions" $ cmd n2
+                  mkBut m "of atom values" $ cmd n3
+                  mkBut m "of output" $ cmd n4
+          subMenu <- mkSub graphMenu "show Boolean matrix"
+          mkMenu subMenu (\x -> initCanvas >> showMatrix x) 6 0 1 2
+          subMenu <- mkSub graphMenu "show list matrix"
+          mkMenu subMenu (\x -> initCanvas >> showMatrix x) 7 3 4 5
+          subMenu <- mkSub graphMenu "show binary relation"
+          mkMenu subMenu showRelation 6 0 1 2
+          subMenu <- mkSub graphMenu "show ternary relation"
+          mkMenu subMenu showRelation 7 3 4 5
+          
+          treeMenu <- getMenu "treeMenu"
+          subMenu <- mkSub treeMenu "call enumerator"
+          mapM_ (mkButF subMenu callEnum) enumerators
+          mkBut treeMenu "remove other trees" removeOthers
+          mkBut treeMenu "show changed" showChanged
+          mkBut treeMenu "show proof" $ showProof True
+          mkBut treeMenu (".. in text field of "++ other) $ showProof False
+          mkBut treeMenu "save proof to file (s)" saveProof
+          mkBut treeMenu "show proof term" $ showProofTerm True
+          mkBut treeMenu (".. in text field of "++ other) $ showProofTerm False
+          mkBut treeMenu "check proof term from file" $ checkProofF False
+          mkBut treeMenu ".. in painter" $ checkProofF True
+          mkBut treeMenu ".. from text field" $ checkProofT False
+          mkBut treeMenu ".. in painter" $ checkProofT True
+          mkBut treeMenu "create induction hypotheses" createIndHyp
+          mkBut treeMenu "save tree to file" $ getFileAnd saveTree
+          mkBut treeMenu "load text from file" $ getFileAnd $ loadText True
+          mkBut treeMenu (".. in text field of "++ other) $ getFileAnd 
+                                                          $ loadText False
 
-            nodesMenu <- getMenu "nodesMenu"
-            mkBut nodesMenu "greatest lower bound" showGlb
-            mkBut nodesMenu "hide values" $ writeIORef hideValsRef 1
-            mkBut nodesMenu "hide widgets"$ writeIORef hideValsRef 2
-            mkBut nodesMenu "show values & widgets" $ writeIORef hideValsRef 0
-            mkBut nodesMenu "predecessors" showPreds
-            mkBut nodesMenu "successors" showSucs
-            mkBut nodesMenu "constructors" $ showSyms constrPositions
-            mkBut nodesMenu "values" showVals
-            mkBut nodesMenu "variables" $ showSyms varPositions
-            mkBut nodesMenu "free variables" $ showSyms freePositions
-            mkBut nodesMenu "label roots with entry (l)" replaceNodes
-            mkBut nodesMenu "polarities" showPolarities
-            mkBut nodesMenu "positions" showPositions
-            mkBut nodesMenu "level numbers" $ showNumbers 1
-            mkBut nodesMenu "preorder numbers" $ showNumbers 2
-            mkBut nodesMenu "heap numbers" $ showNumbers 3
-            mkBut nodesMenu "hill numbers" $ showNumbers 4
-            mkBut nodesMenu "coordinates" showCoords
-            mkBut nodesMenu "cycle targets" showCycleTargets
-            
-            interpreterMenu <- getMenu "interpreterMenu"
-            mapM_ (mkButF interpreterMenu setInterpreter') interpreters
+          nodesMenu <- getMenu "nodesMenu"
+          mkBut nodesMenu "greatest lower bound" showGlb
+          mkBut nodesMenu "hide values" $ writeIORef hideValsRef 1
+          mkBut nodesMenu "hide widgets"$ writeIORef hideValsRef 2
+          mkBut nodesMenu "show values & widgets" $ writeIORef hideValsRef 0
+          mkBut nodesMenu "predecessors" showPreds
+          mkBut nodesMenu "successors" showSucs
+          mkBut nodesMenu "constructors" $ showSyms constrPositions
+          mkBut nodesMenu "values" showVals
+          mkBut nodesMenu "variables" $ showSyms varPositions
+          mkBut nodesMenu "free variables" $ showSyms freePositions
+          mkBut nodesMenu "label roots with entry (l)" replaceNodes
+          mkBut nodesMenu "polarities" showPolarities
+          mkBut nodesMenu "positions" showPositions
+          mkBut nodesMenu "level numbers" $ showNumbers 1
+          mkBut nodesMenu "preorder numbers" $ showNumbers 2
+          mkBut nodesMenu "heap numbers" $ showNumbers 3
+          mkBut nodesMenu "hill numbers" $ showNumbers 4
+          mkBut nodesMenu "coordinates" showCoords
+          mkBut nodesMenu "cycle targets" showCycleTargets
+          
+          interpreterMenu <- getMenu "interpreterMenu"
+          mapM_ (mkButF interpreterMenu setInterpreter') interpreters
 
-            sigMenu <- getMenu "sigMenu"
-            mkBut sigMenu "admit all simplifications" $ setAdmitted' True []
-            mkBut sigMenu ".. except for symbols" $ setAdmitted True
-            mkBut sigMenu ".. for symbols" $ setAdmitted False
-            but <- mkBut sigMenu (eqsButMsg False) switchSafe
-            writeIORef safeButRef but
-            mkBut sigMenu "show sig" showSig
-            mkBut sigMenu "show map" showSigMap
-            mkBut sigMenu "apply map" applySigMap
-            mkBut sigMenu "save map to file" $ getFileAnd saveSigMap
-            addMapMenu <- mkSub sigMenu "add map"
-            mkBut addMapMenu "STACK2IMPL" $ addSigMap "STACK2IMPL"
-            mkBut addMapMenu "from text field" addSigMapT
-            mkBut addMapMenu "from file" $ getFileAnd addSigMap
-            mkBut addMapMenu "remove map" removeSigMap
+          sigMenu <- getMenu "sigMenu"
+          mkBut sigMenu "admit all simplifications" $ setAdmitted' True []
+          mkBut sigMenu ".. except for symbols" $ setAdmitted True
+          mkBut sigMenu ".. for symbols" $ setAdmitted False
+          but <- mkBut sigMenu (eqsButMsg False) switchSafe
+          writeIORef safeButRef but
+          mkBut sigMenu "show sig" showSig
+          mkBut sigMenu "show map" showSigMap
+          mkBut sigMenu "apply map" applySigMap
+          mkBut sigMenu "save map to file" $ getFileAnd saveSigMap
+          addMapMenu <- mkSub sigMenu "add map"
+          mkBut addMapMenu "STACK2IMPL" $ addSigMap "STACK2IMPL"
+          mkBut addMapMenu "from text field" addSigMapT
+          mkBut addMapMenu "from file" $ getFileAnd addSigMap
+          mkBut addMapMenu "remove map" removeSigMap
 
-            streeMenu <- getMenu "streeMenu"
-            mkBut streeMenu "stretch premise" $ stretch True
-            mkBut streeMenu "stretch conclusion" $ stretch False
-            mkBut streeMenu "instantiate" instantiate
-            mkBut streeMenu "unify" unifySubtrees
-            mkBut streeMenu "generalize" generalize
-            mkBut streeMenu "specialize" specialize
-            mkBut streeMenu "decompose atom" decomposeAtom
-            mkBut streeMenu "replace by other sides of in/equations"
-                    replaceSubtrees
-            mkBut streeMenu "use transitivity" applyTransitivity
-            subMenu <- mkSub streeMenu "apply clause"
-            mkBut subMenu "Left to right (Left)" $ applyClause False False False
-            mkBut subMenu ".. and save redex" $ applyClause False False True
-            mkBut subMenu "Left to right lazily" $ applyClause True False False
-            mkBut subMenu ".. and save redex" $ applyClause True False True
-            mkBut subMenu "Right to left (Right)" $ applyClause False True False
-            mkBut subMenu ".. and save redex" $ applyClause False True True
-            mkBut subMenu "Right to left lazily" $ applyClause True True False
-            mkBut subMenu ".. and save redex" $ applyClause True True True
-            mkBut streeMenu "move up quantifiers" shiftQuants
-            mkBut streeMenu "shift subformulas" shiftSubs
-            mkBut streeMenu "coinduction" $ startInd False
-            mkBut streeMenu "induction" $ startInd True
-            mkBut streeMenu "create Hoare invariant" $ createInvariant True
-            mkBut streeMenu "create subgoal invariant" $ createInvariant False
-            mkBut streeMenu "flatten (co-)Horn clause" flattenImpl
-            mkBut streeMenu "shift pattern to rhs" shiftPattern
-            mkBut streeMenu ("replace by tree of "++ other) replaceOther
-            mkBut streeMenu ("unify with tree of "++ other) unifyOther
-            mkBut streeMenu "build unifier" buildUnifier
-            mkBut streeMenu "subsume" subsumeSubtrees
-            mkBut streeMenu "evaluate" evaluateTrees
-            mkBut streeMenu "copy (c)" copySubtrees
-            mkBut streeMenu "remove (r)" removeSubtrees
-            mkBut streeMenu "remove node" removeNode
-            mkBut streeMenu "random labels (L)" randomLabels
-            mkBut streeMenu "random tree (T)" randomTree
-            mkBut streeMenu "remove path (p)" removePath
-            mkBut streeMenu "reverse" reverseSubtrees
-            mkBut streeMenu "insert/replace by text (i)" replaceText
+          streeMenu <- getMenu "streeMenu"
+          mkBut streeMenu "stretch premise" $ stretch True
+          mkBut streeMenu "stretch conclusion" $ stretch False
+          mkBut streeMenu "instantiate" instantiate
+          mkBut streeMenu "unify" unifySubtrees
+          mkBut streeMenu "generalize" generalize
+          mkBut streeMenu "specialize" specialize
+          mkBut streeMenu "decompose atom" decomposeAtom
+          mkBut streeMenu "replace by other sides of in/equations"
+                  replaceSubtrees
+          mkBut streeMenu "use transitivity" applyTransitivity
+          subMenu <- mkSub streeMenu "apply clause"
+          mkBut subMenu "Left to right (Left)" $ applyClause False False False
+          mkBut subMenu ".. and save redex" $ applyClause False False True
+          mkBut subMenu "Left to right lazily" $ applyClause True False False
+          mkBut subMenu ".. and save redex" $ applyClause True False True
+          mkBut subMenu "Right to left (Right)" $ applyClause False True False
+          mkBut subMenu ".. and save redex" $ applyClause False True True
+          mkBut subMenu "Right to left lazily" $ applyClause True True False
+          mkBut subMenu ".. and save redex" $ applyClause True True True
+          mkBut streeMenu "move up quantifiers" shiftQuants
+          mkBut streeMenu "shift subformulas" shiftSubs
+          mkBut streeMenu "coinduction" $ startInd False
+          mkBut streeMenu "induction" $ startInd True
+          mkBut streeMenu "create Hoare invariant" $ createInvariant True
+          mkBut streeMenu "create subgoal invariant" $ createInvariant False
+          mkBut streeMenu "flatten (co-)Horn clause" flattenImpl
+          mkBut streeMenu "shift pattern to rhs" shiftPattern
+          mkBut streeMenu ("replace by tree of "++ other) replaceOther
+          mkBut streeMenu ("unify with tree of "++ other) unifyOther
+          mkBut streeMenu "build unifier" buildUnifier
+          mkBut streeMenu "subsume" subsumeSubtrees
+          mkBut streeMenu "evaluate" evaluateTrees
+          mkBut streeMenu "copy (c)" copySubtrees
+          mkBut streeMenu "remove (r)" removeSubtrees
+          mkBut streeMenu "remove node" removeNode
+          mkBut streeMenu "random labels (L)" randomLabels
+          mkBut streeMenu "random tree (T)" randomTree
+          mkBut streeMenu "remove path (p)" removePath
+          mkBut streeMenu "reverse" reverseSubtrees
+          mkBut streeMenu "insert/replace by text (i)" replaceText
 
-            subsMenu <- getMenu "subsMenu"
-            mkBut subsMenu "add from text field" addSubst
-            mkBut subsMenu "apply" applySubst
-            mkBut subsMenu "rename" renameVar
-            mkBut subsMenu "remove" removeSubst
-            mkBut subsMenu "show" $ showSubst True
-            mkBut subsMenu (".. in text field of "++ other) $ showSubst False
-            mkBut subsMenu (".. on canvas of "++ other) showSubstCanv
-            mkBut subsMenu ".. solutions" showSolutions
+          subsMenu <- getMenu "subsMenu"
+          mkBut subsMenu "add from text field" addSubst
+          mkBut subsMenu "apply" applySubst
+          mkBut subsMenu "rename" renameVar
+          mkBut subsMenu "remove" removeSubst
+          mkBut subsMenu "show" $ showSubst True
+          mkBut subsMenu (".. in text field of "++ other) $ showSubst False
+          mkBut subsMenu (".. on canvas of "++ other) showSubstCanv
+          mkBut subsMenu ".. solutions" showSolutions
 
-            specMenu <- getMenu "specMenu"
-            mkBut specMenu "re-add" reAddSpec
-            mkBut specMenu "remove"
-                  $ do removeSpec; labGreen' $ iniSpec++iniSigMap
-            mkBut specMenu "set pic directory (t)" $ setPicDir False
-            mkBut specMenu "build Kripke model" $ buildKripke 2
-            mkBut specMenu ".. from current graph" $ buildKripke 4
-            mkBut specMenu ".. from regular expression" $ buildKripke 5
-            mkBut specMenu ".. cycle-free" $ buildKripke 0
-            mkBut specMenu ".. pointer-free" $ buildKripke 1
-            mkBut specMenu "state equivalence" stateEquiv
-            mkBut specMenu "minimize" minimize
-            mkBut specMenu "build regular expression" buildRegExp
-            mkBut specMenu "save to file" $ getFileAnd saveSpec
-            subMenu <- mkSub specMenu "load text"
-            createSpecMenu False subMenu
-            subMenu <- mkSub specMenu "add"
-            createSpecMenu True subMenu
+          specMenu <- getMenu "specMenu"
+          mkBut specMenu "re-add" reAddSpec
+          mkBut specMenu "remove"
+                $ do removeSpec; labGreen' $ iniSpec++iniSigMap
+          mkBut specMenu "set pic directory (t)" $ setPicDir False
+          mkBut specMenu "build Kripke model" $ buildKripke 2
+          mkBut specMenu ".. from current graph" $ buildKripke 4
+          mkBut specMenu ".. from regular expression" $ buildKripke 5
+          mkBut specMenu ".. cycle-free" $ buildKripke 0
+          mkBut specMenu ".. pointer-free" $ buildKripke 1
+          mkBut specMenu "state equivalence" stateEquiv
+          mkBut specMenu "minimize" minimize
+          mkBut specMenu "build regular expression" $ buildRegExp 0
+          mkBut specMenu ".. and reduce" $ buildRegExp 1
+          mkBut specMenu "reduce regular expression" reduceRegExp
+          mkBut specMenu "save to file" $ getFileAnd saveSpec
+          subMenu <- mkSub specMenu "load text"
+          createSpecMenu False subMenu
+          subMenu <- mkSub specMenu "add"
+          createSpecMenu True subMenu
 
-            thsMenu <- getMenu "thsMenu"
-            mkBut thsMenu "remove theorems" removeTheorems
-            mkBut thsMenu ".. in entry field" $ removeClauses 1
-            mkBut thsMenu "show theorems" $ showTheorems True
-            mkBut thsMenu (".. in text field of "++ other) $ showTheorems False
-            mkBut thsMenu ".. for symbols" showTheoremsFor
-            subMenu <- mkSub thsMenu "add theorems"
-            createClsMenu 1 subMenu
-            mkBut thsMenu "remove conjects" removeConjects
-            mkBut thsMenu ".. in entry field" $ removeClauses 2
-            mkBut thsMenu "show conjects" showConjects
-            mkBut thsMenu ".. in entry field" $ removeClauses 3
-            mkBut thsMenu "show terms" showTerms
-            mkBut thsMenu "show induction hypotheses" showIndClauses
-            subMenu <- mkSub thsMenu "add conjects"
-            createClsMenu 2 subMenu
+          thsMenu <- getMenu "thsMenu"
+          mkBut thsMenu "remove theorems" removeTheorems
+          mkBut thsMenu ".. in entry field" $ removeClauses 1
+          mkBut thsMenu "show theorems" $ showTheorems True
+          mkBut thsMenu (".. in text field of "++ other) $ showTheorems False
+          mkBut thsMenu ".. for symbols" showTheoremsFor
+          subMenu <- mkSub thsMenu "add theorems"
+          createClsMenu 1 subMenu
+          mkBut thsMenu "remove conjects" removeConjects
+          mkBut thsMenu ".. in entry field" $ removeClauses 2
+          mkBut thsMenu "show conjects" showConjects
+          mkBut thsMenu ".. in entry field" $ removeClauses 3
+          mkBut thsMenu "show terms" showTerms
+          mkBut thsMenu "show induction hypotheses" showIndClauses
+          subMenu <- mkSub thsMenu "add conjects"
+          createClsMenu 2 subMenu
 
-            treeSize `on` valueChanged $ drawNewCurr
-            
-            horBut <- getObject castToScale "horBut"
-            horBut `on` valueChanged $ do
-                val <- truncate <$> horBut `Gtk.get` rangeValue
-                blowHor val
-                drawNewCurr
-            
-            verBut <- getObject castToScale "verBut"
-            verBut `on` valueChanged $ do
-                val <- truncate <$> verBut `Gtk.get` rangeValue
-                blowVer val
-                drawShrinked            
+          treeSize `on` valueChanged $ drawNewCurr
+          
+          horBut <- getObject castToScale "horBut"
+          horBut `on` valueChanged $ do
+              val <- truncate <$> horBut `Gtk.get` rangeValue
+              blowHor val
+              drawNewCurr
+          
+          verBut <- getObject castToScale "verBut"
+          verBut `on` valueChanged $ do
+              val <- truncate <$> verBut `Gtk.get` rangeValue
+              blowVer val
+              drawShrinked            
 
-            -- Scroll support for canvas
-            containerAdd scrollCanv $ getDrawingArea canv
-            changeCanvasBackground white
+          -- Scroll support for canvas
+          containerAdd scrollCanv $ getDrawingArea canv
+          changeCanvasBackground white
 
-            win `on` deleteEvent $ liftIO mainQuit >> return False
-            widgetShowAll win
+          win `on` deleteEvent $ liftIO mainQuit >> return False
+          widgetShowAll win
 
 -- end of buildSolve
 
@@ -1438,37 +1444,37 @@ solver this solveRef enum paint = do
         applyDisCon k (F "&" ts) redices t ps sig msg =
             applyDisCon k (F "<===" [F "&" ts,mkTrue]) redices t ps sig msg
         applyDisCon k (F "<===" [F "|" ts,prem]) redices t ps sig msg = do
-            let pred = glbPos ps
-                u = getSubterm t pred
-                qs = map (restPos pred) ps
-            if all noQuantsOrConsts ts && polarity True t pred
-                && isDisjunct u && all (isProp ||| isAnyQ) (sucTerms u qs)
-            then finishDisCon k False True ts prem redices t ps pred qs sig msg
-            else labRed' $ noAppT k
+          let pred = glbPos ps
+              u = getSubterm t pred
+              qs = map (restPos pred) ps
+          if all noQuantsOrConsts ts && polarity True t pred && isDisjunct u &&
+             all (isProp sig ||| isAnyQ) (sucTerms u qs)
+             then finishDisCon k False True ts prem redices t ps pred qs sig msg
+          else labRed' $ noAppT k
         applyDisCon k (F "<===" [F "&" ts,prem]) redices t ps sig msg = do
-            let pred = glbPos ps
-                u = getSubterm t pred
-                qs = map (restPos pred) ps
-            if all noQuantsOrConsts ts && polarity True t pred
-                && isConjunct u && all (isProp ||| isAllQ) (sucTerms u qs)
+          let pred = glbPos ps
+              u = getSubterm t pred
+              qs = map (restPos pred) ps
+          if all noQuantsOrConsts ts && polarity True t pred && isConjunct u && 
+             all (isProp sig ||| isAllQ) (sucTerms u qs)
             then finishDisCon k False False ts prem redices t ps pred qs sig msg
-            else labRed' $ noAppT k
+          else labRed' $ noAppT k
         applyDisCon k (F "===>" [F "&" ts,conc]) redices t ps sig msg = do
-            let pred = glbPos ps
-                u = getSubterm t pred
-                qs = map (restPos pred) ps
-            if all noQuantsOrConsts ts && polarity False t pred
-                && isConjunct u && all (isProp ||| isAllQ) (sucTerms u qs)
-            then finishDisCon k True True ts conc redices t ps pred qs sig msg
-            else labRed' $ noAppT k
+          let pred = glbPos ps
+              u = getSubterm t pred
+              qs = map (restPos pred) ps
+          if all noQuantsOrConsts ts && polarity False t pred && isConjunct u &&
+             all (isProp sig ||| isAllQ) (sucTerms u qs)
+             then finishDisCon k True True ts conc redices t ps pred qs sig msg
+          else labRed' $ noAppT k
         applyDisCon k (F "===>" [F "|" ts,conc]) redices t ps sig msg = do
-            let pred = glbPos ps
-                u = getSubterm t pred
-                qs = map (restPos pred) ps
-            if all noQuantsOrConsts ts && polarity False t pred
-                && isDisjunct u && all (isProp ||| isAnyQ) (sucTerms u qs)
-            then finishDisCon k True False ts conc redices t ps pred qs sig msg
-            else labRed' $ noAppT k
+          let pred = glbPos ps
+              u = getSubterm t pred
+              qs = map (restPos pred) ps
+          if all noQuantsOrConsts ts && polarity False t pred && isDisjunct u &&
+             all (isProp sig ||| isAnyQ) (sucTerms u qs)
+             then finishDisCon k True False ts conc redices t ps pred qs sig msg
+          else labRed' $ noAppT k
         
         -- Used by 'applyCoinduction' and 'applyInduction'.
         applyInd :: Int
@@ -1850,7 +1856,7 @@ solver this solveRef enum paint = do
             menu.
         -}
         buildKripke :: Int -> Action
-        buildKripke 4 = do
+        buildKripke 4 = do                      -- from current graph
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
@@ -1872,11 +1878,11 @@ solver this solveRef enum paint = do
             delay $ setProof True False kripkeMsg []
                      $ kripkeBuilt 2 0 (length states') 0 $ length atoms'
 
-        buildKripke 5 = do 
+        buildKripke 5 = do                      -- from from regular expression
           str <- getTextHere
           sig <- getSignature
           case parseE (term sig) str of
-           Correct t -> case parseRegExp t of
+           Correct t -> case parseRE sig t of
              Just (e,as) -> do
                 let (_,nda) = regToAuto e
                     as' = as `minus1` "eps"
@@ -1947,12 +1953,14 @@ solver this solveRef enum paint = do
                 $ kripkeBuilt mode noProcs (length states) (length labels)
                 $ length atoms'
         
-        buildRegExp = do
+        buildRegExp mode = do
           start <- ent `Gtk.get` entryText
           sig <- getSignature
           case parse (term sig) start of 
                Just start | start `elem` (sig&states)
-                 -> enterTree' False $ showRegExp $ autoToReg sig start
+                 -> do
+                    let f = if mode == 0 then id else reduceLoop
+                    enterTree' False $ showRE $ f $ autoToReg sig start
                _ -> labRed' "Enter an initial state!"
         
         -- | Called by menu item /build unifier/ from menu
@@ -2241,6 +2249,7 @@ solver this solveRef enum paint = do
                     NegateAxioms ps cps -> negateAxioms' ps cps
                     RandomLabels -> randomLabels
                     RandomTree -> randomTree
+                    ReduceRE -> reduceRegExp
                     ReleaseNode -> releaseNode
                     ReleaseSubtree -> releaseSubtree
                     ReleaseTree -> releaseTree
@@ -2951,7 +2960,7 @@ solver this solveRef enum paint = do
             setTreesFrame []
             labGreen' $ objects++str
          where objects = if b then "Formulas" else "Terms"
-               str = " in the text field are displayed on the canvas."
+               str = " are displayed on the canvas."
         
         -- | Used by 'checkForward'. Called by "evaluate" menu item
         -- from "transform selection" menu.
@@ -4206,7 +4215,31 @@ solver this solveRef enum paint = do
                 writeIORef restoreRef True
                 clearTreeposs
             drawCurr'
-        
+
+        reduceRegExp = do
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               sig <- getSignature
+               trees <- readIORef treesRef
+               curr <- readIORef currRef
+               treeposs <- readIORef treepossRef
+               let t = trees!!curr
+                   p = emptyOrLast treeposs
+                   u = getSubterm t p
+               case parseRE sig u of
+                    Just (e,_) 
+                      -> do
+                         let v = showRE $ reduceLoop e
+                         writeIORef treesRef
+                           $ updList trees curr $ replace0 t p v
+                         setProofTerm ReduceRE
+                         setProof False False "REDUCING THE SUBEXPRESSION" [] $
+                                  expReduced
+                         clearTreeposs; drawCurr'
+                    _ -> labRed' "Select a regular expression!"  
+
+
         -- | Finishes the 'moveNode' action. Called on right mouse button
         -- release on active canvas.
         releaseNode :: Action
@@ -5300,16 +5333,15 @@ solver this solveRef enum paint = do
                         }
                 writeIORef proofRef $ take proofPtr proof'++[next]
                 case u of
-                  F x ts | isJust cycle && permutative x -> do
+                  F x ts@(_:_:_) | just cycle && x `elem` words "| &" -> do
                     let n = length ts
-                    when (n > 1) $ do
-                      modifyIORef permsRef $ \perms
-                         -> upd perms n $ nextPerm $ perms n
-                      perms <- readIORef permsRef
-                      writeIORef treesRef $ [F x [ts!!i | i <- perms n]]
-                      -- writeIORef treesRef $ [F x $ tail ts++[head ts]]
-                      -- writeIORef treesRef [F x $ reverse ts]
-                      writeIORef currRef 0
+                    modifyIORef permsRef $ \perms
+                       -> upd perms n $ nextPerm $ perms n
+                    perms <- readIORef permsRef
+                    writeIORef treesRef $ [F x [ts!!i | i <- perms n]]
+                                       -- [F x $ tail ts++[head ts]]
+                                       -- [F x $ reverse ts]
+                    writeIORef currRef 0
                   _ -> return ()
             else modifyIORef picNoRef pred
             writeIORef newTreesRef False
@@ -5624,11 +5656,11 @@ solver this solveRef enum paint = do
                 (eqsL,zn') = relLToEqs zn $ mkTriples sts labs sts (sig&transL)
                 trGraph = eqsToGraph [] eqs
                 trGraphL = eqsToGraph [] eqsL
-                atGraph = if all null (sig&trans) then emptyGraph 
-                          else outGraph sts ats (out sig) trGraph
-                atGraphL = 
-                      if null (sig&labels) then emptyGraph
-                      else outGraphL sts labs ats (out sig) (outL sig) trGraphL
+                atGraph  = if all null (sig&trans) then emptyGraph 
+                           else outGraph sts ats (out sig) trGraph
+                atGraphL = if null (sig&labels) then emptyGraph
+                           else outGraphL sts labs ats (out sig) (outL sig)
+                                                                 trGraphL
                 inPainter t = do
                            drawFun <- readIORef drawFunRef
                            spread <- readIORef spreadRef

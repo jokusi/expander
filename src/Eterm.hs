@@ -1064,9 +1064,9 @@ sorted (x:s@(y:_)) = x <= y && sorted s
 sorted _             = True
 
 qsort :: (a -> a -> Bool) -> [a] -> [a]
-qsort rel (x:s) = qsort rel s1++x:qsort rel s2 
-                  where (s1,s2) = split (`rel` x) s
-qsort _ s       = s         
+qsort rel (x:s@(_:_)) = qsort rel s1++x:qsort rel s2
+                        where (s1,s2) = split (`rel` x) s
+qsort _ s             = s
  
 -- sort removes duplicates if rel is irreflexive and total
 sort :: (t -> t -> Bool) -> [t] -> [t]
@@ -1708,48 +1708,186 @@ graphToTransRules = f [] where
 -- ** From REGULAR EXPRESSIONS to LABELLED TRANSITIONS and back
 
 data RegExp = Mt | Eps | Const String | Sum_ RegExp RegExp | 
-              Prod RegExp RegExp | Plus RegExp | Star RegExp deriving Eq
-              
-instance Ord RegExp where e <= Plus e'          = e <= e'
-                          e <= Star e'          = e <= e'
-                          e <= Sum_ e1 e2       = e <= e1 || e <= e2
-                          e <= Prod e' (Star _) = e == e'
-                          e <= Prod (Star _) e' = e == e'
-                          e <= e'               = e == e'
-              
-parseRegExp :: TermS -> Maybe (RegExp,[String])
-parseRegExp (F "mt" [])    = Just (Mt,[])
-parseRegExp (F "eps" [])   = Just (Eps,["eps"])
-parseRegExp (F a [])       = Just (Const a,[a])
-parseRegExp (F "+" [t,u])  = do (e,as) <- parseRegExp t
-                                (f,bs) <- parseRegExp u
-                                Just (Sum_ e f,as `join` bs)
-parseRegExp (F "*" [t,u])  = do (e,as) <- parseRegExp t
-                                (f,bs) <- parseRegExp u
-                                Just (Prod e f,as `join` bs)
-parseRegExp (F "plus" [t]) = do (e,as) <- parseRegExp t; Just (Plus e,as)
-parseRegExp (F "star" [t]) = do (e,as) <- parseRegExp t
-                                Just (Star e,as `join1` "eps")
-parseRegExp (F "refl" [t]) = do (e,as) <- parseRegExp t
-                                Just (Sum_ e Eps,as `join1` "eps")
-parseRegExp _              = Nothing
+              Prod RegExp RegExp | Star RegExp deriving Eq
 
-showRegExp :: RegExp -> TermS
-showRegExp Mt           = leaf "mt"
-showRegExp Eps          = leaf "eps"
-showRegExp (Const a)    = leaf a
-showRegExp e@(Sum_ _ _) = F "+" $ map showRegExp $ summands e
-showRegExp e@(Prod _ _) = F "*" $ map showRegExp $ factors e
-showRegExp (Plus e)     = F "plus" [showRegExp e]
-showRegExp (Star e)     = F "star" [showRegExp e]
+parseRE :: Sig -> TermS -> Maybe (RegExp,[String])
+parseRE _ (F "mt" [])          = Just (Mt,[])
+parseRE _ (F "eps" [])         = Just (Eps,["eps"])
+parseRE sig (F a [])           = do guard $ (sig&isConstruct) a
+                                    Just (Const a,[a])
+parseRE sig (F "+" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
+                                    let (e:es,ass) = unzip pairs
+                                    Just (foldl Sum_ e es,concat ass)
+parseRE sig (F "*" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
+                                    let (e:es,ass) = unzip pairs
+                                    Just (foldl Prod e es,concat ass)
+parseRE sig (F "plus" [t])     = do (e,as) <- parseRE sig t
+                                    Just (Prod e $ Star e,as)
+parseRE sig (F "star" [t])     = do (e,as) <- parseRE sig t
+                                    Just (Star e,as `join1` "eps")
+parseRE sig (F "refl" [t])     = do (e,as) <- parseRE sig t
+                                    Just (Sum_ e Eps,as `join1` "eps")
+parseRE _ _                    = Nothing
+
+showRE :: RegExp -> TermS
+showRE Mt           = leaf "mt"
+showRE Eps       = leaf "eps"
+showRE (Const a)    = leaf a
+showRE e@(Sum_ _ _) = F "+" $ map showRE $ summands e
+showRE e@(Prod _ _) = F "*" $ map showRE $ factors e
+showRE (Star e)     = F "star" [showRE e]
+
+instance Ord RegExp                            -- used by summands
+         where Eps <= Star e                   = True
+               e <= Star e'                    = e <= e'
+               e <= Sum_ e1 e2                 = e <= e1 || e <= e2
+               e <= Prod e' (Star _) | e <= e' = True
+               e <= Prod (Star _) e' | e <= e' = True
+               Prod e1 e2 <= Prod e3 e4        = e1 <= e3 && e2 <= e4
+               e <= e'                         = e == e'
+
 
 summands,factors :: RegExp -> [RegExp]
-summands (Sum_ e e') = concatMap summands [e,e']
-summands e           = [e]
+summands (Sum_ e e') = joinMapR summands [e,e']        -- e <= e' ==> e+e' = e'
+summands Mt          = []                              -- Mt+e = e     
+summands e           = [e]                             -- e+Mt = e
 factors (Prod e e')  = concatMap factors [e,e']
-factors e            = [e]
+factors Eps          = []                              -- Eps*e = e
+factors e            = [e]                             -- e*Eps = e
 
--- regToAuto e builds a nondeterministic acceptor of the language of e.
+mkSumRE,mkProdRE,mkProdRE' :: [RegExp] -> RegExp
+mkSumRE [e]   = e
+mkSumRE es    = foldr1 Sum_ es         -- produces right-associative sums
+mkProdRE [e]  = e
+mkProdRE es   = foldr1 Prod es         -- produces right-associative products
+mkProdRE' [e] = e
+mkProdRE' es  = foldl1 Prod es         -- produces left-associative products
+
+(<+) :: RegExp -> RegExp -> Bool               -- (<+) moves Eps to the left
+Eps <+ e                  = True               -- and orders summands by their
+Const a <+ Const b        = a <= b             -- their left factors.          
+e@(Const _) <+ Prod e1 e2 = e <+ e1            -- (<+) is used by sortRE.
+e@(Star _)  <+ Prod e1 e2 = e <+ e1
+Prod e _ <+ e'@(Const _)  = e <+ e'
+Prod e _ <+ e'@(Star _)   = e <+ e'
+Prod e _ <+ Prod e' _     = e <+ e'
+e <+ e'                   = e == e'
+
+(+<) :: RegExp -> RegExp -> Bool               -- (+<) moves Eps to the left
+Eps +< e                  = True               -- and orders summands by their 
+Const a +< Const b        = a <= b             -- their right factors.                 
+e@(Const _) +< Prod e1 e2 = e +< e2            -- (+<) is used by sortRE'.
+e@(Star _)  +< Prod e1 e2 = e +< e2
+Prod _ e +< e'@(Const _)  = e +< e'
+Prod _ e +< e'@(Star _)   = e +< e'
+Prod _ e +< Prod _ e'     = e +< e'
+e +< e'                   = e == e'
+
+sortRE,sortRE' :: RegExp -> RegExp
+sortRE e@(Sum_ _ _)  = mkSumRE $ map sortRE $ qsort (<+) $ summands e
+sortRE e@(Prod _ _)  = mkProdRE $ map sortRE $ factors e
+sortRE (Star e)      = Star $ sortRE e
+sortRE e             = e
+sortRE' e@(Sum_ _ _) = mkSumRE $ map sortRE' $ qsort (+<) $ summands e
+sortRE' e@(Prod _ _) = mkProdRE' $ map sortRE' $ factors e
+sortRE' (Star e)     = Star $ sortRE' e
+sortRE' e            = e
+
+distribute :: RegExp -> RegExp                 -- e*(eps+e') = e+e*e'
+distribute e =                                 -- e*(e1+e2)  = e*e1+e*e2
+                                               -- (eps+e')*e = e+e'*e
+                                               -- (e1+e2)*e  = e1*e+e2*e
+    case e of Sum_ _ _   -> mkSumRE $ map distribute $ concatMap f $ summands e
+              Prod e1 e2 -> case f e of 
+                            [e1,e2] -> Sum_ (distribute e1) $ distribute e2
+                            _       -> Prod (distribute e1) $ distribute e2
+              Star e     -> Star $ distribute e
+              _          -> e
+              where f (Prod e (Sum_ Eps e')) = [e,Prod e e']
+                    f (Prod e (Sum_ e1 e2))  = [Prod e e1,Prod e e2]
+                    f (Prod (Sum_ Eps e') e) = [e,Prod e' e]
+                    f (Prod (Sum_ e1 e2) e)  = [Prod e1 e,Prod e2 e]
+                    f e                             = [e]  
+
+sizeRE :: RegExp -> Int
+sizeRE Eps         = 0
+sizeRE (Sum_ e e') = sizeRE e+sizeRE e'+1
+sizeRE (Prod e e') = sizeRE e+sizeRE e'+1
+sizeRE (Star e )   = sizeRE e+1
+sizeRE _           = 1
+
+-- reduceRE is a step function for simplifying regular expressions.
+-- reduceRE is used by simplifyT (F "reduce" [t]) (see Esolve.hs).
+
+reduceLoop,reduceRE :: RegExp -> RegExp
+reduceLoop = distribute . fixpt (==) (reduceRE . sortRE') . distribute .
+             fixpt (==) (reduceRE . sortRE)
+reduceRE e = case e of
+                  Sum_ _ _ | sizeRE e' < sizeRE e 
+                                    -> e' where es = summands e
+                                                e' = mkSumRE $ reduceS0 es
+                  Sum_ e e'         -> Sum_ (reduceRE e) $ reduceRE e'
+                  Prod Mt _         -> Mt              -- e*Mt = Mt
+                  Prod _ Mt         -> Mt              -- Mt*e = Mt
+                  Prod _ _ | length es' < length es 
+                                    -> mkProdRE es' where es = factors e
+                                                          es' = reduceP es 
+                  Prod e e'         -> Prod (reduceRE e) $ reduceRE e'
+                  Star Mt           -> Eps
+                  Star Eps          -> Eps
+                  Star (Sum_ Eps e) -> Star e          -- star(eps+e) = star(e)
+                  Star (Star e)     -> Star e  
+                  Star e            -> Star $ reduceRE e
+                  _                 -> e
+                  
+reduceP,reduceS0 :: [RegExp] -> [RegExp]   
+ 
+-- star(e)*(eps+e) = star(e)
+-- (eps+e)*star(e) = star(e) 
+
+reduceP (Star e:Sum_ Eps e':es) | e == e' = reduceP $ Star e:es
+reduceP (Sum_ Eps e:Star e':es) | e == e' = reduceP $ Star e:es
+reduceP (e:es) = e:reduceP es
+reduceP _      = []
+
+reduceS0 (Eps:es) = reduceS True es
+reduceS0 es       = reduceS False es
+
+reduceS :: Bool -> [RegExp] -> [RegExp]
+ 
+-- eps+e*star(e)   = star(e)
+-- eps+star(e)*e   = star(e)
+-- eps+e*e*star(e) = e+star(e)
+-- eps+star(e)*e*e = e+star(e)
+
+reduceS True (Prod e (Star e'):es) | e == e' = reduceS False $ Star e:es
+reduceS True (Prod (Star e) e':es) | e == e' = reduceS False $ Star e:es
+reduceS True (Prod e (Prod e1 (Star e2)):es) | e == e1 && e == e2
+                                             = reduceS False $ e:Star e:es
+reduceS True (Prod (Prod e e1) (Star e2):es) | e == e1 && e == e2
+                                             = reduceS False $ e:Star e:es
+reduceS True (Prod (Star e1) (Prod e2 e):es) | e == e1 && e == e2
+                                             = reduceS False $ e:Star e:es  
+reduceS True (Prod (Prod (Star e1) e2) e:es) | e == e1 && e == e2
+                                             = reduceS False $ e:Star e:es  
+-- e+e*e'    = e*(eps+e')
+-- e+e'*e    = (eps+e')*e
+-- e*e1+e*e2 = e*(e1+e2)
+-- e1*e+e2*e = (e1+e2)*e
+
+reduceS b (e:Prod e1 e2:es) | e == e1  = reduceS b $ Prod e (Sum_ Eps e2):es
+reduceS b (Prod e1 e2:e:es) | e == e2  = reduceS b $ Prod (Sum_ Eps e1) e:es
+reduceS b (Prod e1 e2:Prod e3 e4:es) 
+                            | e1 == e3 = reduceS b $ Prod e1 (Sum_ e2 e4):es
+reduceS b (Prod e1 e2:Prod e3 e4:es) 
+                            | e2 == e4 = reduceS b $ Prod (Sum_ e1 e3) e2:es
+reduceS b (e:es) = e:reduceS b es
+reduceS True _   = [Eps]
+reduceS _ _      = []
+                       
+
+-- regToAuto e builds a nondeterministic acceptor with epsilon-transitions of 
+-- the language of e.
 -- regToAuto is used by simplifyT (F "auto" [t]) (see Esolve.hs) and
 -- buildKripke 5 (see Ecom.hs).
 
@@ -1757,22 +1895,21 @@ type NDA = Int -> String -> [Int]
 
 regToAuto :: RegExp -> ([Int],NDA)
 regToAuto e = ([0..nextq-1],delta)
- where (delta,nextq) = eval e 0 1 (const2 []) 2
-       eval :: RegExp -> Int -> Int -> NDA -> Int -> (NDA,Int)
-       eval Mt _ _ delta nextq           = (delta,nextq)
-       eval Eps q q' delta nextq         = (upd2L delta q "eps" q',nextq)
-       eval (Const a) q q' delta nextq   = (upd2L delta q a q',nextq)
-       eval (Sum_ e e') q q' delta nextq = eval e' q q' delta' nextq'
+      where (delta,nextq) = eval e 0 1 (const2 []) 2
+            eval :: RegExp -> Int -> Int -> NDA -> Int -> (NDA,Int)
+            eval Mt _ _ delta nextq           = (delta,nextq)
+            eval Eps q q' delta nextq         = (upd2L delta q "eps" q',nextq)
+            eval (Const a) q q' delta nextq   = (upd2L delta q a q',nextq)
+            eval (Sum_ e e') q q' delta nextq = eval e' q q' delta' nextq'
                          where (delta',nextq') = eval e q q' delta nextq
-       eval (Prod e e') q q' delta nextq = eval e' nextq q' delta' nextq'
+            eval (Prod e e') q q' delta nextq = eval e' nextq q' delta' nextq'
                          where (delta',nextq') = eval e q nextq delta $ nextq+1
-       eval (Plus e) q q' delta nextq    = (upd2L delta3 q1 "eps" q',nextq1)
+            eval (Star e) q q' delta nextq = (upd2L delta4 q "eps" q',nextq1)
                          where q1 = nextq+1
                                (delta1,nextq1) = eval e nextq q1 delta $ q1+1
                                delta2 = upd2L delta1 q "eps" nextq
                                delta3 = upd2L delta2 q1 "eps" nextq
-       eval (Star e) q q' delta nextq    = eval (Sum_ (Plus e) Eps) q q' delta
-                                                                         nextq
+                               delta4 = upd2L delta2 q1 "eps" q'
 
 -- powerAuto nda labs builds the (deterministic) power automaton induced by nda 
 -- with label set labs.
@@ -1787,8 +1924,8 @@ powerAuto nda labs = (reachables,deltaP)
                    deltaP qs = epsHull . delta qs
                    epsHull :: [Int] -> [Int]
                    epsHull qs = if qs' `subset` qs then qs 
-                                 else epsHull $ qs `join` qs'
-                                 where qs' = delta qs "eps"
+                                                   else epsHull $ qs `join` qs'
+                                where qs' = delta qs "eps"
                    reachables = fixpt subset deltaM [epsHull [0]]
                    deltaM qss = qss `join` [deltaP qs a | qs <- qss, a <- labs]
  
@@ -1799,76 +1936,62 @@ powerAuto nda labs = (reachables,deltaP)
 autoToReg :: Sig -> TermS -> RegExp
 autoToReg sig start = if null finals then Const "no final states"
                                      else foldl1 Sum_ $ map (f lg i) finals
-     where finals = (sig&value)!!0
-           lg = length (sig&states)-1
-           Just i = search (== start) (sig&states)
-           f (-1) i j = if i == j then Sum_ (delta i i) Eps else delta i j
-           f k i j    = Sum_ (f' i j) $
-                             Prod (f' i k) $ Prod (Star $ f' k k) $ f' k j
-                        where f' = f $ k-1
-           delta :: Int -> Int -> RegExp
-           delta i j = if null labs then Mt else foldl1 Sum_ labs
-                       where labs = [Const $ showTerm0 $ (sig&labels)!!k |
+         where finals = (sig&value)!!0
+               lg = length (sig&states)-1
+               Just i = search (== start) (sig&states)
+               f (-1) i j = if i == j then Sum_ (delta i i) Eps else delta i j
+               f k i j    = Sum_ (f' i j) $
+                                 Prod (f' i k) $ Prod (Star $ f' k k) $ f' k j
+                            where f' = f $ k-1
+               delta :: Int -> Int -> RegExp
+               delta i j = if null labs then Mt else foldl1 Sum_ labs
+                            where labs = [Const $ showTerm0 $ (sig&labels)!!k |
                                                      k <- indices_ (sig&labels),
                                                      (sig&transL)!!i!!k == [j]]
 
--- reduceRE is a step function for simplifying regular expressions.
--- reduceRE is used by simplifyT (F "reduce" [t]) (see Esolve.hs).
+type Behaviour a = [String] -> a                       -- currently not used
 
-reduceRE :: RegExp -> RegExp
-reduceRE e = case e of
-                  Sum_ _ _ -> mkSum $ reduceS (Eps `elem` es) es
-                              where es = map reduceRE $ mkSetR $ summands e
-                  Prod _ _ -> if Mt `elem` es then Mt else mkProd $ reduceP es
-                              where es = map reduceRE $ factors e
-                  Plus Mt           -> Mt
-                  Plus Eps          -> Eps
-                  Plus (Sum_ e Eps) -> Star e
-                  Plus (Sum_ Eps e) -> Star e
-                  Plus (Plus e)     -> Plus e
-                  Plus (Star e)     -> Star e
-                  Plus e            -> Plus $ reduceRE e
-                  Star Mt           -> Eps
-                  Star Eps          -> Eps
-                  Star (Sum_ e Eps) -> Star e
-                  Star (Sum_ Eps e) -> Star e
-                  Star (Plus e)     -> Star e
-                  Star (Star e)     -> Star e
-                  Star e            -> Star $ reduceRE e
-                  _                 -> e
-                  where mkSum,mkProd :: [RegExp] -> RegExp
-                        mkSum []   = Mt
-                        mkSum [e]  = e
-                        mkSum es   = foldl1 Sum_ es
-                        mkProd []  = Eps
-                        mkProd [e] = e
-                        mkProd es  = foldl1 Prod es
+deltaBeh :: Behaviour a -> String -> Behaviour a
+deltaBeh f x w = f $ x:w
 
-reduceS :: Bool -> [RegExp] -> [RegExp]                -- b <=> Eps in es
-reduceS True (Plus e:es) = Star e:reduceS False es     -- reduceS shifts Eps 
-reduceS True (Star e:es) = Star e:reduceS False es     -- to the right
-reduceS b (Mt:es)       = reduceS b es
-reduceS b (Eps:es)      = reduceS b es
-reduceS b (e:es)        = e:reduceS b es
-reduceS True _          = [Eps]
-reduceS _ _             = []
+betaBeh :: Behaviour a -> a
+betaBeh f = f []
 
-reduceP :: [RegExp] -> [RegExp]
--- e^*(e + eps) = e^*
-reduceP (Star e:Sum_ e' Eps:es) | e == e' = reduceP $ Star e:es
--- e^+(e + eps) = e^*
-reduceP (Plus e:Sum_ e' Eps:es) | e == e' = reduceP $ Star e:es
--- (e + eps)e^* = e^*
-reduceP (Sum_ e' Eps:Star e:es) | e == e' = reduceP $ Star e:es
--- (e + eps)e^+ = e^*
-reduceP (Sum_ e' Eps:Plus e:es) | e == e' = reduceP $ Star e:es
--- e^*e = e^+
-reduceP (Star e:e':es)          | e == e' = reduceP $ Plus e:es
--- ee^* = e^+
-reduceP (e':Star e:es)          | e == e' = reduceP $ Plus e:es
-reduceP (Eps:es) = reduceP es 
-reduceP (e:es)   = e:reduceP es
-reduceP _        = []
+-- Brzozowski acceptor of regular and context-free languages
+
+type CFG = String -> RegExp
+ 
+parseCFG :: Sig -> TermS -> Maybe (String -> RegExp)
+parseCFG sig (F "[]" (F "()" [F x [],e]:pairs)) 
+                       = do e <- parseRE sig e
+                            f <- parseCFG sig $ mkList pairs
+                            Just $ upd f x $ fst e
+parseCFG _ (F "[]" []) = Just $ const Mt
+parseCFG _ _           = Nothing
+
+deltaBro :: CFG -> RegExp -> String -> RegExp
+deltaBro cfg e x = f e where f (Const a)   = if e == Mt 
+                                             then if a == x then Eps else Mt
+                                             else f e where e = cfg a
+                             f (Sum_ e e') = Sum_ (f e) $ f e'
+                             f (Prod e e') = if betaBro cfg e == 1
+                                             then Sum_ p $ f e' else p
+                                             where p = Prod (f e) e'
+                             f (Star e)    = Prod (f e) $ Star e
+                             f _           = Mt
+
+betaBro :: CFG -> RegExp -> Int
+betaBro cfg = f where f Eps         = 1
+                      f (Const a)   = if e == Mt then 0 else f e 
+                                      where e = cfg a
+                      f (Sum_ e e') = max (f e) $ f e'
+                      f (Prod e e') = if f e == 0 then 0 else f e'
+                      f (Star e)    = 1
+                      f _           = 0
+
+unfoldBro :: CFG -> RegExp -> [String] -> Int
+unfoldBro cfg e = betaBro cfg . foldl (deltaBro cfg) e
+
 
 -- * Minimization with the Paull-Unger algorithm
 
@@ -2957,8 +3080,8 @@ isConjunct :: TermS -> Bool
 isConjunct (F "&" _) = True
 isConjunct _         = False
 
-isProp :: TermS -> Bool
-isProp = isDisjunct ||| isConjunct
+isProp :: Sig -> TermS -> Bool
+isProp sig = isAtom sig ||| isDisjunct ||| isConjunct
 
 isSimpl :: TermS -> Bool
 isSimpl (F "==>" [_,F "==" _])   = True
@@ -3988,11 +4111,11 @@ movePoss t p q = f $ getSubterm t p
 -- (see below), catchTree, copySubtrees and replaceNodes' (see Ecom)
 replace0 :: (Eq a1, Num a1) =>
             Term a -> [a1] -> Term a -> Term a
-replace0 t p0 u = f t p0 where f _ []         = u
-                               f (F x ts) p   = F x $ g ts p
-                               g (t:ts) (0:p) = f t p:ts
-                               g (t:ts) (n:p) = t:g ts (n-1:p)
-                               g _ _          = [Hidden ERR]
+replace0 t p u = f t p where f _ []         = u
+                             f (F x ts) p   = F x $ g ts p
+                             g (t:ts) (0:p) = f t p:ts
+                             g (t:ts) (n:p) = t:g ts (n-1:p)
+                             g _ _          = [Hidden ERR]
 
 -- replace t p u expands t at all pointers of t into proper subterms of the 
 -- subterm v of t at position p. Pointers to the same subterm are expanded only 
@@ -4237,25 +4360,28 @@ outGraph sts ats out = mapT $ extendNode sts ats out
 
 outGraphL :: [String] -> [String] -> [String] -> [[Int]] -> [[[Int]]] -> TermS 
           -> TermS
-outGraphL sts labs ats out outL = g where
-             g (F x ts) = F (extendNode sts ats out x) $ map (h x) ts
-             g t        = t
-             h x (F lab ts) = F (extendNodeL sts labs ats outL x lab) $ map g ts
-             h _ t          = t
+outGraphL sts labs ats out outL = g 
+      where g (F x ts) | x == "<+>" = F x $ map g ts
+            g (F x ts) = F (extendNode sts ats out x) $ map (h x) ts
+            g t        = t
+            h x (F lab ts) = F (extendNodeL sts labs ats outL x lab) $ map g ts
+            h _ t          = t
 
 -- mkAtGraph{L} ... out {outL} t adds out!!x to each state node x of t and 
 -- outL!!x!!y to each label node y of t with state predecessor x. 
 -- mkAtGraph{L} is used by showEqsOrGraph (see Ecom).
 
 extendNode :: [String] -> [String] -> [[Int]] -> String -> String
-extendNode sts ats out x = if isPos x || x == "<+>" then x
+extendNode _ _ [] x      = x
+extendNode sts ats out x = if isPos x then x
                            else enterAtoms x $ map (ats!!) $ out!!getInd x sts
 
 extendNodeL :: [String] -> [String] -> [String] -> [[[Int]]] -> String 
             -> String -> String
-extendNodeL sts labs ats outL x lab = 
-         if isPos x || x == "<+>" then x
-         else enterAtoms lab $ map (ats!!) $ outL!!getInd x sts!!getInd lab labs
+extendNodeL _ _ _ [] x _            = x
+extendNodeL sts labs ats outL x lab = if isPos x || x == "<+>" then x
+                                      else enterAtoms lab $ map (ats!!) $ 
+                                            outL!!getInd x sts!!getInd lab labs
 
 
 enterAtoms :: String -> [String] -> String
