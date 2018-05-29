@@ -984,7 +984,7 @@ simplifyA (F "`NOTsubset`" [F x ts,F y us]) sig
                          jConst $ not $ subsetTerm ts us
                       where f = isValue sig
 
-simplifyA (F "Nat" [t]) sig   = jConst $ just $ parseNat t
+-- simplifyA (F "Nat" [t]) sig | just $ parseNat t = jConst True
 
 simplifyA (F "Int" [t]) sig   = jConst $ just $ parseInt t
 
