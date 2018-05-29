@@ -20,12 +20,18 @@ axioms:
 
 & Nat(0)
 & (Nat(suc(x)) <=== Nat(x))
-
+{-
+& (even$0 <==> True) 
+& (even$suc$x <==> odd$x) 
+& (odd$0 <==> False) 
+& (odd$suc$x <==> even$x) 
+-}
 & even(0)
 & (even(suc(x)) <=== odd(x))
 & (odd(suc(x)) <=== even(x))
 
 -- & div(x,y) = loop(y,0,x)
+
 & (r < y ==> loop(y,q,r) == (q,r))
 & (r >= y ==> loop(y,q,r) == loop(y,q+1,r-y))
 & (INV(x,y,q,r) <=== x = (y*q)+r)
@@ -48,6 +54,26 @@ axioms:
 
 & (x >> y <=== x > y)
 
+theorems:
+
+  suc(x) > 0
+& suc(x) > x
+& (Nat(x) ===> x = 0 | Any y:(x = suc(y) & Nat(y)))
+& 0+x = x
+& suc(x) + y = suc(x+y)
+& (suc(x) < y+y <=== suc(x) < suc(y))
+& (suc(x-suc(y)) = x-y <=== x > y)
+& (x*suc(y))+(z-x) = (x*y)+z
+& (x >= suc(y) ===> x > y)
+& (x > y ===> x >= y)
+& 2*x = x+x
+& (a+x = b <=== x = b-a)
+
+--& (p+x = b & q+x = c     <=== p+x = b & q-p = c-b)
+--& (p+x = b & q+(a*x) = c <=== p+x = b & q-(a*p) = c-(a*b))
+--& (p+x = b & q-x = c     <=== p+x = b & q+p = c+b)
+--& (p+x = b & q-(a*x) = c <=== p+x = b & q+(a*p) = c+(a*b))
+
 conjects:
 
   (sum(x) = y ==> x*(x+1) = 2*y)				-- sum1
@@ -67,6 +93,7 @@ conjects:
 & Any x y:(x < y & div(5,3)=(x,y))		
 
 terms:
+
 fun((suc(x),y),x+x+y)(6,10) <+>
 fun((suc(x),y),fun(z,x+y+z)(5))(suc(z),10) <+>
 filter(rel(x,x<5))[1,2,3,4,5,6] <+>
