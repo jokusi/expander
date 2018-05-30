@@ -2,11 +2,16 @@
 
 constructs: 	esum osum elab olab final 
 defuncts:	parity delta beta deltaEO betaEO deltaBeh betaBeh unfold h
-preds: 		even odd
+preds: 		even odd Nat State List
 fovars:		st w
 hovars:		f
 
 axioms:
+
+delta(st,x) == head$transL(st)$x &		
+beta$st == ite(null$out$st,0,1) &
+
+-- acceptors of number sequences whose sum is even
 
 states == [esum] & labels == [elab,olab] & atoms == [final] &
 
@@ -17,19 +22,12 @@ states == [esum] & labels == [elab,olab] & atoms == [final] &
 
 final -> esum &
 
-delta(st,x) == head$transL(st)$x &		
-beta$st == ite(null$out$st,0,1) &
+parity$n == ite(even$n,elab,olab) &
 
 unfold(st) == beta.foldl(delta)(st).map(parity) &
 
-parity$n == ite(even$n,elab,olab) &
-
-(even$0 <==> True) &
-(even$suc$x <==> odd$x) &
-(odd$0 <==> False) &
-(odd$suc$x <==> even$x) &
-
--- acceptors of number sequences whose sum is even
+State$esum &
+State$osum &
 
 (deltaEO(esum)$x = esum <=== even$x) &
 (deltaEO(esum)$x = osum <=== odd$x) &
@@ -51,15 +49,26 @@ h(osum)[] = 0 &
 
 theorems:
 
-(even$x | odd$x) &
-(st=esum | st=osum) 
+(even$x | odd$x) &	-- used by eosum1P
+(st=esum | st=osum) &   -- used by eosum1/2P
+
+(Nat(x) ===> even$x | odd$x) & 	      -- used by eosum3P 
+				      -- conjecture of nat
+(State(st) ===> st=esum | st=osum)    -- used by eosum3/4P
 
 conjects:
 
 -- h is DAut(Int,2)-homomorphic and thus equal to unfold:
 
-h(deltaEO(st)$x)$w = deltaBeh(h$st)(x)$w &	-- eosum1
-betaEO$st = betaBeh$h$st 			-- eosum2
+h(deltaEO(st)$x)$w = deltaBeh(h$st)(x)$w &	
+						-- eosum1
+betaEO$st = betaBeh$h$st &		 	-- eosum2
+
+(Nat(x) & State(st) ==> h(deltaEO(st)$x)$w = deltaBeh(h$st)(x)$w) &	
+						-- eosum3
+(State(st) ==> betaEO$st = betaBeh$h$st) &	-- eosum4
+
+(State(st) ==> st=esum | st=osum)		-- eosum5
 
 terms:
 

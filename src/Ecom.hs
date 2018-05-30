@@ -977,7 +977,7 @@ solver this solveRef enum paint = do
               
           fontSize `on` buttonReleaseEvent $ do
               button <- eventButton
-              when (button == LeftButton) $ liftIO drawCurr'
+              when (button == LeftButton) $ liftIO drawNewCurr
               return False
           
           graphMenu <- getMenu "graphMenu"
