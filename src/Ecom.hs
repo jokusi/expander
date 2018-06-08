@@ -152,7 +152,7 @@ command =   msum [do symbol "ApplySubst"; return ApplySubst,
                      cps <- list quoted; return $ NegateAxioms ps cps,
                   do symbol "RandomLabels"; return RandomLabels,
                   do symbol "RandomTree"; return RandomTree,
-                  do symbol "ReduceRE"; return ReduceRE,
+                  do symbol "ReduceRE"; b <- token bool; return $ ReduceRE b,
                   do symbol "ReleaseNode"; return ReleaseNode,
                   do symbol "ReleaseSubtree"; return ReleaseSubtree,
                   do symbol "ReleaseTree"; return ReleaseTree,
@@ -202,17 +202,13 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (May 27, 2018)"
+start = "Welcome to Expander3 (June 6, 2018)"
 
 startF :: String
 startF = "Load and parse a formula!"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
-
-alreadyRegEqs :: String
-alreadyRegEqs =
-             "The selected tree is already a conjunction of regular equations."
 
 applied :: Bool -> String -> String
 applied b str = "Applying the " ++ s ++ str ++ "\n\n"
@@ -987,17 +983,17 @@ solver this solveRef enum paint = do
           mkBut graphMenu "more tree arcs" $ removeEdges False
           mkBut graphMenu "compose pointers" composePointers
           mkBut graphMenu "collapse after simplify" setCollapse
-          mkBut graphMenu "collapse -->" $ showEqsOrGraph 14
+          mkBut graphMenu "collapse -->" $ showEqsOrGraph 0
           mkBut graphMenu "collapse level" collapseStep
-          mkBut graphMenu "collapse <--" $ showEqsOrGraph 15
+          mkBut graphMenu "collapse <--" $ showEqsOrGraph 1
           mkBut graphMenu "remove copies" removeCopies
-          mkBut graphMenu "show graph" $ showEqsOrGraph 16
+          mkBut graphMenu "show graph" $ showEqsOrGraph 2
           let mkMenu m n1 n2 n3 n4 = do
                  mkBut m "here" $ cmd n1
                  mkBut m "with state equivalence" $ cmd n2
                  mkBut m "in painter" (do initCanvas; cmd n3)
                  mkBut m ("in "++ other) $ cmd n4
-                 where cmd = showEqsOrGraph
+                 where cmd = showTransOrKripke
           subMenu <- mkSub graphMenu ".. of transitions"
           mkMenu subMenu 0 1 2 3
           subMenu <- mkSub graphMenu ".. of labelled transitions"
@@ -1006,12 +1002,13 @@ solver this solveRef enum paint = do
                  mkBut m "here" $ cmd n1
                  mkBut m "in painter" (do initCanvas; cmd n2)
                  mkBut m ("in "++ other) $ cmd n3
-                 where cmd = showEqsOrGraph
+                 where cmd = showTransOrKripke
           subMenu <- mkSub graphMenu ".. of Kripke model"
           mkMenu subMenu 8 9 10
           subMenu <- mkSub graphMenu ".. of labelled Kripke model"
           mkMenu subMenu 11 12 13
-          mkBut graphMenu "show iterative equations" $ showEqsOrGraph 17
+          mkBut graphMenu "show iterative equations" $ showEqsOrGraph 3
+          mkBut graphMenu "show regular equations" $ showEqsOrGraph 4
           let mkMenu m cmd n1 n2 n3 n4 = do
                   mkBut m "of canvas" $ cmd n1
                   mkBut m "of transitions" $ cmd n2
@@ -1152,7 +1149,9 @@ solver this solveRef enum paint = do
           mkBut specMenu "minimize" minimize
           mkBut specMenu "build regular expression" $ buildRegExp 0
           mkBut specMenu ".. and reduce" $ buildRegExp 1
-          mkBut specMenu "reduce regular expression" reduceRegExp
+          mkBut specMenu ".. and distribute" $ buildRegExp 2
+          mkBut specMenu "reduce regular expression" $ reduceRegExp True
+          mkBut specMenu ".. and distribute" $ reduceRegExp False
           mkBut specMenu "save to file" $ getFileAnd saveSpec
           subMenu <- mkSub specMenu "load text"
           createSpecMenu False subMenu
@@ -1878,37 +1877,42 @@ solver this solveRef enum paint = do
             delay $ setProof True False kripkeMsg []
                      $ kripkeBuilt 2 0 (length states') 0 $ length atoms'
 
-        buildKripke 5 = do                      -- from from regular expression
-          str <- getTextHere
-          sig <- getSignature
-          case parseE (term sig) str of
-           Correct t -> case parseRE sig t of
-             Just (e,as) -> do
-                let (_,nda) = regToAuto e
-                    as' = as `minus1` "eps"
-                    (sts,delta) = powerAuto nda as' 
-                    finals = searchAll (elem 1) sts
-                    mkTerm = mkList . map mkConst
-                    f (st,a) = (mkPair (mkTerm st) $ leaf a,[],
-                                mkTerm $ delta st a)
-                    states' = map mkTerm sts
-                    labels' = map leaf as'
-                    atom' = leaf "final"
-                changeSimpl "states" $ mkList states'
-                changeSimpl "atoms" $ mkList [atom']
-                changeSimpl "labels" $ mkList labels'
-                writeIORef transRulesRef $ map f $ prod2 sts as'
-                writeIORef kripkeRef (states',[atom'],labels',[],[],[],[])
-                sig <- getSignature
-                let (_,rsL) = rewriteSig sig (sig&states)
-                    trL = tripsToInts states' labels' rsL states'
-                writeIORef kripkeRef
-                  (states',[atom'],labels',[],trL,[finals],[])
-                enterKripke 5
-                delay $ setProof True False kripkeMsg []
-                      $ kripkeBuilt 2 0 (length sts) (length as') 1
-             _ -> labMag "Enter a regular expression into the text field!"
-           p -> incorrect p str illformed
+        buildKripke 5 = do                            -- from regular expression
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               sig <- getSignature
+               trees <- readIORef treesRef
+               curr <- readIORef currRef
+               treeposs <- readIORef treepossRef
+               let t = trees!!curr
+                   p = emptyOrLast treeposs
+               case parseRE sig $ getSubterm t p of
+                 Just (e,as) -> do
+                    let (_,nda) = regToAuto e
+                        as' = as `minus1` "eps"
+                        (sts,delta) = powerAuto nda as' 
+                        finals = searchAll (elem 1) sts
+                        mkTerm = mkList . map mkConst
+                        f (st,a) = (mkPair (mkTerm st) $ leaf a,[],
+                                    mkTerm $ delta st a)
+                        states' = map mkTerm sts
+                        labels' = map leaf as'
+                        atom' = leaf "final"
+                    changeSimpl "states" $ mkList states'
+                    changeSimpl "atoms" $ mkList [atom']
+                    changeSimpl "labels" $ mkList labels'
+                    writeIORef transRulesRef $ map f $ prod2 sts as'
+                    writeIORef kripkeRef (states',[atom'],labels',[],[],[],[])
+                    sig <- getSignature
+                    let (_,rsL) = rewriteSig sig (sig&states)
+                        trL = tripsToInts states' labels' rsL states'
+                    writeIORef kripkeRef
+                      (states',[atom'],labels',[],trL,[finals],[])
+                    enterKripke 5
+                    delay $ setProof True False kripkeMsg []
+                          $ kripkeBuilt 2 0 (length sts) (length as') 1
+                 _ -> labMag "Select a regular expression!"
 
         buildKripke mode = do
           sig <- getSignature
@@ -1959,7 +1963,10 @@ solver this solveRef enum paint = do
           case parse (term sig) start of 
                Just start | start `elem` (sig&states)
                  -> do
-                    let f = if mode == 0 then id else reduceLoop
+                    let f = case mode of 0 -> id
+                                         1 -> reduceLoop
+                                         _ -> reduceLoopDist
+
                     enterTree' False $ showRE $ f $ autoToReg sig start
                _ -> labRed' "Enter an initial state!"
         
@@ -2249,7 +2256,7 @@ solver this solveRef enum paint = do
                     NegateAxioms ps cps -> negateAxioms' ps cps
                     RandomLabels -> randomLabels
                     RandomTree -> randomTree
-                    ReduceRE -> reduceRegExp
+                    ReduceRE b -> reduceRegExp b
                     ReleaseNode -> releaseNode
                     ReleaseSubtree -> releaseSubtree
                     ReleaseTree -> releaseTree
@@ -4216,7 +4223,7 @@ solver this solveRef enum paint = do
                 clearTreeposs
             drawCurr'
 
-        reduceRegExp = do
+        reduceRegExp b = do
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
@@ -4230,14 +4237,15 @@ solver this solveRef enum paint = do
                case parseRE sig u of
                     Just (e,_) 
                       -> do
-                         let v = showRE $ reduceLoop e
+                         let v = showRE $ if b then reduceLoop e
+                                               else reduceLoopDist e
                          writeIORef treesRef
                            $ updList trees curr $ replace0 t p v
-                         setProofTerm ReduceRE
+                         setProofTerm $ ReduceRE b
                          setProof False False "REDUCING THE SUBEXPRESSION" [] $
                                   expReduced
                          clearTreeposs; drawCurr'
-                    _ -> labRed' "Select a regular expression!"  
+                    _ -> labMag "Select a regular expression!" 
 
 
         -- | Finishes the 'moveNode' action. Called on right mouse button
@@ -5645,134 +5653,90 @@ solver this solveRef enum paint = do
         -- menu /graph/.
         showEqsOrGraph :: Int -> Action
         showEqsOrGraph m = do
-            solve <- readIORef solveRef
-            sig <- getSignature
-            varCounter <- readIORef varCounterRef
-            kripke <- readIORef kripkeRef
-            let [sts,ats,labs] = map (map showTerm0)
-                                     [sig&states,sig&atoms,sig&labels]
-                vcz = varCounter "z"
-                (eqs,zn) = relToEqs vcz $ mkPairs sts sts (sig&trans)
-                (eqsL,zn') = relLToEqs zn $ mkTriples sts labs sts (sig&transL)
-                trGraph = eqsToGraph [] eqs
-                trGraphL = eqsToGraph [] eqsL
-                atGraph  = if all null (sig&trans) then emptyGraph 
-                           else outGraph sts ats (out sig) trGraph
-                atGraphL = if null (sig&labels) then emptyGraph
-                           else outGraphL sts labs ats (out sig) (outL sig)
-                                                                 trGraphL
-                inPainter t = do
-                           drawFun <- readIORef drawFunRef
-                           spread <- readIORef spreadRef
-                           let u = head $ applyDrawFun sig drawFun [t]
-                           pict <- runMaybeT $ widgetTreeT sizes0 spread u
-                           if isNothing pict then labMag "The tree is empty."
-                           else do
-                             curr <- readIORef currRef
-                             font <- readIORef fontRef
-                             fast <- readIORef fastRef
-                             sizes <- mkSizes canv font
-                                      $ stringsInPict $ fromJust pict
-                             (paint&setEval) "tree" spread
-                             Just pict <- runMaybeT $ widgetTreeT sizes spread u
-                             (paint&callPaint) [pict] [curr] False True 
-                                                             curr "white"
-            when (m < 14) $ setZcounter zn'
-            case m of
-                0 -> enterTree' False trGraph
-                1 -> enterTree' False $ colorClasses sig trGraph
-                2 -> inPainter trGraph
-                3 -> do solve&bigWin; (solve&enterTree) False trGraph
-                4 -> enterTree' False trGraphL
-                5 -> enterTree' False $ colorClasses sig trGraphL
-                6 -> inPainter trGraphL
-                7 -> do solve&bigWin; (solve&enterTree) False trGraphL
-                8 -> enterTree' False atGraph
-                9 -> inPainter atGraph
-                10 -> do solve&bigWin; (solve&enterTree) False atGraph
-                11 -> enterTree' False atGraphL
-                12 -> inPainter atGraphL
-                13 -> do solve&bigWin; (solve&enterTree) False atGraphL
-                _ -> do
-                    trees <- readIORef treesRef
-                    if null trees then labBlue' start
-                    else do
-                        curr <- readIORef currRef
-                        treeposs <- readIORef treepossRef
-                        let t = trees!!curr
-                            finish zn p u = do
-                                writeIORef treesRef
-                                    $ updList trees curr $ replace1 t p u
-                                when (m == 17) $ setZcounter zn
-                                clearTreeposs; drawCurr'
-                            relToEqs1 = relToEqs vcz . deAssoc1
-                            relToEqs3 = relLToEqs vcz . deAssoc3
-                            p:ps = emptyOrAll treeposs
-                            u = getSubterm1 t p
-                            (q,f,r) = if null ps then ([],id,p)
-                                      else (p,drop $ length p,head ps)
-                            (eqs,_) = graphToEqs vcz (getSubterm1 t q) $ f r
-                            is = [i | [i,1] <- map f ps]
-                            x = label t r
-                        case m of
-                            14 -> finish 0 p $ collapse True u
-                            15 -> finish 0 p $ collapse False u
-                            16 -> case parseColl parseConsts2 u of
-                                -- from pairs to a graph
-                                Just rel -> do
-                                    let (eqs,zn) = relToEqs1 rel
-                                    finish zn p $ eqsToGraphx x eqs
-                                _ -> case parseColl parseConsts3 u of
-                                    -- from triples to a graph
-                                    Just rel -> do
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               sig <- getSignature
+               trees <- readIORef treesRef
+               curr <- readIORef currRef
+               varCounter <- readIORef varCounterRef
+               treeposs <- readIORef treepossRef
+               let t = trees!!curr
+                   vcz = varCounter "z"
+                   relToEqs1 = relToEqs vcz . deAssoc1
+                   relToEqs3 = relLToEqs vcz . deAssoc3
+                   p:ps = emptyOrAll treeposs
+                   u = getSubterm1 t p
+                   (q,f,r) = if null ps then ([],id,p)
+                                        else (p,drop $ length p,head ps)
+                   (eqs,zn) = graphToEqs vcz (getSubterm1 t q) $ f r
+                   is = [i | [i,1] <- map f ps]
+                   x = label t r
+                   act zn p u = do
+                                    writeIORef treesRef
+                                      $ updList trees curr $ replace1 t p u
+                                    when (m == 3) $ setZcounter zn
+                                    clearTreeposs; drawCurr'
+               case m of 0 -> act 0 p $ collapse True u
+                         1 -> act 0 p $ collapse False u
+                         2 -> case parseColl parseConsts2 u of
+                              Just rel -- from pairs to a graph
+                                -> do
+                                   let (eqs,zn) = relToEqs1 rel
+                                   act zn p $ eqsToGraphx x eqs
+                              _ -> case parseColl parseConsts3 u of
+                                   Just rel -- from triples to a graph
+                                     -> do
                                         let (eqs,zn) = relToEqs3 rel
-                                        finish zn p $ eqsToGraphx x eqs
-                                    _ -> case parseEqs u of
-                                        -- from equations to a graph
-                                        Just eqs ->
-                                            finish vcz p $ eqsToGraph is eqs
-                                        -- from a graph to a graph
-                                        _ -> finish vcz q $ eqsToGraphx x eqs
-                            _ -> case parseColl parseConsts2 u of
-                                -- from pairs to equations
-                                Just rel -> do
-                                    let (eqs,zn) = relToEqs1 rel
-                                    finish zn p $ eqsTerm eqs
-                                _ -> case parseColl parseConsts3 u of
-                                    -- from triples to equations
-                                    Just rel -> do
+                                        act zn p $ eqsToGraphx x eqs
+                                   _ -> case parseEqs u of
+                                        Just eqs -- from equations to a graph
+                                          -> act vcz p $ eqsToGraph is eqs
+                                        _ -> -- from a graph to a graph
+                                             act vcz q $ eqsToGraphx x eqs
+                         3 -> case parseColl parseConsts2 u of
+                              Just rel -- from pairs to equations
+                                -> do
+                                   let (eqs,zn) = relToEqs1 rel
+                                   act zn p $ eqsTerm eqs
+                              _ -> case parseColl parseConsts3 u of
+                                   Just rel -- from triples to equations
+                                     -> do
                                         let (eqs,zn) = relToEqs3 rel
-                                        finish zn p $ eqsTerm eqs
-                                    _ -> case parseEqs u of
-                                        -- from equations to equations
-                                        Just eqs
+                                        act zn p $ eqsTerm eqs
+                                   _ -> case parseEqs u of
+                                        Just eqs -- from equations to equations
                                           -> do
                                              let t = connectEqs eqs
-                                             firstClick
-                                                <- readIORef firstClickRef
+                                             firstClick <- readIORef
+                                                             firstClickRef
                                              if firstClick then do
-                                                finish vcz p t
+                                                act vcz p t
                                                 writeIORef substitutionRef
-                                                        (const t,[])
+                                                  $ (const t,[])
                                                 writeIORef firstClickRef False
                                              else do
-                                                (f,_) <- readIORef
-                                                           substitutionRef
-                                                let u = eqsToGraphs $ f ""
-                                                finish vcz p u
-                                                writeIORef substitutionRef
-                                                      (V,[])
-                                                writeIORef firstClickRef True
-                                        -- from a graph to equations
-                                        _ -> finish vcz q $ eqsTerm eqs
-          where eqsTerm :: [RegEq] -> TermS
+                                                  (f,_) <- readIORef
+                                                             substitutionRef
+                                                  let u = eqsToGraphs $ f ""
+                                                  act vcz p u
+                                                  writeIORef substitutionRef
+                                                    $ (V,[])
+                                                  writeIORef firstClickRef True
+                                        _ -> -- from a graph to equations
+                                             act vcz q $ eqsTerm eqs
+                         _ -> case parseEqs u of
+                                   Just eqs -> act vcz p $ eqsTerm $
+                                                   autoEqsToRegEqs sig eqs
+                                   _ -> labMag "Enter iterative equations!"
+          where eqsTerm :: [IterEq] -> TermS
                 eqsTerm eqs = case eqs' of 
                                    [eq] -> f eq
                                    _ -> F "&" $ addNatsToPoss $ map f eqs'
                               where eqs' = mkSet eqs
                                     f (Equal x t) = mkEq (V x) t
                                     f (Diff x t)  = mkNeq (V x) t
-                  
+
         -- | Called by menu item /greatest lower bound/ from menu /nodes/.
         showGlb :: Action
         showGlb = do
@@ -6146,6 +6110,52 @@ solver this solveRef enum paint = do
                 enterFormulas' cls
                 labGreen' $ see $ "theorems for " ++ showStrList xs
         
+        showTransOrKripke m = do
+          sig <- getSignature
+          varCounter <- readIORef varCounterRef
+          let [sts,ats,labs] = map (map showTerm0)
+                                   [sig&states,sig&atoms,sig&labels]
+              vcz = varCounter "z"
+              (eqs,zn)    = relToEqs vcz $ mkPairs sts sts (sig&trans)
+              (eqsL,zn')  = relLToEqs zn $ mkTriples sts labs sts (sig&transL)
+              trGraph     = eqsToGraph [] eqs
+              trGraphL    = eqsToGraph [] eqsL
+              atGraph     = if all null (sig&trans) then emptyGraph
+                            else outGraph sts ats (out sig) trGraph
+              atGraphL    = if null (sig&labels) then emptyGraph
+                            else outGraphL sts labs ats (out sig) (outL sig)
+                                                                  trGraphL
+              inPainter t = do
+                  drawFun <- readIORef drawFunRef
+                  let u = head $ applyDrawFun sig drawFun [t]
+                  spread <- readIORef spreadRef
+                  pict <- (widgetTreeT sizes0 spread u)&runT
+                  if nothing pict then labMag "The tree is empty."
+                  else do
+                       font <- readIORef fontRef
+                       sizes <- mkSizes canv font $ stringsInPict $ get pict
+                       (paint&setEval) "tree" spread
+                       pict <- (widgetTreeT sizes spread u)&runT
+                       curr <- readIORef currRef
+                       (paint&callPaint) [get pict] [curr] False True curr
+                                                                      "white"
+          setZcounter zn'
+          solve <- readIORef solveRef
+          case m of 0  -> enterTree' False trGraph
+                    1  -> enterTree' False $ colorClasses sig trGraph
+                    2  -> inPainter trGraph
+                    3  -> do (solve&bigWin); (solve&enterTree) False trGraph
+                    4  -> enterTree' False trGraphL
+                    5  -> enterTree' False $ colorClasses sig trGraphL
+                    6  -> inPainter trGraphL
+                    7  -> do (solve&bigWin); (solve&enterTree) False trGraphL
+                    8  -> enterTree' False atGraph
+                    9  -> inPainter atGraph
+                    10 -> do (solve&bigWin); (solve&enterTree) False atGraph
+                    11 -> enterTree' False atGraphL
+                    12 -> inPainter atGraphL
+                    _  -> do (solve&bigWin); (solve&enterTree) False atGraphL
+
         -- | Used by 'stopRun'', 'runChecker', 'setDeriveMode' and 'showPicts''.
         showTreePicts :: Action
         showTreePicts = do                          -- without transformer:

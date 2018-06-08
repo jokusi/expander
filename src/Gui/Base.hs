@@ -22,13 +22,6 @@ import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeExtension, (<.>), (</>), takeDirectory)
 import qualified Data.Text as Text
 
--- | Helper from Expander 2
-just :: Maybe a -> Bool
-just = isJust
-
-get :: Maybe a -> a
-get = fromJust
-
 -- | Main window icon file.
 iconFile, cssFile :: FilePath
 iconFile = "icon" <.> "png"

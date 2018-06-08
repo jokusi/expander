@@ -1,41 +1,24 @@
 -- reglangs
 
-constructs: 	a b c final q qa qb qab qbb qabb q' qa' qb' qab' qgg 
-		qug qgu quu 
+constructs: 	a b c d e h aa gg pp vv final q qa qb qab
 defuncts:	delta beta unfold unfoldND unfoldBro reg drawL drawC
 preds:          Unfold
 fovars: 	st st' w k
 
 axioms:
 
-labels == [a,b] & atoms == [final] & 
+labels == [a,b] & atoms == [final] & states == [q] &
 
--- acceptors of words with an even number of a's and an odd number of b's 
--- if started in q or q'
-
-states == [q] & final -> qb<+>qb' &
-
-(q,a) -> qa     & (q,b) -> qb      & 
+(q,a) -> qa     & (q,b) -> qb      & 		
 (qa,a) -> q     & (qa,b) -> qab    &
-(qb,a) -> qab   & (qb,b) -> qbb    & 
-(qab,a) -> qb   & (qab,b) -> qabb  &
-(qbb,a) -> qabb & (qbb,b) -> qb    &
-(qabb,a) -> qbb & (qabb,b) -> qab  & 
+(qb,a) -> qab   & (qb,b) -> q    &
+(qab,a) -> qb   & (qab,b) -> qa  & 
 
-(q',a) -> qa'   & (q',b) -> qb'    & 		-- minimized version
-(qa',a) -> q'   & (qa',b) -> qab'  &
-(qb',a) -> qab' & (qb',b) -> q'    &
-(qab',a) -> qb' & (qab',b) -> qa'  &
+-- final -> q &	-- A1: acceptor of words with an even number of a's and an even 
+		-- number of b's if started in q
 
--- acceptor of words with an even number of a's and an even number of b's 
--- if started in qgg
-
--- states == [qgg] & final -> qgg &
-
-(qgg,a) -> qug & (qgg,b) -> qgu &
-(qug,a) -> qgg & (qug,b) -> quu &
-(quu,a) -> qgu & (quu,b) -> qug &
-(qgu,a) -> quu & (qgu,b) -> qgg &
+final -> qb & -- A2: acceptor of words with an even number of a's and an odd 
+		-- number of b's if started in q
 
 (Unfold(st)[]    <=== final -> st) &		
 (Unfold(st)(x:w) <=== (st,x) -> st' & Unfold(st')$w) &
@@ -51,30 +34,32 @@ unfold(st) == beta.foldl(delta)(st) & 		-- deterministic unfold
 
 reg$1 == star$plus(a)+plus(b*c) & 	
 
-reg$2 == a+a*a*star(a)*b+a*b*star(b)+b &	--> star(a)*b+a*star(b)
+reg$2 == a+a*a*star(a)*b+a*b*star(b)+b &	    --> star(a)*b+a*star(b)	
+ 
+reg$3 == a+star(a)+eps+a & 			    --> star(a) 
+ 
+reg$4 == (a+eps)*star(a)*(eps+a) &		    --> star(a)
 
-reg$3 == a+star(a)+eps+a & 			--> star(a) 
+reg$5 == (a+eps)*star(a+eps)*(a+eps)+a+eps &        --> star(a)
 
-reg$4 == (a+eps)*star(a)*(eps+a) &		--> star(a)
+reg$6 == star(a)*b*star(b+eps)*(b+eps)+star(a)*b &  --> star(a)*b*star(b)
 
-reg$5 == a*b+a*a+a*h+b*c+b*d &			--> a*(b+a+h)+b*(c+d)
-
-reg$6 == d*pp+c*h*z+a*b+c+a+a*b*c*d+star(a*a+b+a*b)+mt+c*t+b*gg+eps+
+reg$7 == d*pp+c*h*e+a*b+c+a+a*b*c*d+star(a*a+b+a*b)+mt+c*aa+b*gg+eps+
          a+a*a+vv+a*a*8+d+b &
-	--> (a*a*8)+a+c+d+(a*b*c*d)+(b*gg)+(d*pp)+(c*t)+vv+(c*h*z
-            +star((a*(a+b))+b)
+     --> (a*a*8)+a+(c*aa)+c+d+(a*b*c*d)+(c*h*e)+(b*gg)+(d*pp)+
+     --  star((a*a)+(a*b)+b)+vv
 
-reg$7 == a+((star(b)*a)+((a+(star(b)*a))*star(a+(b+mt)))) &	
-	--> star(b)*a*star(a+b)			-- auto3
+reg$8 == a+((b+eps)*star(b+eps)*a)+
+         ((a+((b+eps)*star(b+eps)*a))*star(a+b+eps+(mt*star(b+eps)*a))*
+          (a+b+eps+(mt*star(b+eps)*a))) &	    -- auto3
+     --> star(b)*a*star(a+b)			
 
-reg$8 == (a+c+eps+((a+c+eps)*(star(a+c+eps)*(a+c+eps))))+
-         ((b+((a+c+eps)*(star(a+c+eps)*b)))*(star(a+b+eps+
-         (c*(star(a+c+eps)*b)))*(c+(c*(star(a+c+eps)*(a+c+eps)))))) &
-        --> star(a+c)+(star(a+c)*b*star(a+b+(c*star(a+c)*b))*c*star(a+c))
-						-- auto4
-
-reg$9 == star(a)*b+c+star(a) &			--> star(a)*(eps+b)+c
-
+reg$9 == a+c+eps+((a+c+eps)*star(a+c+eps)*(a+c+eps))+
+         ((b+((a+c+eps)*star(a+c+eps)*b))*star(a+b+eps+(c*star(a+c+eps)*b))*
+          (c+(c*star(a+c+eps)*(a+c+eps)))) &	    -- auto4
+     --> star(a+c)+(star(a+c)*b*star(a+b+(c*star(a+c)*b))*c*star(a+c))
+     -- autoToReg.minimize.regToAuto --> star(a+c+b*star(a+b)*c)	   
+	
 -- widget interpreters
 
 drawL == wtree(1,fun((eps,k,n),text$eps,

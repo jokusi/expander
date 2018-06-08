@@ -49,13 +49,13 @@ import qualified Control.Monad.State as State (get, put)
 import Control.Monad.State (StateT(..), state)
 import Data.Char (isLower, isDigit, ord)
 import Data.Array (Array, Ix, array, (!), range)
-import Data.Maybe (isJust, fromJust, fromMaybe, catMaybes)
+import Data.Maybe (isJust, isNothing, fromJust, fromMaybe, catMaybes)
 import qualified Data.Function ((&))
 import Data.Foldable (asum)
 import Graphics.UI.Gtk (FontDescription, fontDescriptionGetSize)
 import System.FilePath ((</>))
 
-import Prelude hiding ((++),concat)
+import Prelude hiding ((++),concat,(<*))
 
 
 infixl 0 `onlyif`
@@ -85,7 +85,14 @@ concat = asum
 (&&&) = liftM2 (&&)
 (|||) = liftM2 (||)
 
--- * basic functions
+just :: Maybe a -> Bool
+just = isJust
+
+get :: Maybe a -> a
+get = fromJust
+
+nothing :: Maybe a -> Bool
+nothing = isNothing
 
 onlyif :: String -> Bool -> String
 str `onlyif` b = if b then str else ""
@@ -178,6 +185,9 @@ mkArray bounds f = array bounds [(i,f i) | i <- range bounds]
 
 -- The following monad transformer MaybeT is used in the widget interpreters of
 -- Epaint.hs.
+
+runT :: MaybeT m a -> m (Maybe a)
+runT = runMaybeT
 
 lift' :: Monad m => Maybe a -> MaybeT m a
 lift' = MaybeT . return
@@ -446,7 +456,7 @@ invertRelL s cs = map f . prod2 cs
 -}
 
 -- invertRel{L} is used by actTable, simplifyS "out{L}" (see Esolve), 
--- buildKripke, showEqsOrGraph, showMatrix and showRelation (see Ecom).
+-- buildKripke, showTransOrKripke, showMatrix and showRelation (see Ecom).
 
 sublist :: (Num a, Ord a) => [t] -> a -> a -> [t]
 sublist _ i j | i >= j = []
@@ -547,20 +557,17 @@ join = foldl join1
 mkSet :: Eq a => [a] -> [a]
 mkSet = join []
 
-insertR :: Ord a => [a] -> a -> [a]
-insertR s@(x:s') y | y <= x = s 
-                   | x <= y = insertR s' y 
-                   | True   = x:insertR s' y
-insertR _ x = [x]
+insertR :: BoolFun a -> [a] -> a -> [a]
+insertR r s@(x:s') y | r y x = s 
+                     | r x y = insertR r s' y 
+                     | True   = x:insertR r s' y
+insertR _ _ x = [x]
 
-joinR :: Ord a => [a] -> [a] -> [a]
-joinR = foldl insertR
+joinR :: BoolFun a -> [a] -> [a] -> [a]
+joinR r = foldl $ insertR r
 
-joinMapR :: Ord b => (a -> [b]) -> [a] -> [b]
-joinMapR f = foldl joinR [] . map f
-
-mkSetR :: Ord a => [a] -> [a]
-mkSetR = joinR []
+joinMapR :: BoolFun a -> (a -> [a]) -> [a] -> [a]
+joinMapR r f = foldl (joinR r) [] . map f
 
 
 updL :: (Eq a,Eq b) => (a -> [b]) -> a -> b -> a -> [b]
@@ -840,11 +847,7 @@ searchGetR f s = g $ length s-1
 
 -- | @searchGet2 f g s@ searches for the first element @x@ of @s@ satisfying @f@
 -- and then, in the rest of @s@, for the first element @y@ with @g x y@.
-searchGet2
-    :: (a -> Bool) -- ^ f
-    -> (a -> a -> Bool) -- ^ g
-    -> [a] -- ^ s
-    -> Maybe (Int,a,a)
+searchGet2 :: (a -> Bool) -> BoolFun a -> [a] -> Maybe (Int,a,a)
 searchGet2 f g = h [] 0
                   where h s i (x:s') | f x  = case searchGet (g x) $ s++s' of
                                                   Just (_,y) -> Just (i,x,y)
@@ -1593,11 +1596,13 @@ prodTerm :: Sig -> Parser TermS
 prodTerm sig = do t <- singleTerm sig; maybeProd sig t
 
 maybeProd :: Sig -> TermS -> Parser TermS
-maybeProd sig t = concat [ do x <- oneOf mulOps; u <- singleTerm sig
-                              maybeProd sig $ F x [t,u]
-                       , do x <- sat (infixFun sig) (`notElem` addOps)
-                            u <- bagTerm sig; application x t u
-                       , return t]
+maybeProd sig t = concat [do symbol "||"; u <- implication sig
+                             return $ F "||" [t,u],
+                          do x <- oneOf mulOps; u <- singleTerm sig
+                             maybeProd sig $ F x [t,u],
+                          do x <- sat (infixFun sig) (`notElem` addOps)
+                             u <- bagTerm sig; application x t u,
+                          return t]
 
 singleTerm :: Sig -> Parser TermS
 singleTerm sig = concat [ constant sig
@@ -1708,7 +1713,7 @@ graphToTransRules = f [] where
 -- ** From REGULAR EXPRESSIONS to LABELLED TRANSITIONS and back
 
 data RegExp = Mt | Eps | Const String | Sum_ RegExp RegExp | 
-              Prod RegExp RegExp | Star RegExp deriving Eq
+              Prod RegExp RegExp | Star RegExp | Var String deriving Eq
 
 parseRE :: Sig -> TermS -> Maybe (RegExp,[String])
 parseRE _ (F "mt" [])          = Just (Mt,[])
@@ -1717,163 +1722,161 @@ parseRE sig (F a [])           = do guard $ (sig&isConstruct) a
                                     Just (Const a,[a])
 parseRE sig (F "+" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
                                     let (e:es,ass) = unzip pairs
-                                    Just (foldl Sum_ e es,concat ass)
+                                    Just (foldl Sum_ e es,joinM ass)
 parseRE sig (F "*" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
                                     let (e:es,ass) = unzip pairs
-                                    Just (foldl Prod e es,concat ass)
+                                    Just (foldl Prod e es,joinM ass)
 parseRE sig (F "plus" [t])     = do (e,as) <- parseRE sig t
                                     Just (Prod e $ Star e,as)
 parseRE sig (F "star" [t])     = do (e,as) <- parseRE sig t
                                     Just (Star e,as `join1` "eps")
 parseRE sig (F "refl" [t])     = do (e,as) <- parseRE sig t
                                     Just (Sum_ e Eps,as `join1` "eps")
+parseRE sig (V x)              = Just (Var x,[x])
 parseRE _ _                    = Nothing
 
 showRE :: RegExp -> TermS
 showRE Mt           = leaf "mt"
 showRE Eps       = leaf "eps"
 showRE (Const a)    = leaf a
-showRE e@(Sum_ _ _) = F "+" $ map showRE $ summands e
-showRE e@(Prod _ _) = F "*" $ map showRE $ factors e
+showRE e@(Sum_ _ _) = case summands e of []  -> leaf "mt"
+                                         [e] -> showRE e
+                                         es  -> F "+" $ map showRE es
+showRE e@(Prod _ _) = case factors e of []  -> leaf "eps"
+                                        [e] -> showRE e
+                                        es  -> F "*" $ map showRE es
 showRE (Star e)     = F "star" [showRE e]
+showRE (Var x)      = V x
 
-instance Ord RegExp                            -- used by summands
-         where Eps <= Star e                   = True
-               e <= Star e'                    = e <= e'
-               e <= Sum_ e1 e2                 = e <= e1 || e <= e2
-               e <= Prod e' (Star _) | e <= e' = True
-               e <= Prod (Star _) e' | e <= e' = True
+instance Ord RegExp                                    -- used by summands
+         where Eps <= Star _                   = True
+               e <= Star e' | e <= e'          = True
+               Prod e1 e2 <= Star e | e1 <= e && e2 <= Star e = True 
+               e <= Prod e' (Star _) | e == e' = True
+               e <= Prod (Star _) e' | e == e' = True
                Prod e1 e2 <= Prod e3 e4        = e1 <= e3 && e2 <= e4
+               e <= Sum_ e1 e2                 = e <= e1 || e <= e2
                e <= e'                         = e == e'
 
+(<*) :: RegExp -> RegExp -> Bool                       -- used by factors
+Sum_ Eps e <* Star e' | e == e' = True
+e <* e' = False
 
 summands,factors :: RegExp -> [RegExp]
-summands (Sum_ e e') = joinMapR summands [e,e']        -- e <= e' ==> e+e' = e'
-summands Mt          = []                              -- Mt+e = e     
-summands e           = [e]                             -- e+Mt = e
-factors (Prod e e')  = concatMap factors [e,e']
-factors Eps          = []                              -- Eps*e = e
-factors e            = [e]                             -- e*Eps = e
+summands (Sum_ e e') = joinMapR (<=) summands [e,e']   -- e <= e' ==> e+e' = e'
+summands Mt          = []                              -- mt+e = e,  e+mt = e
+summands e           = [e]
+factors (Prod e e')  = joinMapR (<*) factors [e,e']    -- e <* e' ==> e*e' = e'
+factors Eps          = []                              -- eps*e = e, e*eps = e
+factors e            = [e]
 
-mkSumRE,mkProdRE,mkProdRE' :: [RegExp] -> RegExp
-mkSumRE [e]   = e
-mkSumRE es    = foldr1 Sum_ es         -- produces right-associative sums
-mkProdRE [e]  = e
-mkProdRE es   = foldr1 Prod es         -- produces right-associative products
-mkProdRE' [e] = e
-mkProdRE' es  = foldl1 Prod es         -- produces left-associative products
+mkSumR,mkProdL,mkProdR :: [RegExp] -> RegExp
+mkSumR []  = Mt
+mkSumR es  = foldr1 Sum_ es
+mkProdL [] = Eps
+mkProdL es = foldl1 Prod es
+mkProdR [] = Eps
+mkProdR es = foldr1 Prod es
 
-(<+) :: RegExp -> RegExp -> Bool               -- (<+) moves Eps to the left
-Eps <+ e                  = True               -- and orders summands by their
-Const a <+ Const b        = a <= b             -- their left factors.          
-e@(Const _) <+ Prod e1 e2 = e <+ e1            -- (<+) is used by sortRE.
+-- Eps <+ e, e1*e2 <+ e3*e4 iff e1 <+ e3 (products are ordered by left factors)
+
+(<+) :: RegExp -> RegExp -> Bool
+Eps <+ e                  = True
+Const a <+ Const b        = a <= b
+e@(Const _) <+ Prod e1 e2 = e <+ e1
 e@(Star _)  <+ Prod e1 e2 = e <+ e1
 Prod e _ <+ e'@(Const _)  = e <+ e'
 Prod e _ <+ e'@(Star _)   = e <+ e'
 Prod e _ <+ Prod e' _     = e <+ e'
 e <+ e'                   = e == e'
 
-(+<) :: RegExp -> RegExp -> Bool               -- (+<) moves Eps to the left
-Eps +< e                  = True               -- and orders summands by their 
-Const a +< Const b        = a <= b             -- their right factors.                 
-e@(Const _) +< Prod e1 e2 = e +< e2            -- (+<) is used by sortRE'.
+-- Eps +< e, e1*e2 <+ e3*e4 iff e2 <+ e4 (products are ordered by right factors)
+
+(+<) :: RegExp -> RegExp -> Bool
+Eps +< e                  = True
+Const a +< Const b        = a <= b
+e@(Const _) +< Prod e1 e2 = e +< e2
 e@(Star _)  +< Prod e1 e2 = e +< e2
 Prod _ e +< e'@(Const _)  = e +< e'
 Prod _ e +< e'@(Star _)   = e +< e'
 Prod _ e +< Prod _ e'     = e +< e'
 e +< e'                   = e == e'
 
-sortRE,sortRE' :: RegExp -> RegExp
-sortRE e@(Sum_ _ _)  = mkSumRE $ map sortRE $ qsort (<+) $ summands e
-sortRE e@(Prod _ _)  = mkProdRE $ map sortRE $ factors e
-sortRE (Star e)      = Star $ sortRE e
-sortRE e             = e
-sortRE' e@(Sum_ _ _) = mkSumRE $ map sortRE' $ qsort (+<) $ summands e
-sortRE' e@(Prod _ _) = mkProdRE' $ map sortRE' $ factors e
-sortRE' (Star e)     = Star $ sortRE' e
-sortRE' e            = e
+sortRE :: (RegExp -> RegExp -> Bool) -> ([RegExp] -> RegExp)
+                                     -> RegExp -> RegExp
+sortRE r prod e@(Sum_ _ _) = mkSumR $ map (sortRE r prod)
+                                    $ qsort r $ summands e
+sortRE r prod e@(Prod _ _) = prod $ map (sortRE r prod) $ factors e
+sortRE r prod (Star e)     = Star $ sortRE r prod e
+sortRE _ _ e               = e
 
-distribute :: RegExp -> RegExp                 -- e*(eps+e') = e+e*e'
-distribute e =                                 -- e*(e1+e2)  = e*e1+e*e2
-                                               -- (eps+e')*e = e+e'*e
-                                               -- (e1+e2)*e  = e1*e+e2*e
-    case e of Sum_ _ _   -> mkSumRE $ map distribute $ concatMap f $ summands e
-              Prod e1 e2 -> case f e of 
-                            [e1,e2] -> Sum_ (distribute e1) $ distribute e2
-                            _       -> Prod (distribute e1) $ distribute e2
-              Star e     -> Star $ distribute e
-              _          -> e
-              where f (Prod e (Sum_ Eps e')) = [e,Prod e e']
-                    f (Prod e (Sum_ e1 e2))  = [Prod e e1,Prod e e2]
-                    f (Prod (Sum_ Eps e') e) = [e,Prod e' e]
-                    f (Prod (Sum_ e1 e2) e)  = [Prod e1 e,Prod e2 e]
-                    f e                             = [e]  
+-- e*(eps+e') = e+e*e', e*(e1+e2) = e*e1+e*e2
+-- (eps+e')*e = e+e'*e, (e1+e2)*e = e1*e+e2*e
+
+distribute :: RegExp -> RegExp
+distribute e =
+     case e of Sum_ _ _   -> mkSumR $ map distribute $ concatMap f $ summands e
+               Prod e1 e2 -> case f e of
+                             [e1,e2] -> Sum_ (distribute e1) $ distribute e2
+                             _       -> Prod (distribute e1) $ distribute e2
+               Star e     -> Star $ distribute e
+               _          -> e
+               where f (Prod e (Sum_ Eps e')) = [e,Prod e e']
+                     f (Prod e (Sum_ e1 e2))  = [Prod e e1,Prod e e2]
+                     f (Prod (Sum_ Eps e') e) = [e,Prod e' e]
+                     f (Prod (Sum_ e1 e2) e)  = [Prod e1 e,Prod e2 e]
+                     f e                      = [e]
+
+-- reduceLoop(Dist) simplifies regular expressions iteratively and is used by
+-- simplifyT (F "reduce" [t]) (see Esolve.hs).
+-- reduceRE is the step function of reduceLoop.
+
+reduceLoop,reduceLoopDist,reduceRE :: RegExp -> RegExp
+reduceLoop     = fixpt (==) (reduceRE . sortRE (+<) mkProdL) .
+                 fixpt (==) (reduceRE . sortRE (<+) mkProdR)
+reduceLoopDist = distribute . fixpt (==) (reduceRE . sortRE (+<) mkProdL) .
+                 distribute . fixpt (==) (reduceRE . sortRE (<+) mkProdR)
+reduceRE e     = case e of Sum_ e1 e2 -> if sizeRE e' < sizeRE e then e'
+                                         else Sum_ (reduceRE e1) $ reduceRE e2
+                                         where es = summands e
+                                               e' = mkSumR $ f es
+                                               f (Eps:es) = reduceS True es
+                                               f es       = reduceS False es
+                           Prod _ _ -> if Mt `elem` es then Mt else mkProdR es
+                                       where es = map reduceRE $ factors e
+                           Star Mt  -> Eps
+                           Star Eps -> Eps
+                           Star (Sum_ Eps e) -> Star e
+                           Star (Sum_ e Eps) -> Star e
+                           Star (Star e)     -> Star e
+                           Star e -> Star $ reduceRE e
+                           _      -> e
 
 sizeRE :: RegExp -> Int
 sizeRE Eps         = 0
-sizeRE (Sum_ e e') = sizeRE e+sizeRE e'+1
+sizeRE (Sum_ e e') = sizeRE e+sizeRE e'
 sizeRE (Prod e e') = sizeRE e+sizeRE e'+1
-sizeRE (Star e )   = sizeRE e+1
+sizeRE (Star e)    = sizeRE e+1
 sizeRE _           = 1
 
--- reduceRE is a step function for simplifying regular expressions.
--- reduceRE is used by simplifyT (F "reduce" [t]) (see Esolve.hs).
-
-reduceLoop,reduceRE :: RegExp -> RegExp
-reduceLoop = distribute . fixpt (==) (reduceRE . sortRE') . distribute .
-             fixpt (==) (reduceRE . sortRE)
-reduceRE e = case e of
-                  Sum_ _ _ | sizeRE e' < sizeRE e 
-                                    -> e' where es = summands e
-                                                e' = mkSumRE $ reduceS0 es
-                  Sum_ e e'         -> Sum_ (reduceRE e) $ reduceRE e'
-                  Prod Mt _         -> Mt              -- e*Mt = Mt
-                  Prod _ Mt         -> Mt              -- Mt*e = Mt
-                  Prod _ _ | length es' < length es 
-                                    -> mkProdRE es' where es = factors e
-                                                          es' = reduceP es 
-                  Prod e e'         -> Prod (reduceRE e) $ reduceRE e'
-                  Star Mt           -> Eps
-                  Star Eps          -> Eps
-                  Star (Sum_ Eps e) -> Star e          -- star(eps+e) = star(e)
-                  Star (Star e)     -> Star e  
-                  Star e            -> Star $ reduceRE e
-                  _                 -> e
-                  
-reduceP,reduceS0 :: [RegExp] -> [RegExp]   
- 
--- star(e)*(eps+e) = star(e)
--- (eps+e)*star(e) = star(e) 
-
-reduceP (Star e:Sum_ Eps e':es) | e == e' = reduceP $ Star e:es
-reduceP (Sum_ Eps e:Star e':es) | e == e' = reduceP $ Star e:es
-reduceP (e:es) = e:reduceP es
-reduceP _      = []
-
-reduceS0 (Eps:es) = reduceS True es
-reduceS0 es       = reduceS False es
-
 reduceS :: Bool -> [RegExp] -> [RegExp]
- 
--- eps+e*star(e)   = star(e)
--- eps+star(e)*e   = star(e)
--- eps+e*e*star(e) = e+star(e)
--- eps+star(e)*e*e = e+star(e)
+
+-- eps+e*star(e)   = star(e),   eps+star(e)*e   = star(e)       (1)
+-- eps+e*e*star(e) = e+star(e), eps+star(e)*e*e = e+star(e)     (2)
 
 reduceS True (Prod e (Star e'):es) | e == e' = reduceS False $ Star e:es
 reduceS True (Prod (Star e) e':es) | e == e' = reduceS False $ Star e:es
-reduceS True (Prod e (Prod e1 (Star e2)):es) | e == e1 && e == e2
-                                             = reduceS False $ e:Star e:es
-reduceS True (Prod (Prod e e1) (Star e2):es) | e == e1 && e == e2
-                                             = reduceS False $ e:Star e:es
-reduceS True (Prod (Star e1) (Prod e2 e):es) | e == e1 && e == e2
-                                             = reduceS False $ e:Star e:es  
-reduceS True (Prod (Prod (Star e1) e2) e:es) | e == e1 && e == e2
-                                             = reduceS False $ e:Star e:es  
--- e+e*e'    = e*(eps+e')
--- e+e'*e    = (eps+e')*e
--- e*e1+e*e2 = e*(e1+e2)
--- e1*e+e2*e = (e1+e2)*e
+reduceS True (Prod e (Prod e1 (Star e2)):es)
+                        | e == e1 && e == e2 = reduceS False $ e:Star e:es
+reduceS True (Prod (Prod e e1) (Star e2):es)
+                        | e == e1 && e == e2 = reduceS False $ e:Star e:es
+reduceS True (Prod (Star e1) (Prod e2 e):es)
+                        | e == e1 && e == e2 = reduceS False $ e:Star e:es
+reduceS True (Prod (Prod (Star e1) e2) e:es)
+                        | e == e1 && e == e2 = reduceS False $ e:Star e:es
+
+-- e+e*e'    = e*(eps+e'), e+e'*e    = (eps+e')*e        prepares (1) and (2)
+-- e*e1+e*e2 = e*(e1+e2),  e1*e+e2*e = (e1+e2)*e
 
 reduceS b (e:Prod e1 e2:es) | e == e1  = reduceS b $ Prod e (Sum_ Eps e2):es
 reduceS b (Prod e1 e2:e:es) | e == e2  = reduceS b $ Prod (Sum_ Eps e1) e:es
@@ -1881,6 +1884,7 @@ reduceS b (Prod e1 e2:Prod e3 e4:es)
                             | e1 == e3 = reduceS b $ Prod e1 (Sum_ e2 e4):es
 reduceS b (Prod e1 e2:Prod e3 e4:es) 
                             | e2 == e4 = reduceS b $ Prod (Sum_ e1 e3) e2:es
+
 reduceS b (e:es) = e:reduceS b es
 reduceS True _   = [Eps]
 reduceS _ _      = []
@@ -1897,19 +1901,19 @@ regToAuto :: RegExp -> ([Int],NDA)
 regToAuto e = ([0..nextq-1],delta)
       where (delta,nextq) = eval e 0 1 (const2 []) 2
             eval :: RegExp -> Int -> Int -> NDA -> Int -> (NDA,Int)
-            eval Mt _ _ delta nextq           = (delta,nextq)
-            eval Eps q q' delta nextq         = (upd2L delta q "eps" q',nextq)
-            eval (Const a) q q' delta nextq   = (upd2L delta q a q',nextq)
-            eval (Sum_ e e') q q' delta nextq = eval e' q q' delta' nextq'
-                         where (delta',nextq') = eval e q q' delta nextq
-            eval (Prod e e') q q' delta nextq = eval e' nextq q' delta' nextq'
-                         where (delta',nextq') = eval e q nextq delta $ nextq+1
-            eval (Star e) q q' delta nextq = (upd2L delta4 q "eps" q',nextq1)
-                         where q1 = nextq+1
-                               (delta1,nextq1) = eval e nextq q1 delta $ q1+1
-                               delta2 = upd2L delta1 q "eps" nextq
-                               delta3 = upd2L delta2 q1 "eps" nextq
-                               delta4 = upd2L delta2 q1 "eps" q'
+            eval Mt _ _ delta nextq             = (delta,nextq)
+            eval Eps q q' delta nextq           = (upd2L delta q "eps" q',nextq)
+            eval (Const a) q q' delta nextq     = (upd2L delta q a q',nextq)
+            eval (Sum_ e e') q q' delta nextq   = eval e' q q' delta' nextq'
+                          where (delta',nextq') = eval e q q' delta nextq
+            eval (Prod e e') q q' delta nextq   = eval e' nextq q' delta' nextq'
+                          where (delta',nextq') = eval e q nextq delta $ nextq+1
+            eval (Star e) q q' delta nextq      = (delta2,nextq')
+                   where q1 = nextq+1
+                         (delta1,nextq') = eval e nextq q1 delta $ q1+1
+                         delta2 = fold2 f delta1 [q,q1,q1,q] [nextq,nextq,q',q']
+                         f delta q = upd2L delta q "eps"
+
 
 -- powerAuto nda labs builds the (deterministic) power automaton induced by nda 
 -- with label set labs.
@@ -1919,21 +1923,20 @@ regToAuto e = ([0..nextq-1],delta)
 type PDA = [Int] -> String -> [Int]
 
 powerAuto :: NDA -> [String] -> ([[Int]],PDA)
-powerAuto nda labs = (reachables,deltaP)
-             where delta qs a = joinMap (flip nda a) qs 
-                   deltaP qs = epsHull . delta qs
-                   epsHull :: [Int] -> [Int]
-                   epsHull qs = if qs' `subset` qs then qs 
-                                                   else epsHull $ qs `join` qs'
-                                where qs' = delta qs "eps"
-                   reachables = fixpt subset deltaM [epsHull [0]]
-                   deltaM qss = qss `join` [deltaP qs a | qs <- qss, a <- labs]
+powerAuto nda labs = (reachables,deltaH)
+     where reachables = fixpt subset deltaM [epsHull [0]]
+           deltaM qss = qss `join` [deltaH qs a | qs <- qss, a <- labs]
+           deltaH qs  = epsHull . delta qs
+           delta qs a = joinMap (flip nda a) qs
+           epsHull :: [Int] -> [Int]
+           epsHull qs = if qs' `subset` qs then qs else epsHull $ qs `join` qs'
+                        where qs' = delta qs "eps"
  
 -- autoToReg sig start builds a regular expression with the same language as the
 -- automaton contained in sig if started in start. 
 -- autoToReg is used by buildRegExp (see Ecom.hs).
 
-autoToReg :: Sig -> TermS -> RegExp
+autoToReg :: Sig -> TermS -> RegExp                     -- Kleene's algorithm
 autoToReg sig start = if null finals then Const "no final states"
                                      else foldl1 Sum_ $ map (f lg i) finals
          where finals = (sig&value)!!0
@@ -1962,7 +1965,7 @@ betaBeh f = f []
 type CFG = String -> RegExp
  
 parseCFG :: Sig -> TermS -> Maybe (String -> RegExp)
-parseCFG sig (F "[]" (F "()" [F x [],e]:pairs)) 
+parseCFG sig (F "[]" (F "()" [V x,e]:pairs))
                        = do e <- parseRE sig e
                             f <- parseCFG sig $ mkList pairs
                             Just $ upd f x $ fst e
@@ -1970,23 +1973,22 @@ parseCFG _ (F "[]" []) = Just $ const Mt
 parseCFG _ _           = Nothing
 
 deltaBro :: CFG -> RegExp -> String -> RegExp
-deltaBro cfg e x = f e where f (Const a)   = if e == Mt 
-                                             then if a == x then Eps else Mt
-                                             else f e where e = cfg a
+deltaBro cfg e x = f e where f (Const a)   = if a == x then Eps else Mt
                              f (Sum_ e e') = Sum_ (f e) $ f e'
                              f (Prod e e') = if betaBro cfg e == 1
                                              then Sum_ p $ f e' else p
                                              where p = Prod (f e) e'
                              f (Star e)    = Prod (f e) $ Star e
+                             f (Var x)     = f $ cfg x
                              f _           = Mt
 
 betaBro :: CFG -> RegExp -> Int
 betaBro cfg = f where f Eps         = 1
-                      f (Const a)   = if e == Mt then 0 else f e 
-                                      where e = cfg a
+                      f (Const a)   = 0
                       f (Sum_ e e') = max (f e) $ f e'
                       f (Prod e e') = if f e == 0 then 0 else f e'
                       f (Star e)    = 1
+                      f (Var x)     = f $ cfg x
                       f _           = 0
 
 unfoldBro :: CFG -> RegExp -> [String] -> Int
@@ -2648,6 +2650,14 @@ showTerm (F x [t]) n | x `elem` termBuilders || x == "~"
                                      where lg = length x
                                            (st,k) = showImpl t $ n+lg+1
 showTerm (F x ts) n | isInfix x   = showVer x showFactor ts n
+showTerm (F "ite" [t,u,v]) n      = (("ite("++) . st . (',':) . su . (',':) .
+                                     sv . (')':),k+l+m+7)
+                                    where (st,k) = showImpl t $ n+4
+                                          (su,l) = showTerm u $ n+k+1
+                                          (sv,m) = showTerm v $ n+k+l+1
+showTerm (F "||" [t,u]) n         = (st . ("||"++) . su,k+m+2)
+                                    where (st,k) = showTerm t n
+                                          (su,m) = showTerm u $ n+k+2
 showTerm (F "range" [t,u]) n      = (('[':) . st . (".." ++) . su . (']':),
                                        k+m+4) where (st,k) = showTerm t (n+1)
                                                     (su,m) = showTerm u (n+k+3)
@@ -3452,7 +3462,7 @@ mkNeq t u   = F "=/=" [t,u]
 mkGr t u    = F ">" [t,u]
 mkTrans t u = F "->" [t,u]
 
--- mkEqsConjunct is used by eqsToGraph (see below) and showEqsOrGraph 7 
+-- mkEqsConjunct is used by eqsToGraph (see below) and showTransOrKripke 7
 -- (see Ecom).
 mkEqsConjunct :: [String] -> [TermS] -> TermS
 mkEqsConjunct [x] [t] = mkEq (V x) $ addToPoss [1] t
@@ -3461,7 +3471,7 @@ mkEqsConjunct xs ts   = f $ F "&" $ zipWith (mkEq . V) xs ts
                          f (V x) | isPos x = mkPos $ i:1:s where i:s = getPos x
                          f t               = t
 
--- separateTerms is used by eqsToGraph (see below) and showEqsOrGraph 17 
+-- separateTerms is used by eqsToGraph (see below) and showTransOrKripke 3
 -- (see Ecom).
 separateTerms :: TermS -> [Int] -> TermS
 separateTerms t is = if isConjunct t then moreTree $ foldl f t is else t
@@ -4353,7 +4363,7 @@ boundedGraph x n t = if null ps then t else h u
 
 -- outGraph{L} ... out {outL} t adds out!!x to each state node x of t and 
 -- outL!!x!!y to each label node y of t with state predecessor x. 
--- outGraph{L} is used by showEqsOrGraph (see Ecom).
+-- outGraph{L} is used by showTransOrKripke (see Ecom).
  
 outGraph :: [String] -> [String] -> [[Int]] -> TermS -> TermS
 outGraph sts ats out = mapT $ extendNode sts ats out 
@@ -4373,7 +4383,7 @@ outGraphL sts labs ats out outL = g
 
 extendNode :: [String] -> [String] -> [[Int]] -> String -> String
 extendNode _ _ [] x      = x
-extendNode sts ats out x = if isPos x then x
+extendNode sts ats out x = if isPos x || x == "<+>" then x
                            else enterAtoms x $ map (ats!!) $ out!!getInd x sts
 
 extendNodeL :: [String] -> [String] -> [String] -> [[[Int]]] -> String 
@@ -4381,12 +4391,13 @@ extendNodeL :: [String] -> [String] -> [String] -> [[[Int]]] -> String
 extendNodeL _ _ _ [] x _            = x
 extendNodeL sts labs ats outL x lab = if isPos x || x == "<+>" then x
                                       else enterAtoms lab $ map (ats!!) $ 
-                                            outL!!getInd x sts!!getInd lab labs
+                                           outL!!getInd x sts!!getInd lab labs
 
 
 enterAtoms :: String -> [String] -> String
-enterAtoms x []  = x
-enterAtoms x ats = x ++ ':':showTerm0 (mkList $ map leaf ats)
+enterAtoms x []       = x
+enterAtoms x [at]     = x ++ ':':at
+enterAtoms x (at:ats) = x ++ ":[" ++ at ++ concatMap (',':) ats ++ "]"
 
 -- colorClasses{L} colors equivalent states of a transition graph with the same
 -- color and equivalent states with different colors unless they belong to 
@@ -4717,26 +4728,34 @@ evalSubs simplify flow xs = down flow False [] flow
                          rep' (g:gs) (0:p)            = rep g p:gs
                          rep' (g:gs) (n:p)            = g:rep' gs ((n-1):p)
 
--- * Regular equation and inequations
+-- * ITERATIVE EQUATIONS and INEQUATIONS
 
-data RegEq = Equal String TermS | Diff String TermS deriving (Eq,Ord)
+data IterEq = Equal String TermS | Diff String TermS deriving (Eq,Ord)
 
-getVar :: RegEq -> String
+getVar :: IterEq -> String
 getVar (Equal x _) = x
 getVar (Diff x _)  = x
 
-getTerm :: RegEq -> TermS
+getTerm :: IterEq -> TermS
 getTerm (Equal _ t) = t
 getTerm (Diff _ t)  = t
 
-updTerm :: (TermS -> TermS) -> RegEq -> RegEq
+updTerm :: (TermS -> TermS) -> IterEq -> IterEq
 updTerm f (Equal x t) = Equal x (f t)
 updTerm f (Diff x t)  = Diff x (f t)
 
-unzipEqs :: [RegEq] -> ([String], [TermS])
+unzipEqs :: [IterEq] -> ([String], [TermS])
 unzipEqs = unzip . map (getVar *** getTerm)
 
-solEq :: Sig -> TermS -> Maybe RegEq
+-- mkSubst is used by rewrite, applyAx and rewriteTerm (see Esolve).
+
+mkSubst :: [IterEq] -> SubstS
+mkSubst eqs = forL ts xs where (xs,ts) = unzipEqs eqs
+
+solAtom sig t | just eq = eq where eq = solEq sig t
+solAtom sig t           = solIneq sig t
+
+solEq :: Sig -> TermS -> Maybe IterEq
 solEq sig t = do (l,r) <- getEqSides t
                  let x = root l; y = root r
                  if isV l && x `notElem` xs && isNormal sig r 
@@ -4745,12 +4764,7 @@ solEq sig t = do (l,r) <- getEqSides t
                             Just $ Equal y l
                     where xs = anys t
 
-getEqSides :: TermS -> Maybe (TermS, TermS)
-getEqSides (F ('A':'n':'y':_) [F "=" [l,r]]) = Just (l,r)
-getEqSides (F "=" [l,r])                     = Just (l,r)
-getEqSides _                                       = Nothing
-
-solIneq :: Sig -> TermS -> Maybe RegEq
+solIneq :: Sig -> TermS -> Maybe IterEq
 solIneq sig t = do (l,r) <- getIneqSides t
                    let x = root l; y = root r
                    if isV l && x `notElem` xs && isNormal sig r
@@ -4759,20 +4773,30 @@ solIneq sig t = do (l,r) <- getIneqSides t
                               Just $ Diff y l
                       where xs = alls t
 
+getEqSides (F ('A':'n':'y':_) [F "=" [l,r]]) = Just (l,r)
+getEqSides (F "=" [l,r])                     = Just (l,r)
+getEqSides _                                 = Nothing
+
 getIneqSides :: TermS -> Maybe (TermS, TermS)
 getIneqSides (F ('A':'l':'l':_) [F "=/=" [l,r]]) = Just (l,r)
 getIneqSides (F "=/=" [l,r])                     = Just (l,r)
 getIneqSides _                                   = Nothing
 
-solAtom :: Sig -> TermS -> Maybe RegEq
-solAtom sig t | isJust eq = eq where eq = solEq sig t
-solAtom sig t           = solIneq sig t
+autoEqsToRegEqs :: Sig -> [IterEq] -> [IterEq]
+autoEqsToRegEqs sig = map f
+    where f (Equal x t) = Equal x $ showRE $ distribute e
+                          where (e,_) = get $ parseRE sig $ g t
+          g (t@(V _))   = t
+          g (F qat ts)  = F "+" us
+                          where lg = length qat
+                                us = if lg > 5 && drop (lg-5) qat == "final"
+                                     then map h ts++[F "eps" []] else map h ts
+          h (F lab [t]) = F "*" [F lab [],g t]
 
-{-|
-    @parseSol@ is used by 'parseRegEqs', 'isSol', 'Epaint.solPict',
-    'Esolve.applySols' and 'Esolve.solveGuard'.
--}
-parseSol :: (TermS -> Maybe RegEq) -> TermS -> Maybe [RegEq]
+-- parseSol is used by parseEqs, isSol (see below), solPict (see Epaint) and
+-- solveGuard (see Esolve).
+
+parseSol :: (TermS -> Maybe IterEq) -> TermS -> Maybe [IterEq]
 parseSol f t = case t of F "True" [] -> Just []
                          F "&" ts -> do eqs <- mapM f ts
                                         let (xs,us) = unzipEqs eqs
@@ -4794,18 +4818,13 @@ isSol sig = isJust . parseSol (solAtom sig) ||| isFalse
 solPoss :: Sig -> [TermS] -> [Int]
 solPoss sig ts = filter (isSol sig . (ts!!)) $ indices_ ts
 
--- | @mkSubst@ is used by 'Esolve.applySols', 'Esolve.rewrite',
--- 'Esolve.applyAx', 'Esolve.rewriteTerm' and 'Esolve.simplReducts'.
-mkSubst :: [RegEq] -> SubstS
-mkSubst eqs = forL ts xs where (xs,ts) = unzipEqs eqs
-
 {- |
   parseEqs is used by 'Esolve.simplifyS' postflow/stateflow/subsflow,
   'Esolve.simplReducts' and
   'Ecom.showEqsOrGraph'/'Ecom.showMatrix'/'Ecom.showRelation'.
 -}
-parseEqs :: TermS -> Maybe [RegEq]
-parseEqs t = parseSol parseRegEq t ++
+parseEqs :: TermS -> Maybe [IterEq]
+parseEqs t = parseSol parseIterEq t ++
              do F x ts <- Just t; guard $ isFixT x
                 let _:zs = words x
                 case ts of [t] -> Just $ case zs of 
@@ -4813,20 +4832,18 @@ parseEqs t = parseSol parseRegEq t ++
                                 _ -> zipWith (f x t) [0..] zs
                            _ -> do guard $ length zs == length ts
                                    Just $ zipWith Equal zs ts
-     where parseRegEq (F x [t,u])
+     where parseIterEq (F x [t,u])
              | b x && null ts && isF u = Just $ Equal (root t) u
              | b x && null us && isF t = Just $ Equal (root u) t
                 where ts = subterms t
                       us = subterms u
-           parseRegEq _ = Nothing
+           parseIterEq _ = Nothing
            b x = x == "=" || x == "<=>"
            f x u i z = Equal z $ F ("get"++show i) [u]
 
-{- |
-  @graphToEqs n t@ transforms a graph into an equivalent set of regular
-  equations and is used by 'Ecom.showEqsOrGraph'.
--}
-graphToEqs :: Int -> TermS -> [Int] -> ([RegEq],Int)
+-- | graphToEqs n t transforms a graph into an equivalent set of iterative 
+-- equations and is used by showEqsOrGraph (see Ecom).
+graphToEqs :: Int -> TermS -> [Int] -> ([IterEq],Int)
 graphToEqs n t p = (map f $ indices_ ps,n+length ps)
   where ps = (if null p then roots else [p]) `join` targets t
         roots = case t of F "<+>" ts -> map single $ indices_ ts
@@ -4839,12 +4856,9 @@ graphToEqs n t p = (map f $ indices_ ps,n+length ps)
                   g _ _ t        = t
                   h p = V $ 'z':show (n+getInd p ps)
 
--- | @relToEqs n rel@ transforms a binary relation into an equivalent set of
--- regular equations and is used by 'Ecom.showEqsOrGraph'.
-relToEqs
-    :: Int
-    -> Pairs String
-    -> ([RegEq],Int)
+-- | relToEqs n rel transforms a binary relation into an equivalent set of 
+-- iterative equations and is used by showEqsOrGraph (see Ecom).
+relToEqs :: Int -> Pairs String -> ([IterEq],Int)
 relToEqs n rel = (map g $ indices_ ps,n+length ps)
                 where ps = foldr f [] rel
                       f (a,bs) rel = if null bs then rel else updAssoc rel a bs
@@ -4855,14 +4869,11 @@ relToEqs n rel = (map g $ indices_ ps,n+length ps)
                                              _ -> leaf b
 
 {-|
-    @relLToEqs n rel@ transforms a ternary relation into an equivalent set of 
-    regular equations and is used by 'Esolve.simplifyT' @"auto"@ and 
-    'Ecom.showEqsOrGraph'.
+   @relLToEqs n rel@ transforms a ternary relation into an equivalent set of 
+   iterative equations and is used by simplifyT "auto" (see Esolve) and
+   'Ecom.showEqsOrGraph'.
 -}
-relLToEqs
-    :: Int
-    -> Triples String String
-    -> ([RegEq],Int)
+relLToEqs :: Int -> Triples String String -> ([IterEq],Int)
 relLToEqs n rel = (map g $ indices_ ts,n+length ts)
      where ts = foldr f [] rel
            f (a,b,cs) rel = if null cs then rel
@@ -4887,7 +4898,7 @@ mkArc x p = f where f (F z ts) = if x == z then if null ts then mkPos p
 -- fixToEqs replaces the bounded variables of fixpoint formulas by pointers to
 -- the respective subformulas. fixToEqs is used by simplifyS "stateflow"
 -- (see Esolve). Alternating fixpoints may lead to wrong results.
-fixToEqs :: TermS -> Int -> (TermS,[RegEq],Int)
+fixToEqs :: TermS -> Int -> (TermS,[IterEq],Int)
 fixToEqs (F x [t]) n | isFixF x = (F z [],Equal z (F mu [u]):eqs,k)
                            where mu:y:_ = words x
                                  b = y `elem` foldT f t
@@ -4912,7 +4923,7 @@ fixToEqs t n        = (t,[],n)
 -- eqsToGraph is used by graphToTree (see Epaint), simplifyS stateflow, 
 -- simplifyT auto/postflow/subsflow (see Esolve), buildKripke, showEqsOrGraph, 
 -- showMatrix and showRelation (see Ecom).
-eqsToGraph :: [Int] -> [RegEq] -> TermS
+eqsToGraph :: [Int] -> [IterEq] -> TermS
 eqsToGraph [] []  = emptyGraph
 eqsToGraph [] eqs = collapse True $ eqsToGraph (indices_ eqs) eqs
 eqsToGraph is eqs = case maxis subGraph us of [t] -> t
@@ -4924,8 +4935,8 @@ eqsToGraph is eqs = case maxis subGraph us of [t] -> t
                                 _ -> [dropHeadFromPoss $ rhs t]
                            rhs t = getSubterm t [1]
 
--- | eqsToGraphs t transforms the equations of t into connectd components and is 
--- used by showEqsOrGraph 17 (see Ecom).
+-- eqsToGraphs t transforms the equations of t into connected components and is 
+-- used by showEqsOrGraph 3 (see Ecom).
 eqsToGraphs :: TermS -> TermS
 eqsToGraphs (t@(F "&" eqs)) = F "&" $ addNatsToPoss us
                               where is = indices_ eqs
@@ -4936,8 +4947,8 @@ eqsToGraphs t = t
 
 emptyGraph = leaf "This graph is empty."
 
--- connectEqs is used by eqsToGraph (see above) and showEqsOrGraph 7 (see Ecom).
-connectEqs :: [RegEq] -> TermS
+-- connectEqs is used by eqsToGraph (see above) and showEqsOrGraph 3 (see Ecom).
+connectEqs :: [IterEq] -> TermS
 connectEqs eqs = mkEqsConjunct xs $ f xs ts where
                   (xs,ts) = unzipEqs eqs
                -- f xs ts replaces each occurrence in ts of a variable xs!!i by 
@@ -4948,7 +4959,7 @@ connectEqs eqs = mkEqsConjunct xs $ f xs ts where
                               g _ _ ts      = ts
 
 
-eqsToGraphx :: String -> [RegEq] -> TermS
+eqsToGraphx :: String -> [IterEq] -> TermS
 eqsToGraphx x eqs = eqsToGraph is eqs where
                     is = case search ((== x) . root) $ snd $ unzipEqs eqs of 
                          Just i -> [i]
@@ -5893,13 +5904,7 @@ parseAlignment t                   = do F "end" ts <- Just t
 
 -- | @mkAlign global xs ys@ generates __alignments__ of @xs@ and @ys@ by
 -- recursive tabulation and optimization.
-mkAlign
-    :: Eq a
-    => Bool -- ^ global
-    -> [a] -- ^ xs
-    -> [a] -- ^ ys
-    -> (a -> a -> Bool)
-    -> [Align_ a]
+mkAlign :: Eq a => Bool -> [a] -> [a] -> BoolFun a -> [Align_ a]
 mkAlign global xs ys compl = (if global then id else maxima maxmatch)
                               $ align!(0,0)
  where lg1 = length xs; lg2 = length ys
@@ -5919,11 +5924,7 @@ mkAlign global xs ys compl = (if global then id else maxima maxmatch)
 
 -- | @mkPali xs@ recognizes locally separated __palindromes__ within @xs@ by
 -- recursive tabulation and optimization.
-mkPali
-    :: Eq a 
-    => [a] -- ^ xs
-    -> (a -> a -> Bool)
-    -> [Align_ a]
+mkPali :: Eq a => [a] -> BoolFun a -> [Align_ a]
 mkPali xs compl = align!(0,lg)
  where lg = length xs
        align = mkArray ((0,0),(lg,lg)) $ maxima matchcount . f

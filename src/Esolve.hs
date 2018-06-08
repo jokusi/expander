@@ -934,7 +934,7 @@ simplifyA (F "$" [F x ts,u]) sig
                    f p t =   do let xs = sigVars sig u
                                     g = getSubAwayFrom (frees sig u) xs t
                                     v = renameAll g t
-                                concat [do F "||" [p,F "bool" [b]] <- Just p
+                                concat [do F "||" [p,b] <- Just p
                                            sub <- match sig (frees sig p) u p
                                            Just $ F "->" [b>>>sub,v>>>sub],
                                         do sub <- match sig (frees sig p) u p
@@ -1707,7 +1707,7 @@ data Reducts = Sum [TermS] (String -> Int) | Backward [TermS] (String -> Int) |
 -- axs are also the axioms applied to the guards of axs. Reducts are simplified,
 -- but irreducible subtrees are not removed.
 -- solveGuard is used by applyAx, rewrite and rewriteTerm (see below).
-solveGuard :: Sig -> TermS -> [TermS] -> (String -> Int) -> Maybe [[RegEq]]
+solveGuard :: Sig -> TermS -> [TermS] -> (String -> Int) -> Maybe [[IterEq]]
 solveGuard sig cond axs vc = do guard $ notnull sols; Just sols
                   where sols = mapMaybe f (mkSummands $ pr1 t)
                         f = parseSol $ solEq sig
