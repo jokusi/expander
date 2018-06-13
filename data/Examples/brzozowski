@@ -1,12 +1,11 @@
 -- brzozowski
 
-constructs: 	star mt eps a b c S A B final 
-defuncts:	plus delta beta unfoldB1 unfoldB2 unfoldB3 reg1 SAB 
-fovars: 	t u w cfg
+constructs: 	star mt eps a b c final 
+defuncts:	plus delta beta unfoldB1 unfoldB2 reg1 V S A B 
+		-- for deltaBro, betaBro and unfoldBro, see Eterm.hs
+fovars: 	t u w 
 
 axioms:
-
-plus$t == t*star(t) &
 
 delta(t+u,x) == fun((z,z),delta(t,x),
 		    (mt,z),delta(u,x),
@@ -40,29 +39,37 @@ beta(c) == 0 &
 beta(eps) == 1 &
 beta(mt) == 0 &
 
-unfoldB1$t == beta . foldl(delta)$t &					-- slow
+unfoldB1$t == beta . foldl(delta)$t &		-- slow
 
-unfoldB2(cfg)$t == betaBro(cfg) . foldl(deltaBro$cfg)$t &		
+unfoldB2$t == betaBro . foldl(deltaBro)$t &		
 
-unfoldB3(cfg)$t == betaBro(cfg) . foldl(reduce . deltaBro$cfg)$t &
+plus$t == t*star(t) &
 
 reg1 == star$plus(a)+plus(b*c) &
 
 -- CF grammar
 
-SAB == [(S,a*B+b*A+eps),(A,a*S+b*A*A),(B,b*S+a*B*B)] 
+V$S == a*B+b*A+eps &
+V$A == a*S+b*A*A &
+V$B == b*S+a*B*B 
 
 terms:
 
 unfoldB1(reg1)[a,b,c,a]      	<+>	--> 1		-- 26 steps 
 unfoldB1(reg1)[b,c,a,c]     	<+>	--> 0		-- 22 steps 
 
-unfoldB2(SAB)(S)[a,b]   	<+>	--> 1		-- 9 steps
-unfoldB2(SAB)(S)[a,b,a]  	<+>	--> 0		-- 11 steps
+unfoldB2(reg1)[a,b,c,a]      	<+>	--> 1		-- 26 steps 
+unfoldB2(reg1)[b,c,a,c]     	<+>	--> 0		-- 22 steps 
 
-unfoldBro[](reg1)[a,b,c,a] 	<+>     --> 1	
-unfoldBro[](reg1)[b,c,a,c] 	<+>	--> 0	
-unfoldBro(SAB)(S)[a,b,a,b,a,a,b,a,b,b,a,b,a,a,b,a,b,b,b,a,b,a] <+>    --> 1
-unfoldBro(SAB)(S)$replicate(5)(a)++replicate(5)(b)		      --> 1
+unfoldBro(reg1)[a,b,c,a] 	<+>     --> 1	
+unfoldBro(reg1)[b,c,a,c] 	<+>	--> 0	
+
+-- unfoldB2/Bro(S) accepts words with an equal number of a's and b's
+
+unfoldB2(S)[a,b]   	<+>		--> 1		-- 9 steps
+unfoldB2(S)[a,b,a]  	<+>		--> 0		-- 11 steps
+
+unfoldBro(S)[a,b,a,b,a,a,b,a,b,b,a,b,a,a,b,a,b,b,b,a,b,a] <+> --> 1
+unfoldBro(S)$replicate(5)(a)++replicate(5)(b)		      --> 1
 
 

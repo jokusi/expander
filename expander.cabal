@@ -383,7 +383,6 @@ data-files:          Examples/abp
                    , Examples/natstreamSol
                    , Examples/natstreamSolT
                    , Examples/natstreamT
-                   , Examples/NATths
                    , Examples/NEED0proof
                    , Examples/NEED1proof
                    , Examples/NEED2proof

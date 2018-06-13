@@ -733,6 +733,10 @@ fold3 :: (a -> b -> c -> d -> c) -> a -> [b] -> c -> [d] -> c
 fold3 f a (x:xs) b (y:ys) = fold3 f a xs (f a x b y) ys
 fold3 _ _ _ b _           = b
 
+foldlM:: Monad m => (a -> b -> m a) -> a -> [b] -> m a
+foldlM f a (b:bs) = do a <- f a b; foldlM f a bs
+foldlM _ a _      = return a
+
 zipL :: [(t, t1)] -> [t2] -> [(t, t1, t2)]
 zipL ((a,b):ps) (c:cs) = (a,b,c):zipL ps cs
 zipL _ _                = []
@@ -1718,8 +1722,10 @@ data RegExp = Mt | Eps | Const String | Sum_ RegExp RegExp |
 parseRE :: Sig -> TermS -> Maybe (RegExp,[String])
 parseRE _ (F "mt" [])          = Just (Mt,[])
 parseRE _ (F "eps" [])         = Just (Eps,["eps"])
-parseRE sig (F a [])           = do guard $ (sig&isConstruct) a
-                                    Just (Const a,[a])
+parseRE sig (F a [])           = if (sig&isConstruct) a then Just (Const a,[a])
+                                 else do guard $ (sig&isDefunct) a
+                                         Just (Var a,[a])
+parseRE sig (V x)              = Just (Var x,[x])
 parseRE sig (F "+" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
                                     let (e:es,ass) = unzip pairs
                                     Just (foldl Sum_ e es,joinM ass)
@@ -1732,7 +1738,6 @@ parseRE sig (F "star" [t])     = do (e,as) <- parseRE sig t
                                     Just (Star e,as `join1` "eps")
 parseRE sig (F "refl" [t])     = do (e,as) <- parseRE sig t
                                     Just (Sum_ e Eps,as `join1` "eps")
-parseRE sig (V x)              = Just (Var x,[x])
 parseRE _ _                    = Nothing
 
 showRE :: RegExp -> TermS
@@ -1813,44 +1818,41 @@ sortRE _ _ e               = e
 -- e*(eps+e') = e+e*e', e*(e1+e2) = e*e1+e*e2
 -- (eps+e')*e = e+e'*e, (e1+e2)*e = e1*e+e2*e
 
+-- distribute e distributes the products of e over their additive arguments.
+ 
 distribute :: RegExp -> RegExp
-distribute e =
-     case e of Sum_ _ _   -> mkSumR $ map distribute $ concatMap f $ summands e
-               Prod e1 e2 -> case f e of
-                             [e1,e2] -> Sum_ (distribute e1) $ distribute e2
-                             _       -> Prod (distribute e1) $ distribute e2
-               Star e     -> Star $ distribute e
-               _          -> e
-               where f (Prod e (Sum_ Eps e')) = [e,Prod e e']
-                     f (Prod e (Sum_ e1 e2))  = [Prod e e1,Prod e e2]
-                     f (Prod (Sum_ Eps e') e) = [e,Prod e' e]
-                     f (Prod (Sum_ e1 e2) e)  = [Prod e1 e,Prod e2 e]
-                     f e                      = [e]
+distribute = fixpt (==) f
+  where f e = case e of Sum_ _ _   -> mkSumR $ map f $ concatMap g $ summands e
+                        Prod e1 e2 -> case g e of [e1,e2] -> Sum_ (f e1) $ f e2
+                                                  _       -> Prod (f e1) $ f e2
+                        Star e     -> Star $ distribute e
+                        _          -> e
+              where g (Prod e (Sum_ Eps e')) = [e,Prod e e']
+                    g (Prod e (Sum_ e1 e2))  = [Prod e e1,Prod e e2]
+                    g (Prod (Sum_ Eps e') e) = [e,Prod e' e]
+                    g (Prod (Sum_ e1 e2) e)  = [Prod e1 e,Prod e2 e]
+                    g e                      = [e]
 
--- reduceLoop(Dist) simplifies regular expressions iteratively and is used by
--- simplifyT (F "reduce" [t]) (see Esolve.hs).
--- reduceRE is the step function of reduceLoop.
+-- reduceLeft/Right simplifies regular expressions iteratively.
 
-reduceLoop,reduceLoopDist,reduceRE :: RegExp -> RegExp
-reduceLoop     = fixpt (==) (reduceRE . sortRE (+<) mkProdL) .
-                 fixpt (==) (reduceRE . sortRE (<+) mkProdR)
-reduceLoopDist = distribute . fixpt (==) (reduceRE . sortRE (+<) mkProdL) .
-                 distribute . fixpt (==) (reduceRE . sortRE (<+) mkProdR)
-reduceRE e     = case e of Sum_ e1 e2 -> if sizeRE e' < sizeRE e then e'
-                                         else Sum_ (reduceRE e1) $ reduceRE e2
-                                         where es = summands e
-                                               e' = mkSumR $ f es
-                                               f (Eps:es) = reduceS True es
-                                               f es       = reduceS False es
-                           Prod _ _ -> if Mt `elem` es then Mt else mkProdR es
-                                       where es = map reduceRE $ factors e
-                           Star Mt  -> Eps
-                           Star Eps -> Eps
-                           Star (Sum_ Eps e) -> Star e
-                           Star (Sum_ e Eps) -> Star e
-                           Star (Star e)     -> Star e
-                           Star e -> Star $ reduceRE e
-                           _      -> e
+reduceLeft,reduceRight,reduceRE :: RegExp -> RegExp
+reduceLeft  = fixpt (==) (reduceRE . sortRE (+<) mkProdL)
+reduceRight = fixpt (==) (reduceRE . sortRE (<+) mkProdR)
+reduceRE e  = case e of Sum_ e1 e2 -> if sizeRE e' < sizeRE e then e'
+                                      else Sum_ (reduceRE e1) $ reduceRE e2
+                                      where es = summands e
+                                            e' = mkSumR $ f es
+                                            f (Eps:es) = reduceS True es
+                                            f es       = reduceS False es
+                        Prod _ _ -> if Mt `elem` es then Mt else mkProdR es
+                                    where es = map reduceRE $ factors e
+                        Star Mt  -> Eps
+                        Star Eps -> Eps
+                        Star (Sum_ Eps e) -> Star e
+                        Star (Sum_ e Eps) -> Star e
+                        Star (Star e)     -> Star e
+                        Star e -> Star $ reduceRE e
+                        _      -> e
 
 sizeRE :: RegExp -> Int
 sizeRE Eps         = 0
@@ -1904,6 +1906,7 @@ regToAuto e = ([0..nextq-1],delta)
             eval Mt _ _ delta nextq             = (delta,nextq)
             eval Eps q q' delta nextq           = (upd2L delta q "eps" q',nextq)
             eval (Const a) q q' delta nextq     = (upd2L delta q a q',nextq)
+            eval (Var x) q q' delta nextq       = (upd2L delta q x q',nextq)
             eval (Sum_ e e') q q' delta nextq   = eval e' q q' delta' nextq'
                           where (delta',nextq') = eval e q q' delta nextq
             eval (Prod e e') q q' delta nextq   = eval e' nextq q' delta' nextq'
@@ -1962,38 +1965,33 @@ betaBeh f = f []
 
 -- Brzozowski acceptor of regular and context-free languages
 
-type CFG = String -> RegExp
- 
-parseCFG :: Sig -> TermS -> Maybe (String -> RegExp)
-parseCFG sig (F "[]" (F "()" [V x,e]:pairs))
-                       = do e <- parseRE sig e
-                            f <- parseCFG sig $ mkList pairs
-                            Just $ upd f x $ fst e
-parseCFG _ (F "[]" []) = Just $ const Mt
-parseCFG _ _           = Nothing
+deltaBro :: (String -> Maybe RegExp) -> RegExp -> String -> Maybe RegExp
+deltaBro getRHS e x = f e where
+                      f Mt          = Just Mt
+                      f Eps         = Just Mt
+                      f (Const a)   = Just $ if a == x then Eps else Mt
+                      f (Sum_ e e') = do e <- f e; e' <- f e'; Just $ Sum_ e e'
+                      f (Prod e e') = do e1 <- f e
+                                         b <- betaBro getRHS e
+                                         let p = Prod e1 e'
+                                         if b == 0 then Just p
+                                                   else do e' <- f e'
+                                                           Just $ Sum_ p e'
+                      f e'@(Star e) = do e <- f e; Just $ Prod e e'
+                      f (Var x)     = do e <- getRHS x; f e
 
-deltaBro :: CFG -> RegExp -> String -> RegExp
-deltaBro cfg e x = f e where f (Const a)   = if a == x then Eps else Mt
-                             f (Sum_ e e') = Sum_ (f e) $ f e'
-                             f (Prod e e') = if betaBro cfg e == 1
-                                             then Sum_ p $ f e' else p
-                                             where p = Prod (f e) e'
-                             f (Star e)    = Prod (f e) $ Star e
-                             f (Var x)     = f $ cfg x
-                             f _           = Mt
+betaBro :: (String -> Maybe RegExp) -> RegExp -> Maybe Int
+betaBro getRHS = f where f Mt          = Just 0
+                         f Eps         = Just 1
+                         f (Const a)   = Just 0
+                         f (Sum_ e e') = do b <- f e; c <- f e'; Just $ max b c
+                         f (Prod e e') = do b <- f e; if b == 0 then Just 0
+                                                                else f e'
+                         f (Star e)    = Just 1
+                         f (Var x)     = do e <- getRHS x; f e
 
-betaBro :: CFG -> RegExp -> Int
-betaBro cfg = f where f Eps         = 1
-                      f (Const a)   = 0
-                      f (Sum_ e e') = max (f e) $ f e'
-                      f (Prod e e') = if f e == 0 then 0 else f e'
-                      f (Star e)    = 1
-                      f (Var x)     = f $ cfg x
-                      f _           = 0
-
-unfoldBro :: CFG -> RegExp -> [String] -> Int
-unfoldBro cfg e = betaBro cfg . foldl (deltaBro cfg) e
-
+unfoldBro :: (String -> Maybe RegExp) -> RegExp -> [String] -> Maybe Int
+unfoldBro getRHS e w = do e <- foldlM (deltaBro getRHS) e w; betaBro getRHS e
 
 -- * Minimization with the Paull-Unger algorithm
 
@@ -2077,12 +2075,11 @@ actTable sig (i,k) = if k `elem` nonterminals || length acts /= 1 then Error
                        nonterminals = [k | k <- ks, all (null . h k) is]
                        h k i = outL!!i!!k
 
--- * Linear functions (polynomials) and linear equations
+-- linear equations (polynomials)
 
-type LinFun = ([(Double,String)],Double)
-type LinEq  = LinFun
+type LinEq = ([(Double,String)],Double)
 
-combLins :: (Double -> Double -> Double) -> Double -> LinFun -> LinFun -> LinFun
+combLins :: (Double -> Double -> Double) -> Double -> LinEq -> LinEq -> LinEq
 combLins f c (ps,a) (qs,b) = (comb ps qs,f a b)
            where comb ps@(p@(a,x):ps') qs@((b,y):qs')
                        | x == y               = if fab == 0 then comb ps' qs'
@@ -2094,7 +2091,7 @@ combLins f c (ps,a) (qs,b) = (comb ps qs,f a b)
                  comb [] ps                  = map h ps where h (a,x) = (a*c,x)
                  comb ps _                   = ps
 
-addLin, subLin :: LinFun -> LinFun -> LinFun
+addLin, subLin :: LinEq -> LinEq -> LinEq
 addLin = combLins (+) 1
 subLin = combLins (-) $ -1
 
@@ -2823,7 +2820,7 @@ parseLinEq :: TermS -> Maybe LinEq
 parseLinEq t = do F "=" [t,u] <- Just t; ps <- parseProds t; b <- parseReal u
                   Just (ps,b)
 
-parseLin :: TermS -> Maybe LinFun
+parseLin :: TermS -> Maybe LinEq
 parseLin (F "lin" [F "+" [t,u]]) | isJust b = do ps <- parseProds t
                                                  Just (ps,fromJust b)
                                             where b = parseReal u
@@ -4021,10 +4018,16 @@ label t [] = root t
 label (F _ ts) (n:p) | n < length ts = label (ts!!n) p
 label _ _  = undef
 
--- getSubterm t p returns the subterm at position p of t.
+-- | getSubterm t p returns the subterm at position p of t.
+getSubterm :: Term a -> [Int] -> Term a
 getSubterm t [] = t
 getSubterm (F _ ts) (n:p) | n < length ts = getSubterm (ts!!n) p
 getSubterm t _  = Hidden ERR
+
+-- | getSubterm1 t p returns the subterm u at position p of t and replaces each
+-- pointer p++q in u by q.
+getSubterm1 :: TermS -> [Int] -> TermS
+getSubterm1 t p = dropFromPoss p $ getSubterm t p
 
 removeAllCopies :: TermS -> [Int] -> TermS
 removeAllCopies t p = f [] t where u = getSubterm t p
@@ -4060,11 +4063,6 @@ dropFromPoss' p = if null p then id else mapT f
 
 drop0FromPoss :: TermS -> TermS
 drop0FromPoss = dropFromPoss [0]
-
--- getSubterm1 t p returns the subterm u at position p of t and replaces each
--- pointer p++q in u by q.
-getSubterm1 :: TermS -> [Int] -> TermS
-getSubterm1 t p = dropFromPoss p $ getSubterm t p
 
 -- addToPoss p t adds the prefix p to all pointers of t that point to subterms
 -- of t.
@@ -4116,11 +4114,9 @@ movePoss t p q = f $ getSubterm t p
                        f t                 = t
 
 -- replace0 t p u replaces the subterm of t at position p by u.
-
 -- replace0 is used by separateTerms, removeNonRoot, exchange, expand 
 -- (see below), catchTree, copySubtrees and replaceNodes' (see Ecom)
-replace0 :: (Eq a1, Num a1) =>
-            Term a -> [a1] -> Term a -> Term a
+replace0 :: Term a -> [Int] -> Term a -> Term a
 replace0 t p u = f t p where f _ []         = u
                              f (F x ts) p   = F x $ g ts p
                              g (t:ts) (0:p) = f t p:ts
@@ -4744,14 +4740,18 @@ updTerm :: (TermS -> TermS) -> IterEq -> IterEq
 updTerm f (Equal x t) = Equal x (f t)
 updTerm f (Diff x t)  = Diff x (f t)
 
+eqPairs :: [IterEq] -> [(String,TermS)]
+eqPairs = map (getVar *** getTerm)
+
 unzipEqs :: [IterEq] -> ([String], [TermS])
-unzipEqs = unzip . map (getVar *** getTerm)
+unzipEqs = unzip . eqPairs
 
 -- mkSubst is used by rewrite, applyAx and rewriteTerm (see Esolve).
 
 mkSubst :: [IterEq] -> SubstS
 mkSubst eqs = forL ts xs where (xs,ts) = unzipEqs eqs
 
+solAtom :: Sig -> TermS -> Maybe IterEq
 solAtom sig t | just eq = eq where eq = solEq sig t
 solAtom sig t           = solIneq sig t
 
@@ -4782,16 +4782,42 @@ getIneqSides (F ('A':'l':'l':_) [F "=/=" [l,r]]) = Just (l,r)
 getIneqSides (F "=/=" [l,r])                     = Just (l,r)
 getIneqSides _                                   = Nothing
 
+-- autoEqsToRegEqs, substituteEqs and solveRegEq are used by showEqsOrGraph.
+
 autoEqsToRegEqs :: Sig -> [IterEq] -> [IterEq]
 autoEqsToRegEqs sig = map f
-    where f (Equal x t) = Equal x $ showRE $ distribute e
-                          where (e,_) = get $ parseRE sig $ g t
-          g (t@(V _))   = t
-          g (F qat ts)  = F "+" us
-                          where lg = length qat
-                                us = if lg > 5 && drop (lg-5) qat == "final"
-                                     then map h ts++[F "eps" []] else map h ts
-          h (F lab [t]) = F "*" [F lab [],g t]
+     where f (Equal x t) = Equal x $ showRE $ distribute e
+                           where (e,_) = get $ parseRE sig $ g t
+           g (t@(V _))   = t
+           g (F qat ts)  = F "+" us
+                           where lg = length qat
+                                 us = if lg > 5 && drop (lg-5) qat == "final"
+                                      then map h ts++[F "eps" []] else map h ts
+           h (F lab [t]) = F "*" [F lab [],g t]
+
+substituteVars :: TermS -> [IterEq] -> [[Int]] -> Maybe TermS
+substituteVars t eqs ps = do let ts = map (getSubterm1 t) ps
+                             guard $ all isV ts
+                             Just $ fold2 replace1 t ps $ map (subst . root) ts
+                          where subst x = if nothing t || x `isin` u
+                                          then V x else u
+                                          where t = lookup x $ eqPairs eqs
+                                                u = get t
+
+solveRegEq :: Sig -> String -> TermS -> Maybe (RegExp,[String])
+solveRegEq sig x t = parseRE sig $ f $ case t of F "+" ts -> ts; _ -> [t]
+        where f ts = F "*" [star,rest] where
+                     recs = [t | t@(F "*" us) <- ts, last us == V x]
+                     star = case recs of []    -> F "eps" []
+                                         [rec] -> F "star" [g rec]
+                                         _     -> F "star" [F "+" $ map g recs]
+                     g (F "*" ts) = F "*" $ init ts
+                     g _          = leaf "OOPS"
+                     us = ts `minus` recs
+                     rest = case us of []  -> F "eps" []
+                                       [u] -> u
+                                       _   -> F "+" us
+
 
 -- parseSol is used by parseEqs, isSol (see below), solPict (see Epaint) and
 -- solveGuard (see Esolve).
@@ -4818,6 +4844,11 @@ isSol sig = isJust . parseSol (solAtom sig) ||| isFalse
 solPoss :: Sig -> [TermS] -> [Int]
 solPoss sig ts = filter (isSol sig . (ts!!)) $ indices_ ts
 
+-- parseIterEq is used by
+
+parseIterEq (F "=" [V x,t]) | isF t = Just $ Equal x t
+parseIterEq _ = Nothing
+
 {- |
   parseEqs is used by 'Esolve.simplifyS' postflow/stateflow/subsflow,
   'Esolve.simplReducts' and
@@ -4825,21 +4856,27 @@ solPoss sig ts = filter (isSol sig . (ts!!)) $ indices_ ts
 -}
 parseEqs :: TermS -> Maybe [IterEq]
 parseEqs t = parseSol parseIterEq t ++
-             do F x ts <- Just t; guard $ isFixT x
-                let _:zs = words x
-                case ts of [t] -> Just $ case zs of 
-                                [z] -> [Equal z t]
-                                _ -> zipWith (f x t) [0..] zs
-                           _ -> do guard $ length zs == length ts
-                                   Just $ zipWith Equal zs ts
-     where parseIterEq (F x [t,u])
-             | b x && null ts && isF u = Just $ Equal (root t) u
-             | b x && null us && isF t = Just $ Equal (root u) t
-                where ts = subterms t
-                      us = subterms u
-           parseIterEq _ = Nothing
-           b x = x == "=" || x == "<=>"
-           f x u i z = Equal z $ F ("get"++show i) [u]
+           do F x ts <- Just t; guard $ isFixT x
+              let _:zs = words x
+              case ts of [t] -> Just $ case zs of [z] -> [Equal z t]
+                                                  _ -> zipWith (f x t) [0..] zs
+                         _ -> do guard $ length zs == length ts
+                                 Just $ zipWith Equal zs ts
+           where parseIterEq (F x [t,u])
+                  | b x && null (subterms t) && isF u = Just $ Equal (root t) u
+                  | b x && null (subterms u) && isF t = Just $ Equal (root u) t
+                 parseIterEq _ = Nothing
+                 b x = x == "=" || x == "<=>"
+                 f x u i z = Equal z $ F ("get"++show i) [u]
+
+-- eqsTerm is used by
+
+eqsTerm :: [IterEq] -> TermS
+eqsTerm eqs = case eqs' of [eq] -> f eq
+                           _ -> F "&" $ addNatsToPoss $ map f eqs'
+              where eqs' = mkSet eqs
+                    f (Equal x t) = mkEq (V x) t
+                    f (Diff x t)  = mkNeq (V x) t
 
 -- | graphToEqs n t transforms a graph into an equivalent set of iterative 
 -- equations and is used by showEqsOrGraph (see Ecom).
@@ -5168,10 +5205,12 @@ subSubs xs fs gs = all (\f -> any (eqSub xs f) gs) fs
 meetSubs :: [a] -> [a -> TermS] -> [a -> TermS] -> [a -> TermS]
 meetSubs xs fs gs = [f | f <- fs, any (eqSub xs f) gs]
 
-joinSubs :: [a] -> [a -> TermS] -> [a -> TermS] -> [a -> TermS]
-joinSubs xs fs gs = h $ fs++gs
-                    where h (f:s) = f:[g | g <- h s, not $ eqSub xs f g]
-                          h _     = []
+joinSubs :: [String]
+         -> [String -> TermS] -> [String -> TermS] -> [String -> TermS]
+joinSubs xs fs gs = h $ fs++gs where h (f:s) = f:[g | g <- h s,
+                                                      not $ eqSub xs g f,
+                                                      not $ eqSub xs g V]
+                                     h _     = []
 
 (>>>) :: TermS -> (String -> TermS) -> TermS
 t >>> f = h t f []

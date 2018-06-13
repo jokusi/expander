@@ -51,17 +51,20 @@ pixpath file = do
     dir <- userLibDir
     return $ dir </> "Pix" </> file
 
-mkFile :: String -> Int -> String
-mkFile dir i | i < 10  = enclose "00"
-             | i < 100 = enclose "0"
-             | True    = enclose ""
-               where enclose str = dir </> str ++ show i ++ ".png"
+mkDir :: FilePath -> IO ()
+mkDir = createDirectoryIfMissing True
 
 renewDir :: FilePath -> IO ()
 renewDir dir = do
   exists <- doesDirectoryExist dir
   when exists $ removeDirectoryRecursive dir
   createDirectoryIfMissing True dir
+
+mkFile :: String -> Int -> String
+mkFile dir i | i < 10  = enclose "00"
+             | i < 100 = enclose "0"
+             | True    = enclose ""
+               where enclose str = dir </> str ++ show i ++ ".png"
 
 loadPhoto :: FilePath -> IO (Maybe Image)
 loadPhoto file = do

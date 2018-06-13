@@ -14,10 +14,10 @@ labels == [a,b] & atoms == [final] & states == [q] &
 (qb,a) -> qab   & (qb,b) -> q    &
 (qab,a) -> qb   & (qab,b) -> qa  & 
 
--- final -> q &	-- A1: acceptor of words with an even number of a's and an even 
+-- final -> q &	-- A1 acceptor of words with an even number of a's and an even 
 		-- number of b's if started in q
 
-final -> qb & -- A2: acceptor of words with an even number of a's and an odd 
+final -> qb &   -- A2: acceptor of words with an even number of a's and an odd 
 		-- number of b's if started in q
 
 (Unfold(st)[]    <=== final -> st) &		

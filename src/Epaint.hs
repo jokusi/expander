@@ -108,18 +108,18 @@ data Step = ApplySubst | ApplySubstTo String TermS | ApplyTransitivity |
             DecomposeAtom | DeriveMode Bool Bool | EvaluateTrees | 
             ExpandTree Bool Int | FlattenImpl | Generalize [TermS] | 
             Induction Bool Int | Mark [[Int]] | Match Int | Minimize | 
-            Narrow Int Bool | NegateAxioms [String] [String] | RandomLabels | 
-            RandomTree | ReduceRE Bool | ReleaseNode | ReleaseSubtree |
-            ReleaseTree | RemoveCopies | RemoveEdges Bool | RemoveNode |
-            RemoveOthers | RemovePath | RemoveSubtrees | RenameVar String | 
-            ReplaceNodes String | ReplaceOther | 
+            ModifyEqs Int | Narrow Int Bool | NegateAxioms [String] [String] |
+            RandomLabels | RandomTree | ReduceRE Int | ReleaseNode |
+            ReleaseSubtree | ReleaseTree | RemoveCopies | RemoveEdges Bool |
+            RemoveNode | RemoveOthers | RemovePath | RemoveSubtrees |
+            RenameVar String | ReplaceNodes String | ReplaceOther |
             ReplaceSubtrees [[Int]] [TermS] | ReplaceText String | 
             ReplaceVar String TermS [Int] | ReverseSubtrees | SafeEqs | 
             SetAdmitted Bool [String] | SetCurr String Int | SetDeriveMode | 
             SetMatch | ShiftPattern | ShiftQuants | ShiftSubs [[Int]] | 
             Simplify Bool Int Bool | SplitTree | StretchConclusion | 
             StretchPremise | SubsumeSubtrees | Theorem Bool TermS | 
-            UnifySubtrees | POINTER Step
+            Transform Int | UnifySubtrees | POINTER Step
             deriving Show
 
 data Runner = Runner
@@ -1380,51 +1380,46 @@ painter pheight solveRef solve2Ref = do
                 edges <- readIORef edgesRef
                 rectIndices <- readIORef rectIndicesRef
                 rscale <- readIORef rscaleRef
+                filePath <- pixpath file
+                usr <- userLib file
                 let graph@(pict,arcs) = (pictures!!curr,edges!!curr)
                     (pict1,arcs1) = subgraph graph rectIndices
                     pict2 = scalePict rscale pict1
                     (x,y,_,_) = pictFrame pict2
                     pict3 = map (transXY (-x,-y)) pict2
                     lg = length file
-                
+                    (prefix,suffix) = splitAt (lg-4) file
+                    write = writeFile usr
+                    msg str = labGreen $ savedCode str filePath
+                    act1 = mkHtml canv prefix filePath
+                    act2 n = do writeIORef currRef n
+                                pictSlider `Gtk.set`
+                                      [ rangeValue := fromIntegral n ]
+                                remoteDraw
+                                delay 100 $ act1 n
+                                return ()
                 if null file then labRed' "Enter a file name!"
                 else do
-                  let (prefix,suffix) = splitExtension file
-                      dir = if lg > 4 && suffix `elem` words ".eps .png .gif"
-                            then prefix else ""
-                  dirPath <- pixpath dir
-                  if null dir then do
-                    rect <- readIORef rectRef
-                    filePath <- userLib file
-                    let msg str = labGreen $ savedCode str filePath
-                    if isJust rect then
-                      case pict3 of 
-                        [w] -> do
-                          let f (_,_,c,_) = st0 c
-                          writeFile filePath $ show $ updState f w
-                          msg "widget"
-                        _ -> do
-                          writeFile filePath $ show (pict3,arcs1)
-                          msg "selection"
-                    else do
-                      scale <- readIORef scaleRef
-                      writeFile filePath $ show (scalePict scale pict,arcs)
-                      msg "entire graph"
-                  else case pictures of 
-                     [_] -> do
-                       savePic suffix canv dirPath
-                       labGreen $ saved "graph" file
-                     _ -> do
-                       renewDir dirPath
-                       let f n = do writeIORef currRef n
-                                    pictSlider `Gtk.set`
-                                      [ rangeValue := fromIntegral n ]
-                                    remoteDraw
-                                    let act = mkHtml canv dir dirPath n
-                                    delay 100 act; return ()
-                       saver <- runner2 f $ length pictures-1
-                       startRun saver 500
-                       labGreen $ saved "graphs" $ dirPath <.> "html"
+                   if lg < 5 || suffix `notElem` words ".eps .png .gif" then do
+                      rect <- readIORef rectRef
+                      if just rect then
+                         case pict3 of
+                           [w] -> do write $ show $ updState st w; msg "widget"
+                           _   -> do write $ show (pict3,arcs1); msg "selection"
+                      else do
+                           scale <- readIORef scaleRef
+                           write $ show (scalePict scale pict,arcs)
+                           msg "entire graph"
+                   else case pictures of
+                        [_] -> do
+                               file <- savePic suffix canv filePath
+                               labGreen $ saved "graph" file
+                        _   -> do
+                               renewDir filePath
+                               saver <- runner2 act2 $ length pictures-1
+                               (saver&startRun) 500
+                               labGreen $ saved "graphs" $ filePath ++ ".html"
+           where st (_,_,c,_) = st0 c
             
         scaleAndDraw msg = do
             scans <- readIORef scansRef
@@ -2704,8 +2699,9 @@ widgetsC c sizes@(n,width) spread t = f t where
         f (F "taichi" s)       = jturtle $ taichi sizes s c
         f (F "text" ts)        = do guard $ notnull strs
                                     Just [Text_ (st0 c) n strs $ map width strs]
-                                 where strs = words $ showTree False 
-                                                    $ colHidden $ mkTup ts
+                                 where strs = map (map h) $ words $ showTree
+                                              False $ colHidden $ mkTup ts
+                                       h x = if x == '\'' then ' ' else x
         f (F "tree" [t])       = Just [Tree st0B n c $ mapT h ct]
                                  where ct = coordTree width spread 
                                                       (20,20) $ colHidden t
