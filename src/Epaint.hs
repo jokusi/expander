@@ -76,6 +76,7 @@ data Solver = Solver
     , getSolver       :: Request String -- ^ Returns name of this solver object.
     , getText         :: Request String -- ^ Returns content of text area.
     , getFont         :: Request FontDescription
+    , getPicNo        :: Request Int
     , getSignatureR   :: Request Sig
     , getTree         :: Request (Maybe TermS)
     , iconify         :: Action -- ^ Minimize solver window.
@@ -90,7 +91,7 @@ data Solver = Solver
     -- ^ Shows a 'String' in the left label
     -- and set the label background to green.
     , narrow          :: Action
-    , saveGraphDP     :: Bool -> Canvas -> Action
+    , saveGraphDP     :: Bool -> Canvas -> Int -> Action
     , setCurrInSolve  :: Int -> Action
     , setForw         :: ButtonOpts -> Action
     , setQuit         :: ButtonOpts -> Action
@@ -103,7 +104,7 @@ data Solver = Solver
   
   
 data Step = ApplySubst | ApplySubstTo String TermS | ApplyTransitivity | 
-            BuildKripke Int | CollapseStep | ComposePointers | 
+            BuildKripke Int | BuildRE | CollapseStep | ComposePointers |
             CopySubtrees | CreateIndHyp | CreateInvariant Bool | 
             DecomposeAtom | DeriveMode Bool Bool | EvaluateTrees | 
             ExpandTree Bool Int | FlattenImpl | Generalize [TermS] | 
@@ -653,7 +654,7 @@ painter pheight solveRef solve2Ref = do
             font <- fontDescriptionFromString $ monospace ++ " 14"
             widgetOverrideFont saveEnt $ Just font
             
-            saveDBut `on` buttonActivated $ saveGraphDP solve False canv
+            saveDBut `on` buttonActivated $ saveGraphD
             
             scaleSlider `on` valueChanged $ moveScale
             scaleSlider `on` buttonPressEvent $ do
@@ -1390,7 +1391,7 @@ painter pheight solveRef solve2Ref = do
                     lg = length file
                     (prefix,suffix) = splitAt (lg-4) file
                     write = writeFile usr
-                    msg str = labGreen $ savedCode str filePath
+                    msg str = labGreen $ savedCode str usr
                     act1 = mkHtml canv prefix filePath
                     act2 n = do writeIORef currRef n
                                 pictSlider `Gtk.set`
@@ -1420,7 +1421,14 @@ painter pheight solveRef solve2Ref = do
                                (saver&startRun) 500
                                labGreen $ saved "graphs" $ filePath ++ ".html"
            where st (_,_,c,_) = st0 c
-            
+
+        saveGraphD = do
+          solve <- readIORef solveRef
+          str <- saveEnt `Gtk.get` entryText
+          picNo <- (solve&getPicNo)
+          (solve&saveGraphDP) False canv $ case parse nat str of Just n -> n
+                                                                 _ -> picNo
+
         scaleAndDraw msg = do
             scans <- readIORef scansRef
             mapM_ stopScan0 scans
@@ -2390,34 +2398,33 @@ linearEqsT sizes _ = f where
 matrixT sizes spread = f where
         f :: TermS -> MaybeT Cmd Picture
         f (Hidden (BoolMat dom1 dom2 pairs@(_:_))) 
-                         = rturtle $ matrixBool sizes dom1 dom2 $ deAssoc0 pairs
-        f (Hidden (ListMat dom1 dom2 trips@(_:_))) 
-                         = rturtle $ matrixList sizes dom1 dom $ map g trips 
-                           where g (a,b,cs) = (a,b,map leaf cs)
-                                 dom = mkSet [b | (_,b,_:_) <- trips]
-        f (Hidden (ListMatL dom trips@(_:_))) 
-                              = rturtle $ matrixList sizes dom dom $ map g trips
-                                where g (a,b,cs) = (a,b,map mkStrLPair cs)
-        f t | just u          = do bins@(bin:_) <- lift' u
-                                   let (arr,k,m) = karnaugh (length bin)
-                                       g = binsToBinMat bins arr
-                                       ts = [(show i,show j,F (g i j) [])  
+                            = rturtle $ matrixBool sizes dom1 dom2 pairs
+        f (Hidden (ListMat dom1 dom2@(_:_) trips))
+                            = rturtle $ matrixList sizes dom1 dom2 $ map g trips
+                              where g (a,b,cs) = (a,b,map leaf cs)
+        f (Hidden (ListMatL dom trips@(_:_)))
+                            = rturtle $ matrixList sizes dom dom $ map g trips
+                              where g (a,b,cs) = (a,b,map mkStrLPair cs)
+        f t | just u         = do bins@(bin:_) <- lift' u
+                                  let (arr,k,m) = karnaugh (length bin)
+                                      g = binsToBinMat bins arr
+                                      ts = [(show i,show j,F (g i j) [])
                                                      | i <- [1..k], j <- [1..m]]
-                                   rturtle $ matrixTerm sizes ts
-                                where u = parseBins t
-        f (F _ [])            = mzero
-        f (F "pict" ts)       = do ts <- mapM (lift' . parseConsts2Term) ts
-                                   rturtle $ matrixWidget sizes spread 
-                                           $ deAssoc3 ts
-        f (F _ ts) | just us  = rturtle $ matrixBool sizes dom1 dom2 ps
-                                where us = mapM parseConsts2 ts
-                                      ps = deAssoc2 $ get us
-                                      (dom1,dom2) = sortDoms ps
-        f (F _ ts) | isJust us= rturtle $ matrixList sizes dom1 dom2 trs 
-                                where us = mapM parseConsts2Terms ts
-                                      trs = deAssoc3 $ get us
-                                      (dom1,dom2) = sortDoms2 trs
-        f _                   = mzero
+                                  rturtle $ matrixTerm sizes ts
+                               where u = parseBins t
+        f (F _ [])           = mzero
+        f (F "pict" ts)      = do ts <- mapM (lift' . parseConsts2Term) ts
+                                  rturtle $ matrixWidget sizes spread
+                                          $ deAssoc3 ts
+        f (F _ ts) | just us = rturtle $ matrixBool sizes dom1 dom2 ps
+                               where us = mapM parseConsts2 ts
+                                     ps = deAssoc2 $ get us
+                                     (dom1,dom2) = sortDoms ps
+        f (F _ ts) | just us = rturtle $ matrixList sizes dom1 dom2 trs
+                               where us = mapM parseConsts2Terms ts
+                                     trs = deAssoc3 $ get us
+                                     (dom1,dom2) = sortDoms2 trs
+        f _                  = mzero
 
 widgetTreeT sizes spread t = do t <- f [] t; return [WTree t] where
         f :: [Int] -> TermS -> MaybeT Cmd TermW
@@ -4270,8 +4277,8 @@ matrixBool sizes@(n,width) dom1 dom2 ps =
                             btf j = halfmax width [j]+3
                             ht = fromInt n/2+3
 
-matrixList :: Sizes -> [String] -> [String] -> [(String,String,[TermS])] 
-                     -> TurtleActs
+matrixList :: Sizes -> [String] -> [String] -> Triples String TermS
+                    -> TurtleActs
 matrixList sizes@(n,width) dom1 dom2 ts = 
             rectMatrix sizes entry dom1 dom2 btf htf
             where entry i j = open:down:JumpA back:concatMap h (f i j)++[Close]

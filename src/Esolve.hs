@@ -453,20 +453,24 @@ reduceString :: Sig -> String -> Maybe String
 reduceString sig t = do t <- parse (term sig) t
                         Just $ showTerm0 $ simplifyIter sig t
 
--- | applyDrawFun is used by showEqsOrGraph, showSubtreePicts and showTreePicts
+-- applyDrawFun is used by showSubtreePicts, showTreePicts and showTransOrKripke
 -- (see Ecom).
-applyDrawFun :: Sig -> String -> [TermS] -> [TermS]
-applyDrawFun _ ""     = id
-applyDrawFun sig draw = map $ mkPict . fst . simplifyLoop sig True 1 . 
-                                        F draw . single . addToPoss [0]
- where mkPict (F "$" [F "wtree" [f],t]) = g t
-         where g (F x ts) | just u = F "widg" $ vs++[sapply sig f $ get u]
-                          | True   = F x vs where vs = map g ts
-                                                  u = parse (term sig) x
-               g t@(V x) | isPos x = mkPos $ tail $ getPos x
-                         | True    = F "widg" [sapply sig f t]
-               g t = t
-       mkPict (F "$" [F "wtree" [m,f],t]) | isJust m' = g t pt
+
+applyDrawFun :: Sig -> String -> String -> [TermS] -> [TermS]
+applyDrawFun _ "addtext" str | null str = id
+                             | True     = map $ add . addToPoss [0]
+     where add t = mkSum [t,F "widg" [F "red" [F "frame" [F "black" [F "text"
+                                                         [leaf str]]]]]]
+applyDrawFun sig draw _ = map $ wtree . fst . simplifyLoop sig True 1 . F draw
+                                            . single . addToPoss [0]
+     where wtree (F "$" [F "wtree" [f],t]) = g t
+             where g (F x ts) | just u  = F "widg" $ vs++[sapply sig f $ get u]
+                              | True    = F x vs where vs = map g ts
+                                                       u = parse (term sig) x
+                   g t@(V x)  | isPos x = mkPos $ tail $ getPos x
+                              | True    = F "widg" [sapply sig f t]
+                   g t = t
+           wtree (F "$" [F "wtree" [m,f],t]) | just m' = g t pt
                where m' = parsePnat m
                      order = case get m' of 1 -> levelTerm; 2 -> preordTerm
                                             3 -> heapTerm;  _ -> hillTerm
@@ -479,8 +483,8 @@ applyDrawFun sig draw = map $ mkPict . fst . simplifyLoop sig True 1 .
                      g t@(V x) (F k _) | isPos x = mkPos $ tail $ getPos x
                                        | True    = F "widg" [h t k]
                      g t _ = t
-       mkPict t = simplifyIter sig t
-                        
+           wtree t = simplifyIter sig t
+
 -- wtree(f)(t) replaces each subgraph x(t1,..,tm) of t by the subgraph 
 -- widg(t1,...,tm,f(x)).
 
@@ -498,22 +502,21 @@ applyDrawFun sig draw = map $ mkPict . fst . simplifyLoop sig True 1 .
 -- simplifyLoop is used by applyDrawFun, simplifyIter, simplifyA lambda 
 -- (see here), simplify' and simplifySubtree (see Ecom).
 simplifyLoop :: Sig -> Bool -> Int -> TermS -> (TermS,Int)
-simplifyLoop sig depthfirst = loop 0
- where loop k 0 t = (t,k)
-       loop k m t = case f (simplifyOne sig) t of 
-                         Just t -> loop (k+1) (m-1) t
-                         _ -> case f (expandFix sig) t of 
-                                   Just t -> loop (k+1) (m-1) t
-                                   _ -> (t,k)
-       f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
-       f g t = if depthfirst then modifyDF [] t else modifyBF [([],t)]
-              where modifyDF p u = msum $ g t p:
-                                            zipWithSucs modifyDF p (subterms u)
-                    modifyBF pus = do guard $ notnull pus
-                                      msum (map (g t) ps) `mplus`
-                                          modifyBF (msum $ zipWith zipSucs ps
-                                                           $ map subterms us)
-                                   where (ps,us) = unzip pus
+simplifyLoop sig depthfirst = loop 0 where
+ loop k 0 t = (t,k)
+ loop k m t = case f (simplifyOne sig) t of
+                   Just t -> loop (k+1) (m-1) t
+                   _ -> case f (expandFix sig) t of
+                             Just t -> loop (k+1) (m-1) t
+                             _ -> (t,k)
+ f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
+ f g t = if depthfirst then modifyDF [] t else modifyBF [([],t)]
+        where modifyDF p u = concat $ g t p:zipWithSucs modifyDF p (subterms u)
+              modifyBF pus = do guard $ notnull pus
+                                concat (map (g t) ps) ++
+                                       modifyBF (concat $ zipWith zipSucs ps
+                                                        $ map subterms us)
+                             where (ps,us) = unzip pus
 
 -- | simplifyOne sig t p applies the first applicable simplification rule to the
 -- subterm of t at position p.
@@ -537,10 +540,6 @@ simplifyOne sig t p = do guard $ isF redex1
                         block x = if blocked sig x then "BLOCK"++x else x
                         g ('B':'L':'O':'C':'K':x) = x
                         g x                            = x
-
-getRHS :: Sig -> String -> Maybe RegExp
-getRHS sig x = do [rhs] <- Just $ simplReducts sig False $ F "V" [leaf x]
-                  (e,_) <- parseRE sig rhs; Just e
 
 -- expandFix sig t p expands a fixpoint abstraction at position p of t if there
 -- is any.
@@ -1266,12 +1265,13 @@ simplifyS sig (F "pauto" [t]) | just e = Just $ eqsToGraph [] $ fst
 
 simplifyS _ t = simplifyT t
 
+getRHS :: Sig -> String -> Maybe RegExp
+getRHS sig x = do [rhs] <- Just $ simplReducts sig False $ F "V" [leaf x]
+                  (e,_) <- parseRE sig rhs; Just e
+
 -- * __Signature-independent simplification__
 
 simplifyT :: TermS -> Maybe TermS
-
-simplifyT (F "addtext" [t,u]) = 
-     Just $ mkSum [t,F "widg" [F "red" [F "frame" [F "black" [F "text" [u]]]]]]
 
 simplifyT (F "CASE" (F "->" [F "True" [],t]:_))   = Just t
 simplifyT (F "CASE" (F "->" [F "False" [],_]:ts)) = Just $ F "CASE" ts
@@ -1667,7 +1667,6 @@ rewriteSig sig ts = (zip ts $ reduce ts,
 -- rewriteStates is used by 'Ecom.buildKripke'.
 rewriteStates :: Sig -> Int -> ([TermS],Pairs TermS,Triples TermS TermS)
 rewriteStates sig mode = h (sig&states) (sig&states) [] [] where
-                 -- h 0 sts ts ps psL = (sts,ps,psL) 
                     h sts ts ps psL = if null new then (sts,rs,rsL) 
                                       else h (sts `join` new) new rs rsL
                       where new = reds `minus` sts

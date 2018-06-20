@@ -497,7 +497,7 @@ subsetsN n k = mkSet [insert (<) x xs | xs <- subsetsN n (k-1),
                                         x <- [0..n-1]`minus`xs]
 
 emptyOrAll :: [[t]] -> [[t]]
-emptyOrAll ss = if null ss then [[]] else ss
+emptyOrAll ss  = if null ss then [[]] else ss
 
 emptyOrLast :: [[t]] -> [t]
 emptyOrLast ss = if null ss then [] else last ss
@@ -527,20 +527,6 @@ xs `minus1` y = [x | x <- xs, x /= y]
 
 minus :: Eq t => [t] -> [t] -> [t]
 xs `minus` ys = [x | x <- xs, x `notElem` ys]
-
-deAssoc0 :: [(a, [b])] -> [(a, b)]
-deAssoc0 = concatMap f where f (x,ys) = map (\y -> (x,y)) ys
-
-deAssoc1 :: [([a], b)] -> [(a, b)]
-deAssoc1 = concatMap f where f (xs,y) = map (\x -> (x,y)) xs
-
-deAssoc2 :: [([a], [b])] -> [(a, b)]
-deAssoc2 = concatMap f where f (xs,ys) = concatMap g xs
-                                      where g x = map (\y -> (x,y)) ys
-
-deAssoc3 :: [([a], [b], c)] -> [(a, b, c)]
-deAssoc3 = concatMap f where f (xs,ys,z) = concatMap g xs
-                                        where g x = map (\y -> (x,y,z)) ys
 
 powerset :: Eq a => [a] -> [[a]]
 powerset (a:s) = if a `elem` s then ps else ps++map (a:) ps
@@ -1184,6 +1170,19 @@ mkTriples dom1 dom2 ran = concat . zipWith f [0..]
                                 where g j ks = (dom1!!i,dom2!!j,map (ran!!) ks)
 
 
+deAssoc0 :: [(a, [b])] -> [(a, b)]
+deAssoc0 = concatMap f where f (x,ys) = map (\y -> (x,y)) ys
+
+deAssoc1 :: [([a], b)] -> [(a, b)]
+deAssoc1 = concatMap f where f (xs,y) = map (\x -> (x,y)) xs
+
+deAssoc2 :: [([a], [b])] -> [(a, b)]
+deAssoc2 = concatMap f where f (xs,ys) = concatMap g xs
+                                      where g x = map (\y -> (x,y)) ys
+
+deAssoc3 :: [([a], [b], c)] -> [(a, b, c)]
+deAssoc3 = concatMap f where f (xs,ys,z) = concatMap g xs
+                                        where g x = map (\y -> (x,y,z)) ys
 
 infixl 7 <<=
 infixl 8 >>>
@@ -1757,6 +1756,7 @@ instance Ord RegExp                                    -- used by summands
          where Eps <= Star _                   = True
                e <= Star e' | e <= e'          = True
                Prod e1 e2 <= Star e | e1 <= e && e2 <= Star e = True 
+               Prod e1 e2 <= Star e | e1 <= Star e && e2 <= e = True 
                e <= Prod e' (Star _) | e == e' = True
                e <= Prod (Star _) e' | e == e' = True
                Prod e1 e2 <= Prod e3 e4        = e1 <= e3 && e2 <= e4
@@ -1769,11 +1769,11 @@ e <* e' = False
 
 summands,factors :: RegExp -> [RegExp]
 summands (Sum_ e e') = joinMapR (<=) summands [e,e']   -- e <= e' ==> e+e' = e'
-summands Mt          = []                              -- mt+e = e,  e+mt = e
-summands e           = [e]
+summands Mt          = []                              -- mt+e = e
+summands e           = [e]                             -- e+mt = e
 factors (Prod e e')  = joinMapR (<*) factors [e,e']    -- e <* e' ==> e*e' = e'
-factors Eps          = []                              -- eps*e = e, e*eps = e
-factors e            = [e]
+factors Eps          = []                              -- eps*e = e
+factors e            = [e]                             -- e*eps = e
 
 mkSumR,mkProdL,mkProdR :: [RegExp] -> RegExp
 mkSumR []  = Mt
@@ -1807,10 +1807,10 @@ Prod _ e +< e'@(Star _)   = e +< e'
 Prod _ e +< Prod _ e'     = e +< e'
 e +< e'                   = e == e'
 
-sortRE :: (RegExp -> RegExp -> Bool) -> ([RegExp] -> RegExp)
-                                     -> RegExp -> RegExp
-sortRE r prod e@(Sum_ _ _) = mkSumR $ map (sortRE r prod)
-                                    $ qsort r $ summands e
+sortRE :: (RegExp -> RegExp -> Bool) -> ([RegExp] -> RegExp) -> RegExp
+                                                             -> RegExp
+sortRE r prod e@(Sum_ _ _) = mkSumR $ map (sortRE r prod) $ qsort r
+                                                          $ summands e
 sortRE r prod e@(Prod _ _) = prod $ map (sortRE r prod) $ factors e
 sortRE r prod (Star e)     = Star $ sortRE r prod e
 sortRE _ _ e               = e
@@ -1846,11 +1846,27 @@ reduceRE e  = case e of Sum_ e1 e2 -> if sizeRE e' < sizeRE e then e'
                                             f es       = reduceS False es
                         Prod _ _ -> if Mt `elem` es then Mt else mkProdR es
                                     where es = map reduceRE $ factors e
-                        Star Mt  -> Eps
-                        Star Eps -> Eps
+                        Star Mt           -> Eps
+                        Star Eps          -> Eps
+                        Star (Star e)     -> Star e
                         Star (Sum_ Eps e) -> Star e
                         Star (Sum_ e Eps) -> Star e
-                        Star (Star e)     -> Star e
+                        -- star(star(e)+e') = star(e+e')
+                        Star (Sum_ (Star e) e') -> Star $ Sum_ e e'
+                        -- star(star(e)+e') = star(e+e')
+                        Star (Sum_ e (Star e')) -> Star $ Sum_ e e'
+                        -- star(e*star(e)+e') = star(e+e')
+                        Star (Sum_ (Prod e1 (Star e2)) e3) | e1 == e2
+                                                -> Star $ Sum_ e1 e3
+                        -- star(star(e)*e+e') = star(e+e')
+                        Star (Sum_ (Prod (Star e1) e2) e3) | e1 == e2
+                                                -> Star $ Sum_ e1 e3
+                        -- star(e'+e*star(e)) = star(e+e')
+                        Star (Sum_ e1 (Prod e2 (Star e3))) | e2 == e3
+                                                -> Star $ Sum_ e1 e2
+                        -- star(e'+star(e)*e) = star(e+e')
+                        Star (Sum_ e1 (Prod (Star e2) e3)) | e2 == e3
+                                                -> Star $ Sum_ e1 e2
                         Star e -> Star $ reduceRE e
                         _      -> e
 
@@ -2137,7 +2153,7 @@ gauss3 = f []
 data Term a = V a | F a [Term a] | Hidden Special deriving (Show,Eq,Ord)
 
 data Special = Dissect [(Int,Int,Int,Int)] | 
-               BoolMat [String] [String] (Pairs String) | 
+               BoolMat [String] [String] [(String,String)] |
                ListMat [String] [String] (Triples String String) | 
                ListMatL [String] (TriplesL String) | 
                LRarr (Array (Int,Int) ActLR) |
@@ -4804,19 +4820,23 @@ substituteVars t eqs ps = do let ts = map (getSubterm1 t) ps
                                           where t = lookup x $ eqPairs eqs
                                                 u = get t
 
+-- solveRegEq sig t solves the regular equation x = t*x+u in x. If u = mt, then
+-- the solution is mt, otherwise star(t)*u.
+
 solveRegEq :: Sig -> String -> TermS -> Maybe (RegExp,[String])
 solveRegEq sig x t = parseRE sig $ f $ case t of F "+" ts -> ts; _ -> [t]
-        where f ts = F "*" [star,rest] where
-                     recs = [t | t@(F "*" us) <- ts, last us == V x]
-                     star = case recs of []    -> F "eps" []
-                                         [rec] -> F "star" [g rec]
-                                         _     -> F "star" [F "+" $ map g recs]
-                     g (F "*" ts) = F "*" $ init ts
-                     g _          = leaf "OOPS"
-                     us = ts `minus` recs
-                     rest = case us of []  -> F "eps" []
-                                       [u] -> u
-                                       _   -> F "+" us
+         where f ts = case us of []  -> leaf "mt"
+                                 [u] -> F "*" [star,u]
+                                 _   -> F "*" [star,F "+" us]
+                      where us = ts `minus` recs
+                            recs = [t | t@(F "*" us) <- ts, last us == V x]
+                            star = case recs of
+                                        []    -> leaf "eps"
+                                        [rec] -> F "star" [g rec]
+                                        _     -> F "star" [F "+" $ map g recs]
+               g (F "*" [t,_]) = t
+               g (F "*" ts)    = F "*" $ init ts
+               g _             = leaf "OOPS"
 
 
 -- parseSol is used by parseEqs, isSol (see below), solPict (see Epaint) and

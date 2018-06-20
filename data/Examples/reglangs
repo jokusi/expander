@@ -1,11 +1,13 @@
 -- reglangs
 
 constructs: 	a b c d e h aa gg pp vv final q qa qb qab
-defuncts:	delta beta unfold unfoldND unfoldBro reg drawL drawC
+defuncts:	delta beta plus unfold unfoldND unfoldBro reg drawL drawC
 preds:          Unfold
-fovars: 	st st' w k
+fovars: 	e st st' w k
 
 axioms:
+
+-- acceptors
 
 labels == [a,b] & atoms == [final] & states == [q] &
 
@@ -23,16 +25,18 @@ final -> qb &   -- A2: acceptor of words with an even number of a's and an odd
 (Unfold(st)[]    <=== final -> st) &		
 (Unfold(st)(x:w) <=== (st,x) -> st' & Unfold(st')$w) &
 
-unfoldND$s == out <=< kfold(flip$transL)$s &	-- nondeterministic unfold
+unfoldND$w == out <=< kfold(flip$transL)$w &	-- nondeterministic unfold
 						-- (for kfold see base)
 delta(st,x) == head$transL(st)$x &		
 beta$st == ite(null$out$st,0,1) &
 
 unfold(st) == beta.foldl(delta)(st) & 		-- deterministic unfold
 
--- Examples
+-- regular expressions
 
-reg$1 == star$plus(a)+plus(b*c) & 	
+plus$e == e*star(e) &
+
+reg$1 == star$plus(a)+plus(b*c) & 		    --> star(a+b*c)
 
 reg$2 == a+a*a*star(a)*b+a*b*star(b)+b &	    --> star(a)*b+a*star(b)	
  
@@ -58,7 +62,9 @@ reg$9 == a+c+eps+((a+c+eps)*star(a+c+eps)*(a+c+eps))+
          ((b+((a+c+eps)*star(a+c+eps)*b))*star(a+b+eps+(c*star(a+c+eps)*b))*
           (c+(c*star(a+c+eps)*(a+c+eps)))) &	    -- auto4
      --> star(a+c)+(star(a+c)*b*star(a+b+(c*star(a+c)*b))*c*star(a+c))
-     -- autoToReg.minimize.regToAuto --> star(a+c+b*star(a+b)*c)	   
+     -- autoToReg.minimize.regToAuto --> star(a+c+b*star(a+b)*c)	
+
+reg$10 == star(a)+star(a)*b*star(c*star(a)*b)*c*star(a) &
 	
 -- widget interpreters
 
@@ -77,9 +83,7 @@ Unfold(q)[b,b] &		--> False
 Unfold(q)[a,b,a,b,a,b,a] &	--> True	-- reglangs1
 Unfold(q)[a,b,a,b,b,a,b,a] &	--> False
 Unfold(q)[a,b,a,a,b,a] &	--> False
-Unfold(q)[a,b,a,a,b,a,b] &	--> True
-
-q~q' 				--> True
+Unfold(q)[a,b,a,a,b,a,b] 	--> True
 
 terms:
 
@@ -100,5 +104,5 @@ unfold(qgg)[a,b,a,a,b,a] <+>		--> 1		-- 25 steps
 unfoldBro[](reg$2)[a,a,a,b] <+>		--> 1
 unfoldBro[](reg$2)[a,a,a,b,b] <+>	--> 0
 
-auto$reg$1 <+>			--> non-deterministic acceptor of reg1 
-pauto$reg$1 			--> deterministic acceptor of reg1   
+auto$reg$1 <+>			--> non-deterministic acceptor of reg$1 
+pauto$reg$1 			--> deterministic acceptor of reg$1   

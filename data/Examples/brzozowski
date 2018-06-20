@@ -1,8 +1,9 @@
 -- brzozowski
 
 constructs: 	star mt eps a b c final 
-defuncts:	plus delta beta unfoldB1 unfoldB2 reg1 V S A B 
+defuncts:	plus delta beta betaBro deltaBro unfoldB1 unfoldB2 reg1 V S A B 
 		-- for deltaBro, betaBro and unfoldBro, see Eterm.hs
+copreds:	~
 fovars: 	t u w 
 
 axioms:
@@ -51,7 +52,13 @@ reg1 == star$plus(a)+plus(b*c) &
 
 V$S == a*B+b*A+eps &
 V$A == a*S+b*A*A &
-V$B == b*S+a*B*B 
+V$B == b*S+a*B*B &
+
+-- state equivalence
+
+(t ~ u ===> beta$t = beta$u & delta(t,x) ~ delta(u,x)) &
+
+(t ~ u ===> betaBro$t = betaBro$u & deltaBro(t,x) ~ deltaBro(u,x)) 
 
 terms:
 
@@ -66,8 +73,8 @@ unfoldBro(reg1)[b,c,a,c] 	<+>	--> 0
 
 -- unfoldB2/Bro(S) accepts words with an equal number of a's and b's
 
-unfoldB2(S)[a,b]   	<+>		--> 1		-- 9 steps
-unfoldB2(S)[a,b,a]  	<+>		--> 0		-- 11 steps
+unfoldB2(S)[a,b]   		<+>	--> 1		-- 9 steps
+unfoldB2(S)[a,b,a]  		<+>	--> 0		-- 11 steps
 
 unfoldBro(S)[a,b,a,b,a,a,b,a,b,b,a,b,a,a,b,a,b,b,b,a,b,a] <+> --> 1
 unfoldBro(S)$replicate(5)(a)++replicate(5)(b)		      --> 1

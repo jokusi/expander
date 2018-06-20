@@ -126,6 +126,7 @@ command =   msum [do symbol "ApplySubst"; return ApplySubst,
                   do symbol "ApplyTransitivity"; return ApplyTransitivity,
                   do symbol "BuildKripke"; m <- token int
                      return $ BuildKripke m,
+                  do symbol "BuildRE"; return BuildRE,
                   do symbol "CollapseStep"; return CollapseStep,
                   do symbol "ComposePointers"; return ComposePointers,
                   do symbol "CopySubtrees"; return CopySubtrees,
@@ -394,8 +395,9 @@ kripkeBuilt mode procs sts labs ats =
     "A " ++ f mode ++ " Kripke model with " ++ 
     (if procs > 0 then show procs ++ " processes, " else "") ++ 
     show' sts "state" ++ ", " ++ show' ats "atom" ++ " and " ++ 
-    show' labs "label" ++ " has been built from the axioms."
+    show' labs "label" ++ " has been built from the " ++ g mode
     where f 0 = "cycle-free"; f 1 = "pointer-free"; f _ = ""
+          g 3 = "current graph."; g 4 = "regular expression."; g _ = "axioms."
 
 kripkeMsg = "BUILDING A KRIPKE MODEL"
     
@@ -501,6 +503,12 @@ premCallsConc =
 proofLoaded :: String -> String
 proofLoaded file = "The proof term has been loaded from " ++ file ++ "."
 
+regBuilt :: String
+regBuilt = "A regular expression has been built from the Kripke model."
+
+regReduced :: String
+regReduced = "The selected regular expression has been reduced."
+
 removed :: String
 removed = "The selected trees have been removed."
 
@@ -512,9 +520,6 @@ replacedTerm = "The selected terms have been replaced by equivalent ones."
 
 replaceIn :: String -> String
 replaceIn solve = "The subtree has been replaced by the tree of "++solve++"."
-
-reReduced :: String
-reReduced = "The selected regular expression has been reduced."
 
 reversed :: String
 reversed = "The list of selected trees has been reversed."
@@ -757,7 +762,7 @@ solver this solveRef enum paint = do
     numberedExpsRef <- newIORef ([],True)
     constraintsRef <- newIORef (True,[])
 
-    drawFunRef <- newIORef ""
+    drawFunRef <- newIORef "addtext"
     picEvalRef <- newIORef "tree"
     picDirRef <- newIORef "picDir"
 
@@ -1005,20 +1010,20 @@ solver this solveRef enum paint = do
                  mkBut m "in painter" (do initCanvas; cmd n3)
                  mkBut m ("in "++ other) $ cmd n4
                  where cmd = showTransOrKripke
-          subMenu <- mkSub graphMenu "transitions"
+          subMenu <- mkSub graphMenu "of transitions"
           mkMenu subMenu 0 1 2 3
-          subMenu <- mkSub graphMenu "labelled transitions"
+          subMenu <- mkSub graphMenu "of labelled transitions"
           mkMenu subMenu 4 5 6 7
           let mkMenu m n1 n2 n3 = do
                  mkBut m "here" $ cmd n1
                  mkBut m "in painter" (do initCanvas; cmd n2)
                  mkBut m ("in "++ other) $ cmd n3
                  where cmd = showTransOrKripke
-          subMenu <- mkSub graphMenu "Kripke model"
+          subMenu <- mkSub graphMenu "of Kripke model"
           mkMenu subMenu 8 9 10
-          subMenu <- mkSub graphMenu "labelled Kripke model"
+          subMenu <- mkSub graphMenu "of labelled Kripke model"
           mkMenu subMenu 11 12 13
-          mkBut graphMenu "iterative equations" $ transformGraph 3
+          mkBut graphMenu "to iterative equations" $ transformGraph 3
           mkBut graphMenu "connect equations" $ modifyEqs 0
           let mkMenu m cmd n1 n2 n3 n4 = do
                   mkBut m "of canvas" $ cmd n1
@@ -1152,13 +1157,13 @@ solver this solveRef enum paint = do
                 $ do removeSpec; labGreen' $ iniSpec++iniSigMap
           mkBut specMenu "set pic directory (t)" $ setPicDir False
           mkBut specMenu "build Kripke model" $ buildKripke 2
-          mkBut specMenu ".. from current graph" $ buildKripke 4
-          mkBut specMenu ".. from regular expression" $ buildKripke 5
+          mkBut specMenu ".. from current graph" $ buildKripke 3
+          mkBut specMenu ".. from regular expression" $ buildKripke 4
           mkBut specMenu ".. cycle-free" $ buildKripke 0
           mkBut specMenu ".. pointer-free" $ buildKripke 1
           mkBut specMenu "state equivalence" stateEquiv
           mkBut specMenu "minimize" minimize
-          mkBut specMenu "build regular expression" $ buildRegExp
+          mkBut specMenu "build regular expression" buildRegExp
           mkBut specMenu "distribute regular expression" $ reduceRegExp 0
           mkBut specMenu "reduce left-folded regular expression"$ reduceRegExp 1
           mkBut specMenu ".. right-folded regular expression" $ reduceRegExp 2
@@ -1868,7 +1873,7 @@ solver this solveRef enum paint = do
             menu.
         -}
         buildKripke :: Int -> Action
-        buildKripke 4 = do                      -- from current graph
+        buildKripke 3 = do                              -- from current graph
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
@@ -1886,11 +1891,10 @@ solver this solveRef enum paint = do
                 tr = pairsToInts states' rs1 states'
                 va = pairsToInts states' rs2 atoms'
             writeIORef kripkeRef (states',atoms',[],tr,[],va,[])
-            enterKripke 4
             delay $ setProof True False kripkeMsg []
-                     $ kripkeBuilt 2 0 (length states') 0 $ length atoms'
+                     $ kripkeBuilt 3 0 (length states') 0 $ length atoms'
 
-        buildKripke 5 = do                            -- from regular expression
+        buildKripke 4 = do                            -- from regular expression
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
@@ -1922,9 +1926,8 @@ solver this solveRef enum paint = do
                         trL = tripsToInts states' labels' rsL states'
                     writeIORef kripkeRef
                       (states',[atom'],labels',[],trL,[finals],[])
-                    enterKripke 5
                     delay $ setProof True False kripkeMsg []
-                          $ kripkeBuilt 2 0 (length sts) (length as') 1
+                          $ kripkeBuilt 4 0 (length sts) (length as') 1
                  _ -> labMag "Select a regular expression!"
 
         buildKripke mode = do
@@ -1964,19 +1967,36 @@ solver this solveRef enum paint = do
               va  = pairsToInts states rs atoms'
               vaL = tripsToInts states labels rsL atoms'
           writeIORef kripkeRef (states,atoms',labels,tr,trL,va,vaL)
-
-          enterKripke mode
           delay $ setProof True False kripkeMsg []
                 $ kripkeBuilt mode noProcs (length states) (length labels)
                 $ length atoms'
         
         buildRegExp = do
-          start <- ent `Gtk.get` entryText
-          sig <- getSignature
-          case parse (term sig) start of 
-               Just start | start `elem` (sig&states)
-                 -> enterTree' False $ showRE $ autoToReg sig start
-               _ -> labRed' "Enter an initial state!"
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               str <- ent `Gtk.get` entryText
+               sig <- getSignature
+               let finish start = do
+                      trees <- readIORef treesRef
+                      curr <- readIORef currRef
+                      writeIORef treesRef
+                        $ updList trees curr $ showRE $ autoToReg sig start
+                      setProofTerm BuildRE
+                      setProof False False "BUILDING A REGULAR EXPRESSION" []
+                                           regBuilt
+                      clearTreeposs; drawCurr'
+               case parse (term sig) str of
+                    Just start | start `elem` (sig&states) -> finish start
+                    _ -> do
+                         trees <- readIORef treesRef
+                         curr <- readIORef currRef
+                         treeposs <- readIORef treepossRef
+                         let start = label (trees!!curr) $ emptyOrLast treeposs
+                         case parse (term sig) $ takeWhile (/= ':') start of
+                              Just start | start `elem` (sig&states)
+                                -> finish start
+                              _ -> labRed' "Enter or select an initial state!"
         
         -- | Called by menu item /build unifier/ from menu
         -- /transform selection/.
@@ -2235,6 +2255,7 @@ solver this solveRef enum paint = do
                     ApplySubstTo x t -> applySubstTo' x t
                     ApplyTransitivity -> applyTransitivity
                     BuildKripke m -> buildKripke m
+                    BuildRE -> buildRegExp
                     CollapseStep -> collapseStep
                     ComposePointers -> composePointers
                     CopySubtrees -> copySubtrees
@@ -2902,15 +2923,7 @@ solver this solveRef enum paint = do
                 clearText
                 addText $ lines $ showFactors fs
                 writeIORef numberedExpsRef (fs,True)
-        
-        enterKripke mode = do
-          setProofTerm $ BuildKripke mode
-          enterTree' False $ leaf $ "A Kripke model is built" ++ str
-          where str = if mode == 4 then " from the current graph."
-                      else if mode == 4 then " from the regular expression."
-                                        else "."
 
-        
         -- Show terms in textfield. Used by 'showTerms'.
         enterTerms :: [TermS] -> Action
         enterTerms ts = do
@@ -3206,6 +3219,8 @@ solver this solveRef enum paint = do
         getMaxHeap :: Request Int
         getMaxHeap = truncate <$> (treeSize `Gtk.get` rangeValue)
         
+        getPicNo' = readIORef picNoRef
+
         -- | Used by most other 'Epaint.Solver' functions. Exported by public
         -- 'Epaint.Solver' method 'Epaint.getSignatureR'.
         getSignature :: Request Sig
@@ -3257,7 +3272,7 @@ solver this solveRef enum paint = do
                 , valueL      = valueL'
                 , safeEqs     = safeEqs'
                 }
-        
+
         -- | Returns name of this solver object. Exported by public
         -- 'Epaint.Solver' method 'Epaint.getSolver'.
         getSolver' :: Request String
@@ -3634,11 +3649,10 @@ solver this solveRef enum paint = do
                                               where v = substituteVars t eqs ps
                                    _ -> labMag instantiateVars
                          _ -> case parseIterEq u of
-                                   Just (Equal x t) | just e
-                                     -> act p $ mkEq (V x) $ showRE $ distribute
-                                                           $ fst $ get e
-                                        where e = solveRegEq sig x t
-                                   _ -> labMag "Select a regular equation!"
+                                  Just (Equal x t) | just e
+                                    -> act p $ mkEq (V x) $ showRE $ fst $ get e
+                                       where e = solveRegEq sig x t
+                                  _ -> labMag "Select a regular equation!"
 
         {- |
             Moves a node of a tree on the canvas. Click and hold the right
@@ -4303,7 +4317,7 @@ solver this solveRef enum paint = do
                          $ updList trees curr $ replace0 t p $ showRE $ f e
                        setProofTerm $ ReduceRE mode
                        setProof False False "REDUCING THE REGULAR EXPRESSION"
-                                            [p] $ reReduced
+                                            [p] regReduced
                        clearTreeposs; drawCurr'
                   _ -> labMag "Select a regular expression!"
 
@@ -5004,20 +5018,20 @@ solver this solveRef enum paint = do
         -- | Called by button "save pic to dir" ('saveDBut').
         saveGraphD :: Action
         saveGraphD = do
-            trees <- readIORef treesRef
-            if null trees then labBlue' start
-            else saveGraphDP' True canv
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               str <- ent `Gtk.get` entryText
+               case parse nat str of Just n -> writeIORef picNoRef n
+                                     _ -> return ()
+               picNo <- readIORef picNoRef
+               saveGraphDP' True canv picNo
         
-        saveGraphDP' :: Bool -> Canvas -> Action
-        saveGraphDP' b screen = do
+        saveGraphDP' b screen n = do
           picDir <- readIORef picDirRef
           when (notnull picDir) $ do
-            str <- ent `Gtk.get` entryText
-            case parse nat str of Just n -> writeIORef picNoRef n
-                                  _ -> return ()
             pp <- pixpath picDir
-            picNo <- readIORef picNoRef
-            saveGraphDH b screen picDir pp picNo
+            saveGraphDH b screen picDir pp n
             modifyIORef picNoRef succ
         
         -- | Used by 'draw' and 'saveGraphN'.
@@ -5258,7 +5272,8 @@ solver this solveRef enum paint = do
             spread <- readIORef spreadRef
             setEval paint eval spread
             draw <- ent `Gtk.get` entryText
-            writeIORef drawFunRef $ if isDefunct sig draw then draw else ""
+            writeIORef drawFunRef
+              $ if (sig&isDefunct) draw then draw else "addtext"
             drawFun <- readIORef drawFunRef
             labGreen' $ newInterpreter eval drawFun
         
@@ -5735,53 +5750,56 @@ solver this solveRef enum paint = do
         -- | Called by all /show matrix/ menu items from menu /graph/.
         showMatrix :: Int -> Action
         showMatrix m = do
-            kripke <- readIORef kripkeRef
-            treeposs <- readIORef treepossRef
-            trees <- readIORef treesRef
-            curr <- readIORef currRef
-            spread <- readIORef spreadRef
-            sig <- getSignature
-            let [sts,ats,labs] 
-                    = map (map showTerm0) [sig&states,sig&atoms,sig&labels]
-                p:ps = emptyOrAll treeposs
-                t = getSubterm1 (trees!!curr) p
-                f = if null ps then id else drop $ length p
-                is = [i | [i,1] <- map f ps]
-            pict <- runMaybeT $ matrixT sizes0 spread t
-            let u = case m of 0 -> Hidden $ BoolMat sts sts $ mkPairs sts sts 
-                                                    (sig&trans)
-                              1 -> Hidden $ BoolMat ats sts $ mkPairs ats sts
-                                          (sig&value)
-                              2 -> Hidden $ BoolMat sts ats $ mkPairs sts ats
-                                                            $ out sig
-                              3 -> Hidden $ ListMat sts labs
-                                          $ mkTriples sts labs sts (sig&transL)
-                              4 -> Hidden $ ListMat ats labs
-                                          $ mkTriples ats labs sts (sig&valueL)
-                              5 -> Hidden $ ListMat sts labs 
-                                          $ mkTriples sts labs ats $ outL sig
-                              _ -> case parseEqs t of
-                                      Just eqs -> mat m $ eqsToGraph is eqs
-                                      _ -> if isJust pict then t else mat m t
-            pict <- runMaybeT $ matrixT sizes0 spread u
-            if m > 5 && null trees then labBlue' start
-            else
-                if isNothing pict then labMag "The matrix is empty."
-                else do
-                    font <- readIORef fontRef
-                    sizes <- mkSizes canv font $ stringsInPict $ fromJust pict
-                    fast <- readIORef fastRef
-                    spread <- readIORef spreadRef
-                    setEval paint "" spread
-                    Just pict <- runMaybeT $ matrixT sizes spread u
-                    curr <- readIORef currRef
-                    callPaint paint [pict] [curr] False True curr "white"
-            where mat 6 t = Hidden $ BoolMat dom1 dom2 ps
-                           where ps = graphToRel t
-                                 (dom1,dom2) = sortDoms $ deAssoc0 ps
-                  mat _ t = Hidden $ ListMat dom1 dom2 ts
-                           where ts = graphToRel2 (evenNodes t) t
-                                 (dom1,dom2) = sortDoms $ map (pr1 *** pr2) ts
+          kripke <- readIORef kripkeRef
+          treeposs <- readIORef treepossRef
+          trees <- readIORef treesRef
+          curr <- readIORef currRef
+          spread <- readIORef spreadRef
+          sig <- getSignature
+          let [sts,ats,labs] 
+                  = map (map showTerm0) [sig&states,sig&atoms,sig&labels]
+              p:ps = emptyOrAll treeposs
+              t = getSubterm1 (trees!!curr) p
+              f = if null ps then id else drop $ length p
+              is = [i | [i,1] <- map f ps]
+          pict <- runMaybeT $ matrixT sizes0 spread t
+          let u = case m of 0 -> Hidden $ BoolMat sts sts
+                                        $ deAssoc0 $ mkPairs sts sts (sig&trans)
+                            1 -> Hidden $ BoolMat ats sts
+                                        $ deAssoc0 $ mkPairs ats sts (sig&value)
+                            2 -> Hidden $ BoolMat sts ats
+                                        $ deAssoc0 $ mkPairs sts ats $ out sig
+                            3 -> Hidden $ ListMat sts (labs' trips) $ trips
+                                 where
+                                   trips = mkTriples sts labs sts (sig&transL)
+                            4 -> Hidden $ ListMat ats (labs' trips) $ trips
+                                 where
+                                   trips = mkTriples ats labs sts (sig&valueL)
+                            5 -> Hidden $ ListMat sts (labs' trips) $ trips
+                                 where trips = mkTriples sts labs ats $ outL sig
+                            _ -> case parseEqs t of
+                                    Just eqs -> mat m $ eqsToGraph is eqs
+                                    _ -> if just pict then t else mat m t
+          pict <- runMaybeT $ matrixT sizes0 spread u
+          if m > 5 && null trees then labBlue' start
+          else
+              if isNothing pict then labMag "The matrix is empty."
+              else do
+                  font <- readIORef fontRef
+                  sizes <- mkSizes canv font $ stringsInPict $ fromJust pict
+                  fast <- readIORef fastRef
+                  spread <- readIORef spreadRef
+                  setEval paint "" spread
+                  Just pict <- runMaybeT $ matrixT sizes spread u
+                  curr <- readIORef currRef
+                  callPaint paint [pict] [curr] False True curr "white"
+          where labs' trips = mkSet [x | (_,x,_:_) <- trips]
+                mat 6 t = Hidden $ BoolMat dom1 dom2 ps
+                          where ps = deAssoc0 $ graphToRel t
+                                (dom1,dom2) = sortDoms ps
+                mat _ t = Hidden $ ListMat dom1 dom2 ts
+                         where ts = graphToRel2 (evenNodes t) t
+                               (dom1,dom2) = sortDoms $ map (pr1 *** pr2) ts
         
         -- | Called by all /(...) numbers/ menu items from /nodes/ menu.
         showNumbers :: Int -> Action
@@ -5990,13 +6008,14 @@ solver this solveRef enum paint = do
         showSubtreePicts = do                    -- without transformer:
             sig <- getSignature
             eval <- getInterpreterT              -- getInterpreter
+            str <- ent `Gtk.get` entryText
             trees <- readIORef treesRef
             curr <- readIORef currRef
             treeposs <- readIORef treepossRef
             drawFun <- readIORef drawFunRef
             spread <- readIORef spreadRef
             let t = trees!!curr
-                ts = applyDrawFun sig drawFun $ map (closedSub t) treeposs
+                ts = applyDrawFun sig drawFun str $ map (closedSub t) treeposs
                 picts = map (eval sizes0 spread) ts
             picts <- mapM runMaybeT picts        -- return ()
             font <- readIORef fontRef
@@ -6085,6 +6104,7 @@ solver this solveRef enum paint = do
         
         showTransOrKripke m = do
           sig <- getSignature
+          str <- ent `Gtk.get` entryText
           varCounter <- readIORef varCounterRef
           let [sts,ats,labs] = map (map showTerm0)
                                    [sig&states,sig&atoms,sig&labels]
@@ -6099,19 +6119,20 @@ solver this solveRef enum paint = do
                             else outGraphL sts labs ats (out sig) (outL sig)
                                                                   trGraphL
               inPainter t = do
-                  drawFun <- readIORef drawFunRef
-                  let u = head $ applyDrawFun sig drawFun [t]
-                  spread <- readIORef spreadRef
-                  pict <- (widgetTreeT sizes0 spread u)&runT
-                  if nothing pict then labMag "The tree is empty."
-                  else do
-                       font <- readIORef fontRef
-                       sizes <- mkSizes canv font $ stringsInPict $ get pict
-                       (paint&setEval) "tree" spread
-                       pict <- (widgetTreeT sizes spread u)&runT
-                       curr <- readIORef currRef
-                       (paint&callPaint) [get pict] [curr] False True curr
-                                                                      "white"
+                           drawFun <- readIORef drawFunRef
+                           let u = head $ applyDrawFun sig drawFun str [t]
+                           spread <- readIORef spreadRef
+                           pict <- (widgetTreeT sizes0 spread u)&runT
+                           if nothing pict then labMag "The tree is empty."
+                           else do
+                                font <- readIORef fontRef
+                                sizes <- mkSizes canv font $ stringsInPict $ get pict
+                                (paint&setEval) "tree" spread
+                                pict <- (widgetTreeT sizes spread u)&runT
+                                curr <- readIORef currRef
+                                (paint&callPaint) [get pict] [curr] False True
+                                                             curr "white"
+
           setZcounter zn'
           solve <- readIORef solveRef
           case m of 0  -> enterTree' False trGraph
@@ -6134,10 +6155,11 @@ solver this solveRef enum paint = do
         showTreePicts = do                          -- without transformer:
             sig <- getSignature
             eval <- getInterpreterT                 -- getInterpreter
+            str <- ent `Gtk.get` entryText
             drawFun <- readIORef drawFunRef
             trees <- readIORef treesRef
             spread <- readIORef spreadRef
-            let ts = applyDrawFun sig drawFun trees
+            let ts = applyDrawFun sig drawFun str trees
                 picts = map (eval sizes0 spread) ts
             picts <- mapM runMaybeT picts           -- return ()
             font <- readIORef fontRef
@@ -6636,6 +6658,7 @@ solver this solveRef enum paint = do
         , getSolver       = getSolver'
         , getText         = getTextHere
         , getFont         = getFont'
+        , getPicNo        = getPicNo'
         , getSignatureR   = getSignature
         , getTree         = getTree'
         , isSolPos        = isSolPos'
