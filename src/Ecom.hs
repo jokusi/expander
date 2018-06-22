@@ -142,8 +142,8 @@ command =   msum [do symbol "ApplySubst"; return ApplySubst,
                   do symbol "FlattenImpl"; return FlattenImpl,
                   do symbol "Generalize"; cls <- list linearTerm
                      return $ Generalize cls,
-                  do symbol "Induction"; ind <- token bool; n <- token int
-                     return $ Induction ind n,
+                  do symbol "Induction"; b <- token bool; n <- token int
+                     pars <- list $ some item; return $ Induction b n pars,
                   do symbol "Mark"; ps <- list $ list int; return $ Mark ps,
                   do symbol "Match"; n <- token int; return $ Match n,
                   do symbol "Minimize"; return Minimize,
@@ -742,7 +742,6 @@ solver this solveRef enum paint = do
     checkersRef <- newIORef []
     conjectsRef <- newIORef []
     indClausesRef <- newIORef []
-    iniStatesRef <- newIORef []
     matchTermRef <- newIORef []
     oldTreepossRef <- newIORef []
     proofRef <- newIORef []
@@ -1232,7 +1231,8 @@ solver this solveRef enum paint = do
                 simplRules <- readIORef simplRulesRef
                 modifyIORef transRulesRef
                     $ \transRules -> transRules ++ trips ["->"] axs
-                writeIORef iniStatesRef $ [t | (F "states" _,_,t) <- simplRules]
+                --let iniStates = [t | (F "states" _,_,F "[]" ts) <- simplRules]
+                --changeSimpl "states" $ mkList iniStates
                 labGreen' $ newCls "axioms" file
             else do
                 enterFormulas' cls
@@ -1409,49 +1409,55 @@ solver this solveRef enum paint = do
                                          if invert then invertClause cl else cl
         
         -- | Used by 'checkForward' and 'startInd'.
-        applyCoinduction :: Int -> Action
-        applyCoinduction limit = do
-            trees <- readIORef treesRef
-            curr <- readIORef currRef
-            treeposs <- readIORef treepossRef
-            varCounter <- readIORef varCounterRef
-            axioms <- readIORef axiomsRef
-            let t = trees!!curr
-                qs@(p:ps) = emptyOrAll treeposs
-                rs@(r:_) = map init qs
-                u = getSubterm t r
-                str = "COINDUCTION"
-                g = stretchConc $ varCounter "z"
-                getAxioms = flip noSimplsFor axioms
-            if notnull qs && any null ps then labRed' $ noApp str
-            else do
-                sig <- getSignature
-                newPreds <- readIORef newPredsRef
-                let h x = if x `elem` fst newPreds then getPrevious x else x
-                    conjs@(conj:_) = map (mapT h . getSubterm t) qs
-                    f = preStretch False (isCopred sig)
-                if null ps && universal sig t p conj
-                then case f conj of
-                    Just (x,varps) -> do
-                        let (conj',k) = g varps conj
-                        setZcounter k
-                        applyInd limit False str [conj'] [x] (getAxioms [x])
-                                    t p []
-                    _ -> notStretchable "The conclusion"
-                else 
-                    if allEqual rs && isConjunct u && universal sig t r u then
-                        case mapM f conjs of
-                            Just symvarpss -> do
-                                let (xs,varpss) = unzip symvarpss
-                                    (conjs',ks)
-                                        = unzip $ zipWith g varpss conjs
-                                    ys = mkSet xs
-                                modifyIORef varCounterRef $ \varCounter ->
-                                    updMax varCounter "z" ks
-                                applyInd limit False str conjs' ys
-                                    (getAxioms ys) t r $ restInd (subterms u) qs
-                            _ -> notStretchable "Some conclusion"
-                    else labRed' $ noApp str
+        applyCoinduction :: Int -> [String] -> Action
+        applyCoinduction limit pars = do
+          sig <- getSignature
+          trees <- readIORef treesRef
+          curr <- readIORef currRef
+          treeposs <- readIORef treepossRef
+          varCounter <- readIORef varCounterRef
+          axioms <- readIORef axiomsRef
+          let t = trees!!curr
+              qs@(p:ps) = emptyOrAll treeposs
+              rs@(r:_) = map init qs
+              u = getSubterm t r
+              str = "COINDUCTION"
+              g = stretchConc $ varCounter "z"
+              getAxioms = flip noSimplsFor axioms
+              b "equiv" = True
+              b par     = ((sig&isConstruct) ||| (sig&isDefunct)) (init par) &&
+                          just (parse digit [last par])
+          if notnull qs && any null ps then labRed' $ noApp str
+          else if any (not . b) pars
+                  then labRed' "Enter equiv and functions only."
+               else do
+                    newPreds <- readIORef newPredsRef
+                    let h x = if x `elem` fst newPreds then getPrevious x else x
+                        conjs@(conj:_) = map (mapT h) $ map (getSubterm t) qs
+                        f = preStretch False (sig&isCopred)
+                    if null ps && universal sig t p conj then
+                       case f conj of
+                        Just (x,varps) -> do
+                            let (conj',k) = g varps conj
+                                axs = getAxioms [x]
+                            setZcounter k
+                            applyInd limit pars False str [conj'] [x] axs t p []
+                        _ -> notStretchable "The conclusion"
+                    else if allEqual rs && isConjunct u && universal sig t r u
+                            then case mapM f conjs of
+                                 Just symvarpss
+                                   -> do
+                                      let (xs,varpss) = unzip symvarpss
+                                          (conjs',ks) = unzip $ zipWith g varpss
+                                                                          conjs
+                                          ys = mkSet xs; axs = getAxioms ys
+                                      modifyIORef varCounterRef $ \varCounter
+                                           -> updMax varCounter "z" ks
+                                      applyInd limit pars False str conjs' ys
+                                               axs t r $ restInd (subterms u) qs
+                                 _ -> notStretchable "Some conclusion"
+                            else labRed' $ noApp str
+
         
         -- | Used by 'applyTheorem'.
         applyDisCon :: Maybe Int -> TermS -> [TermS] -> TermS -> [[Int]] -> Sig
@@ -1494,66 +1500,60 @@ solver this solveRef enum paint = do
           else labRed' $ noAppT k
         
         -- Used by 'applyCoinduction' and 'applyInduction'.
-        applyInd :: Int
-                 -> Bool
-                 -> String
-                 -> [TermS]
-                 -> [String]
-                 -> [TermS]
-                 -> TermS
-                 -> [Int]
-                 -> [TermS]
-                 -> Action
-        applyInd limit ind str conjs indsyms axs t p rest = do
-            sig <- getSignature
-            varCounter <- readIORef varCounterRef
-            symbols <- readIORef symbolsRef
-            newPreds <- readIORef newPredsRef
-            let (ps0,cps0) = newPreds
-                syms = if ind then cps0 else ps0
-                vc1 = decrVC varCounter syms
-                oldIndsyms = map getPrevious syms
-                indsyms' = indsyms `join` oldIndsyms
-                (f,vc2) = renaming vc1 indsyms'
-                axs0 = map mergeWithGuard axs
-                (axs1,vc3) = iterate h (axs0,vc2)!!limit
-                h (axs,vc) = applyToHeadOrBody sig
-                          (((`elem` indsyms') .) . label) False axs0 axs vc
-                (newAxs,axs2) = (map mkAx conjs,map g axs1)
-                mkAx (F x [t,u]) = F x [g t,u]; mkAx _ = error "applyInd"
-                -- g replaces a logical predicate r by f(r) and an equation
-                -- h(t)=u with h in xs by the logical atom f(h)(t,u).
-                g eq@(F "=" [F x ts,u]) = if x `elem` indsyms'
-                                          then F (f x) $ ts++[u] else eq
-                g (F x ts)              = F (f x) $ map g ts
-                g t                     = t
-                rels = map f indsyms
-                crels = map mkComplSymbol rels
-                (ps',cps') = if ind then (crels,rels) else (rels,crels)
-                beqs = [x | x@('`':'~':_) <- ps']
-                newAxs1 = newAxs `join` joinMap equivAxs (map f beqs)
-                (ps,cps,cs,ds,fs,hs) = symbols
-            writeIORef symbolsRef (ps `join` ps',cps `join` cps',cs,ds,fs,hs)
-            writeIORef newPredsRef (ps0 `join` ps',cps0 `join` cps')
-            sig <- getSignature
-            let (cls,vc4) = applyToHeadOrBody sig (const2 True) True newAxs axs2 
-                                              vc3
-                conj = mkConjunct cls
-                xs = [x | x <- frees sig conj, noExcl x]
-                u = replace t p $ mkConjunct $ mkAll xs conj:rest
-                msg = "Adding\n\n" ++ showFactors newAxs1 ++
-                   "\n\nto the axioms and applying " ++ str ++ " wrt\n\n"
-                   ++ showFactors axs1 ++ "\n\n"
-            modifyIORef indClausesRef (`join` newAxs1)
-            modifyIORef axiomsRef (`join` newAxs1)
-            writeIORef varCounterRef vc4
-            writeIORef proofStepRef $ Induction ind limit
-            maybeSimplify sig u
-            makeTrees sig
-            proofStep <- readIORef proofStepRef
-            setProofTerm proofStep
-            setTreesFrame []
-            setProof True True msg [p] $ indApplied str
+        applyInd :: Int -> [String] -> Bool -> String -> [TermS] -> [String]
+                 -> [TermS] -> TermS -> [Int] -> [TermS] -> Action
+        applyInd limit pars ind str conjs indsyms axs t p rest = do
+          sig <- getSignature
+          varCounter <- readIORef varCounterRef
+          symbols <- readIORef symbolsRef
+          newPreds <- readIORef newPredsRef
+          let (ps0,cps0) = newPreds
+              syms = if ind then cps0 else ps0
+              vc1 = decrVC varCounter syms
+              oldIndsyms = map getPrevious syms
+              indsyms' = indsyms `join` oldIndsyms
+              (f,vc2) = renaming vc1 indsyms'
+              axs0 = map mergeWithGuard axs
+              (axs1,vc3) = iterate h (axs0,vc2)!!limit
+              h (axs,vc) = applyToHeadOrBody sig (((`elem` indsyms') .) . label)
+                                                 False axs0 axs vc
+              newAxs = map mkAx conjs
+              mkAx (F x [t,u]) = F x [g t,u]
+              mkAx _           = error "applyInd"
+              -- g replaces a logical predicate r by f(r) and an equation
+              -- h(t)=u with h in xs by the logical atom f(h)(t,u).
+              g eq@(F "=" [F x ts,u]) = if x `elem` indsyms'
+                                        then F (f x) $ ts++[u] else eq
+              g (F x ts)              = F (f x) $ map g ts
+              g t                     = t
+              rels = map f indsyms
+              -- crels = map mkComplSymbol rels
+              -- (ps',cps') = if ind then (crels,rels) else (rels,crels)
+              (ps',cps') = if ind then ([],rels) else (rels,[])
+              beqs =  map f [eq | eq@('~':_) <- ps']
+              newAxs1 = newAxs `join` joinMap (congAxs pars) beqs
+              (ps,cps,cs,ds,fs,hs) = symbols
+          writeIORef symbolsRef (ps `join` ps',cps `join` cps',cs,ds,fs,hs)
+          writeIORef newPredsRef (ps0 `join` ps',cps0 `join` cps')
+          sig <- getSignature
+          let (cls,vc4) = applyToHeadOrBody sig (const2 True) True newAxs
+                                                (map g axs1) vc3
+              conj = mkConjunct cls
+              xs = [x | x <- frees sig conj, noExcl x]
+              u = replace t p $ mkConjunct $ mkAll xs conj:rest
+              msg = "Adding\n\n" ++ showFactors newAxs1 ++
+                 "\n\nto the axioms and applying " ++ str ++ " wrt\n\n"
+                 ++ showFactors axs1 ++ "\n\n"
+          modifyIORef indClausesRef (`join` newAxs1)
+          modifyIORef axiomsRef (`join` newAxs1)
+          writeIORef varCounterRef vc4
+          writeIORef proofStepRef $ Induction ind limit pars
+          maybeSimplify sig u
+          makeTrees sig
+          proofStep <- readIORef proofStepRef
+          setProofTerm proofStep
+          setTreesFrame []
+          setProof True True msg [p] $ indApplied str
         
         -- | Used by 'checkForward' and 'startInd'.
         applyInduction :: Int -> Action
@@ -1589,7 +1589,7 @@ solver this solveRef enum paint = do
                                 (axs,ms) = getAxioms [k] [x] axioms
                             modifyIORef varCounterRef $ \varCounter ->
                                 updMax varCounter "z" ms
-                            applyInd limit True str [conj'] [x] axs t p []
+                            applyInd limit [] True str [conj'] [x] axs t p []
                         _ -> notStretchable "The premise"
                 else
                     if allEqual rs && isConjunct u && universal sig t r u
@@ -1602,8 +1602,8 @@ solver this solveRef enum paint = do
                                 (axs,ms) = getAxioms ks ys axioms
                             modifyIORef varCounterRef $ \varCounter ->
                                 updMax varCounter "z" ms
-                            applyInd limit True str conjs' ys axs t r $
-                                    restInd (subterms u) qs
+                            applyInd limit [] True str conjs' ys axs t r $
+                                     restInd (subterms u) qs
                         _ -> notStretchable "Some premise"
                     else labRed' $ noApp str
         
@@ -1931,13 +1931,16 @@ solver this solveRef enum paint = do
                  _ -> labMag "Select a regular expression!"
 
         buildKripke mode = do
-          sig <- getSignature
+          trees <- readIORef treesRef
+          when (null trees) $ enterTree' False $ V""
           str <- ent `Gtk.get` entryText
+          sig <- getSignature
           let noProcs = if (sig&isDefunct) "procs" 
                            then case parse pnat str of Just n -> n; _ -> 0
                            else 0
           when (noProcs > 0) $ changeSimpl "procs" $ mkConsts [0..noProcs-1]
-          iniStates <- readIORef iniStatesRef
+          simplRules <- readIORef simplRulesRef
+          let iniStates = [t | (F "states" _,_,t) <- simplRules]
           changeSimpl "states" $ if null iniStates then mkList [] 
                                                    else head iniStates
           delay $ buildKripke1 mode noProcs
@@ -2272,8 +2275,8 @@ solver this solveRef enum paint = do
                     ExpandTree b n -> expandTree' b n
                     FlattenImpl -> flattenImpl
                     Generalize cls -> generalize' cls
-                    Induction True n -> applyInduction n
-                    Induction _ n -> applyCoinduction n
+                    Induction True n _ -> applyInduction n
+                    Induction _ n pars -> applyCoinduction n pars
                     Mark ps -> do
                         writeIORef treepossRef ps
                         drawCurr'
@@ -6345,16 +6348,20 @@ solver this solveRef enum paint = do
         -- /transform selection/.
         startInd :: Bool -> Action
         startInd ind = do
-            trees <- readIORef treesRef
-            formula <- readIORef formulaRef
-            if null trees || not formula then labBlue' startF
-            else do
-                limit <- ent `Gtk.get` entryText
-                let n = case parse (do symbol "more"; pnat) limit of
-                            Just k -> k
-                            _ -> 0
-                when (n /= 0) $ ent `Gtk.set` [ entryText := "" ]
-                if ind then applyInduction n else applyCoinduction n
+          trees <- readIORef treesRef
+          formula <- readIORef formulaRef
+          if null trees || not formula then labBlue' startF
+          else do
+               params <- ent `Gtk.get` entryText
+               let pars = words params
+               case pars of
+                  "ext":limit:pars | just k
+                    -> do
+                       let n = get k
+                       if ind then applyInduction n else applyCoinduction n pars
+                       where k = parse pnat limit
+                  _ -> if ind then applyInduction 0 else applyCoinduction 0 pars
+
         
         stateEquiv :: Action
         stateEquiv = do

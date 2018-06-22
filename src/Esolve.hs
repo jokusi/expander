@@ -770,9 +770,12 @@ simplifyF sig (F "&" ts) | just t = t
 simplifyF _ (F "$" [F "all" [p],F x ts]) | collector x =
                                         Just $ mkConjunct $ map (apply p) ts
                                            
-simplifyF _ (F "$" [F "$" [F "allany" [r],F x ts],F y us])
-                     | collector x && collector y = Just $ mkConjunct $ map q ts
-                            where q t = mkDisjunct $ map (apply $ apply r t) us
+simplifyF _ (F "$" [F "allany" [r],F "()" [F x ts,F y us]])
+                    | collector x && collector y = Just $ mkConjunct $ map q ts
+                                          where q t = mkDisjunct $ map (f t) us
+                                                f t u = applyL r [t,u]
+
+
 simplifyF _ (F "$" [F "prodE" ts,u])  = Just $ mkTup $ map (flip apply u) ts
 
 simplifyF _ (F "$" [F "/\\" [t,u],v]) = Just $ F "&" [apply t v,apply u v]
@@ -1266,7 +1269,7 @@ simplifyS sig (F "pauto" [t]) | just e = Just $ eqsToGraph [] $ fst
 simplifyS _ t = simplifyT t
 
 getRHS :: Sig -> String -> Maybe RegExp
-getRHS sig x = do [rhs] <- Just $ simplReducts sig False $ F "V" [leaf x]
+getRHS sig x = do [rhs] <- Just $ simplReducts sig False $ F "step" [leaf x]
                   (e,_) <- parseRE sig rhs; Just e
 
 -- * __Signature-independent simplification__

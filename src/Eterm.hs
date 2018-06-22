@@ -1419,14 +1419,15 @@ quoted :: Parser String
 quoted        = do char '"'; x <- many $ sat item (/= '"'); char '"'; return x
 
 infixWord :: Parser String
-infixWord     = do char '`'; x <- some $ sat item (/= '`'); char '`'
-                   return $ '`':x++"`"
+infixWord     = do char '`'; w <- some $ sat item (/= '`'); char '`'
+                   return $ '`':w ++ "`"
 
 noBlanks :: Parser String
-noBlanks      = token $ some $ sat item noDelims
+noBlanks      = token $ some $ sat item noDelim
 
-noDelims :: Char -> Bool
-noDelims c    = c `notElem` " \t\n()[]{},`$.;:+-*<=~>/\\^#&|!"
+noDelim :: Char -> Bool
+noDelim c     = c `notElem` " \t\n()[]{},`$.;:+-*<=~>/\\^#&|!"
+
 
 infixChar :: Char -> Bool
 infixChar c   = c `elem` "$.;:+-*<=~>/\\^#&|!"
@@ -1633,7 +1634,7 @@ singleTerm sig = concat [ constant sig
                         , do t <- enclosedTerm sig; curryrestF sig t
                         , do x <- sat noBlanks (isFovar sig); return $ V x
                         , do x <- sat (token $ some $ sat item
-                                             $ noDelims ||| (== ' '))
+                                                    $ noDelim ||| (== ' '))
                                       $ not . declared sig
                              curryrestF sig $ F (unwords $ words x) []
                         , do x <- sat noBlanks $ functional sig
@@ -2871,12 +2872,13 @@ parseRel sts t = do F "rel" [t] <- Just t
 -- * Signatures, Horn and Co-Horn clauses
 
 iniPreds :: [String]
-iniPreds = words "_ () [] : ++ $ . == -> -/-> ~ ~/~ <= >= < > >> true false" ++
+iniPreds = words "_ () [] : ++ $ . == -> -/-> <= >= < > >> true false" ++
            words "not /\\ \\/ `then` EX AX # <> nxt all any allany disjoint" ++
            words "filter filterL flip foldl foldr foldr1 `in` `NOTin` Int" ++
-           words "`IN` `NOTIN`" ++
-           words "INV Nat List lsec map null NOTnull prodL Real `shares`" ++
-           words "`NOTshares` single `subset` `NOTsubset` rsec Value zipWith"
+           words "`IN` `NOTIN` INV Nat List lsec map null NOTnull prodL" ++
+           words "Real `shares``NOTshares` single `subset` `NOTsubset` rsec" ++
+           words "Value zipWith"
+
 
 iniDefuncts :: [String]
 iniDefuncts = words "_ $ . <=< ; + ++ - * ** / !! atoms auto bag branch" ++
@@ -3414,7 +3416,6 @@ mkApplys (x,tss)  = applyL (mkApplys (x,init tss)) $ last tss
 
 mkComplSymbol :: String -> String
 mkComplSymbol "="                 = "=/="
-mkComplSymbol "~"                 = "~/~"
 mkComplSymbol "->"                = "-/->"
 mkComplSymbol "-/->"              = "->"
 mkComplSymbol "=/="               = "="
@@ -3559,16 +3560,25 @@ invertClause t                                        = t
 -- mkIndHyps t desc constructs the induction hypothesis from a conjecture t and
 -- a descent condition (see createIndHyp in Ecom).
 mkIndHyps :: TermS -> TermS -> [TermS]
-mkIndHyps t desc = case t of F "==>" [u,v] -> [F "<===" [v,F "&" [u,desc]],
-                                               F "===>" [u,F "==>" [desc,v]]]
-                             _ -> [F "<===" [t,desc]]
+mkIndHyps t desc = case t of F "==>" [u,v] -> [mkHorn v $ F "&" [u,desc],
+                                               mkCoHorn u $ F "==>" [desc,v]]
+                             _             -> [mkHorn t desc]
 
--- equivAxs is used by applyInd (see Ecom).
-equivAxs :: String -> [TermS]
-equivAxs equiv = [F "<===" [F equiv [x,y],mkEq x y],
-                  F "<===" [F equiv [x,y],F equiv [y,x]],
-                  F "<===" [F equiv [x,z],F "&" (map (F equiv) [[x,y],[y,z]])]]
-                 where [x,y,z] = map V (words "x y z")
+-- congAxs is used by applyInd (see Ecom).
+congAxs :: [String] -> String -> [TermS]
+congAxs pars equiv = concatMap f pars where
+                     f "equiv" = [mkHorn (x ~~ y) $ mkEq x y,
+                                  mkHorn (x ~~ y) $ y ~~ x,
+                                  mkHorn (x ~~ z) $ F "&" [x ~~ y,y ~~ z]]
+                     f par     = [mkHorn (t c 'x' n ~~ t c 'y' n) $ prem n]
+                                 where c = init par
+                                       n = get $ parse digit [last par]
+                     t ~~ u  = F equiv [t,u]
+                     [x,y,z] = map V $ words "x y z"
+                     t c x n = F c $ map g [1..n] where g i = V $ x:show i
+                     prem n  = F "&" $ map h [1..n]
+                               where h i = V ('x':show i) ~~ V ('y':show i)
+
 
 -- derivedFun sig f xs axs returns Just (loop,inits[xs/ys],ax) if 
 -- ax is f(ys)=loop(take i ys++inits) and ax is the only axiom for f. 

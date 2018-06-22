@@ -1,20 +1,20 @@
--- STREAM
+-- stream
 
-preds:      X P FS GS eqstream F `ble`
-copreds:    NatStream G `le` ~
-defuncts:   zero one blink blink' evens odds map zipWith zip bzip 
+defuncts:   zeros ones blink blink' evens odds map zipWith zip bzip 
 	    fact facts iter1 iter2 fib fib0 fib1 add12 nats loop 
 	    inv switch morse morse1 morse2 morsef
+preds:      X P F FS eqstream F `ble`
+copreds:    NatStream G GS `le` ~
 fovars:     n z z' s s'
 hovars:     X P f
 
 axioms:
 
-  head(zero) == 0
-& tail(zero) == zero
+  head(zeros) == 0
+& tail(zeros) == zeros
 
-& head(one) == 1
-& tail(one) == one
+& head(ones) == 1
+& tail(ones) == ones
 
 & head(blink) == 0
 & tail(blink) == 1:blink
@@ -135,7 +135,7 @@ theorems:
 
 conjects:
 
-  blink ~ zip(zero,one)					-- blinkzip
+  blink ~ zip(zeros,ones)				-- blinkzip
 & evens$zip(s,s') ~ s  					-- evenszip
 & odds$zip(s,s') ~ s'					-- oddszip
 & zip(evens$s,odds$s) ~ s	       		 	-- zipEvensOdds

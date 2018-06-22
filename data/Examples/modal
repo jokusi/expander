@@ -4,7 +4,7 @@ preds:          X P Q true false not \/ /\ `then` or and path
 		EX XE <> >< EF AF FE FA `EU` `AU` F `U` `leadsto` nxt nxt2 
 		allanytrans allanytransL alloutL
 copreds: 	AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR` path G `W` `R` `H` 
-		`~` eqstate eqpath
+		~ eqstate eqpath
 fovars:  	s s' st st' lab at
 hovars:  	X P Q
 
@@ -29,10 +29,12 @@ axioms:
  & ((P\/Q)$st <==> P$st | Q$st)
  & ((P`then`Q)$st <==> (P$st ==> Q$st))
 
- & (allanytrans(P,st,st') <==> allany(P)(trans$st)(trans$st'))
- & (allanytransL(P,st,st') 
-        <==> all(rel(lab,allany(P)(transL(st)$lab)(transL(st')$lab)))$labels)
- & (alloutL(st,st') <==> all(rel(lab,outL(st)$lab=outL(st')$lab))$labels)
+ & (allanytrans(P)(st,st')  <==> allany(P)(trans$st,trans$st'))
+ & (allanytransL(P)(st,st') <==> all(rel(lab,allany(P)(transL(st)$lab,
+						       transL(st')$lab)))
+ 				     $labels)
+ & (alloutL(st,st') <==> all(rel(lab,outL(st)$lab=outL(st')$lab))
+			     $labels)
 
 -- simplification of second-order state formulas
 
@@ -56,10 +58,10 @@ axioms:
  & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
  
  & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & alloutL(st,st')&
-				   allanytrans(X,st,st') &
-				   allanytrans(X,st',st) &
-				   allanytransL(X,st,st') &
-				   allanytransL(X,st',st)))
+				   allanytrans(X)(st,st') &
+				   allanytrans(X)(st',st) &
+				   allanytransL(X)(st,st') &
+				   allanytransL(X)(st',st)))
 
 -- narrowing of first-order state formulas
 
@@ -83,12 +85,9 @@ axioms:
  & ((P`ER`Q)$st ===> Q$st & (P$st | EX(P`ER`Q)$st))	-- release
  & ((P`AR`Q)$st ===> Q$st & (P$st | AX(P`AR`Q)$st))
 
- & (st`~`st' ===> out$st=out$st' & 
-		  outL(st)$lab=outL(st')$lab & 
-		  allany(`~`)(trans$st)(trans$st') &
-		  allany(`~`)(trans$st')(trans$st) &
-		  allany(`~`)(trans(st)$lab)(trans(st')$lab) &
-		  allany(`~`)(trans(st')$lab)(trans(st)$lab))
+ & (st ~ st' ===> out$st=out$st' & alloutL(st,st') &
+		  allanytrans(~)(st,st') & allanytrans(~)(st',st) &
+		  allanytransL(~)(st,st') & allanytransL(~)(st',st))
 
 {- simplification of first-order path formulas
 

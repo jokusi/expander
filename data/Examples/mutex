@@ -2,7 +2,9 @@
 
 specs:		modal
 constructs:  	idle wait crit
-preds:   	live nonBlock noSeq crit' crits Idle Wait Crit Live NonBlock NoSeq 
+defuncts:	procs
+preds:   	live nonBlock noSeq crit' crits Idle Wait Crit Live NonBlock
+		NoSeq 
 		Crit' Crits  check
 defuncts:   	procs start pairs diffpairs pair drawN drawI drawL drawK drawO 
 		drawS drawC
@@ -15,9 +17,9 @@ start == (procs,[],[]) &
 atoms == map($)$pairs & 
 pairs == prodL[[idle,wait,crit],procs] &
 
-(is =/= [] ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & 
+(NOTnull$is ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & 
 								-- i waits
-(ws =/= [] ==> (is,ws,[]) -> (is,init$ws,[last$ws])) &     	-- last$ws enters
+(NOTnull$ws ==> (is,ws,[]) -> (is,init$ws,[last$ws])) &     	-- last$ws enters
 (is,ws,[c]) -> (insert(c)$is,ws,[]) &			     	-- c leaves
 
 -- 2 processes yield 9 states

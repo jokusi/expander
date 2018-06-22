@@ -1,7 +1,8 @@
 -- brzozowski
 
 constructs: 	star mt eps a b c final 
-defuncts:	plus delta beta betaBro deltaBro unfoldB1 unfoldB2 reg1 V S A B 
+defuncts:	plus delta beta betaBro deltaBro unfoldB1 unfoldB2 reg1 step
+		S A B 
 		-- for deltaBro, betaBro and unfoldBro, see Eterm.hs
 copreds:	~
 fovars: 	t u w 
@@ -50,9 +51,9 @@ reg1 == star$plus(a)+plus(b*c) &
 
 -- CF grammar
 
-V$S == a*B+b*A+eps &
-V$A == a*S+b*A*A &
-V$B == b*S+a*B*B &
+step$S == a*B+b*A+eps &
+step$A == a*S+b*A*A &
+step$B == b*S+a*B*B &
 
 -- state equivalence
 

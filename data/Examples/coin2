@@ -1,6 +1,8 @@
 -- coin2
 
-constructs: start coin coffee tea odd
+specs: 		modal
+constructs: 	start coin coffee tea odd
+copreds:	~
 
 axioms:
 
