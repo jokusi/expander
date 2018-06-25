@@ -1,18 +1,37 @@
 -- modal
 
 preds:          X P Q true false not \/ /\ `then` or and path 
-		EX XE <> >< EF AF FE FA `EU` `AU` F `U` `leadsto` nxt nxt2 
-		allanytrans allanytransL alloutL
-copreds: 	AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR` path G `W` `R` `H` 
-		~ eqstate eqpath
+		allanytrans allanytransL alloutL EX XE <> >< EF AF FE FA `EU` 
+		`AU` -- nxt nxt2 F `U` `leadsto` 
+copreds: 	`~` eqstate AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR`
+		-- path eqpath G `W` `R` `H` 
 fovars:  	s s' st st' lab at
 hovars:  	X P Q
 
 axioms:
 
--- simplification of first-order state formulas
+-- state equivalence
 
-   (EX(P)$st <==> any(P)$trans$st)
+   (allanytrans(P)(st,st')  <==> allany(P)(trans$st,trans$st'))
+ & (allanytransL(P)(st,st') <==> all(rel(lab,allany(P)(transL(st)$lab,
+						       transL(st')$lab)))
+ 				     $labels)
+ & (alloutL(st,st') <==> all(rel(lab,outL(st)$lab=outL(st')$lab))
+			     $labels)
+
+ & (st `~` st' ===> out$st=out$st' & alloutL(st,st') &
+		    allanytrans(`~`)(st,st') & allanytrans(`~`)(st',st) &
+		    allanytransL(`~`)(st,st') & allanytransL(`~`)(st',st))
+ 
+ & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & alloutL(st,st')&
+				   allanytrans(X)(st,st') &
+				   allanytrans(X)(st',st) &
+				   allanytransL(X)(st,st') &
+				   allanytransL(X)(st',st)))
+
+-- simplification of basic first-order state formulas
+
+ & (EX(P)$st <==> any(P)$trans$st)
  & (AX(P)$st <==> all(P)$trans$st)
  & ((lab<>P)$st <==> any(P)$transL(st)$lab)
  & ((lab#P)$st <==> all(P)$transL(st)$lab)
@@ -28,40 +47,6 @@ axioms:
  & ((P/\Q)$st <==> P$st & Q$st)
  & ((P\/Q)$st <==> P$st | Q$st)
  & ((P`then`Q)$st <==> (P$st ==> Q$st))
-
- & (allanytrans(P)(st,st')  <==> allany(P)(trans$st,trans$st'))
- & (allanytransL(P)(st,st') <==> all(rel(lab,allany(P)(transL(st)$lab,
-						       transL(st')$lab)))
- 				     $labels)
- & (alloutL(st,st') <==> all(rel(lab,outL(st)$lab=outL(st')$lab))
-			     $labels)
-
--- simplification of second-order state formulas
-
- & (or <==> foldl(\/)$false)
- & (and <==> foldl(/\)$true)
-
- & (EF$P <==> MU X.(P\/EX$X))		     -- forward finally on some path
- & (FE$P <==> MU X.(P\/XE$X))		     -- backwards finally on some path
- & (AF$P <==> MU X.(P\/(AX(X)/\EX$true)))    -- forward finally on all paths 	
- & (FA$P <==> MU X.(P\/(XA(X)/\XE$true)))    -- backwards finally on all paths 	
- & (EG$P <==> NU X.(P/\(EX(X)\/AX$false)))   -- forward generally on some path
- & (GE$P <==> NU X.(P/\(XE(X)\/XA$false)))   -- backwards generally on some path
- & (AG$P <==> NU X.(P/\AX$X))		     -- forward generally on all paths
- & (GA$P <==> NU X.(P/\XA$X))		     -- backwards generally on all paths
-
- & ((P`EU`Q) <==> MU X.(Q\/(P/\EX$X)))	     -- until
- & ((P`AU`Q) <==> MU X.(Q\/(P/\AX$X)))		
- & ((P`EW`Q) <==> NU X.(Q\/(P/\EX$X)))       -- weak until
- & ((P`AW`Q) <==> NU X.(Q\/(P/\AX$X)))
- & ((P`ER`Q) <==> NU X.(Q/\(P\/EX$X)))       -- release
- & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
- 
- & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & alloutL(st,st')&
-				   allanytrans(X)(st,st') &
-				   allanytrans(X)(st',st) &
-				   allanytransL(X)(st,st') &
-				   allanytransL(X)(st',st)))
 
 -- narrowing of first-order state formulas
 
@@ -85,30 +70,38 @@ axioms:
  & ((P`ER`Q)$st ===> Q$st & (P$st | EX(P`ER`Q)$st))	-- release
  & ((P`AR`Q)$st ===> Q$st & (P$st | AX(P`AR`Q)$st))
 
- & (st ~ st' ===> out$st=out$st' & alloutL(st,st') &
-		  allanytrans(~)(st,st') & allanytrans(~)(st',st) &
-		  allanytransL(~)(st,st') & allanytransL(~)(st',st))
+-- simplification of second-order state formulas
+
+ & (or <==> foldl(\/)$false)
+ & (and <==> foldl(/\)$true)
+
+ & (EF$P <==> MU X.(P\/EX$X))		     -- forward finally on some path
+ & (FE$P <==> MU X.(P\/XE$X))		     -- backwards finally on some path
+ & (AF$P <==> MU X.(P\/(AX(X)/\EX$true)))    -- forward finally on all paths 	
+ & (FA$P <==> MU X.(P\/(XA(X)/\XE$true)))    -- backwards finally on all paths 	
+ & (EG$P <==> NU X.(P/\(EX(X)\/AX$false)))   -- forward generally on some path
+ & (GE$P <==> NU X.(P/\(XE(X)\/XA$false)))   -- backwards generally on some path
+ & (AG$P <==> NU X.(P/\AX$X))		     -- forward generally on all paths
+ & (GA$P <==> NU X.(P/\XA$X))		     -- backwards generally on all paths
+
+ & ((P`EU`Q) <==> MU X.(Q\/(P/\EX$X)))	     -- until
+ & ((P`AU`Q) <==> MU X.(Q\/(P/\AX$X)))		
+ & ((P`EW`Q) <==> NU X.(Q\/(P/\EX$X)))       -- weak until
+ & ((P`AW`Q) <==> NU X.(Q\/(P/\AX$X)))
+ & ((P`ER`Q) <==> NU X.(Q/\(P\/EX$X)))       -- release
+ & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
 
 {- simplification of first-order path formulas
 
  & (head$tail$s = x ==>
-      (nxt(P)$s <==> x `in` trans$head$s & (P(tail$s) | x = head$s)))
+        (nxt(P)$s <==> x `in` trans$head$s & (P(tail$s) | x = head$s)))
  & (nxt2(Q)(s,s') <==> head$tail$s `in` trans$head$s & 
 		       head$tail$s' `in` trans$head$s' & Q(tail$s,tail$s'))
-
--- simplification of second-order path formulas
-
- & (F(P) <==> MU X.(P\/nxt$X))			-- finally
- & (G(P) <==> NU X.(P/\nxt$X))			-- generally
- & (P`U`Q <==> MU X.(Q\/(P/\nxt$X)))		-- until
- & (P`W`Q <==> NU X.(Q\/(P/\nxt$X)))		-- weak until
- & (P`R`Q <==> NU X.(Q/\(P\/nxt$X)))		-- release
- & (P`leadsto`Q <==> G(P`then`F$Q))
-
- & (path <==> NU X.nxt$X)
- & (eqpath <==> NU X.rel((s,s'),out$head$s=out$head$s' & nxt2(X)(s,s')))
  
 -- narrowing of first-order path formulas
+
+ & (path$s ===> nxt(path)$s)
+ & (eqpath(s,s') ===> out$head$s=out$head$s' & nxt2(eqpath)(s,s')) 
 
  & (F(P)$s <=== P$s | nxt(F$P)$s)			-- finally
  & (G(P)$s ===> P$s & nxt(G$P)$s)			-- generally
@@ -117,8 +110,17 @@ axioms:
  & ((P`R`Q)$s ===> Q$s & (P$s | nxt(P`R`Q)$s)) 	   	-- release
  & ((P`H`Q)$s ===> P$s & nxt((P`H`Q)\/(Q`H`P)\/G(Q))$s)	-- alternate
 
- & (path$s ===> nxt(path)$s)
- & (eqpath(s,s') ===> out$head$s=out$head$s' & nxt2(eqpath)(s,s')) 
+-- simplification of second-order path formulas
+
+ & (path <==> NU X.nxt$X)
+ & (eqpath <==> NU X.rel((s,s'),out$head$s=out$head$s' & nxt2(X)(s,s')))
+
+ & (F(P) <==> MU X.(P\/nxt$X))			-- finally
+ & (G(P) <==> NU X.(P/\nxt$X))			-- generally
+ & (P`U`Q <==> MU X.(Q\/(P/\nxt$X)))		-- until
+ & (P`W`Q <==> NU X.(Q\/(P/\nxt$X)))		-- weak until
+ & (P`R`Q <==> NU X.(Q/\(P\/nxt$X)))		-- release
+ & (P`leadsto`Q <==> G(P`then`F$Q))
 
 theorems:
 

@@ -1,8 +1,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, April 2018
-                  Jos Kusiek, April 2018
+Copyright   : (c) Peter Padawitz, June 2018
+                  Jos Kusiek, June 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -69,7 +69,7 @@ sigrest key syms =
         [do key <- oneOf keywords; sigrest key syms,
          do x <- sigWord
             let [ps',cps',cs',ds',fs'] = map (`minus1` x) [ps,cps,cs,ds,fs]
-                f = (`join1` x)
+                f s = s `join1` x
             case key of
                 "specs:"      -> sigrest key (f specs,ps,cps,cs,ds,fs,hs)    
                 "preds:"      -> sigrest key (specs,f ps,cps',cs',ds',fs',hs)
@@ -93,7 +93,7 @@ instances syms = msum [do symbol "{"; es <- p; symbol "}"; return es,
                                     return [e]]
 
 sigWord :: Parser String
-sigWord = token (some (sat item (`notElem` "{\t\n "))) `mplus` token infixWord
+sigWord = token $ some (sat item (`notElem` "{\t\n ")) ++ infixWord
 
 keywords :: [String]
 keywords = words "specs: preds: copreds: constructs: defuncts: fovars: hovars:"
@@ -219,17 +219,17 @@ foldArith :: Eq a => Arith a -> TermS -> Maybe a
 foldArith alg = f
  where f (F "-" [t])      = do a <- f t; Just $ inv alg a
        f (F "+" [t,u])    = do a <- f t; b <- f u; Just $ aPlus alg a b
+       f (F "sum" [F x ts]) | collector x = do as <- mapM f ts; Just $ sum_ as
        f (F "-" [t,u])    = do a <- f t; b <- f u; Just $ aMinus alg a b
        f (F "*" [t,u])    = do a <- f t; b <- f u; Just $ aTimes alg a b
+       f (F "product" [F x ts]) | collector x
+                          = do as <- mapM f ts; Just $ prod as
        f (F "**" [t,u])   = do a <- f t; n <- parseNat u
                                Just $ prod $ replicate n a
        f (F "/" [t,u])    = do a <- f t; b <- f u; guard $ b /= zero alg
                                Just $ aDiv alg a b
        f (F "min" [t,u])  = do a <- f t; b <- f u; Just $ aMin alg a b
        f (F "max" [t,u])  = do a <- f t; b <- f u; Just $ aMax alg a b
-       f (F "sum" [F x ts]) | collector x = do as <- mapM f ts; Just $ sum_ as
-       f (F "product" [F x ts]) | collector x 
-                          = do as <- mapM f ts; Just $ prod as
        f (F "min" [F x ts]) | collector x
                           = do as@(_:_)<- mapM f ts; Just $ foldl1 (aMin alg) as
        f (F "max" [F x ts]) | collector x
@@ -1066,6 +1066,13 @@ simplifyS sig (t@(F "$" [f@(F "filter" [g]),F x (u:us)]))
                    rest' = apply f $ F x $ changeLPoss p q us
                    p i = [1,i+1]; q i = [1,i]
 
+simplifyS sig (F "$" [F "$" [F "sfold" [f],a],F x []]) | collector x = Just a
+
+simplifyS sig (F "$" [F "$" [F "sfold" [f],a],F x (t:ts)]) | collector x =
+       Just $ apply (apply (F "sfold" [f]) $ simplifyIter sig $ applyL f [a,t])
+            $ F x ts
+
+
 -- LR parsing
 
 simplifyS sig (F "parseLR" [str]) =
@@ -1369,7 +1376,7 @@ simplifyT (F "$" [F "$" [F "insertL" [t],F "[]" ts],F "[]" all])
 
 simplifyT (F "prodL" [F x ts]) | all collector (x:map root ts) = 
                                 jList $ map mkTup $ mapM subterms ts
- 
+{-
 simplifyT (F "head" [F "[]" (t:_)]) = Just $ dropFromPoss [0,0] t
 
 simplifyT (t@(F "tail" [F "[]" (_:ts)])) | separated f t = 
@@ -1394,7 +1401,7 @@ simplifyT t@(F "$" [F "drop" [u],F "[]" ts]) | isJust n && separated f t =
                                          f p = any h [0..k-1]
                                                where h i = [1,i] <<= p
                                          p i = [1,i+k]
-
+-}
 simplifyT t@(F "++" ts) | allColls "[]" t ts = f $ mkList ts
                           | allColls "{}" t ts = f $ F "{}" ts
                         | allColls "^" t ts  = f $ F "^" ts
@@ -1424,15 +1431,15 @@ simplifyT (F "$" [F "foldr1" [f],F x ts]) | collector x =
 simplifyT (F "$" [F "zip" [F x ts],F y us]) | collectors x y = 
             Just $ mkList $ map g $ zip ts us where g (t,u) = mkPair t u
 
-simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y = 
-            Just $ mkList $ zipWith g ts us where g t u = applyL f [t,u]
-
-simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
-             Just $ F ":" [applyL f [t,u],F "$" [F "$" [F "zipWith" [f],ts],us]]
-
 simplifyT (F "$" [F "$" [F "zipWith" _,F "[]" _],F ":" _]) = Just mkNil
 
 simplifyT (F "$" [F "$" [F "zipWith" _,F ":" _],F "[]" _]) = Just mkNil
+
+simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
+            Just $ F ":" [applyL f [t,u],apply (apply (F "zipWith" [f]) ts) us]
+
+simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y =
+            Just $ mkList $ zipWith g ts us where g t u = applyL f [t,u]
 
 simplifyT (F "index" [t,F x ts]) | collector x = do i <- search (eqTerm t) ts
                                                     jConst i

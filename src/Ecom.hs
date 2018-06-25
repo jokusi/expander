@@ -1429,7 +1429,7 @@ solver this solveRef enum paint = do
                           just (parse digit [last par])
           if notnull qs && any null ps then labRed' $ noApp str
           else if any (not . b) pars
-                  then labRed' "Enter equiv and functions only."
+                  then labRed' "Enter equiv and functions with arity only."
                else do
                     newPreds <- readIORef newPredsRef
                     let h x = if x `elem` fst newPreds then getPrevious x else x
@@ -1530,7 +1530,7 @@ solver this solveRef enum paint = do
               -- crels = map mkComplSymbol rels
               -- (ps',cps') = if ind then (crels,rels) else (rels,crels)
               (ps',cps') = if ind then ([],rels) else (rels,[])
-              beqs =  map f [eq | eq@('~':_) <- ps']
+              beqs =  [eq | eq@('`':'~':_) <- ps']
               newAxs1 = newAxs `join` joinMap (congAxs pars) beqs
               (ps,cps,cs,ds,fs,hs) = symbols
           writeIORef symbolsRef (ps `join` ps',cps `join` cps',cs,ds,fs,hs)
@@ -3255,6 +3255,7 @@ solver this solveRef enum paint = do
                 transitions' = transRules
                 states' = sts; atoms' = ats; labels' = labs; trans' = tr
                 transL' = trL; value' = va; valueL' = vaL
+                base = pr1 . splitVar
              in Sig
                 { isPred      = isPred'
                 , isCopred    = isCopred'
@@ -5952,14 +5953,15 @@ solver this solveRef enum paint = do
         -- | Called by menu item /show sig/ from menu /signature/.
         showSig :: Action
         showSig = do
-            symbols <- readIORef symbolsRef
-            constraints <- readIORef constraintsRef
-            safe <- readIORef safeRef
+          symbols <- readIORef symbolsRef
+          constraints <- readIORef constraintsRef
+          safe <- readIORef safeRef
 
-            enterText' $ showSignature (minus6 symbols iniSymbols) ""
-            let (block,xs) = constraints
-            labGreen' $ see $ "signature" ++ '\n':admitted block xs
-                                          ++ '\n':equationRemoval safe
+          enterText' $ showSignature (minus6 symbols iniSymbols) ""
+          let (block,xs) = constraints
+          labGreen' $ see "signature" ++ '\n':admitted block xs
+                                      ++ '\n':equationRemoval safe
+
         
         -- | Called by menu item /show map/ from menu /signature/.
         showSigMap :: Action

@@ -1,10 +1,10 @@
 -- stream
 
 defuncts:   zeros ones blink blink' evens odds map zipWith zip bzip 
-	    fact facts iter1 iter2 fib fib0 fib1 add12 nats loop 
+	    fact facts iter1 iter2 fib fib0 fib1 addTail nats loop 
 	    inv switch morse morse1 morse2 morsef
 preds:      X P F FS eqstream F `ble`
-copreds:    NatStream G GS `le` ~
+copreds:    NatStream G GS `le` `~`
 fovars:     n z z' s s'
 hovars:     X P f
 
@@ -19,8 +19,8 @@ axioms:
 & head(blink) == 0
 & tail(blink) == 1:blink
 
--- & (blink = 1:blink <==> False)  	-- used in fairblink2 and
-					-- notfairblink2
+-- & (blink = 1:blink <==> False)  	-- used in fairblink2
+					-- and notfairblink2
 & blink' == mu s.(0:1:s)
 
 & head(evens(s)) == head(s)
@@ -92,33 +92,34 @@ axioms:
 
 & head(fib1(n)) == fib(n)
 & head(tail(fib1(n))) == fib(n+1)
-& tail(tail(fib1(n))) == add12(zip(fib1(n),tail(fib1(n))))
+& tail(tail(fib1(n))) == addTail(zip(fib1(n),tail(fib1(n))))
 
-& head(add12(s)) == head(s)+head(tail(s))
-& tail(add12(s)) == add12(tail(tail(s)))
+& head(addTail(s)) == head(s)+head(tail(s))
+& tail(addTail(s)) == addTail(tail(tail(s)))
 
 & head$s+s' == head(s)+head(s')
 & tail$s+s' == tail(s)+tail(s')
 
-& (FS$P <==> MU X.(P\/X.tail))				-- finally
-& (GS$P <==> NU X.(P/\X.tail))				-- generally
+-- state equivalence
 
-& (eqstream <==> NU X.rel((s,s'), head$s=head$s' & X(tail$s,tail$s')))
+& (s `~` s' ===> head$s = head$s' & tail$s `~` tail$s')	
+
+& (eqstream <==> NU X.rel((s,s'),head$s=head$s' & X(tail$s,tail$s')))	
 
 & (F(P)$s <=== P$s | F(P)$tail$s)			-- finally
 & (G(P)$s ===> P$s & G(P)$tail$s)			-- generally
 
-& (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
-
-& (s `le` s' ===> head(s) `ble` head(s'))
-& (s `le` s' ===> (head(s) = head(s') ==> tail(s) `le` tail(s')))
+& (FS$P <==> MU X.(P\/X.tail))				-- finally
+& (GS$P <==> NU X.(P/\X.tail))				-- generally
 
 & (NatStream(x:s) ===> Nat(x) & NatStream$s)
 
+& (s `le` s' ===> head$s `ble` head(s')) 
+& (s `le` s' ===> (head$s = head$s' ==> tail$s `le` tail$s'))
+
 theorems:
 							
-  blink = 0:1:blink					-- used in blinkzip
-& iter1(f,loop(f)(n)(x)) = map(loop(f)(n))(iter2(f,x)) 	-- used in iter1iter1
+  iter1(f,loop(f)(n)(x)) = map(loop(f)(n))(iter2(f,x)) 	-- used in iter1iter1
 & map(loop(f)(0))(s) = s                               	-- used in iter1iter1
 & map(loop(f)(suc(n)))(s) = map(loop(f)(n))(map(f)(s)) 	-- used in iterloop
 & loop(f)(n)(f(x)) = f(loop(f)(n)(x))                  	-- used in maploop
@@ -126,7 +127,7 @@ theorems:
 & tail(fib1(n)) = fib1(n+1)		               	-- used in fib01
 & fib((n+1)+1) = (fib(n)+fib(n+1))		       	-- used in fibtail
 & evens(zip(s,s')) = s				      	-- used in evodmorse
-& s ~ s						       	-- used in evodmorse
+& s `~` s						-- used in evodmorse
 & zip(s,inv(s)) = morsef(s)                            	-- used in morsef
 
 & (x `ble` z <=== x `ble` y & y `ble` z)
@@ -135,51 +136,51 @@ theorems:
 
 conjects:
 
-  blink ~ zip(zeros,ones)				-- blinkzip
-& evens$zip(s,s') ~ s  					-- evenszip
-& odds$zip(s,s') ~ s'					-- oddszip
-& zip(evens$s,odds$s) ~ s	       		 	-- zipEvensOdds
-& evens$x:s ~ x:odds$s				  	-- evensodds
-& bzip(s,s',0) ~ zip(s,s') 				-- bzip
--- bzip(s,s',1) ~ zip(s',s)				
-& inv$inv$s ~ s						-- invinv
-& iter1(f,n) ~ iter2(f,n) 				-- iter1iter2
-& iter1(f,loop(f)(n)(x)) ~ map(loop(f)(n))(iter2(f,x))	-- iterloop
-& map(loop(f)(0))(s) ~ s				-- maploop0
-& map(loop(f)(suc(n)))(s) ~ map(loop(f)(n))(map(f)(s))	-- maploop
-& map(f)(iter1(f,x)) ~ iter1(f,f(x))   			-- mapiter1
-& map(fact)(nats(n)) ~ facts(n)				-- mapfact
-& fib0(n) ~ fib1(n)					-- fib01
-& fib1(n+1) ~ tail(fib1(n))				-- fibtail
-& tail(fib1(n+1)) ~ add12(zip(fib1(n),tail(fib1(n))))   -- tailfib
-& evens$morse ~ morse & odds$tail$morse ~ tail$morse    -- evodmorse
-& morsef$inv$s ~ inv$morsef$s				-- morseinv
-& morse1$inv$s ~ inv$morse1$s				-- morseinv2
-& morsef$morse ~ morse 					-- morsef
-& zip(s,inv$s) ~ morsef$s				-- zipmorse
-& morse ~ 0:zip(inv$morse,tail$morse)
-
-& (x `le` y & y `le` z ==> x `le` z)  			-- kozen1
-& (x `le` y & z `le` z' ==> x+z `le` y+z') 		-- kozen2
-
-& G(F$(=0).head)(blink)			--> True 	-- fairblink
-& Not(G(F$(=0).head)(blink))           	--> False	-- notfairblink
-& G(F$(=2).head)(blink)			--> False 	-- fairblink2
-& Not(G(F$(=2).head)(blink))           	--> True	-- notfairblink2
--- & G(F$(=!x).head)(blink)		--> !x=0 | !x=1 -- fairblinkx
-& G(F$(=0).head)(mu s.(0:1:s))		--> True	-- fairblinkmu
-& GS(FS$(=0).head)$blink    		-- cyclic proof -- fairblinkC
-& (s = blink | s = 1:blink ==> GS(FS$(=0).head)$s) 	
-					--> True        -- fairblinkS
-
-& NatStream(mu s.(1:2:3:s))	--> True 			-- natstream
--- & NatStream(1:2:3:!s)	--> !s = 1:2:3:!s | 		-- natstreamSol
-				--  !s = 2:3:!s | !s = 3:!s
+  blink `~` zip(zeros,ones)					-- blinkzip
+& evens$zip(s,s') `~` s						-- evenszip
+& odds$zip(s,s') `~` s'						-- oddszip
+& zip(evens$s,odds$s) `~` s	       		 		-- zipEvensOdds
+& evens$x:s `~` x:odds$s					-- evensodds
+& bzip(s,s',0) `~` zip(s,s') 					-- bzip
+-- bzip(s,s',1) `~` zip(s',s)				
+& inv$inv$s `~` s						-- invinv
+& iter1(f,n) `~` iter2(f,n) 					-- iter1iter2
+& iter1(f,loop(f)(n)(x)) `~` map(loop(f)(n))(iter2(f,x))	-- iterloop
+& map(loop(f)(0))(s) `~` s					-- maploop0
+& map(loop(f)(suc(n)))(s) `~` map(loop(f)(n))(map(f)(s))	-- maploop
+& map(f)(iter1(f,x)) `~` iter1(f,f(x))   			-- mapiter1
+& map(fact)(nats(n)) `~` facts(n)				-- mapfact
+& fib0(n) `~` fib1(n)						-- fib01
+& fib1(n+1) `~` tail(fib1(n))					-- fibtail
+& tail(fib1(n+1)) `~` addTail(zip(fib1(n),tail(fib1(n)))) 	-- tailfib
+& evens$morse `~` morse & odds$tail$morse `~` tail$morse    	-- evodmorse
+& morsef$inv$s `~` inv$morsef$s					-- morseinv
+& morse1$inv$s `~` inv$morse1$s					-- morseinv2
+& morsef$morse `~` morse 					-- morsef
+& zip(s,inv$s) `~` morsef$s					-- zipmorse
+& morse `~` 0:zip(inv$morse,tail$morse)
 
 & eqstream(blink,0:1:blink)
-
 & (s = x & s' = zip(evens$x,odds$x) | 
    s = tail$x & s' = zip(odds$x,evens$x) ==> eqstream(s,s'))
+
+& G(F$(=0).head)(blink)			--> True 		-- fairblink
+& Not(G(F$(=0).head)(blink))           	--> False		-- notfairblink
+& G(F$(=2).head)(blink)			--> False 		-- fairblink2
+& Not(G(F$(=2).head)(blink))           	--> True		-- notfairblink2
+-- & G(F$(=!x).head)(blink)		--> !x=0 | !x=1	 	-- fairblinkx
+& G(F$(=0).head)(mu s.(0:1:s))		--> True		-- fairblinkmu
+
+& GS(FS$(=0).head)$blink    		-- cyclic proof 	-- fairblinkC
+& (s = blink | s = 1:blink ==> GS(FS$(=0).head)$s) 	
+					--> True        	-- fairblinkS
+
+& NatStream(mu s.(1:2:3:s))	--> True 			-- natstream
+-- & NatStream(1:2:3:!s)	--> !s = 1:2:3:!s |		-- natstreamSol
+				--  !s = 2:3:!s | !s = 3:!s
+
+& (x `le` y & y `le` z ==> x `le` z)  				-- kozen1
+& (x `le` y & z `le` z' ==> x+z `le` y+z') 			-- kozen2
 
 
 

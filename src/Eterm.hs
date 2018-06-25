@@ -307,15 +307,6 @@ showStr x = show x `minus1` '\"'
 showStrList :: Show a => a -> String
 showStrList xs = show xs `minus` "[]\""
 
-blanks :: Int -> String -> String
-blanks n = (replicate n ' ' ++)
-
-newBlanks :: Int -> String -> String
-newBlanks n = ('\n':) . blanks n
-
-enclose :: (String -> String) -> String -> String
-enclose f = ('(':) . f . (')':)
-
 -- | @splitSpec@ is used by 'Ecom.addSpec'.
 splitSpec :: String -> (String, String, String, String, String)
 splitSpec = searchSig []
@@ -1422,18 +1413,20 @@ infixWord :: Parser String
 infixWord     = do char '`'; w <- some $ sat item (/= '`'); char '`'
                    return $ '`':w ++ "`"
 
-noBlanks :: Parser String
-noBlanks      = token $ some $ sat item noDelim
+infixChar :: Char -> Bool
+infixChar c   = c `elem` "$.;:+-*<=~>/\\^#&|!"
 
 noDelim :: Char -> Bool
 noDelim c     = c `notElem` " \t\n()[]{},`$.;:+-*<=~>/\\^#&|!"
 
-
-infixChar :: Char -> Bool
-infixChar c   = c `elem` "$.;:+-*<=~>/\\^#&|!"
+infixString :: Parser String
+infixString   = infixWord ++ some (sat item infixChar)
 
 infixToken :: Parser String
-infixToken    = token $ infixWord ++ some (sat item infixChar)
+infixToken    = token infixString
+
+noBlanks :: Parser String
+noBlanks      = token $ some $ sat item noDelim
 
 infixFun :: Sig -> Parser String
 infixFun      = sat infixToken . functional
@@ -1716,12 +1709,13 @@ graphToTransRules = f [] where
 
 -- ** From REGULAR EXPRESSIONS to LABELLED TRANSITIONS and back
 
-data RegExp = Mt | Eps | Const String | Sum_ RegExp RegExp | 
+data RegExp = Mt | Eps | Const String | Sum_ RegExp RegExp | Int_ |
               Prod RegExp RegExp | Star RegExp | Var String deriving Eq
 
 parseRE :: Sig -> TermS -> Maybe (RegExp,[String])
 parseRE _ (F "mt" [])          = Just (Mt,[])
 parseRE _ (F "eps" [])         = Just (Eps,["eps"])
+parseRE _ (F "int" [])         = Just (Int_,["int"])
 parseRE sig (F a [])           = if (sig&isConstruct) a then Just (Const a,[a])
                                  else do guard $ (sig&isDefunct) a
                                          Just (Var a,[a])
@@ -1742,7 +1736,8 @@ parseRE _ _                    = Nothing
 
 showRE :: RegExp -> TermS
 showRE Mt           = leaf "mt"
-showRE Eps       = leaf "eps"
+showRE Eps          = leaf "eps"
+showRE Int_         = leaf "int"
 showRE (Const a)    = leaf a
 showRE e@(Sum_ _ _) = case summands e of []  -> leaf "mt"
                                          [e] -> showRE e
@@ -1986,6 +1981,8 @@ deltaBro :: (String -> Maybe RegExp) -> RegExp -> String -> Maybe RegExp
 deltaBro getRHS e x = f e where
                       f Mt          = Just Mt
                       f Eps         = Just Mt
+                      f Int_        = Just $ if just $ parse int x then Eps
+                                                                   else Mt
                       f (Const a)   = Just $ if a == x then Eps else Mt
                       f (Sum_ e e') = do e <- f e; e' <- f e'; Just $ Sum_ e e'
                       f (Prod e e') = do e1 <- f e
@@ -1998,8 +1995,9 @@ deltaBro getRHS e x = f e where
                       f (Var x)     = do e <- getRHS x; f e
 
 betaBro :: (String -> Maybe RegExp) -> RegExp -> Maybe Int
-betaBro getRHS = f where f Mt          = Just 0
-                         f Eps         = Just 1
+betaBro getRHS = f where f Eps         = Just 1
+                         f Mt          = Just 0
+                         f Int_        = Just 0
                          f (Const a)   = Just 0
                          f (Sum_ e e') = do b <- f e; c <- f e'; Just $ max b c
                          f (Prod e e') = do b <- f e; if b == 0 then Just 0
@@ -2540,6 +2538,18 @@ newVar n = V $ 'z':show n
 -- * Unparser
 -- ** Unparser of trees
 
+isInfix :: String -> Bool
+isInfix = just . parse infixString
+
+blanks :: Int -> String -> String
+blanks n = (replicate n ' ' ++)
+
+newBlanks :: Int -> String -> String
+newBlanks n = ('\n':) . blanks n
+
+enclose :: (String -> String) -> String -> String
+enclose f = ('(':) . f . (')':)
+
 showTree :: Bool -> TermS -> String
 showTree True t = foldT f t
                   where f "range" [str1,str2] = '[':str1++".."++str2++"]"
@@ -2558,17 +2568,14 @@ showTree True t = foldT f t
                         g x (str:strs) = str++x++g x strs
 showTree _ t    = fst (showImpl t 0) ""
 
-isInfix :: String -> Bool
-isInfix = all infixChar ||| isJust . parse infixWord
-
 showSummands :: [TermS] -> String
 showSummands cs = fst (showVer0 "| " showConjunct cs 0 True) ""
 
 showFactors :: [TermS] -> String
-showFactors fs = fst (showVer0 "& " showFactor fs 0 True) ""
+showFactors fs  = fst (showVer0 "& " showFactor fs 0 True) ""
 
 showSum :: [TermS] -> String
-showSum ts = fst (showVer0 "<+> " showTerm ts 0 True) ""
+showSum ts      = fst (showVer0 "<+> " showTerm ts 0 True) ""
 
 showVer0 :: String
             -> (a -> Int -> (String -> String, Int))
@@ -3760,7 +3767,7 @@ removeCyclePtrs t = case f [] t of Just p -> removeCyclePtrs $ lshiftPos t [p]
 
 -- separated f t is True iff for each pointer p of t, p satisfies f or the
 -- target position of p does not satisfy f. 
--- separated is used by simplifyS (see Esolve).
+-- separated is used by simplifyS/T (see Esolve).
 separated :: ([Int] -> Bool) -> TermS -> Bool
 separated f t = all (f ||| not . f . getPos . label t) $ pointers t
 
@@ -5242,18 +5249,18 @@ joinSubs xs fs gs = h $ fs++gs where h (f:s) = f:[g | g <- h s,
                                                       not $ eqSub xs g V]
                                      h _     = []
 
-(>>>) :: TermS -> (String -> TermS) -> TermS
-t >>> f = h t f []
+(>>>) :: TermS -> SubstS -> TermS
+t>>>f = h t f []
  where h c@(V x) f p                = if isPos x then c else addToPoss p $ f x
-       h c@(F x [t]) f p | binder x = mkBinder op zs $ g $ p ++ [0]
+       h c@(F x [t]) f p | binder x = mkBinder op zs $ g $ p++[0]
                                       where (zs,_,g) = renameAwayFrom f xs t c
                                             op:xs = words x
        h c@(F x ts) f p | lambda x  = F x $ concat $
-                                           zipWithSucs2 g p (evens ts) $ odds ts
+                                          zipWithSucs2 g p (evens ts) $ odds ts
                        where g p par t = [g1 par,g2 p]
                               where (_,g1,g2) = renameAwayFrom f xs t c
                                     xs = foldT v par
-                                    v x xss = if x == root (f x) 
+                                    v x xss = if x == root (f x)
                                               then concat xss else x:concat xss
        h (F x []) f p = case f x of V z -> F z []     -- isV (f x) ==> x is a
                                                       -- higher-order variable.
@@ -5261,8 +5268,8 @@ t >>> f = h t f []
        h (F x ts) f p = case f x of V z -> F z $ g2 g0
                                     F z [] -> F z $ g2 g0
                                     t -> F "$" [addToPoss (p++[0]) t,u]
-                        where g0 t n = h t f (p ++ [n])
-                              g1 t n = h t f (p ++ [1,n])
+                        where g0 t n = h t f (p++[n])
+                              g1 t n = h t f (p++[1,n])
                               g2 g = zipWith g ts $ indices_ ts
                               u = case ts of [t] -> g0 t 1
                                              _ -> mkTup $ g2 g1
@@ -5271,12 +5278,10 @@ t >>> f = h t f []
                             where zs = map g xs
                                   g' = renameAll g
                                   f' = fold2 upd f zs $ map V zs
-                                  g = fst $ renaming vc toBeRenamed
-                                  vc = iniVC $ allSyms b c
-                                  b x = any (eqBase x) toBeRenamed
-                                  toBeRenamed = xs `meet` ys
+                                  g = getSubAwayFrom xs ys c
                                   ys = joinMap (frees . f) $ domSub (frees t) f
                                   frees = allFrees $ const True
+
 
 andThen :: (a -> TermS) -> (String -> TermS) -> a -> TermS
 andThen f g x = f x >>> g
@@ -5304,28 +5309,21 @@ type VarCounter = String -> Int
 
 -- | @splitVar x@ splits @x@ into its non-numerical prefix and its numerical
 -- suffix.
-splitVar
-    :: String -- ^ x
-    -> (String, String, Bool)
-splitVar x = (base,k,b) 
-       where b = isJust $ parse infixWord x
-             (base,k) = break isDigit $ if b then init $ tail x else f x
-             f ('!':x) = x; f x = x
+splitVar :: String -> (String, String, Bool)
+splitVar x = (base,ds,b)
+      where b = just $ parse infixWord x
+            (base,ds) = span (not . isDigit) $ if b then init $ tail x else f x
+            f ('!':x) = x; f x = x
 
-base :: String -> String
-base = pr1 . splitVar
-
--- | @eqBase x y@ checks the non-numerical prefixes of @x@ and @y@ for equality.
-eqBase
-    :: BoolFun String -- ^ x -> y -> Bool
-eqBase x y = base x == base y
                       
 -- | @getSubAwayFrom xs ys t@ renames the variables of @xs `meet` ys@ away from
 -- the variables of @t@.
 getSubAwayFrom :: [String] -> [String] -> TermS -> String -> String
 getSubAwayFrom xs ys t = fst $ renaming vc toBeRenamed
                          where vc = iniVC $ allSyms b t
-                               b x = any (eqBase x) toBeRenamed
+                               b x = any eqBase toBeRenamed
+                                     where eqBase y = base x == base y
+                               base = pr1 . splitVar
                                toBeRenamed = xs `meet` ys
 
 -- iniVC syms initializes the index counter vc the maximal non-numerical 
@@ -5334,21 +5332,17 @@ getSubAwayFrom xs ys t = fst $ renaming vc toBeRenamed
 -- set to n+1. 
 -- iniVC is used by >>>, renameAwayFrom and iniVarCounter (see above), 
 -- initialize and parseSig (see Ecom).
-iniVC
-    :: [String] -- ^ xs
-    -> VarCounter
+iniVC :: [String] -> VarCounter
 iniVC = foldl f $ const 0
-      where f vc x = upd vc base $ max (vc base) $ if null k then 0 
-                                                   else read k+1
-                   where (base,k,_) = splitVar x
+        where f vc x = upd vc base $ max (vc base) $ if null ds then 0
+                                                                else read ds+1
+                       where (base,ds,_) = splitVar x
+
                                     
 -- decrVC vc xs decreases the counter vc of the maximal non-numerical prefixes 
 -- of all strings of xs and is used by applyInd (see Ecom).
-decrVC
-    :: VarCounter -- ^ vc
-    -> [String] -- ^ xs
-    -> VarCounter
-decrVC = foldl f where f vc x = upd vc z $ vc z-1 where z = base x
+decrVC :: VarCounter -> [String] -> VarCounter
+decrVC = foldl f where f vc x = upd vc z $ vc z-1 where z = pr1 $ splitVar x
 
 {-|
     @renaming vc xs@ renames @xn@ in @xs@ to x(vc(x)). The values of @vc@ are
@@ -5412,7 +5406,7 @@ renameFree _ t               = t
 
 getPrevious :: String -> String
 getPrevious x = if b then '`':str++"`" else str
-                where (base,k,b) = splitVar x; n = read k
+                where (base,ds,b) = splitVar x; n = read ds
                       str = if n == 0 then base else base++show (n-1)
 
 -- * Unification of terms and formulas

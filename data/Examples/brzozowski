@@ -1,53 +1,39 @@
 -- brzozowski
 
-constructs: 	star mt eps a b c final 
-defuncts:	plus delta beta betaBro deltaBro unfoldB1 unfoldB2 reg1 step
-		S A B 
-		-- for deltaBro, betaBro and unfoldBro, see Eterm.hs
-copreds:	~
-fovars: 	t u w 
+constructs: 	star mt eps a b c int
+defuncts: 	delta beta unfold1 unfold2 step S A B reg regI ite
+copreds:	`~`
+fovars: 	t u v w 
 
 axioms:
 
-delta(t+u,x) == fun((z,z),delta(t,x),
-		    (mt,z),delta(u,x),
-		    (z,mt),delta(t,x),
-		    z,delta(t,x)+delta(u,x))(t,u) &
-(beta$t=0 ==> delta(t*u,x) == fun((mt,z),mt,
-				  (z,mt),mt,
-				  (eps,z),delta(u,x),
-				  (z,eps),delta(t,x),
-		    		  z,delta(t,x)*u)(t,u)) &
-(beta$t=1 ==> delta(t*u,x) == fun((mt,z),mt,
-				  (z,mt),mt,
-				  (eps,z),delta(u,x),
-				  (z,eps),delta(t,x),
-		    		  z,delta(t,x)*u+delta(u,x))(t,u)) &
+delta(t+u,x) == delta(t,x)+delta(u,x) &
+-- delta(t*u,x) == delta(t,x)*u+ite(beta$t=0,mt,delta(u,x)) &
+
+(delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &
+(delta(t*u,x) = delta(t,x)*u+delta(u,x) <=== beta$t=1) &
+
 delta(star$t,x) == delta(t,x)*star(t) &
-delta(a,x) == ite(a=x,eps,mt) &
-delta(b,x) == ite(b=x,eps,mt) &
-delta(c,x) == ite(c=x,eps,mt) &
-delta(eps,x) == mt &
-delta(mt,x) == mt &
+(x `in` [a,b,c,mt,eps] ==> delta(x,y) == ite(x=y,eps,mt)) &
+delta(int,x) == ite(Int$x,eps,mt) &
 
-(beta$t=0 ==> beta$t+u == beta$u) &
-(beta$t=1 ==> beta$t+u == 1) &
-(beta$t=0 ==> beta$t*u == 0) &
-(beta$t=1 ==> beta$t*u == beta$u) &
+beta$t+u == max(beta$t,beta$u) &
+beta$t*u == beta(t)*beta(u) &
+beta$eps == 1 &
 beta$star$t == 1 &
-beta(a) == 0 &
-beta(b) == 0 &
-beta(c) == 0 &
-beta(eps) == 1 &
-beta(mt) == 0 &
+(x `in` [a,b,c,mt,int] ==> beta(x) == 0) &
 
-unfoldB1$t == beta . foldl(delta)$t &		-- slow
+t+mt == t & 					-- (2)
+-- t+ite(x,u,v) == ite(x,t+u,t+v) &		-- (4)
+-- ite(x,u,v)+t == ite(x,u+t,v+t) &		
+x*max(y,z) == max(x*y,x*z) &			-- (5)
 
-unfoldB2$t == betaBro . foldl(deltaBro)$t &		
+unfold1$t == beta . sfold(delta)$t &		-- sfold = strict fold
+						-- see Esolve.hs
+unfold2$t == betaBro . sfold(deltaBro)$t &	
 
-plus$t == t*star(t) &
-
-reg1 == star$plus(a)+plus(b*c) &
+reg == star$a+b*c &
+regI == star$a+int*c &
 
 -- CF grammar
 
@@ -55,29 +41,37 @@ step$S == a*B+b*A+eps &
 step$A == a*S+b*A*A &
 step$B == b*S+a*B*B &
 
--- state equivalence
+(t `~` u ===> beta$t = beta$u & delta(t,x) `~` delta(u,x)) 
 
-(t ~ u ===> beta$t = beta$u & delta(t,x) ~ delta(u,x)) &
+theorems:
 
-(t ~ u ===> betaBro$t = betaBro$u & deltaBro(t,x) ~ deltaBro(u,x)) 
+(t+u)+(v+w) = t+v+u+w 				-- (3)
+
+conjects:
+
+t*(u+v) `~` t*u+t*v				-- (1)
 
 terms:
 
-unfoldB1(reg1)[a,b,c,a]      	<+>	--> 1		-- 26 steps 
-unfoldB1(reg1)[b,c,a,c]     	<+>	--> 0		-- 22 steps 
+unfold1(reg)[a,b,c,a]  		<+>	--> 1		-- 35 steps (some are slow)
+unfold1(regI)[a,5,c,a] 		<+>	--> 1		-- 35 steps (some are slow)
+unfold1(reg)[b,c,a,c]  		<+>	--> 0		-- 34 steps (some are slow)
 
-unfoldB2(reg1)[a,b,c,a]      	<+>	--> 1		-- 26 steps 
-unfoldB2(reg1)[b,c,a,c]     	<+>	--> 0		-- 22 steps 
+unfold2(reg)[a,b,c,a]      	<+>	--> 1		-- 8 steps 
+unfold2(regI)[a,5,c,a] 		<+>	--> 1		-- 8 steps 
+unfold2(reg)[b,c,a,c]     	<+>	--> 0		-- 8 steps 
 
-unfoldBro(reg1)[a,b,c,a] 	<+>     --> 1	
-unfoldBro(reg1)[b,c,a,c] 	<+>	--> 0	
+unfoldBro(reg)[a,b,c,a] 	<+>     --> 1		-- 2 steps
+unfoldBro(regI)[a,5,c,a,a,566,c]<+>	--> 1		-- 2 steps 
+unfoldBro(regI)[a,c,67,a] 	<+>	--> 0		-- 2 steps
+unfoldBro(reg)[b,c,a,c] 	<+>	--> 0		-- 2 steps
 
--- unfoldB2/Bro(S) accepts words with an equal number of a's and b's
+-- unfold2/Bro(S) accepts words with an equal number of a's and b's
 
-unfoldB2(S)[a,b]   		<+>	--> 1		-- 9 steps
-unfoldB2(S)[a,b,a]  		<+>	--> 0		-- 11 steps
-
-unfoldBro(S)[a,b,a,b,a,a,b,a,b,b,a,b,a,a,b,a,b,b,b,a,b,a] <+> --> 1
+unfold2(S)[a,b]   		<+>	--> 1		-- 6 steps
+unfold2(S)[a,b,a]  		<+>	--> 0		-- 7 steps
+unfold2(S)[a,b,a,b,a,a,b,a,b,b,a,b,a,a,b,a,b,b,b,a,b,a]   <+> --> 1  -- 26 steps
+unfoldBro(S)[a,b,a,b,a,a,b,a,b,b,a,b,a,a,b,a,b,b,b,a,b,a] <+> --> 1  -- 1 step
 unfoldBro(S)$replicate(5)(a)++replicate(5)(b)		      --> 1
 
 
