@@ -2883,7 +2883,7 @@ iniPreds = words "_ () [] : ++ $ . == -> -/-> <= >= < > >> true false" ++
            words "not /\\ \\/ `then` EX AX # <> nxt all any allany disjoint" ++
            words "filter filterL flip foldl foldr foldr1 `in` `NOTin` Int" ++
            words "`IN` `NOTIN` INV Nat List lsec map null NOTnull prodL" ++
-           words "Real `shares``NOTshares` single `subset` `NOTsubset` rsec" ++
+           words "Real `shares` `NOTshares` single `subset` `NOTsubset` rsec" ++
            words "Value zipWith"
 
 
