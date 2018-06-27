@@ -3573,18 +3573,19 @@ mkIndHyps t desc = case t of F "==>" [u,v] -> [mkHorn v $ F "&" [u,desc],
 
 -- congAxs is used by applyInd (see Ecom).
 congAxs :: [String] -> String -> [TermS]
-congAxs pars equiv = concatMap f pars where
-                     f "equiv" = [mkHorn (x ~~ y) $ mkEq x y,
-                                  mkHorn (x ~~ y) $ y ~~ x,
-                                  mkHorn (x ~~ z) $ F "&" [x ~~ y,y ~~ z]]
-                     f par     = [mkHorn (t c 'x' n ~~ t c 'y' n) $ prem n]
-                                 where c = init par
-                                       n = get $ parse digit [last par]
+congAxs pars equiv = map f pars where
+                     f "refl" = mkHorn (x ~~ y) $ mkEq x y
+                     f "symm" = mkHorn (x ~~ y) $ y ~~ x
+                     f "tran" = mkHorn (x ~~ z) $ F "&" [x ~~ y,y ~~ z]
+                     f par    = mkHorn (x ~~ y) $ F "&" cs where
+                                c = init par
+                                n = get $ parse digit [last par]
+                                cs = (x ~~ t 'x'):(y ~~ t 'y'):map h [1..n]
+                                t x = F c $ map (g x) [1..n]
                      t ~~ u  = F equiv [t,u]
                      [x,y,z] = map V $ words "x y z"
-                     t c x n = F c $ map g [1..n] where g i = V $ x:show i
-                     prem n  = F "&" $ map h [1..n]
-                               where h i = V ('x':show i) ~~ V ('y':show i)
+                     g x i = V $ x:show i
+                     h i = g 'x' i ~~ g 'y' i
 
 
 -- derivedFun sig f xs axs returns Just (loop,inits[xs/ys],ax) if 
