@@ -108,7 +108,7 @@ data Step = ApplySubst | ApplySubstTo String TermS | ApplyTransitivity |
             CopySubtrees | CreateIndHyp | CreateInvariant Bool | 
             DecomposeAtom | DeriveMode Bool Bool | EvaluateTrees | 
             ExpandTree Bool Int | FlattenImpl | Generalize [TermS] | 
-            Induction Bool Int [String] | Mark [[Int]] | Match Int | Minimize |
+            Induction Bool Int | Mark [[Int]] | Match Int | Minimize |
             ModifyEqs Int | Narrow Int Bool | NegateAxioms [String] [String] |
             RandomLabels | RandomTree | ReduceRE Int | ReleaseNode |
             ReleaseSubtree | ReleaseTree | RemoveCopies | RemoveEdges Bool |

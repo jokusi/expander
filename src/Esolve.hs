@@ -457,8 +457,9 @@ reduceString sig t = do t <- parse (term sig) t
 -- (see Ecom).
 
 applyDrawFun :: Sig -> String -> String -> [TermS] -> [TermS]
-applyDrawFun _ "addtext" str | null str = id
-                             | True     = map $ add . addToPoss [0]
+applyDrawFun _ "" _       = id
+applyDrawFun _ "text" ""  = id
+applyDrawFun _ "text" str = map $ add . addToPoss [0]
      where add t = mkSum [t,F "widg" [F "red" [F "frame" [F "black" [F "text"
                                                          [leaf str]]]]]]
 applyDrawFun sig draw _ = map $ wtree . fst . simplifyLoop sig True 1 . F draw
@@ -1422,6 +1423,9 @@ simplifyT (F "$" [F "uncurry" [f],F "()" [t]]) = Just $ apply f t
 simplifyT (F "$" [F "$" [F "foldl" [f],a],F x ts]) | collector x = 
                               Just $ foldl g a ts where g a t = applyL f [a,t]
 
+simplifyT (F "$" [F "foldl1" [f],F x ts]) | collector x =
+                              Just $ foldl1 g ts where g a t = applyL f [a,t]
+
 simplifyT (F "$" [F "$" [F "foldr" [f],a],F x ts]) | collector x = 
                               Just $ foldr g a ts where g t a = applyL f [t,a]
 
@@ -1441,11 +1445,11 @@ simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
 simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y =
             Just $ mkList $ zipWith g ts us where g t u = applyL f [t,u]
 
-simplifyT (F "index" [t,F x ts]) | collector x = do i <- search (eqTerm t) ts
-                                                    jConst i
+simplifyT (F "index" [t,F x ts])
+                         | collector x = do i <- search (eqTerm t) ts; jConst i
 
-simplifyT (F "singles" [F x ts]) | collector x = 
-                                                jList $ map (mkList . single) ts
+simplifyT (F "singles" [F x ts])
+                         | collector x = jList $ map (mkList . single) ts
 
 simplifyT t = simplifyT1 t
 
@@ -1463,35 +1467,35 @@ simplifyT1 (F "perms" [F "[]" ts])   = jList $ map mkList $ perms ts
 
 simplifyT1 (F "reverse" [F "[]" ts]) = jList $ reverse ts
 
-simplifyT1 (F "shuffle" [F _ ts]) 
-        | all ((== "[]") . root) ts  = jList $ shuffle $ map subterms ts
+simplifyT1 (F "shuffle" [F x ts])
+           | all ((== "[]") . root) ts  = jList $ shuffle $ map subterms ts
 
-simplifyT1 (F "sort" [F "[]" ts]) 
-        | all isJust is = jConsts $ qsort (<=) $ map fromJust is
-        | all isJust rs = jConsts $ qsort (<=) $ map fromJust rs
-        | True        = jList $ sort (<) ts
-                        where is = map (foldArith intAlg) ts
-                              rs = map (foldArith realAlg) ts
+simplifyT1 (F "sort" [F "[]" ts])
+           | all just is = jConsts $ qsort (<=) $ map get is
+           | all just rs = jConsts $ qsort (<=) $ map get rs
+           | True        = jList $ sort (<) ts
+                           where is = map (foldArith intAlg) ts
+                                 rs = map (foldArith realAlg) ts
 
 -- begin functions with pattern match checker problems
 simplifyT1 (F "subperms" [F "[]" ts]) = jList $ map mkList $ subperms ts
 
 simplifyT1 (F "$" [F x [n],F "[]" ts])
-        | x `elem` words "cantor hilbert mirror snake transpose" && isJust k
-                      = Just $ mkList $ f (fromJust k) $ changeLPoss p single ts
-                        where k = parsePnat n
-                              f = case head x of 'c' -> cantorshelf
-                                                 'h' -> hilbshelf
-                                                 'm' -> mirror
-                                                 's' -> snake
-                                                 _ -> transpose
-                              p i = [1,i]
+           | x `elem` words "cantor hilbert mirror snake transpose" && just k
+                         = Just $ mkList $ f (get k) $ changeLPoss p single ts
+                           where k = parsePnat n
+                                 f = case head x of 'c' -> cantorshelf
+                                                    'h' -> hilbshelf
+                                                    'm' -> mirror
+                                                    's' -> snake
+                                                    _ -> transpose
+                                 p i = [1,i]
 
-simplifyT1 (F x [F "bool" [t],F "bool" [u]]) | isEq x = 
-                                    Just $ if x == "=/=" then F "Not" [v] else v
-                               where v = F "<==>" [changePoss [0,0] [0] t,
-                                                      changePoss [1,0] [1] u]
-                                           
+simplifyT1 (F x [F "bool" [t],F "bool" [u]]) | isEq x
+                         = Just $ if x == "=/=" then F "Not" [v] else v
+                           where v = F "<==>" [changePoss [0,0] [0] t,
+                                               changePoss [1,0] [1] u]
+
 simplifyT1 (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) = 
                   case search (eqTerm t) us of
                        Just n -> Just $ mkEq (mkBag ts') $ mkBag $ context n us
@@ -1551,11 +1555,11 @@ simplifyT1 (F "gauss" [t]) | just eqs =
                               where eqs = parseLinEqs t
 
 simplifyT1 (F x@"gaussI" [t]) | just eqs =
-                        case gauss1 $ get eqs of Just eqs -> f eqs
-                                                 _ -> do eqs <- gauss2 $ fromJust eqs
-                                                         f eqs
-                       where eqs = parseLinEqs t
-                             f eqs = Just $ F x [mkLinEqs $ gauss3 eqs]
+                               case gauss1 $ get eqs of
+                                    Just eqs -> f eqs
+                                    _ -> do eqs <- gauss2 $ get eqs; f eqs
+                               where eqs = parseLinEqs t
+                                     f eqs = Just $ F x [mkLinEqs $ gauss3 eqs]
 
 simplifyT1 (F "obdd" [t])   = do bins <- parseBins t; Just $ binsToObdd bins
 

@@ -1719,7 +1719,6 @@ parseRE _ (F "int" [])         = Just (Int_,["int"])
 parseRE sig (F a [])           = if (sig&isConstruct) a then Just (Const a,[a])
                                  else do guard $ (sig&isDefunct) a
                                          Just (Var a,[a])
-parseRE sig (V x)              = Just (Var x,[x])
 parseRE sig (F "+" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
                                     let (e:es,ass) = unzip pairs
                                     Just (foldl Sum_ e es,joinM ass)
@@ -2092,7 +2091,7 @@ actTable sig (i,k) = if k `elem` nonterminals || length acts /= 1 then Error
 
 -- linear equations (polynomials)
 
-type LinEq = ([(Double,String)],Double)
+type LinEq = ([(Double,String)],Double)   -- a1*x1+...+an*xn+a*x = b
 
 combLins :: (Double -> Double -> Double) -> Double -> LinEq -> LinEq -> LinEq
 combLins f c (ps,a) (qs,b) = (comb ps qs,f a b)
@@ -2121,7 +2120,7 @@ gauss eqs = case gauss1 eqs of
                   _ -> case gauss2 eqs of Just eqs -> gauss $ gauss3 eqs
                                           _ -> Just eqs
 
--- (a1*x1)+...+(an*xn)+(a*x) = b ----> (a1/a*x1)+...+(an/a*xn)+x = b/a
+-- a1*x1+...+an*xn+a*x = b ----> a1/a*x1+...+an/a*xn+x = b/a
                   
 gauss1 :: [LinEq] -> Maybe [LinEq]
 gauss1 eqs = do (i,a) <- searchGet (/= 1) $ map (fst . last . fst) eqs
@@ -2135,7 +2134,7 @@ gauss2 eqs = do (i,eq,eq') <- searchGet2 f g eqs
              where f (ps,_)        = fst (last ps) == 1
                    g (ps,_) (qs,_) = last ps == last qs
 
--- x = b & eqs ----> x = b & eqs[(ps,c-a*b)/((a,x):ps,c)]
+-- x = b & eqs ----> x = b & eqs[(ps = c-a*b)/(a*x+ps = c)]
 
 gauss3 :: [LinEq] -> [LinEq]
 gauss3 = f []
@@ -2441,6 +2440,9 @@ mkVar sig x = if isFovar sig x then V x else F x []
 isVarRoot :: Sig -> TermS -> Bool
 isVarRoot sig = isV ||| isHovar sig . getOp ||| isHidden
 
+newVar :: Show a => a -> TermS
+newVar n = V $ 'z':show n
+
 allSyms :: (String -> Bool) -> TermS -> [String]
 allSyms b (F x [t]) | binder x = allSyms b t `join` filter b (tail $ words x)
 allSyms b (F x ts)             = if b x then us `join1` x else us
@@ -2531,9 +2533,6 @@ universal sig t p u = polarity True t p && all f (frees sig u)
                                                           _ -> True
         where cond b q = polarity b t q && 
                          all (p <<) [r | r <- filterPositions (== x) t, q << r]
-
-newVar :: Show a => a -> TermS
-newVar n = V $ 'z':show n
 
 -- * Unparser
 -- ** Unparser of trees
@@ -3572,21 +3571,19 @@ mkIndHyps t desc = case t of F "==>" [u,v] -> [mkHorn v $ F "&" [u,desc],
                              _             -> [mkHorn t desc]
 
 -- congAxs is used by applyInd (see Ecom).
-congAxs :: [String] -> String -> [TermS]
-congAxs pars equiv = map f pars where
-                     f "refl" = mkHorn (x ~~ y) $ mkEq x y
+congAxs :: String -> [String] -> [TermS]
+congAxs equiv pars = map f pars where
+                     f "refl" = x ~~ x
                      f "symm" = mkHorn (x ~~ y) $ y ~~ x
                      f "tran" = mkHorn (x ~~ z) $ F "&" [x ~~ y,y ~~ z]
-                     f par    = mkHorn (x ~~ y) $ F "&" cs where
-                                c = init par
-                                n = get $ parse digit [last par]
-                                cs = (x ~~ t 'x'):(y ~~ t 'y'):map h [1..n]
-                                t x = F c $ map (g x) [1..n]
+                     f par    = mkHorn (t 'x' ~~ t 'y') $ F "&" $ map h [1..n]
+                                where c = init par
+                                      n = get $ parse digit [last par]
+                                      t x = F c $ map (g x) [1..n]
                      t ~~ u  = F equiv [t,u]
                      [x,y,z] = map V $ words "x y z"
-                     g x i = V $ x:show i
-                     h i = g 'x' i ~~ g 'y' i
-
+                     g x i   = V $ x:show i
+                     h i     = g 'x' i ~~ g 'y' i
 
 -- derivedFun sig f xs axs returns Just (loop,inits[xs/ys],ax) if 
 -- ax is f(ys)=loop(take i ys++inits) and ax is the only axiom for f. 
@@ -5327,7 +5324,7 @@ getSubAwayFrom xs ys t = fst $ renaming vc toBeRenamed
                                base = pr1 . splitVar
                                toBeRenamed = xs `meet` ys
 
--- iniVC syms initializes the index counter vc the maximal non-numerical 
+-- iniVC syms initializes the index counter vc of the maximal non-numerical
 -- prefixes of all strings of xs. If there is no n such that xn is in syms, 
 -- then vc x is set to 0. If n is maximal such that xn is in syms, then vc x is 
 -- set to n+1. 
