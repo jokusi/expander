@@ -14,13 +14,16 @@ axioms:
 (RegExp$star$t <=== RegExp$t) &
 
 delta(t+u,x) == delta(t,x)+delta(u,x) &
+
 -- delta(t*u,x) == delta(t,x)*u+ite(beta$t=0,mt,delta(u,x)) &    
  
-(delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &		     -- axioms for brzo3
+(delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &	-- for brzo1v, brzo2v, brzo3
 (delta(t*u,x) = delta(t,x)*u+delta(u,x) <=== beta$t=1) &
 
 delta(star$t,x) == delta(t,x)*star(t) &
+
 (x `in` [a,b,c,mt,eps] ==> delta(x,y) == ite(x=y,eps,mt)) &
+
 delta(int,x) == ite(Int$x,eps,mt) &
 
 beta$t+u == max(beta$t,beta$u) &
@@ -58,24 +61,30 @@ step$B == b*S+a*B*B &
 
 -- (t `~` u ===> beta$t = beta$u & all(rel(x,delta(t,x)`~`delta(u,x)))[a,b])
 
-(t `~` u ===> beta$t = beta$u & delta(t,x) `~` delta(u,x)) -- axiom for brzo3
-
+(t `~` u ===> beta$t = beta$u & delta(t,x) `~` delta(u,x)) 
+					-- for brzo1v, brzo2v, brzo3
 theorems:
 
 (beta$t = 0 | beta$t = 1) &
-(t+u)+(v+w) = (t+v)+(u+w) 		-- (3)
+(t+u)+(v+w) = (t+v)+(u+w) &		-- (3)
+t*(u+v) = t*u+t*v &
+(u+v)*t = u*t+v*t &
+(t+u)+v = t+(u+v) &
+
+(max(x*y,y) = y <=== x = 0 | x = 1) 
+
 -- (t+u `~0` v+w <=== t `~0` v & u `~0` w) &
 -- t `~0` t
 
 conjects:
 
-star(t+u) `~` star(star(t)*star(u)) &		
-
 star(a+b) `~` star(star(a)*star(b)) &	-- brzo1 (Rosu, Example 3.4)
 
-star(t)*u `~` t*star(t)*u+u &		-- star(t)*u is solution of x = t*x+u 	
+star(t+u) `~` star(star(t)*star(u)) &	-- brzo1v	
 
 star(a)*b `~` a*star(a)*b+b &		-- brzo2 (Rosu, Example 3.6)
+
+star(t)*u `~` t*star(t)*u+u &		-- brzo2v	
 
 t*(u+v) `~` t*u+t*v &			-- brzo3 (ELAS, Example SEQPAR)
 

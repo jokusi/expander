@@ -1,23 +1,26 @@
 -- trans0
 
 specs:		modal
-constructs:	a b c is less
-defuncts:       drawI drawS
-fovars:     	st k n
+constructs:	a b c is -- less
+defuncts:       drawI drawS elem less
+fovars:     	st k n sts
 
 axioms:     
 
   states == [0,22] 
-& atoms == map($)$prodL[[is,less],[1,2,4,14]]
+& atoms == map(is)[0..44]
+-- & atoms == map($)$prodL[[is,less],[1,2,4,14]]
 		 
 & (st < 6 ==> st -> st+1<+>ite(st`mod`2 = 0,st,()))
 & 6 -> branch$[1..5]++[7..10]	  
 & 7 -> 14 
 & 22 -> 33<+>44
-& 44 -> ()
 
-& is$st -> st
-& less$st -> branch$filter(<st)$states
+& (st `in` states ==> is$st -> st)
+-- & less$st -> branch$filter(<st)$states
+
+& elem == foldl1(\/).map(is)
+& less$st == elem$filter(<st)$states
 
 -- widget interpreters:
  
@@ -36,6 +39,7 @@ conjects:
 terms:   
 
     eval(is$4)		--> [4]
+<+> eval(elem[2,4])	--> [2,4]
 <+> eval(EX$is$4)	--> [3,4,6]
 <+> eval(EF$is$4)	--> [4,0,1,2,3,5,6]
 <+> eval(EF$less$4)	--> [0..6]	

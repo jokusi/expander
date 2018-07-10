@@ -103,13 +103,14 @@ data Solver = Solver
     }
   
   
-data Step = ApplySubst | ApplySubstTo String TermS | ApplyTransitivity | 
-            BuildKripke Int | BuildRE | CollapseStep | ComposePointers |
-            CopySubtrees | CreateIndHyp | CreateInvariant Bool | 
-            DecomposeAtom | DeriveMode Bool Bool | EvaluateTrees | 
-            ExpandTree Bool Int | FlattenImpl | Generalize [TermS] | 
-            Induction Bool Int | Mark [[Int]] | Match Int | Minimize |
-            ModifyEqs Int | Narrow Int Bool | NegateAxioms [String] [String] |
+data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
+            ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep |
+            ComposePointers | CopySubtrees | CreateIndHyp |
+            CreateInvariant Bool | DecomposeAtom | DeriveMode Bool Bool |
+            EvaluateTrees | ExpandTree Bool Int | FlattenImpl |
+            Generalize [TermS] | Induction Bool Int | Mark [[Int]] |
+            Match Int | Minimize | ModifyEqs Int | Narrow Int Bool |
+            NegateAxioms [String] [String] |
             RandomLabels | RandomTree | ReduceRE Int | ReleaseNode |
             ReleaseSubtree | ReleaseTree | RemoveCopies | RemoveEdges Bool |
             RemoveNode | RemoveOthers | RemovePath | RemoveSubtrees |

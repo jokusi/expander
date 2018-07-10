@@ -109,7 +109,9 @@ deriveStep step = case step of DeriveMode _ _ -> False
                                _                -> True
 
 command :: Parser Step
-command =   msum [do symbol "ApplySubst"; return ApplySubst,
+command = concat [do symbol "AddAxioms"; axs <- list linearTerm
+                     return $ AddAxioms axs,
+                  do symbol "ApplySubst"; return ApplySubst,
                   do symbol "ApplySubstTo"; x <- token quoted
                      t <- enclosed linearTerm; return $ ApplySubstTo x t,
                   do symbol "ApplyTransitivity"; return ApplyTransitivity,
@@ -194,7 +196,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (July 1, 2018)"
+start = "Welcome to Expander3 (July 5, 2018)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -1209,7 +1211,7 @@ solver this solveRef enum paint = do
                 cls = filter (not . isAxiom sig) axs
             if null cls then do
                 writeIORef solPositionsRef []
-                modifyIORef axiomsRef $ \axioms -> joinTerms axs axioms
+                modifyIORef axiomsRef $ \axioms -> axioms `join` axs
                 modifyIORef simplRulesRef $ \simplRules ->
                     simplRules ++ trips ["==","<==>"] axs
                 simplRules <- readIORef simplRulesRef
@@ -1239,8 +1241,8 @@ solver this solveRef enum paint = do
                 _ -> parseConjects sig file' str'
             where text = null file
 
-        addNamedClauses :: Action
-        addNamedClauses = do
+        addNamedAxioms :: Action
+        addNamedAxioms = do
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
@@ -1262,12 +1264,17 @@ solver this solveRef enum paint = do
                if null pars'
                   then labRed' "Enter axiom names into the entry field."
                   else if null axs then
-                          labRed'"Select a binary relation in the current tree."
-                       else do
-                            modifyIORef axiomsRef
-                              $ \axioms -> joinTerms axs axioms
-                            enterFormulas' axs
-                            labGreen' $ newCls "axioms" "the text field"
+                          labRed' "Select a binary relation in the current tree."
+                       else addNamedAxioms' axs
+
+        addNamedAxioms' axs = do
+          modifyIORef axiomsRef $ \axioms -> axioms `join` axs
+          modifyIORef indClausesRef $ \indClauses -> indClauses `join` axs
+          enterFormulas' axs
+          setProofTerm $ AddAxioms axs
+          let msg = "Adding\n\n" ++ showFactors axs ++
+                    "\n\nto the axioms and applying nothing"
+          setProof True False msg [] $ newCls "axioms" "the text field"
 
         -- | Called by menu items /STACK2IMPL/ and /from file/ from menu
         -- /signature/.
@@ -1380,7 +1387,7 @@ solver this solveRef enum paint = do
         addTheorems t file = do
             -- sig <- getSignature
             modifyIORef theoremsRef $ \theorems ->
-                joinTerms (if isConjunct t then subterms t else [t]) theorems
+                theorems `join` if isConjunct t then subterms t else [t]
             labGreen' $ newCls "theorems" file
         
         -- | Called by menu item /apply clause/ from menu /transform selection/.
@@ -2250,6 +2257,7 @@ solver this solveRef enum paint = do
                 when (deriveStep step && k < length proof)
                     $ writeIORef proofPtrRef k
                 case step of
+                    AddAxioms axs -> addNamedAxioms' axs
                     ApplySubst -> applySubst
                     ApplySubstTo x t -> applySubstTo' x t
                     ApplyTransitivity -> applyTransitivity
@@ -2630,7 +2638,7 @@ solver this solveRef enum paint = do
           mkBut menu "from file" $ getFileAnd $ addClauses mode
           mkBut menu "from text field" $ addClauses mode ""
           when (mode == 0) $ do
-            mkBut menu "from entry field" addNamedClauses; return ()
+            mkBut menu "from entry field" addNamedAxioms; return ()
           solve <- readIORef solveRef
           other <- getSolver solve
           mkBut menu ("from "++ other) $ do tree <- (solve&getTree)
@@ -3359,7 +3367,7 @@ solver this solveRef enum paint = do
         initialize vars str = do
           symbols@(ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
           (nps,ncps) <- readIORef newPredsRef
-          let (ps',cps') = (minus ps nps,minus cps ncps)
+          let (ps',cps') = (ps `minus` nps,cps `minus` ncps)
           constraints@(block,xs) <- readIORef constraintsRef
           treeMode <- readIORef treeModeRef
           trees <- readIORef treesRef
@@ -3452,7 +3460,7 @@ solver this solveRef enum paint = do
                         ps' = x:(x++"Loop"):ps
                     writeIORef symbolsRef (ps',cps`minus1`x,cs,ds,fs,hs)
                     modifyIORef axiomsRef
-                        $ \axioms -> joinTerms axs' $ removeTerms axioms axs
+                        $ \axioms -> axioms `minus` axs `join` axs'
                     modifyIORef varCounterRef
                         $ \varCounter -> upd (incr varCounter "i") "z" k
                     enterFormulas' axs'
@@ -3986,9 +3994,9 @@ solver this solveRef enum paint = do
                cls1 = filterClauses sig redex cls
                cls2 = if saveRedex then map copyRedex cls1 else cls1
                (cls3,vc') = renameApply cls2 sig t vc
-               proceed q f reds used' =
+               proceed q f reds used' vc =
                          narrowPar (replace t q $ f reds) sig k cls saveRedex
-                                   (joinTerms used' used) ps (p:qs)
+                                   (used `join` used') ps (p:qs) vc
                next = narrowPar t sig k cls saveRedex used ps qs vc
                labMsg = labColorToPaint magback
         narrowPar _ _ k _ _ [] _ _ _ =
@@ -4125,7 +4133,7 @@ solver this solveRef enum paint = do
             case parseE (implication sig) conjs of
                 Correct t -> do
                     let ts = if isConjunct t then subterms t else [t]
-                    modifyIORef conjectsRef $ \conjects -> joinTerms ts conjects
+                    modifyIORef conjectsRef $ \conjects -> conjects `join` ts
                     labGreen' $ newCls "conjectures" file
                 p -> incorrect p conjs illformed
         
@@ -4199,7 +4207,7 @@ solver this solveRef enum paint = do
         parseTerms sig file ts =  case parseE (term sig) ts of
             Correct t -> do
                 let ts = if isSum t then subterms t else [t]
-                modifyIORef termsRef $ \terms -> joinTerms ts terms
+                modifyIORef termsRef $ \terms -> ts `join` terms
                 labGreen' $ newCls "terms" file
             p -> incorrect p ts illformed
         
@@ -4931,7 +4939,7 @@ solver this solveRef enum paint = do
                     case applyAxsToTerm cls1 cls3 axioms redex sig vc of
                         (Sum reds vc,used') ->
                             rewritePar (replace t p $ mkSum reds) sig k cls
-                                saveRedex (joinTerms used' used) ps (p:qs) vc
+                                saveRedex (used `join` used') ps (p:qs) vc
                         _ -> rewritePar t sig k cls saveRedex used ps qs vc'
                 else do
                     rand <- readIORef randRef
@@ -4939,7 +4947,7 @@ solver this solveRef enum paint = do
                         (Sum reds vc,used',rand') -> do
                             writeIORef randRef rand'
                             rewritePar (replace t p $ mkSum reds) sig k cls
-                                saveRedex (joinTerms used' used) ps (p:qs) vc
+                                saveRedex (used `join` used') ps (p:qs) vc
                         _ -> rewritePar t sig k cls saveRedex used ps qs vc'
             where redex = getSubterm t p
         rewritePar t sig k cls saveRedex used _ qs vc =
@@ -5331,7 +5339,7 @@ solver this solveRef enum paint = do
 
 
         setProof :: Bool -> Bool -> String -> [[Int]] -> String -> Action
-        setProof correct postSimpl msg ps labMsg = do
+        setProof correct simplPossible msg ps labMsg = do
           proof <- readIORef proofRef
           proofPtr <- readIORef proofPtrRef
           trees <- readIORef treesRef
@@ -5376,7 +5384,7 @@ solver this solveRef enum paint = do
                   if correct then case ruleString of
                                       "NARROWING" -> str0++str1++str2 "atoms"
                                       "REWRITING" -> str1++str2 "terms"
-                                      _ -> str1 `onlyif` postSimpl
+                                      _ -> str1 `onlyif` simplPossible
                   else "\nCAUTION: This step may be semantically incorrect!"
               (msgP,msgL) = if null str3 then (str,labMsg)
                                          else (str++'\n':str3,labMsg++str3)
