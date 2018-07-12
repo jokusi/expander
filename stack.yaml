@@ -2,7 +2,5 @@ flags: {}
 extra-package-dbs: []
 packages:
 - .
-extra-deps:
-- gtk3-0.14.9
-- gio-0.13.5.0
-resolver: nightly-2018-05-29
+extra-deps: []
+resolver: lts-12.0

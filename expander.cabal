@@ -926,6 +926,42 @@ benchmark expander-bench
   -- Base language which the package is written in.
   default-language:    Haskell2010
 
+test-suite expander-test
+  type:               exitcode-stdio-1.0
+  main-is:            expander-test.hs
+  build-depends:      base
+                    , expander
+                    , transformers
+                    , mtl
+                    , array
+                    , gtk3
+                    , cairo
+                    , filepath
+                    , directory
+                    , text
+                    , deepseq
+                    , test-framework
+                    , test-framework-hunit
+                    , test-framework-quickcheck2
+                    , HUnit
+                    , QuickCheck
+                    
+  other-modules:      EcomTest
+                    , EsolveTest
+                    , EpaintTest
+                    , EtermTest
+                    
+  hs-source-dirs:     test
+  if flag(bundle)
+    if os(osx)
+        hs-source-dirs: srcpath/bundle/osx
+    else
+        hs-source-dirs: srcpath/bundle/win32
+  else
+    hs-source-dirs: srcpath/unbundled
+  default-language:   Haskell2010
+  ghc-options:         -threaded -with-rtsopts=-N -rtsopts=all -O2
+
 source-repository head
   type:     git
   location: https://github.com/jokusi/expander

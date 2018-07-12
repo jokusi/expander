@@ -38,8 +38,6 @@ The last command is needed everytime the Expander3 package is build.
 Needs stack to be installed.
 ```
 stack setup
-stack exec -- pacman --needed -Sy bash pacman pacman-mirrors msys2-runtime msys2-runtime-devel
-stack exec -- pacman -Syu
 stack exec -- pacman -Syuu
 stack exec -- pacman -S pkg-config mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolchain base-devel git
 ```
