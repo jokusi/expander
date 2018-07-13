@@ -8,12 +8,14 @@ import qualified EtermTest
 import qualified EpaintTest
 import qualified EsolveTest
 import qualified EcomTest
+import qualified SpecificationTest
 
 tests = 
   [ EtermTest.tests
   , EpaintTest.tests
   , EsolveTest.tests
   , EcomTest.tests
+  , SpecificationTest.tests
   ]
 
 main = defaultMain tests

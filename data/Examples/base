@@ -6,28 +6,30 @@ hovars: f g
 
 axioms:
 
-g<=<f == concat.(map$g).f &            -- Kleisli composition for the list monad
+g<=<f == concat.(map$g).f &            -- Kleisli composition
 
 kfold(f) == foldl$fun((s,x),concat$map(f$x)$s) &
 				       -- Kleisli fold for the list monad
 []++s == s &
 [x]++s == x:s &
-((x:s)++s') == x:(s++s') &
+-- ((x:s)++s') == x:(s++s') &
 s++[] == s &
 
 head$x:s == x &
 tail$x:s == s &
-
-init$x:y:s == x:init$y:s &
-init(s)++[last$s] == s &
-
-last$x:y:s == last$y:s &
 
 take(0)$s == [] &
 take(n)$x:s == x:take(n-1)$s &
 
 drop(0)$s == s &
 drop(n)$x:s == drop(n-1)$s &
+
+init[x] == [] &
+init$x:y:s == x:init$y:s &
+init(s)++[last$s] == s &
+
+last[x] == x &
+last$x:y:s == last$y:s &
 
 length$x:s == length(s)+1 &
 length$init$x:s == length(s) &
@@ -59,7 +61,12 @@ x/1 == x & x/1.0 == x &
 x**0 == 1 & x**0.0 == 1 &
 0**x == 0 & 0.0**x == 0 &
 x**1 == x & x**1.0 == x &
-1**x == 1 & 1.0**x == 1 
+1**x == 1 & 1.0**x == 1 &
+
+(suc$x > x <==> True) &
+(suc(x)-y > x-y <==> True) &
+(x-y > x-suc(y) <==> True) &
+(x < suc$x <==> True) 
 
 {-
 x+suc(y) == suc(x+y) &
@@ -68,10 +75,6 @@ suc(x)-suc(y) == x-y &
 x*suc(y) == x+(x*y) & 
 suc(x)*y == (x*y)+y & 
 x**suc(y) == x*(x**y) &
-(suc$x > x <==> True) &
-(suc(x)-y > x-y <==> True) &
-(x-y > x-suc(y) <==> True) &
-(x < suc$x <==> True) &
 
 (x `in` y:s <==> x = y | x `in` s) &
 (x `NOTin` y:s <==> x =/= y & x `NOTin` s) 

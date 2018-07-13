@@ -950,6 +950,7 @@ test-suite expander-test
                     , EsolveTest
                     , EpaintTest
                     , EtermTest
+                    , SpecificationTest
                     
   hs-source-dirs:     test
   if flag(bundle)

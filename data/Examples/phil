@@ -2,7 +2,8 @@
 
 preds:		free	
 constructs:	think wait eat avail
-defuncts:   	procs lg next idles forks forksL neighbours start inits states eaters states'
+defuncts:   	procs lg next idles forks forksL neighbours start inits 
+		states eaters states'
 		atoms /\ \/ And Or EF mark
 fovars:     	xs ys sols
 
@@ -18,10 +19,13 @@ neighbours == map(fun(x,forks(x)))(procs) &
 
 start == ([],[]) & inits == [start] &
 
-(xs,ys) -> branch(map(fun(x,(x:xs,ys)))(idles(xs,ys))) &  	  -- x waits for her forks
+(xs,ys) -> branch(map(fun(x,(x:xs,ys)))(idles(xs,ys))) &  	  
+						-- x waits for her forks
 (xs =/= [] & last(xs) = x & forks(x) `NOTshares` forksL(ys)
-   	   ==> (xs,ys) -> (init(xs),insert(x,ys))) &  		  -- x starts eating
-(ys =/= [] ==> (xs,ys) -> branch(map(fun(x,(xs,ys-[x])))(ys))) &  -- x stops eating
+   	   ==> (xs,ys) -> (init(xs),insert(x,ys))) &  		  
+						-- x starts eating
+(ys =/= [] ==> (xs,ys) -> branch(map(fun(x,(xs,ys-[x])))(ys))) &  
+						-- x stops eating
 
 atoms == map($)(tups[[think,wait,eat],procs]) & 
 
@@ -36,7 +40,8 @@ free(xs) <=> all(rel(x,forks(x) `NOTsubset` xs))(procs) &
 
 eaters == filter(free)(subsetsB(procs,lg/2)) &
 
-states' == fasttupsfilter(rel(xs,ys,xs `NOTshares` ys))[subperms(procs),eaters]
+states' == fasttupsfilter(rel(xs,ys,xs `NOTshares` ys))
+			 [subperms(procs),eaters]
 	  
 terms:
 
@@ -48,8 +53,10 @@ EF(And(map(eat)(procs))) <+>
 And(map(EF.eat)(procs)) <+>
 Or(map(fun([x,y],eat(x)/\eat(y)))(neighbours)) <+>
 Or(map(fun(x,avail(x)\/eat(x)\/eat((x-1)`mod`lg)))(procs)) <+>
-mark[([],[2]),([],[0,2]),([0],[2]),([1],[2]),([1],[0,2]),([3],[2]),([3],[0,2]),
-     ([0,1],[2]),([1,0],[2]),([0,3],[2]),([3,0],[2]),([1,3],[2]),([1,3],[0,2]),
-     ([3,1],[2]),([3,1],[0,2]),([0,1,3],[2]),([3,1,0],[2]),([1,3,0],[2]),
-     ([3,0,1],[2]),([0,3,1],[2]),([1,0,3],[2])](2)  -- sol(eat(2)) if procs = [0..3]
+mark[([],[2]),([],[0,2]),([0],[2]),([1],[2]),([1],[0,2]),
+	([3],[2]),([3],[0,2]),([0,1],[2]),([1,0],[2]),([0,3],[2]),
+	([3,0],[2]),([1,3],[2]),([1,3],[0,2]),([3,1],[2]),
+	([3,1],[0,2]),([0,1,3],[2]),([3,1,0],[2]),([1,3,0],[2]),
+   	([3,0,1],[2]),([0,3,1],[2]),([1,0,3],[2])](2)  
+					-- sol(eat(2)) if procs = [0..3]
 
