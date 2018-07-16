@@ -1,2 +1,0 @@
--- iter1iter2T
-[DeriveMode False False, Match 0, Mark [[1]], Theorem False (F "=" [V "s", F "$" [F "map" [F "$" [F "loop" [F "f" []], F "0" []]], V "s"]]), Mark [[0, 1, 1, 0]], ReplaceVar "f0" (F "f" []) [], Mark [[0, 1]], Theorem False (F "=" [F "$" [F "map" [F "$" [F "loop" [F "f" []], V "n"]], F "iter2" [F "f" [], V "x"]], F "iter1" [F "f" [], F "$" [F "$" [F "loop" [F "f" []], V "n"], V "x"]]]), Mark [], Simplify True 100 False False, Mark [], Theorem False (F "~" [V "s", V "s"]), Mark []]

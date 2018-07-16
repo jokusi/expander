@@ -1,2 +1,0 @@
--- /Users/Padawitz/ExpanderLib/eosum1T
-[DeriveMode False False, Match 0, Mark [[0, 0, 0]], Match 2, Narrow 0 False, Mark [], Simplify True 100 False, Mark [], Match 0, Mark [[0, 0, 1], [1, 0, 1], [2, 0, 1], [3, 0, 1]], Narrow 0 False, Mark [], Simplify True 100 False, Mark [[0, 0], [1, 0]], Theorem False (F "|" [F "even" [V "x"], F "odd" [V "x"]]), Mark [[2, 0], [1, 0]], Theorem False (F "|" [F "even" [V "x"], F "odd" [V "x"]]), Mark [], Theorem False (F "|" [F "=" [V "st", F "esum" []], F "=" [V "st", F "osum" []]]), Mark []]

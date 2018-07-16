@@ -1,2 +1,0 @@
--- fairblink2T
-[DeriveMode True False, Match 0, Mark [], Induction False 0, Mark [[1]], DeriveMode False False, Narrow 0 False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark []]

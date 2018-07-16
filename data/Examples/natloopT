@@ -1,2 +1,0 @@
--- natloopT
-[DeriveMode False False, Match 0, Mark [], DeriveMode True False, Induction True 0, Mark [], Narrow 1 True, Mark [[0, 1, 0, 0, 0, 0, 0]], ReplaceVar "f0" (F "f" []) [0, 0], Mark [[0, 1, 0, 0, 1, 0]], ReplaceVar "x1" (V "x0") [0, 0], Mark [[0], [0, 1, 0]], ReplaceSubtrees [[0, 1, 0]] [F "f" [F "$" [F "$" [F "loop2" [F "f" []], V "x"], F "f" [V "x0"]]]], Mark [[0], [0, 1, 1, 0]], ReplaceSubtrees [[0, 1, 1, 0]] [F "$" [F "$" [F "loop2" [F "f" []], V "x"], F "f" [V "x0"]]], Mark []]

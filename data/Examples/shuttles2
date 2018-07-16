@@ -1,5 +1,0 @@
--- shuttles2
-fun((F,x),
-    turt(F(1,x,dark cyan),J(22),O,T( -90),J(22),flipV(F(1,x,dark yellow)),C,O,T(90),J(22),
-         flipV(F(1,x,dark magenta)),C,J(22),flipV(F(1,x,green))))
-((turt.(shineW.polySF),[22,12,0,0,22,5,22,0,0,12]))

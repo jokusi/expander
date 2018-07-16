@@ -4,8 +4,7 @@ specs:		modal
 constructs:  	idle wait crit
 defuncts:	procs
 preds:   	live nonBlock noSeq crit' crits Idle Wait Crit Live NonBlock
-		NoSeq 
-		Crit' Crits  check
+		NoSeq Crit' Crits  check
 defuncts:   	procs start pairs diffpairs pair drawN drawI drawL drawK drawO 
 		drawS drawC
 fovars:		st i c is ws cs k n
@@ -18,9 +17,9 @@ atoms == map($)$pairs &
 pairs == prodL[[idle,wait,crit],procs] &
 
 (NOTnull$is ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & 
-								-- i waits
-(NOTnull$ws ==> (is,ws,[]) -> (is,init$ws,[last$ws])) &     	-- last$ws enters
-(is,ws,[c]) -> (insert(c)$is,ws,[]) &			     	-- c leaves
+							-- i waits
+(NOTnull$ws ==> (is,ws,[]) -> (is,init$ws,[last$ws])) &	-- last$ws enters
+(is,ws,[c]) -> (insert(c)$is,ws,[]) &			-- c leaves
 
 -- 2 processes yield 9 states
 -- 3 processes yield 31 states
@@ -88,7 +87,6 @@ drawS == wtree $ fun(sat$st,frame$text$st) &
 drawC == wtree $ fun(sat$st,green$circ$11,st,red$circ$11) &
 
 diffpairs == filter(=/=)$prodL$[procs,procs] 
-
 
 conjects:
 

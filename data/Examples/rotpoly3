@@ -1,3 +1,0 @@
--- srotpoly
-repeat(shuffleA(rotate(poly(6,[33,11],red)),rotate(turt(J(66),poly(6,[33,11],green))),
-                rotate(turt(J(132),poly(6,[33,11],blue)))))

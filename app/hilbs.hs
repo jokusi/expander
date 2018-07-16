@@ -1,7 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 
-import Gui
+import Gui.Base
+import Gui.Canvas
 import Control.Arrow ((***))
 import Control.Monad.IO.Class (liftIO)
 import Graphics.UI.Gtk as Gtk hiding (Point, Action, rectangle, Color)
@@ -203,7 +204,7 @@ painter = do -- template
             file <- readIORef fileRef
             maybe
                 saveAsGraph
-                (void . canvasSave canv PNG)
+                (void . canvasSave canv)
                 file
         
         saveAsGraph :: Action

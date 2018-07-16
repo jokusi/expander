@@ -1,5 +1,0 @@
--- combsp
-[Assign("fact",IntE(1)),
- Loop(Greater(Var("x"),IntE(0)),
-      [Assign("fact",Prod[Var("fact"),Var("x")]),
-       Assign("x",Sub(Var("x"),IntE(1)))])]

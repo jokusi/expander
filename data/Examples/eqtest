@@ -1,4 +1,0 @@
--- eqtest
-z0 = 0(pos 0 1,pos 1 1) & z1 = 1(pos 2 1) & z2 = 2(pos 2 1,pos 3 1) & 
-z3 = 3(pos 4 1) & z4 = 4(pos 4 1,pos 5 1) & z5 = 5(pos 6 1) & 
-z6 = 6(pos 6 1,pos 7 1) & z7 = 7(8)

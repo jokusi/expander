@@ -1,8 +1,0 @@
--- cpic2
-[#FF0000(pos 24 0),#FF003D(pos 24 0),#CC00FF(pos 24 0),#8F00FF(pos 24 0),
- #00FFA3(pos 24 0),#FF007A(pos 24 0),#FF00F5(pos 24 0),#5200FF(pos 24 0),
- #00FFE0(pos 24 0),#00FF66(pos 24 0),#FF00B8(pos 24 0),#1400FF(pos 24 0),
- #00E0FF(pos 24 0),#00FF29(pos 24 0),#FFF500(pos 24 0),#0029FF(pos 24 0),
- #00A3FF(pos 24 0),#14FF00(pos 24 0),#CCFF00(pos 24 0),#FFB800(pos 24 0),
- #0066FF(pos 24 0),#52FF00(pos 24 0),#8FFF00(pos 24 0),#FF7A00(pos 24 0),
- #FF3D00(rect(pos 24 0 1,15))]

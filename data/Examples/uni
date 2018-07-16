@@ -1,6 +1,0 @@
--- UNI
-Not(All s0 s'0 f0 x0 f2 x2:
-    (    tail(s0) = map(f0)(iter1(f0,x0))
-       & tail(s'0) = iter1(f0,f0(x0))
-     |   tail(s0) = map(f2)(iter1(f2,x2))
-       & tail(s'0) = iter1(f2,f2(x2))))

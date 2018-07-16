@@ -1,2 +1,0 @@
--- iterloopT
-[DeriveMode True False, Match 0, Mark [], Induction False 0, Mark [[0, 1]], Theorem False (F "=" [F "$" [F "map" [F "$" [F "loop" [F "f" []], V "n"]], F "$" [F "map" [F "f" []], V "s"]], F "$" [F "map" [F "$" [F "loop" [F "f" []], F "suc" [V "n"]]], V "s"]]), Mark [], Narrow 1 True, Mark []]

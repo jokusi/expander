@@ -12,7 +12,7 @@ kfold(f) == foldl$fun((s,x),concat$map(f$x)$s) &
 				       -- Kleisli fold for the list monad
 []++s == s &
 [x]++s == x:s &
--- ((x:s)++s') == x:(s++s') &
+(x:s)++s' == x:(s++s') &
 s++[] == s &
 
 head$x:s == x &

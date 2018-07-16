@@ -1,2 +1,0 @@
--- stateflow2PT
-[DeriveMode True False, Match 0, Mark [], Simplify 1 ["mu", "MU", "NU"] True False False, Mark [], Simplify 7 ["mu", "MU", "NU"] True False False, Mark [], Simplify 7 ["mu", "MU", "NU"] True False False, Mark [[0], [1], [2], [3], [4], [5], [6]], Simplify 1 ["mu", "MU", "NU"] False False True, Mark [], Simplify 11 ["mu", "MU", "NU"] True False True, Mark [], Simplify 11 [] True False True, Mark [], Simplify 11 [] True False True, Mark [], Simplify 11 [] True False True, Mark [], Simplify 11 [] True False True, Mark [], Simplify 11 [] True False True, Mark []]

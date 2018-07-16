@@ -1,2 +1,0 @@
--- fairblinkxT
-[DeriveMode True False, Match 0, Mark [], Induction False 0, Mark [[1]], Induction False 0, Mark [[2]], Narrow 0 False, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [[2]], RemoveSubtrees, Mark []]

@@ -1,4 +1,0 @@
--- rectshelfS
-shelves(17,0,
-        shuffle(map(fun(z,light(-z,rainbow(rect(26,26,yellow),26))))
-                [0,5,10,15,20,25,30,35,40,35,30,25,20,15,10,5,0]))

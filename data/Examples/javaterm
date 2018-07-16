@@ -1,1 +1,0 @@
-Seq (Assign ("fact",Sum (Prod (EmbedI 1,NilP),NilS)),Embed (Loop (EmbedC (EmbedL (Atom (Sum (Prod (Var "x",NilP),NilS),">",Sum (Prod (EmbedI 1,NilP),NilS)))),Block (Seq (Assign ("fact",Sum (Prod (Var "fact",Prodsect ("*",Var "x",NilP)),NilS)),Embed (Assign ("x",Sum (Prod (Var "x",NilP),Sumsect ("-",Prod (EmbedI 1,NilP),NilS)))))))))

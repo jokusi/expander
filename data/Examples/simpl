@@ -22,6 +22,7 @@ conjects:
 & (P(x,y) ==> (Q(y) ==> R(x,y,z)) | P(y,z))
 & zipWith(=)([1,x,3,4])([1,2,y,4])
 & (Any x y z:(x = f(y) & Q(z)) ==> Any x' y' z':(Q(z') & f(y') = x'))
+& (All x y z:(x = f(y) & Q(z)) ==> All x' y' z':(Q(z') & f(y') = x'))
 & [2,3]++[5`mod`2,1] <+> 78 <+> []^{9,5,5}^{9,9,5} = x
 & {2,1^3,{1,4,x},f({5,5})} = {{4,x,1},3^1,2,3^1,f({5}),2}
 
@@ -54,7 +55,10 @@ conjects:
 
 terms: 
 
-    g(s,g(s,sd,g(s,sd,r)),r)<+>g(s,sd,r)<+>g(s,sd,g(s,sd,r))<+>g(g(s,sd,r),sd,r)
+    g(s,g(s,sd,g(s,sd,r)),r)
+<+> g(s,sd,r)
+<+> g(s,sd,g(s,sd,r))
+<+> g(g(s,sd,r),sd,r)
 <+> take(4)$iter(+1)$0 
 <+> take(4)$iterate(+1)$0 
 <+> take(4)$iter(+3*2)$0 
@@ -117,18 +121,18 @@ terms:
 
 <+> lin(5*x+6*y+z)+lin(4*x+7*y+z)
 
-<+> gauss(x+y-z+z' = 6 		&
-      2*x+y-z-z'   = 8		&
-      x+2*y+z-2*z' = 10		&
+<+> gauss(x+y-z+z' = 6	&
+      2*x+y-z-z'   = 8	&
+      x+2*y+z-2*z' = 10	&
       x-y-z+3*z'   = 2)
-<+> gaussI(x+y-z+z' = 6         &
-      2*x+y-z-z'   = 8		&
-      x+2*y+z-2*z' = 10		&
-      x-y-z+3*z'   = 2)
+<+> gaussI(x+y-z+z' = 6	 &
+      2*x+y-z-z'    = 8	 &
+      x+2*y+z-2*z'  = 10 &
+      x-y-z+3*z'    = 2)
 
 <+> filter(<4)[1..5]
 <+> filter(`NOTin`[2,5])[1,2,3,4,5]
-<+> filter(rel(x,sum$x=6))$replicate(3)[1,2,3]
+<+> filter(rel(x,sum$x=6))[[1,2,3],[2,3,2],[12,0,-6]]
 <+> filterL(=/=)[[1,2,3],[a,1,c]]
 <+> filterL(=/=)[[1,2,3],[1,2,3]]
 <+> filterL(`NOTin`)[[3,5,7],[[2,3,4],[4,5,6],[6,7,8]]]
@@ -140,8 +144,6 @@ terms:
 <+> fun(x,f(f(x,x,x),f(x,x,x)))(f(ggg,nnn,bbb))
 
 <+> map(+3)[3,6,4] 
-<+> mapfilterL(=/=)(+)[[1,2,3],[1,2,3]]
-<+> mapfilterL(=/=)(+)$replicate(2)[1..5]
 <+> [(0,[1]),(1,[2]),(2,[3]),(3,[4]),(4,[5]),(5,[0])]
 
 <+> concat$replicate(5)[1,2,f(pos 0 1 2 1,g(x)),3,4]

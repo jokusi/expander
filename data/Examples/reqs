@@ -1,4 +1,0 @@
--- reqs
-red_1 = 1(a(pos 2),b(pos 3),c(pos 1)) & red_2 = 2(a(pos 4),b(pos 4),c(pos 3)) & 
-red_3 = 3(a(pos 5),b(pos 1),c(pos 2)) & red_4 = 4(a(pos 2),b(pos 0),c(pos 5)) & 
-red_5 = 5(a(pos 4),b(pos 1),c(pos 2)) & red_6 = 6(a(pos 4),b(pos 4),c(pos 0))

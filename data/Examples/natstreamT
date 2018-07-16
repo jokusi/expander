@@ -1,2 +1,0 @@
--- natstreamT
-[DeriveMode True True, Match 2, Mark [], Induction False 0, Mark [], Simplify True 100 False False, Mark [], Induction False 0, Mark [], Induction False 0, Mark [], DeriveMode False False, Narrow 1 True, Mark [], Simplify True 100 False False, Mark []]

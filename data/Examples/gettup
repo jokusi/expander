@@ -1,2 +1,0 @@
--- gettup
-(get1.tup(suc,suc.suc))(9) - (get0.tup(suc,suc.suc))(9)

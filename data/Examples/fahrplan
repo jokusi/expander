@@ -1,8 +1,0 @@
--- fahrplan
-
-[Zug(Zugnr(Linie(RB59),Zeit(10,7)),
-     [Koord(Bahnhof(EDO),Minus,Zeit(10,7)),
-      Koord(Bahnhof(EDWH),Zeit(10,12),Plus)]),
- Zug(Zugnr(Linie(RB53),Zeit(10,9)),
-     [Koord(Bahnhof(EDWH),Plus,Zeit(10,9)),Koord(Bahnhof(EDO),Zeit(10,9),Minus)]),
- Zug(Zugnr(Linie(RB52),Zeit(10,27)),[Koord(Bahnhof(EHG),Minus,Zeit(9,53))])]

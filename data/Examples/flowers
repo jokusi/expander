@@ -1,38 +1,0 @@
--- flowers
-
-defuncts:	blos poly rhombs bunch
-
-axioms:	rhomb -> leafA(15,6)			
-&	rhomb -> turt(blosA(10,5,2,red),blos)
-&	rhomb -> polyR(5,9,3)			
-
-&	blos == blosA(10,8,50) 			
-&	poly == polyR(5,9,3)				
-&	rhombs(x) == flower(x)$replicate(5)$rhomb	
-&	bunch == rainbow(0,11,0,11)$scale(8)
-			   $flower(2)[rhomb,rhomb,rhombs(2),rhomb,rhombs(3)]
-
-terms: 	rhomb
-<+>	(blos(21,33)<+>blosA(21,222,50)<+>blosR(21,222,50)<+>blosS(21,66,50))
-<+>	scale(6)$flower(2)[blosA(11,8,50),rhomb,rhombs(2),rhomb,rhombs(3)] 
-<+>	file$flower4						
-<+>	flower(2)[rhomb,rhomb,rhombs(2),rhomb,rhombs(3)]	
-<+>	flower(1)[rhomb,rhombs(1),rhombs(3),rhombs(2),
-                  flower(2)[rhomb,rhombs(3),rhombs(2),rhomb,rhomb]] 
-<+>	flower(3)[rhomb,rhomb,flipV$poly,rhomb,turt[blosA(10,5,2,red),blos]]	
-<+> 	flower(3)[rhomb,rhomb,flipV$poly,rhomb,gif(tweety,111)]	
-<+>	scale(6)$flower(2)[rhomb,rhomb,turt[blosA(10,8,50,red),blos],rhomb,
-                           turt[blosA(10,8,50,green),blos]] 	
-<+>	fun(x,turt[R,x,flipV$x,B,x,flipV$x])$bunch
-<+>	scale(8)$blue$
-       fun(x,
-           fun(y,
-	       fun(z,
-	           flower(1)
-		         [y,flower(2)[rhomb,rhombs(3),z,rhomb,rhomb],y,z,x]) $ 
-               flower(2)[x,y,rhombs(2),rhomb,rhomb]) $ 
-           flower(1)[rhomb,x,rhombs(3),x,x]) $ 
-       flower(2)[rhomb,rhombs(3),rhombs(2),rhomb,rhomb] 
-<+>	red$flower2[skip,rhomb,leafC(15,4),rhomb,leafC(20,6)]	
-<+>	red$flower1[skip,rhomb,leafC(15,4),rhomb,leafC(20,6)] 0>red(flower2[pos 0 0 4 0 4 0 0,               flower0[pos 0 0 4 0 4 0 4,pos 0 0 4 0 4 0 3,pos 0 0 4 0 4 0 2,                       pos 0 0 2,pos 0 0 3],               flower2(pos 0 0 3 0),               flower1[pos 0 0 4 0 4 0 4,pos 0 0 4 0 4 0 3,pos 0 0 4 0 4 0 2,                       pos 0 0 4 0 4 0 3,pos 0 0 4 0 4 0 4],               flower2[pos 0 0 4 0 4 0 2,flower0(pos 0 0 4 0 4 0),pos 0 0 4 0 4,                       pos 0 0 4 0 4 0 2,                       flower2[skip,pos 0 0 4 0 4 0 3,leafC(15,4),rhomb,                               leafC(20,6)]]])
-

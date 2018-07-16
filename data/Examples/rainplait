@@ -1,3 +1,0 @@
--- rainplait
-shuffle(fproduct(fun(z,rainbow(z)),fun(z,rainbow(turt(T(45),z))),fun(z,rainbow(turt(R,z))),
-                 fun(z,rainbow(turt(T(135),z))))(plaitS(5,80,yellow,yellow,0)))

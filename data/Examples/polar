@@ -1,9 +1,0 @@
--- polar
-    (    ((div(X,Y)=(Q,R))==>&(X=((Y*Q)+R),R<Y))==>&(X=((Y*Q)+R),
-                                                     (div(X,Y)=(Q,R))==>&(X=((Y*Q)+R),R<Y)) = (Q,R)
-     ==>   X = (Y*Q)+R
-         & R < Y)
-==>   X = (Y*Q)+R
-    & (    div(X,Y) = (Q,R)
-       ==> Not(  X = (Y*Q)+R
-               & R < Y))

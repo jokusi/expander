@@ -1,2 +1,0 @@
--- rainsnow
-repeat(rainbow(snow(3,22,green),51),reverse(rainbow(snow(3,22,green),51)))

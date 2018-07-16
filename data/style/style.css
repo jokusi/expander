@@ -24,6 +24,9 @@
 .bg_redpulse {
     animation: redpulse 1s infinite alternate;
 }
+.label {
+    color: black
+}
 .font10 {
     font: 10px Sans-serif italic;
 }
