@@ -24,7 +24,7 @@ test_all_specifications = buildTest $ do
     dir <- builtinLibDir
     list <- listDirectory dir
     listOfFiles <- filterM (doesFileExist . (dir </>)) list
-    let listOfSpecs = filter (not . hasExtension) listOfFiles
+    let listOfSpecs = reverse $ filter (not . hasExtension) listOfFiles
         listOfTests = map mkSpecTest listOfSpecs
         tests = testGroup "specifications" listOfTests
     return tests

@@ -61,6 +61,7 @@ data-files:          Examples/DNA
                    , Examples/cellular
                    , Examples/coin1
                    , Examples/coin2
+                   , Examples/crossing
                    , Examples/cse
                    , Examples/cycle
                    , Examples/derecExp

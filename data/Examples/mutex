@@ -1,10 +1,22 @@
 -- mutex
 
+{- Huth, Ryan, Logic in Computer Science, 14.3
+
+   Safety:       There is at most one process in the critical section.	(1)
+   Liveness:     If a process asks for entering the critical section,
+	         it will enter it sometime.				(2)
+   Non-blocking: Every process may ask for entering the critical 
+		 section.						(3)
+   No strict sequencing : 
+		 Every process that has left the critical section may 
+		 enter it again before another process does so. 	(4)
+-}	
+
 specs:		modal
 constructs:  	idle wait crit
 defuncts:	procs
-preds:   	live nonBlock noSeq crit' crits Idle Wait Crit Live NonBlock
-		NoSeq Crit' Crits  check
+preds:   	safe live nonBlock noSeq Safe Live NonBlock NoSeq 
+		crit' crits Idle Wait Crit Crit' Crits check
 defuncts:   	procs start pairs diffpairs pair drawN drawI drawL drawK drawO 
 		drawS drawC
 fovars:		st i c is ws cs k n
@@ -38,7 +50,9 @@ crit$i -> branch$filter(Crit$i)$states &
 
 -- modal operator simplification
 
-(live$i <==> (wait$i) `then` AF$crit$i) &
+(safe$i <==> (crit$i) `then` crit'$i) &			
+
+(live$i <==> (wait$i) `then` AF$crit$i) &			
 
 (nonBlock$i <==> (idle$i) `then` EX$wait$i) &
 
@@ -50,6 +64,8 @@ crit$i -> branch$filter(Crit$i)$states &
 (crits <==> map(crit)$procs) &
 
 -- modal operator simplification outside eval
+
+(Safe$i <==> (Crit$i) `then` Crit'$i) &			
 
 (Live$i <==> (Wait$i) `then` AF$Crit$i) &
 
