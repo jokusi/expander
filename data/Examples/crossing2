@@ -1,0 +1,71 @@
+-- crossing2
+
+{- Moller, Struth, Modelling Computing Systems, 14.3
+
+   LTS for Road||Rail||Control
+	   Road = car.up.ccross.down.Road 
+	   Rail = train.green.tcross.red Rail 
+           Control = green.red.Control + up.down.Control
+           sync$Road 	= [up,down] 
+	   sync$Rail    = [green,red] 
+	   sync$Control = [up,down,green,red] 
+
+   A car may not cross at the same time as a train. 		(1)
+   If a car arrives, the barrier goes up eventually.		(2)
+   If a car arrives, the barrier may go up eventually.		(3)
+   If a train arrives, the signal turns green eventually.	(4)
+   If a train arrives, the signal may turn green eventually.	(5)
+-}
+
+specs:		modal
+constructs:	car train green red up down ccross tcross
+preds:		P X
+defuncts:       state1 state2 start draw
+fovars:		p q p' q' act act'
+hovars:      	P X
+
+axioms:
+
+state1 == (car,train,green) &	-- (Road,Rail,Control)
+state2 == (car,train,up) &
+
+states == [state1,state2] &
+
+labels == [car,train,up,down,green,red,ccross,tcross] &
+
+((car,x,y),car) 	-> (up,x,y) &
+((up,x,up),up)  	-> (ccross,x,down) &
+((ccross,x,y),ccross)	-> (down,x,y) &
+((down,x,down),down)	-> (car,x,green) <+> (car,x,up) &
+((x,train,y),train)    	-> (x,green,y) &
+((x,green,green),green)	-> (x,tcross,red) &
+((x,tcross,y),tcross)	-> (x,red,y) &
+((x,red,red),red)	-> (x,train,green) <+> (x,train,up) 
+
+conjects: 
+
+-- act<>true  = act is enabled
+-- act#true   = act is not disabled = act may be enabled
+-- act<>false = act is disabled
+-- act#false  = act is not enabled = act may be disabled
+
+(EF$(ccross<>true)/\tcross<>true)$state1 &	--> False 	(1)
+(EF$(ccross<>true)/\tcross<>true)$state2 &	--> False 	(1)
+(car#AF$up<>true)(car,train,green) 	 &   	--> False	(2)
+(car#AF$up#true)(car,train,green) 	 &   	--> True	(3)
+(train#AF$green<>true)(car,train,up) 	 &	--> False	(4)
+(train#AF$green#true)(car,train,up)		--> True	(5)
+
+terms:
+
+eval$(ccross<>true)/\tcross<>true	<+>     		-- (1)
+	--> []
+eval$not$car#AF$up<>true		<+>			-- (2)
+	--> [(car,train,green),(car,green,green),(car,tcross,red),(car,red,red)]
+eval$not$car#AF$up#true			<+>     		-- (3)
+	--> []   	   
+eval$not$train#AF$green<>true		<+>			-- (4)
+	--> [(car,train,up),(up,train,up),(ccross,train,down),(down,train,down)]  
+eval$not$train#AF$green#true					-- (5)	
+	--> []   	   
+

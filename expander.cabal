@@ -62,6 +62,7 @@ data-files:          Examples/DNA
                    , Examples/coin1
                    , Examples/coin2
                    , Examples/crossing
+                   , Examples/crossing2
                    , Examples/cse
                    , Examples/cycle
                    , Examples/derecExp
