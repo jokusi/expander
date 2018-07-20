@@ -58,14 +58,11 @@ conjects:
 
 terms:
 
-eval$(ccross<>true)/\tcross<>true	<+>     		-- (1)
-	--> []
-eval$not$car#AF$up<>true		<+>			-- (2)
+eval$(ccross<>true)/\tcross<>true	<+>     --> []		(1)
+eval$not$car#AF$up<>true		<+>     --		(2)
 	--> [(car,train,green),(car,green,green),(car,tcross,red),(car,red,red)]
-eval$not$car#AF$up#true			<+>     		-- (3)
-	--> []   	   
-eval$not$train#AF$green<>true		<+>			-- (4)
+eval$not$car#AF$up#true			<+>     --> []   	(3)   
+eval$not$train#AF$green<>true		<+>	--		(4)
 	--> [(car,train,up),(up,train,up),(ccross,train,down),(down,train,down)]  
-eval$not$train#AF$green#true					-- (5)	
-	--> []   	   
-
+eval$not$train#AF$green#true			--> []   	(5)   
+	

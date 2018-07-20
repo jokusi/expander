@@ -1,0 +1,41 @@
+-- phil3
+
+constructs:	think wait eat up down
+defuncts:       lg procs left chg1 chg2 chg3	
+preds:		pred1 pred2 pred3
+fovars:     	i phils forks st
+
+axioms:
+
+lg == length(procs) &
+
+left$i == (i+1)`mod`lg &	             -- fork left of philosopher i
+
+states == [(replicate(lg)$think,replicate(lg)$down)] &	-- [(phils,forks)]
+
+(phils!!0 = think & forks!!1 = down
+	==> (phils,forks) -> (upd(phils)(0)$wait,upd(forks)(1)$up)) &
+
+(phils!!0 = wait & forks!!0 = down
+	==> (phils,forks) -> (upd(phils)(0)$eat,upd(forks)(0)$up)) &
+
+st -> branch$map(chg1$st)$filter(pred1$st)$tail$procs &
+
+st -> branch$map(chg2$st)$filter(pred2$st)$tail$procs &
+
+st -> branch$map(chg3$st)$filter(pred3$st)$procs &
+
+(pred1(phils,forks)$i <==> phils!!i = think & forks!!i = down) &
+
+chg1(phils,forks)$i == (upd(phils)(i)$wait,upd(forks)(i)$up) &
+
+(pred2(phils,forks)$i <==> phils!!i = wait & forks!!(left$i) = down) &
+
+chg2(phils,forks)$i == (upd(phils)(i)$eat,upd(forks)(left$i)$up) &
+
+(pred3(phils,forks)$i <==> phils!!i = eat) &
+
+chg3(phils,forks)$i == (upd(phils)(i)$think,
+		        upd(upd(forks)(left$i)(down))(i)$down)
+	  
+

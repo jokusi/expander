@@ -123,6 +123,8 @@ data-files:          Examples/DNA
                    , Examples/oscis
                    , Examples/peaks
                    , Examples/penrose
+                   , Examples/phil2
+                   , Examples/phil3
                    , Examples/philac
                    , Examples/polygons
                    , Examples/polynoms

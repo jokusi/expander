@@ -1,0 +1,56 @@
+-- phil2
+
+{- see Moller, Struth, Modelling Computing Systems, 14.4.1
+
+   LTS for Phil1||...||Philn||Fork1||...||Forkn
+	   Phil0 = tL.tR.eat.drop.Phil0
+	   Phili = tR.tL.eat.drop.Phili  i > 0
+	   Forki = take.drop.Forki
+           sync$Phili = [tR,tL,eat,drop] 
+	   sync$Forki = [take,drop] 
+-}
+
+constructs:	tR tL drop eat take drop
+defuncts:   	procs lg left /\ \/ And Or EF		
+fovars:     	i j phils forks
+
+axioms:
+
+lg == length(procs) &
+
+left$i == (i+1)`mod`lg &		       -- fork left of philosopher i
+
+states == [(tL:replicate(lg-1)$tR,replicate(lg)$take)] &  -- [(phils,forks)]
+
+labels == map($)$prodL[[tR,tL,eat],procs] &
+
+(phils!!0 = tL & forks!!1 = take
+	==> ((phils,forks),tL$0) 
+			-> (upd(phils)(0)$tR,upd(forks)(1)$drop)) &
+
+(phils!!0 = tR & forks!!0 = take 
+	==> ((phils,forks),tR$0) 
+			-> (upd(phils)(0)$eat,upd(forks)(0)$drop)) &
+
+(i`in`tail$procs & phils!!i = tR & forks!!i = take 
+	==> ((phils,forks),tR$i) 
+			-> (upd(phils)(i)$tL,upd(forks)(i)$drop)) &
+
+(i`in`tail$procs & phils!!i = tL & forks!!left$i = take
+	==> ((phils,forks),tL$i) 
+			-> (upd(phils)(i)$eat,upd(forks)(left$i)$drop)) &
+
+(i`in`procs & phils!!i = eat & forks!!i = drop & forks!!left$i = drop
+	==> ((phils,forks),eat$i) 
+			-> (upd(phils)(i)$ite(i=0,tL,tR),
+			    upd(upd(forks)(left$i)(take))(i)$take))	  
+terms:
+
+eat(2) <+> 
+EF(eat(2))(([],[])) <+> 
+Or(map(eat)(procs)) <+>
+And(map(eat)(procs)) <+>
+EF(And(map(eat)(procs))) <+>
+And(map(EF.eat)(procs)) <+>
+Or(map(fun(x,avail(x)\/eat(x)\/eat((x-1)`mod`lg)))(procs))
+

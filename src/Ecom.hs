@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, April 2018
-                  Jos Kusiek, April 2018
+Copyright   : (c) Peter Padawitz, July 2018
+                  Jos Kusiek, July 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -196,7 +196,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (July 5, 2018)"
+start = "Welcome to Expander3 (July 18, 2018)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -1206,23 +1206,20 @@ solver this solveRef enum paint = do
         -- | Used by 'addClauses' and 'addSpec''.
         addAxioms :: TermS -> String -> Action
         addAxioms t file = do
-            sig <- getSignature
-            let axs = if isConjunct t then subterms t else [t]
-                cls = filter (not . isAxiom sig) axs
-            if null cls then do
-                writeIORef solPositionsRef []
-                modifyIORef axiomsRef $ \axioms -> axioms `join` axs
-                modifyIORef simplRulesRef $ \simplRules ->
-                    simplRules ++ trips ["==","<==>"] axs
-                simplRules <- readIORef simplRulesRef
-                modifyIORef transRulesRef
-                    $ \transRules -> transRules ++ trips ["->"] axs
-                -- let iniStates = [t | (F "states" _,_,F "[]" ts) <- simplRules]
-                -- changeSimpl "states" $ mkList iniStates
-                labGreen' $ newCls "axioms" file
-            else do
-                enterFormulas' cls
-                labRed' "The clauses in the text field are not axioms."
+          sig <- getSignature
+          let axs = if isConjunct t then subterms t else [t]
+              cls = filter (not . isAxiom sig) axs
+          if null cls then do
+                           writeIORef solPositionsRef []
+                           modifyIORef axiomsRef $ \axioms -> axioms `join` axs
+                           modifyIORef simplRulesRef $ \simplRules
+                               -> simplRules ++ trips ["==","<==>"] axs
+                           modifyIORef transRulesRef $ \transRules
+                               -> transRules ++ trips ["->"] axs
+                           labGreen' $ newCls "axioms" file
+          else do
+              enterFormulas' cls
+              labRed' "The clauses in the text field are not axioms."
 
         -- | Used by 'createClsMenu'.
         addClauses :: Int -> FilePath -> Action
@@ -2754,37 +2751,31 @@ solver this solveRef enum paint = do
         
         -- | Used by 'drawTree'.
         drawPointer :: TermSP -> Color -> [Int] -> Pos -> [Int] -> Action
-        drawPointer ct ac p (x,y) q = do
-            font <- readIORef fontRef
+        drawPointer ct ac p mid1@(x,y) q = do
+          font <- readIORef fontRef
 
-            (above,below) <- getTextHeight canv font
-            let arc = [(x1,y1+below),(x,y-above)]
-                target z = (x',if z < y' then y'-above else y'+above)
-                draw :: [Pos] -> Color -> Action
-                draw path color = line canv path
-                    $ lineOpt{ lineFill = color
-                             , lineArrow = Just Last
-                             , lineSmooth = True
-                             }
-            if q `elem` allPoss ct then
-                if q << p || y > y'+30
-                    then do -- up pointer
-                        let z = (y-y')`div`3
-                            z' = (y+y')`div`2
-                            (mid1,mid2) = if x < x1 then ((x-10,y+10),(x-z,z'))
-                                                    else ((x+10,y+10),(x+z,z'))
-                            path = arc++[mid1,mid2,target y]
-                        draw path $ if q << p then f orange else f magenta
-                        return ()
-                    else do -- down pointer
-                        let z = abs $ x-x'
-                            z' = y+z`div`2
-                            mid = if z < 30 then (x,z') else ((x+x')`div`2,z')
-                        draw (arc++[mid,target z']) $ f magenta
-                        return ()
-            else do -- dangling pointer
-                draw (arc++[(x-10,y+10)]) $ f red
-                return ()
+          (above,below) <- getTextHeight canv font
+          let arc = [(x1,y1+below),(x,y-above)]
+              target z = (x',if z < y' then y'-above else y'+above)
+              draw :: [Pos] -> Color -> Action
+              draw path color = line canv path
+                  $ lineOpt{ lineFill = color
+                           , lineArrow = Just Last
+                           , lineSmooth = True
+                           }
+          if q `elem` allPoss ct then
+             if q << p || y > y'+30 then do                   -- up pointer
+                let mid2 = (if x < x' then x-30 else x'+30,(y+y')`div`2)
+                    path = arc++[mid1,mid2,target y]
+                draw path $ if q << p then f orange else f magenta; done
+             else do                                          -- down pointer
+                  let z = abs $ x-x'
+                      z' = y+z`div`5
+                      mid = (if z < 30 then x else (x+x')`div`2,z')
+                  draw (arc++[mid,target z']) $ f magenta; done
+          else do -- dangling pointer
+              draw (arc++[(x-10,y+10)]) $ f red
+              return ()
           where (_,(x1,y1)) = label ct $ init p   -- pred of source
                 (_,(x',y')) = label ct q           -- target
                 f color = if ac == white then white else color
@@ -4845,20 +4836,20 @@ solver this solveRef enum paint = do
         
         -- | Used by 'checkForward'.
         replaceVar :: String -> TermS -> [Int] -> Action
-        replaceVar x u quantPos = do
+        replaceVar x u p = do
             trees <- readIORef treesRef
             curr <- readIORef currRef
 
             sig <- getSignature
-            writeIORef proofStepRef $ ReplaceVar x u quantPos
+            writeIORef proofStepRef $ ReplaceVar x u p
             let t = trees!!curr
-                F z [v] = getSubterm t quantPos
+                F z [v] = getSubterm t p
                 quant:xs = words z
                 zs = xs `join` [ x | x <- frees sig u `minus` frees sig t
-                               , isNothing $ isAny t x quantPos
-                               , isNothing $ isAll t x quantPos
+                               , isNothing $ isAny t x p
+                               , isNothing $ isAll t x p
                                ]
-                t1 = replace t quantPos $ F (unwords $ quant:zs) [v>>>for u x]
+                t1 = replace t p $ F (unwords $ quant:zs) [v>>>for u x]
             maybeSimplify sig t1
             makeTrees sig
             finish
@@ -4867,7 +4858,7 @@ solver this solveRef enum paint = do
                   finish = do
                         setProofTerm =<< readIORef proofStepRef
                         setTreesFrame []
-                        setProof True True msg []
+                        setProof True True msg [p]
                                          $ subMsg str x
         
         -- | Used by 'releaseSubtree' and 'releaseTree'.

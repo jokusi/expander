@@ -52,6 +52,9 @@ while mb act = do
         act
         while mb act 
 
+done :: Action
+done = return ()
+
 -- CSS
 loadCSS :: IO ()
 loadCSS = do
