@@ -1,7 +1,7 @@
 -- GRAPHS
 
 defuncts:   G1 G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12 frame intcirc redassign 
-constructs: F C f g
+constructs: F C f g /\
 fovars:     k n
 hovars:     F C
 
@@ -67,10 +67,15 @@ axioms:
 & G12 == 0(1(2,             2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                 4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),             2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,             2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                 4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),             2))
 
 terms:   
+    hhh(gg,widg(kk,rainbow2(22,4,7)$red$oval(111,44)))
 
-    f(widg$matrix[(3,4,c),(a,b,dd)],kkk,kkk)
+<+> f(widg$matrix[(3,4,c),(a,b,dd)],kkk,kkk)
 <+> fun(x,f(g(444,widg(444,bbb,x),widg(444,widg(444,bbb,x),x)),widg(444,bbb,x)))
     $matrix[(3,4,c),(a,b,dd)]
+<+> f a(g(b,k),c)$[hhhhhhhh(F s,Tina Turner),widg$circ$22,
+    Lisa(Mutter Renate,Vater Heinrich,Kinder([Amalie,Otto,Hans,Emma])),
+    widg$circ$22,widg$circ$7,						   
+    Lisa(Mutter Renate,Vater Heinrich,Kinder([Amalie,Otto,Hans,Emma]))]
 <+> (iterate(fun(x,widg(x,circ$22)))$widg$circ$44)!!3
 <+> drawLC(G7) <+> drawLO(G9) <+> drawLM(G9)
 <+> fun((F,C),F$C$circ$44,7777)((rainbow(0,5),red))
@@ -78,41 +83,30 @@ terms:
 <+> file(fadeterm)
 <+> file(widg(widg$red$rect(22,11),
               widg(widg$green$rect(11,22),yellow$tria$15),              circ$22),         FF)
-<+> repeat(map(animate)(tup(id,reverse)(map(fun(n,polyR(n,[22,55,44],red)))[1..15])))
-<+> repeat(fork(rotate(10,poly(6,[33,11],red)):
-	      map(fun((x,y,z),rotate(x,turt(J(y),poly(6,[33,11],z)))))
-	      [(-10,66,green),(7.5,132,blue),(-7.5,198,magenta),(5,264,dark cyan)])) 
-<+> aaaa(ddd,
-     aaaa(ddd,
-          bbb(ddd,
-              aaaaa(ddd,
-                    bbb(ddd,cccccc(ccccc,ccccccccccccccccccccccccc),ccccccccc,
-                        ccccccccccccccccccccccccc),
-                    ccccccccc,ccccccccccccccccccccccccc),
-              aaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,ccccccccc,
-                            ccccccccccccccccccccccccc)),
-          bbb,ccccccccc,ccccccccccccccccccccccccc,ccccccccccccccccccccccccc,
-          ccccccccccccccccccccccccc),
-     aaaaaaaaaaaaaaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,
-                               ccccccccccccccccccccccccc))
-<+> aaaaaaaaaaa(aaaaaaaaaaaaa(bbb,
-                          aaaaaaaaa(bbb,ccccccccccccccccccccccccc,ccccccccc,
-                                    ccccccccccccccccccccccccc,ccccccccc,
-                                    ccccccccccccccccccccccccc,
-                                    aaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,
-                                                  ccccccccc,5+6,ccccccccc),
-                                    ccccccccccccccccccccccccc)),
-            aaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,ccccccccc,
-                          ccccccccccccccccccccccccc,ccccccccc),
-            aaaaaaaaaaaaaaaaaaaaaaaaa(bbb,
-                                      aaaaaa(bbb,ccccccccc,
-                                             ccccccccccccccccccccccccc,
-                                             ccccccccccccccccccccccccc,
-                                             ccccccccccccccccccccccccc,
-                                             ccccccccc,
-                                             ccccccccccccccccccccccccc,
-                                             ccccccccc)),
-            aaaaaaaaaaaaaaaaaaaaaaaaa(bbb,ccccccccccccccccccccccccc,
-                                      ccccccccccccccccccccccccc,ccccccccc,
-                                      ccccccccccccccccccccccccc))
-
+<+> string[5,6,7](f(g,h)/\h)
+<+> widg(f(g,h)/\h,text[5,6,7])
+<+> widg(f(g,h),g,h,shelf(1)[text(/\),text[5,6,7]])
+<+> f$widg(gg(h,kk),zzzz(h,kk),frame$green$tree(zz(uu,pp,pp)))	-- tree
+<+> h(1,map(widg.red.frame.text)[0..4])
+<+> h(1,map(widg.frame.red.text)[0..4])
+<+> h(1,map(fun(x,widg(x,frameS$red$text$x+1)))[0..4]) 
+<+> f(g(h,n),widg(widg(t,z,oval(22,44)),z,oval(22,44)))
+<+> f(g(h,n),widg(widg(t,z,red$oval(22,44)),z,light green$oval(44,22)))
+<+> widg(replicate(5)[1..4],center$turt[shine(11)$red$circ$22,J$33,
+					shine(11)$blue$circ$22])
+<+> widg(hh,widg(gg,load$test),load$test)
+<+> f(g(h,widg(t,z,gif(goat,28,25))),     widg(widg(t,z,gif(nemo,63,49)),z,light green(oval(44,22))))	
+<+> f(a,a,a,a,a,widg(a,a,a,a,a,a,a,a,a,a,a,green$circ$55),a,a,a,a,
+      widg(a,red$circ$33))
+<+> f(f(f(4,4,4,4,4)),f(widg(g(g(5),g(5),g(5),g(5)),circ(22))),
+    f(widg(g(g(5),g(5),g(5),g(5)),circ(22))),g(widg(g(g(5),g(5),g(5),g(5)),
+      circ(22))),g(g(5),g(5),g(5),g(5)))
+<+>
+0(2(4,6(pos 0)),
+  9(11(13(15),17(19(21(23(25(pos 1 1 0 0,pos 1 1 0 0)),29(pos 1 0 0 0))))),
+    32(34(widg(38(40(42(44),46(pos 1 0 0 0))),49(pos 1 1 0 0 0 0),
+               52(54(56(58),60)),62(pos 1 1 0 0 2 0),65(67(69(71),73)),
+               75(pos 1 1 0 0 4 0),oval(88,22)),
+          78(80(82(84(86),88(pos 1 0 0 0))),91(pos 1 1 0 0 0 0))),
+       94(96,98(100(102),104(pos 1))),107(pos 1 1 1 0,pos 1 1 1 1))),
+  111(pos 1 0,pos 1 1))

@@ -1,0 +1,184 @@
+-- newmanP
+
+
+Derivation of
+
+rs(x,y) & rs(x,z) ==> Any u:(rs(y,u) & rs(z,u))
+
+SELECTING INDUCTION VARIABLES at position [0,0,0] of the preceding formula leads to 
+
+All y z:(rs(!x,y) & rs(!x,z) ==> Any u:(rs(y,u) & rs(z,u)))
+
+Applying the AXIOMS
+
+  rs(x,x)
+& (rs(x,z) <=== r(x,y) & rs(y,z))
+
+at positions [0,0,1],[0,0,0]
+of the preceding formula leads to 
+
+All y z:((y = !x | Any y0:(r(!x,y0) & rs(y0,y))) & 
+         (z = !x | Any y1:(r(!x,y1) & rs(y1,z))) ==> 
+         Any u:(rs(y,u) & rs(z,u)))
+
+SIMPLIFYING the preceding formula (24 steps) leads to 
+
+Any u0:(All y z y0 y1:
+         (rs(y0,y) & r(!x,y0) & r(!x,y1) & rs(y1,z) ==> 
+          Any u:(rs(y,u) & rs(z,u))) & 
+        All z y1:(r(!x,y1) & rs(y1,z) ==> Any u:(rs(!x,u) & rs(z,u))) & 
+        rs(!x,u0))
+
+Applying the AXIOMS
+
+  rs(x,x)
+& (rs(x,z) <=== r(x,y) & rs(y,z))
+
+at positions [0,2],[0,1,0,1,0,1],[0,1,0,1,0,0]
+of the preceding formula leads to 
+
+Any u0:(All y z y0 y1:
+         (rs(y0,y) & r(!x,y0) & r(!x,y1) & rs(y1,z) ==> 
+          Any u:(rs(y,u) & rs(z,u))) & 
+        All z y1:(r(!x,y1) & rs(y1,z) ==> 
+                  Any u:((u = !x | Any y2:(r(!x,y2) & rs(y2,u))) & 
+                         (u = z | Any y3:(r(z,y3) & rs(y3,u))))) & 
+        (u0 = !x | Any y4:(r(!x,y4) & rs(y4,u0))))
+
+SIMPLIFYING the preceding formula (17 steps) leads to 
+
+All y z y0 y1:
+ (rs(y0,y) & r(!x,y0) & r(!x,y1) & rs(y1,z) ==> Any u:(rs(y,u) & rs(z,u)))
+
+Applying the THEOREM
+
+r(x,y) & r(x,z) ===> Any u:(rs(y,u) & rs(z,u))
+
+at positions [0,0,1],[0,0,2]
+of the preceding formula leads to 
+
+All y z y0 y1:
+ (r(!x,y0) & r(!x,y1) & Any u0:(rs(y0,u0) & rs(y1,u0)) & rs(y0,y) & rs(y1,z) ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+SIMPLIFYING the preceding formula (3 steps) leads to 
+
+All y z y0 y1 u0:
+ (rs(y1,z) & rs(y0,y) & rs(y0,u0) & rs(y1,u0) & r(!x,y1) & r(!x,y0) ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+Applying the INDUCTION HYPOTHESIS
+
+rs(x,y) & rs(x,z) ===> (!x >> x ==> Any u:(rs(y,u) & rs(z,u)))
+
+at positions [0,0,0],[0,0,3]
+of the preceding formula leads to 
+
+All y z y0 y1 u0:
+ (rs(y1,z) & rs(y1,u0) & (!x >> y1 ==> Any u1:(rs(z,u1) & rs(u0,u1))) & 
+  rs(y0,y) & rs(y0,u0) & r(!x,y1) & r(!x,y0) ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+Applying the INDUCTION HYPOTHESIS
+
+rs(x,y) & rs(x,z) ===> (!x >> x ==> Any u:(rs(y,u) & rs(z,u)))
+
+at positions [0,0,3],[0,0,4]
+of the preceding formula leads to 
+
+All y z y0 y1 u0:
+ (rs(y0,y) & rs(y0,u0) & (!x >> y0 ==> Any u2:(rs(y,u2) & rs(u0,u2))) & 
+  rs(y1,z) & rs(y1,u0) & (!x >> y1 ==> Any u1:(rs(z,u1) & rs(u0,u1))) & 
+  r(!x,y1) & r(!x,y0) ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+Applying the THEOREM
+
+r(x,y) ===> x >> y
+
+at position [0,0,6] of the preceding formula leads to 
+
+All y z y0 y1 u0:
+ (rs(y0,y) & rs(y0,u0) & (!x >> y0 ==> Any u2:(rs(y,u2) & rs(u0,u2))) & 
+  rs(y1,z) & rs(y1,u0) & (!x >> y1 ==> Any u1:(rs(z,u1) & rs(u0,u1))) & 
+  !x >> y1 & r(!x,y0) ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+Applying the THEOREM
+
+r(x,y) ===> x >> y
+
+at position [0,0,7] of the preceding formula leads to 
+
+All y z y0 y1 u0:
+ (rs(y0,y) & rs(y0,u0) & (!x >> y0 ==> Any u2:(rs(y,u2) & rs(u0,u2))) & 
+  rs(y1,z) & rs(y1,u0) & (!x >> y1 ==> Any u1:(rs(z,u1) & rs(u0,u1))) & 
+  !x >> y1 & !x >> y0 ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+SIMPLIFYING the preceding formula (4 steps) leads to 
+
+All y z y0 y1 u0 u2 u1:
+ (!x >> y0 & !x >> y1 & rs(z,u1) & rs(u0,u1) & rs(y1,u0) & rs(y1,z) & rs(y,u2) & 
+  rs(u0,u2) & rs(y0,u0) & rs(y0,y) ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+Applying the INDUCTION HYPOTHESIS
+
+rs(x,y) & rs(x,z) ===> (!x >> x ==> Any u:(rs(y,u) & rs(z,u)))
+
+at positions [0,0,3],[0,0,7]
+of the preceding formula leads to 
+
+All y z y0 y1 u0 u2 u1:
+ ((!x >> u0 ==> Any u3:(rs(u1,u3) & rs(u2,u3))) & !x >> y0 & !x >> y1 & 
+  rs(z,u1) & rs(y1,u0) & rs(y1,z) & rs(y,u2) & rs(y0,u0) & rs(y0,y) ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+Applying the THEOREM
+
+x >> y & rs(y,z) ===> x >> z
+
+at positions [0,0,1],[0,0,7]
+of the preceding formula leads to 
+
+All y z y0 y1 u0 u2 u1:
+ (!x >> u0 & (!x >> u0 ==> Any u3:(rs(u1,u3) & rs(u2,u3))) & !x >> y1 & 
+  rs(z,u1) & rs(y1,u0) & rs(y1,z) & rs(y,u2) & rs(y0,y) ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+SIMPLIFYING the preceding formula (4 steps) leads to 
+
+All y z y0 y1 u0 u2 u1 u3:
+ (rs(y0,y) & rs(y,u2) & rs(y1,z) & rs(y1,u0) & rs(z,u1) & !x >> y1 & rs(u1,u3) & 
+  rs(u2,u3) & !x >> u0 ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+Applying the THEOREM
+
+rs(x,y) & rs(y,z) ===> rs(x,z)
+
+at positions [0,0,1],[0,0,7]
+of the preceding formula leads to 
+
+All y z y0 y1 u0 u2 u1 u3:
+ (rs(y,u3) & rs(y0,y) & rs(y1,z) & rs(y1,u0) & rs(z,u1) & !x >> y1 & rs(u1,u3) & 
+  !x >> u0 ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+Applying the THEOREM
+
+rs(x,y) & rs(y,z) ===> rs(x,z)
+
+at positions [0,0,4],[0,0,6]
+of the preceding formula leads to 
+
+All y z y0 y1 u0 u2 u1 u3:
+ (rs(z,u3) & rs(y,u3) & rs(y0,y) & rs(y1,z) & rs(y1,u0) & !x >> y1 & !x >> u0 ==> 
+  Any u:(rs(y,u) & rs(z,u)))
+
+SIMPLIFYING the preceding formula (3 steps) leads to 
+
+True
+
+Number of proof steps: 18

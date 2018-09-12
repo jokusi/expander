@@ -1,0 +1,154 @@
+-- WIRTHproof
+
+
+Derivation of
+
+Nat(x) & Nat(y) & Nat(z) ==> P(x) & Q(y,z)
+
+Selecting induction variables at positions [0,0,0],[0,1,0],[0,2,0] of the preceding formula leads to 
+
+Nat(!x) & Nat(!y) & Nat(!z) ==> P(!x) & Q(!y,!z)
+
+Applying the axioms
+
+  Q(x,0)
+& (Q(x,suc(y)) <=== P(x) & Q(x,y))
+& P(0)
+& (P(suc(x)) <=== P(x) & Q(x,suc(x)))
+
+at positions [1,1],[1,0] of the preceding formula leads to 
+
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !x = 0 | Any x:(P(x) & Q(x,suc(x)) & !x = suc(x))) & 
+(Nat(!x) & Nat(!y) & Nat(!z) ==> !z = 0 | P(!y) & Any y:(Q(!y,y) & !z = suc(y)))
+
+The reducts have been simplified.
+
+Applying the induction hypothesis
+
+P(x) & Q(y,z) <=== (Nat(x) & Nat(y) & Nat(z)) & (!x,!y,!z) >> (x,y,z)
+
+at positions [0,1,1,0,0],[0,1,1,0,1] of the preceding formula leads to 
+
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !x = 0 | 
+ Any x:(!x = suc(x) & Nat(x) & Nat(suc(x)) & (suc(x),!y,!z) >> (x,x,suc(x)))) & 
+(Nat(!x) & Nat(!y) & Nat(!z) ==> !z = 0 | P(!y) & Any y:(Q(!y,y) & !z = suc(y)))
+
+The reducts have been simplified.
+
+Moving up quantifiers at position [1,1,1,1] of the preceding formula leads to 
+
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !x = 0 | 
+ Any x:(!x = suc(x) & Nat(x) & Nat(suc(x)) & (suc(x),!y,!z) >> (x,x,suc(x)))) & 
+(Nat(!x) & Nat(!y) & Nat(!z) ==> !z = 0 | Any y:(P(!y) & Q(!y,y) & !z = suc(y)))
+
+Applying the induction hypothesis
+
+P(x) & Q(y,z) <=== (Nat(x) & Nat(y) & Nat(z)) & (!x,!y,!z) >> (x,y,z)
+
+at positions [1,1,1,0,0],[1,1,1,0,1] of the preceding formula leads to 
+
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !x = 0 | 
+ Any x:(!x = suc(x) & Nat(x) & Nat(suc(x)) & (suc(x),!y,!z) >> (x,x,suc(x)))) & 
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !z = 0 | Nat(!y) & Any y:(!z = suc(y) & Nat(y) & (!x,!y,suc(y)) >> (!y,!y,y)))
+
+The reducts have been simplified.
+
+Applying the axiom resp. theorem
+
+(x,y,z) >> (x',y',z') <=== x > x' & x > y'
+
+at position [0,1,1,0,3] of the preceding formula leads to 
+
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !x = 0 | Any x:(!x = suc(x) & Nat(x) & Nat(suc(x)) & suc(x) > x)) & 
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !z = 0 | Nat(!y) & Any y:(!z = suc(y) & Nat(y) & (!x,!y,suc(y)) >> (!y,!y,y)))
+
+The reducts have been simplified.
+
+Applying the axiom resp. theorem
+
+(x,y,z) >> (x',y',z') <=== (y,z) `gt` (x',0) & (y,z) `gt` (y',z')
+
+at position [1,1,1,1,0,2] of the preceding formula leads to 
+
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !x = 0 | Any x:(!x = suc(x) & Nat(x) & Nat(suc(x)) & suc(x) > x)) & 
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !z = 0 | 
+ Nat(!y) & 
+ Any y:(!z = suc(y) & Nat(y) & (!y,suc(y)) `gt` (!y,0) & 
+        (!y,suc(y)) `gt` (!y,y)))
+
+The reducts have been simplified.
+
+Applying the axioms
+
+  ((x,y) `gt` (x',y') <=== x > x')
+& ((x,y) `gt` (x,y') <=== y > y')
+
+at positions [1,1,1,1,0,3],[1,1,1,1,0,2] of the preceding formula leads to 
+
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !x = 0 | Any x:(!x = suc(x) & Nat(x) & Nat(suc(x)) & suc(x) > x)) & 
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !z = 0 | Nat(!y) & Any y:(!z = suc(y) & Nat(y) & suc(y) > y))
+
+The reducts have been simplified.
+
+Applying the axiom resp. theorem
+
+suc(x) > x
+
+at position [0,1,1,0,3] of the preceding formula leads to 
+
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !x = 0 | Any x:(!x = suc(x) & Nat(x) & Nat(suc(x)))) & 
+(Nat(!x) & Nat(!y) & Nat(!z) ==> 
+ !z = 0 | Nat(!y) & Any y:(!z = suc(y) & Nat(y) & suc(y) > y))
+
+The reducts have been simplified.
+
+Applying the axioms
+
+  (Nat(suc(x)) <=== Nat(x))
+& Nat(0)
+
+at positions [0,1,1,0,2],[0,0,0] of the preceding formula leads to 
+
+Nat(!x) & Nat(!y) & Nat(!z) ==> 
+!z = 0 | Nat(!y) & Any y:(!z = suc(y) & Nat(y) & suc(y) > y)
+
+The reducts have been simplified.
+
+Applying the axiom resp. theorem
+
+suc(x) > x
+
+at position [1,1,1,0,2] of the preceding formula leads to 
+
+Nat(!x) & Nat(!y) & Nat(!z) ==> !z = 0 | Nat(!y) & Any y:(!z = suc(y) & Nat(y))
+
+The reducts have been simplified.
+
+Applying the axioms
+
+  Nat(0)
+& (Nat(suc(x)) <=== Nat(x))
+
+at position [0,2] of the preceding formula leads to 
+
+True
+
+The reducts have been simplified.
+
+Number of proof steps: 12
+
+Solutions:
+
+True

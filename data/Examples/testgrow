@@ -1,0 +1,2 @@
+-- test
+red((grow(clock(16,111))$[pos 0 1 14,pos 0 1 15,pos 0 1 14,pos 0 1 15,pos 0 1 14,pos 0 1 15,pos 0 1 14,pos 0 1 15,pos 0 1 14,pos 0 1 15,pos 0 1 14,pos 0 1 15,pos 0 1 14,pos 0 1 15,skip,(grow(CA)$[turt([J(45),circ(22),J(45)]),pos 0 1 15 1 0,pos 0 1 15 1 0,pos 0 1 15 1 0,pos 0 1 15 1 0])]))

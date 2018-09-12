@@ -27,9 +27,11 @@ all(ONE)[3,4]   	--> False 	match&narrow + coinduction
 terms: 
 
 eval$one <+> 							--> [3,4]
-stateflow$one <+>						--> [3,4] 
+stateflow$one <+>						--> [3,4]   trans1one
+stateflowT$one <+>						--> [3,4]   trans1oneT
 stateflow(X = NU(Y/\(b#X)) & Y = MU((a<>true)\/(b<>Y))) <+>	--> [3,4]
 eval$two <+>							--> [2,3,4]	
-stateflow$two <+>						--> [2,3,4]
+stateflow$two <+>						--> [2,3,4] trans1two	
+stateflowT$two <+>						--> [2,3,4] trans1twoT	
 stateflow(Y = MU((a<>true)\/(b<>Y)))				--> [2,3,4]	
 

@@ -134,7 +134,9 @@ eval(nonBlock$1) <+>						--> states
 eval(noSeq$1) <+>						--> states
 
 eval(EF$or$crits) <+>						--> states
+stateflow(EF$or$crits) <+>					--> states
 eval(EF$and$crits) <+>						--> []
+stateflow(EF$and$crits) <+>					--> []
 eval(and$map(EF.crit)$procs) <+>				--> states
 eval(or$map(rel((x,y),EF$crit(x)/\crit$y))$diffpairs) <+>	--> []
 eval(and$map(rel((x,y),EF$crit(x)\/crit$y))$diffpairs) <+>	--> states

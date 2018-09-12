@@ -1,0 +1,2 @@
+-- logConj2T
+[DeriveMode True False, Match 2, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark []]

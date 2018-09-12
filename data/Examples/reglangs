@@ -101,8 +101,8 @@ unfold(q)[a,b,a,a,b,a,b] <+>		--> 1		-- 26 steps
 unfold(qgg)[a,b,a,a,b] <+>		--> 0		-- 22 steps
 unfold(qgg)[a,b,a,a,b,a] <+>		--> 1		-- 25 steps
 
-unfoldBro(reg$2)[a,a,a,b] <+>		--> 1
-unfoldBro(reg$2)[a,a,a,b,b] <+>		--> 0
+unfoldBro[](reg$2)[a,a,a,b] <+>		--> 1
+unfoldBro[](reg$2)[a,a,a,b,b] <+>	--> 0
 
 auto$reg$1 <+>			--> non-deterministic acceptor of reg$1 
 pauto$reg$1 			--> deterministic acceptor of reg$1   

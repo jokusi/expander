@@ -117,12 +117,12 @@ nats == 0:map(+1)$nats &
 
 nats' == mu s.(0:map(+1)$s) &
 	     
-natsf == mu f.fun(n,n:f$n+1) &				-- nats = natsf$0
+natsf == mu f.fun(n,n:f$n+1) &			-- nats = natsf$0
 
 fibs  == 0:tfibs &
 tfibs == 1:zipWith(+)(fibs)$tfibs &
 
-fibs' == get0(mu s s'.(0:s',1:zipWith(+)(s)$s')) & 	-- terminating?
+fibs' == get0(mu s s'.(0:s',1:zipWith(+)(s)$s')) &
 
 Server(a:s) == mkResponse(a):Server(s) &
 					

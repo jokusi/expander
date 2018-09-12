@@ -1,0 +1,86 @@
+-- LRRUN
+
+
+Derivation of
+
+parse([c,mul,d],[0],[])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([mul,d],[goto(0,c),0],[])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([mul,d],[3,0],[])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([mul,d],[goto(0,B),0],[mkSyn(B,[c])([])])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([mul,d],[2,0],[mkSyn(B,[c])([])])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([mul,d],[2,0],[P4])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([mul,d],[goto(0,A),0],[mkSyn(A,[B])([P4])])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([mul,d],[1,0],[mkSyn(A,[B])([P4])])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([mul,d],[1,0],[P3(P4)])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([d],[goto(1,mul),1,0],[P3(P4)])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([d],[5,1,0],[P3(P4)])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([],[goto(5,d),5,1,0],[P3(P4)])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([],[4,5,1,0],[P3(P4)])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([],[goto(5,B),5,1,0],[P3(P4),mkSyn(B,[d])([])])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([],[6,5,1,0],[P3(P4),mkSyn(B,[d])([])])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([],[6,5,1,0],[P3(P4),P5])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([],[goto(0,A),0],[mkSyn(A,[A,mul,B])([P3(P4),P5])])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([],[1,0],[mkSyn(A,[A,mul,B])([P3(P4),P5])])
+
+Rewriting applied to the preceding term leads to the term
+
+parse([],[1,0],[P2(P3(P4),P5)])
+
+Rewriting applied to the preceding term leads to the term
+
+mkSyn(S,[A])([P2(P3(P4),P5)])
+
+Rewriting applied to the preceding term leads to the term
+
+P1(P2(P3(P4),P5))

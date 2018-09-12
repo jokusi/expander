@@ -1,14 +1,13 @@
 -- coin1
 
 specs: 		modal
-constructs:	start coin coffee tea odd is less
-copreds:	~
+constructs: 	start coin coffee tea odd is less
 
 axioms:
 
 states == [0] &
 labels == [start,coin,coffee,tea] &
--- atoms == [less(5),is(6)] &			-- (*)
+atoms == [less(5),is(6)] &			-- (*)
 
 (0,start) -> branch[1,5] & (2,coffee) -> 3 &
 (1,coin) -> 2 & (2,tea) -> 4 &

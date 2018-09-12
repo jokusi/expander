@@ -1,0 +1,42 @@
+-- pal1P
+
+
+Derivation of
+
+pal1[2,3,2] = b
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any r:(reveq1([2,3,2],r) = (r,b))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any y s2 r0 b1:(r0++[2] = y:s2 & bool(2 = y & Bool(b1)) = b & 
+                reveq1([3,2],s2) = (r0,b1))
+
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any y b2 r s3 y0:(reveq1([2],s3) = (r,b2) & r++[3]++[2] = y:y0:s3 & 
+                  bool(2 = y & 3 = y0 & Bool(b2)) = b)
+
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any y y0 b3 r1 s2 y1:(reveq1([],s2) = (r1,b3) & r1++[2]++[3]++[2] = y:y0:y1:s2 & 
+                      bool(2 = y & 3 = y0 & 2 = y1 & Bool(b3)) = b)
+
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+bool(True) = b
+
+The reducts have been simplified.
+
+Number of proof steps: 5

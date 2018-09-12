@@ -1,0 +1,82 @@
+-- fairblinkmu
+
+
+Derivation of
+
+G(F((=0).head))$mu s
+
+Adding
+
+  (G0(z0)$z1 <=== z0 = F((=0).head) & z1 = mu s)
+
+to the axioms and applying COINDUCTION wrt
+
+  (G(P)$s ===> P(s) & G(P)$tail(s))
+
+at position [] of the preceding formula leads to 
+
+F((=0).head)$mu s0 & G0(F((=0).head))$tail(mu s0)
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+head(mu s0) = 0 & G0(F((=0).head))$tail(mu s0) | 
+F((=0).head)$tail(mu s0) & G0(F((=0).head))$tail(mu s0)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+SIMPLIFYING the preceding formula (4 steps) leads to 
+
+G0(F((=0).head))$(1:mu s0)
+
+Adding
+
+  (G0(z2)$z3 <=== z2 = F((=0).head) & z3 = (1:mu s0))
+
+to the axioms and applying COINDUCTION wrt
+
+  (G(P)$s ===> P(s) & G(P)$tail(s))
+
+at position [] of the preceding formula leads to 
+
+F((=0).head)$(1:mu s0) & G0(F((=0).head))$mu s0
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+F((=0).head)$mu s0 & G0(F((=0).head))$mu s0
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+head(mu s0) = 0 & G0(F((=0).head))$mu s0 | 
+F((=0).head)$tail(mu s0) & G0(F((=0).head))$mu s0
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+SIMPLIFYING the preceding formula (4 steps) leads to 
+
+G0(F((=0).head))$(0:(1:mu s0))
+
+NARROWING the preceding formula (1 step) leads to 
+
+(0:(1:mu s0)) = mu s
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+(0:(1:mu s0)) = (0:(1:mu s))
+
+SIMPLIFYING the preceding formula (1 step) leads to 
+
+True
+
+Number of proof steps: 10

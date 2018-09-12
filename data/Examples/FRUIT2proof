@@ -1,0 +1,77 @@
+-- FRUIT2PROOF
+
+
+
+Derivation of
+
+All b c:
+(    (b,c) = (kirsche,glas)
+ ==>     p2(b,c)
+       & p2(x,y)
+     |   p3(b,c)
+       & p3(x,y)
+     |   p4(b,c)
+       & p4(x,y)
+     |   p5(b,c)
+       & p5(x,y))
+
+Simplifying (5 steps) the preceding tree leads to the summand
+
+  p2(kirsche,glas)
+& p2(x,y)
+
+Narrowing (4 steps) at position [] of the preceding summand leads to the summand
+
+  False
+& p2(x0,y0)
+
+Simplifying the preceding summand leads to new ones. The current summand is given by
+
+  p3(kirsche,glas)
+& p3(x,y)
+
+Narrowing (4 steps) at position [] of the preceding summand leads to the summand
+
+  True
+& p3(x1,y1)
+
+Simplifying the preceding summand leads to the summand
+
+p3(x1,y1)
+
+Narrowing (6 steps) at position [] of the summand
+
+  p4(kirsche,glas)
+& p4(x,y)
+
+leads to the summand
+
+  p4(kirsche,glas)
+& p4(x,y)
+
+Simplifying the summand
+
+p3(x1,y1)
+
+leads to the summand
+
+p3(x1,y1)
+
+Narrowing at position [] of the summand
+
+  p5(kirsche,glas)
+& p5(x,y)
+
+leads to the summand
+
+  p5(kirsche,glas)
+& p5(x,y)
+
+Simplifying the preceding summand leads to new ones. The current summand is given by
+
+p3(x1,y1)
+
+Adding the other summands leads to
+
+  p3(x1,y1)
+| p4(x2,y2)

@@ -1,0 +1,49 @@
+-- /Users/Padawitz/ExpanderLib/derec1P
+
+0. Derivation of
+
+PLUS(SUM(PROD(Var(x))),TIMES(PROD(EmbedI(5)),EncloseS(PLUS(SUM(PROD(Var(x))),TIMES(PROD(EmbedI(5)),EncloseS(y))))))
+
+All axioms are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING the preceding terms (one step) leads to 
+
+PLUS(Sum(PROD(Var(x)),NilS),TIMES(PROD(EmbedI(5)),EncloseS(PLUS(SUM(PROD(Var(x))),TIMES(PROD(EmbedI(5)),EncloseS(y))))))
+
+2. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(PROD(Var(x)),Plus(TIMES(PROD(EmbedI(5)),EncloseS(PLUS(SUM(PROD(Var(x))),TIMES(PROD(EmbedI(5)),EncloseS(y))))),NilS))
+
+3. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(Prod(Var(x),NilP),Plus(TIMES(PROD(EmbedI(5)),EncloseS(PLUS(SUM(PROD(Var(x))),TIMES(PROD(EmbedI(5)),EncloseS(y))))),NilS))
+
+4. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(Prod(Var(x),NilP),Plus(TIMES(Prod(EmbedI(5),NilP),EncloseS(PLUS(SUM(PROD(Var(x))),TIMES(PROD(EmbedI(5)),EncloseS(y))))),NilS))
+
+5. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(Prod(Var(x),NilP),Plus(Prod(EmbedI(5),Times(EncloseS(PLUS(SUM(PROD(Var(x))),TIMES(PROD(EmbedI(5)),EncloseS(y)))),NilP)),NilS))
+
+6. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(Prod(Var(x),NilP),Plus(Prod(EmbedI(5),Times(EncloseS(PLUS(Sum(PROD(Var(x)),NilS),TIMES(PROD(EmbedI(5)),EncloseS(y)))),NilP)),NilS))
+
+7. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(Prod(Var(x),NilP),Plus(Prod(EmbedI(5),Times(EncloseS(Sum(PROD(Var(x)),Plus(TIMES(PROD(EmbedI(5)),EncloseS(y)),NilS))),NilP)),NilS))
+
+8. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(Prod(Var(x),NilP),Plus(Prod(EmbedI(5),Times(EncloseS(Sum(Prod(Var(x),NilP),Plus(TIMES(PROD(EmbedI(5)),EncloseS(y)),NilS))),NilP)),NilS))
+
+9. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(Prod(Var(x),NilP),Plus(Prod(EmbedI(5),Times(EncloseS(Sum(Prod(Var(x),NilP),Plus(TIMES(Prod(EmbedI(5),NilP),EncloseS(y)),NilS))),NilP)),NilS))
+
+10. SIMPLIFYING the preceding terms (one step) leads to 
+
+Sum(Prod(Var(x),NilP),Plus(Prod(EmbedI(5),Times(EncloseS(Sum(Prod(Var(x),NilP),Plus(Prod(EmbedI(5),Times(EncloseS(y),NilP)),NilS))),NilP)),NilS))
+

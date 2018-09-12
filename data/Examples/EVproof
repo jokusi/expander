@@ -1,0 +1,83 @@
+-- EVPROOF
+
+
+
+Derivation of
+
+    even(x)
+==>   x = 0
+    | Any y z:
+      (  x = y+z
+       & odd(y)
+       & odd(z))
+
+Applying the axioms
+
+  even(0)
+& (     even(suc(x))
+   <=== odd(x))
+
+at position [0] of the preceding tree leads to the formula
+
+      x0 = 0
+    | Any x1:
+      (  odd(x1)
+       & x0 = suc(x1))
+==>   x0 = 0
+    | Any y z:
+      (  x0 = y+z
+       & odd(y)
+       & odd(z))
+
+Simplifying the preceding tree leads to the formula
+
+All x1:
+(      odd(x1)
+     & x0 = suc(x1)
+ ==>   x0 = 0
+     | Any y z:
+       (  x0 = y+z
+        & odd(y)
+        & odd(z)))
+
+Removing the subtrees at position [0,1] of the preceding tree leads to the formula
+
+All x1:
+(      odd(x1)
+     & x0 = suc(x1)
+ ==>   Any y z:
+       (  x0 = y+z
+        & odd(y)
+        & odd(z)))
+
+Simplifying the preceding tree leads to the formula
+
+All x1:
+(      odd(x1)
+     & x0 = suc(x1)
+ ==> Any y z:
+     (  x0 = y+z
+      & odd(y)
+      & odd(z)))
+
+Substituting 1 for z at position [0,1] of the preceding tree leads to the formula
+
+All x1:
+(      odd(x1)
+     & x0 = suc(x1)
+ ==> Any y z:
+     (  x0 = y+1
+      & odd(y)
+      & odd(1)))
+
+Narrowing at position [0,1,0,2] of the preceding tree leads to the formula
+
+All x1:
+(      odd(x1)
+     & x0 = suc(x1)
+ ==> Any y0 z:
+     (  x0 = y0+1
+      & odd(y0)
+      & True))
+
+Simplifying the entire formula leads to True.

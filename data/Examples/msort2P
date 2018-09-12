@@ -1,0 +1,104 @@
+-- msort2P
+
+
+Derivation of
+
+mergesort2[3,2,1,4]
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2(mergesort2(3:[1]),mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2(merge2(mergesort2(3:[]),mergesort2(1:[])),mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2(merge2(3:[],mergesort2(1:[])),mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2(merge2([3],mergesort2(1:[])),mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2(merge2([3],1:[]),mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2(1:merge2(3:[],[]),mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2(1:(3:[]),mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2(1:[3],mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2([1,3],mergesort2(2:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2([1,3],merge2(mergesort2(2:[]),mergesort2(4:[])))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2([1,3],merge2(2:[],mergesort2(4:[])))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2([1,3],merge2([2],mergesort2(4:[])))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2([1,3],merge2([2],4:[]))
+
+Simplifying the preceding term (1 step) leads to 
+
+merge2([1,3],2:merge2([],4:[]))
+
+Simplifying the preceding term (1 step) leads to 
+
+1:merge2([3],2:merge2([],4:[]))
+
+Simplifying the preceding term (1 step) leads to 
+
+1:(2:merge2(3:[],merge2([],4:[])))
+
+Simplifying the preceding term (1 step) leads to 
+
+1:(2:merge2([3],merge2([],4:[])))
+
+Simplifying the preceding term (1 step) leads to 
+
+1:(2:merge2([3],4:[]))
+
+Simplifying the preceding term (1 step) leads to 
+
+1:(2:(3:merge2([],4:[])))
+
+Simplifying the preceding term (1 step) leads to 
+
+1:(2:(3:(4:[])))
+
+Simplifying the preceding term (1 step) leads to 
+
+1:(2:(3:[4]))
+
+Simplifying the preceding term (1 step) leads to 
+
+1:(2:[3,4])
+
+Simplifying the preceding term (1 step) leads to 
+
+1:[2,3,4]
+
+Simplifying the preceding term (1 step) leads to 
+
+[1,2,3,4]
+
+Number of proof steps: 24

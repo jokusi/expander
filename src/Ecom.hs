@@ -196,7 +196,7 @@ linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (July 18, 2018)"
+start = "Welcome to Expander3 (August 19, 2018)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -715,7 +715,6 @@ solver this solveRef enum paint = do
     counterRef <- newIORef $ const 0
     currRef <- newIORef 0
     -- curr1Ref <- newIORef 0
-    hideValsRef <- newIORef 0
     matchingRef <- newIORef 0
     proofPtrRef <- newIORef 0
     proofTPtrRef <- newIORef 0
@@ -851,19 +850,21 @@ solver this solveRef enum paint = do
           
           widgetOverrideFont lab =<< Just <$> labFont
           setBackground lab blueback
-          lab `Gtk.set` [ labelLabel := start ]
+          lab `Gtk.set` [ labelLabel := start, labelSelectable := True ]
           lab `on` keyPressEvent $ do
               name <- Text.unpack <$> eventKeyName
               liftIO $ case name of
                   "c" -> copySubtrees
                   "i" -> replaceText
                   "l" -> replaceNodes
-                  "n" -> negateAxioms
                   "L" -> randomLabels
-                  "T" -> randomTree
+                  "n" -> negateAxioms
+                  "o" -> removeNode
                   "p" -> removePath
                   "r" -> removeSubtrees
                   "s" -> saveProof
+                  "T" -> randomTree
+                  "v" -> reverseSubtrees
                   "d" -> setPicDir False
                   "x" -> showAxiomsFor
                   "Left" -> incrCurr False
@@ -1046,9 +1047,6 @@ solver this solveRef enum paint = do
           
           nodesMenu <- getMenu "nodesMenu"
           mkBut nodesMenu "greatest lower bound" showGlb
-          mkBut nodesMenu "hide values" $ writeIORef hideValsRef 1
-          mkBut nodesMenu "hide widgets"$ writeIORef hideValsRef 2
-          mkBut nodesMenu "show values & widgets" $ writeIORef hideValsRef 0
           mkBut nodesMenu "predecessors" showPreds
           mkBut nodesMenu "successors" showSucs
           mkBut nodesMenu "constructors" $ showSyms constrPositions
@@ -1119,12 +1117,12 @@ solver this solveRef enum paint = do
           mkBut streeMenu "evaluate" evaluateTrees
           mkBut streeMenu "copy (c)" copySubtrees
           mkBut streeMenu "remove (r)" removeSubtrees
-          mkBut streeMenu "remove node" removeNode
+          mkBut streeMenu "remove node (o)" removeNode
+          mkBut streeMenu "reverse (v)" reverseSubtrees
+          mkBut streeMenu "insert/replace by text (i)" replaceText
           mkBut streeMenu "random labels (L)" randomLabels
           mkBut streeMenu "random tree (T)" randomTree
           mkBut streeMenu "remove path (p)" removePath
-          mkBut streeMenu "reverse" reverseSubtrees
-          mkBut streeMenu "insert/replace by text (i)" replaceText
 
           subsMenu <- getMenu "subsMenu"
           mkBut subsMenu "add from text field" addSubst
@@ -2751,36 +2749,23 @@ solver this solveRef enum paint = do
         
         -- | Used by 'drawTree'.
         drawPointer :: TermSP -> Color -> [Int] -> Pos -> [Int] -> Action
-        drawPointer ct ac p mid1@(x,y) q = do
+        drawPointer ct ac p mid@(x,y) q = do
           font <- readIORef fontRef
-
           (above,below) <- getTextHeight canv font
           let arc = [(x1,y1+below),(x,y-above)]
-              target z = (x',if z < y' then y'-above else y'+above)
-              draw :: [Pos] -> Color -> Action
-              draw path color = line canv path
-                  $ lineOpt{ lineFill = color
-                           , lineArrow = Just Last
-                           , lineSmooth = True
-                           }
-          if q `elem` allPoss ct then
-             if q << p || y > y'+30 then do                   -- up pointer
-                let mid2 = (if x < x' then x-30 else x'+30,(y+y')`div`2)
-                    path = arc++[mid1,mid2,target y]
-                draw path $ if q << p then f orange else f magenta; done
-             else do                                          -- down pointer
-                  let z = abs $ x-x'
-                      z' = y+z`div`5
-                      mid = (if z < 30 then x else (x+x')`div`2,z')
-                  draw (arc++[mid,target z']) $ f magenta; done
-          else do -- dangling pointer
-              draw (arc++[(x-10,y+10)]) $ f red
-              return ()
-          where (_,(x1,y1)) = label ct $ init p   -- pred of source
-                (_,(x',y')) = label ct q           -- target
+              target = (x',if y <= y' then y'-above else y'+above)
+          if q `elem` allPoss ct then do
+             draw (arc++[mid,target]) $ f $ if q << p then orange else magenta
+             done
+          else do draw (arc++[(x-10,y+10)]) $ f red; done    -- dangling pointer
+          where (_,(x1,y1)) = label ct $ init p              -- pred of source
+                (_,(x',y')) = label ct q                     -- target
                 f color = if ac == white then white else color
+                draw path color = (canv&line) path lineOpt{ lineFill = color
+                                                          , lineArrow = Just Last
+                                                          , lineSmooth = True
+                                                          }
 
-        
         -- | Called on change by 'verBut'.
         drawShrinked :: Action
         drawShrinked = do
@@ -2807,17 +2792,13 @@ solver this solveRef enum paint = do
         drawThis :: TermS -> [[Int]] -> String -> Action
         drawThis t ps col = do
             showState <- readIORef showStateRef
-            hideVals <- readIORef hideValsRef
             treeposs <- readIORef treepossRef
             maxHeap <- getMaxHeap
             font <- readIORef fontRef
             spread <- readIORef spreadRef
             corner <- readIORef cornerRef
 
-            let qs = if showState then []
-                     else case hideVals of 0 -> treeposs
-                                           1 -> treeposs++valPositions t
-                                           _ -> treeposs++widgPositions t
+            let qs = if showState then [] else treeposs
                 u = cutTree maxHeap (colHidden t) ps col qs
             sizes@(_,w) <- mkSizes canv font $ nodeLabels u
             writeIORef sizeStateRef sizes

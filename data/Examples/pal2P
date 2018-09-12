@@ -1,0 +1,155 @@
+-- pal2P
+
+
+Derivation of
+
+pal2[2,3,2]
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(reveq2[2,3,2](r)))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun(~(y:s2),
+                 fun((r,b),(r++[2],bool(2 = y & Bool(b))))
+                    (reveq2[3,2](s2)))
+                (r)))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (reveq2[3,2](tail(r)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (reveq2[3,2](drop(1,r)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun(~(y:s2),
+                     fun((r,b),(r++[3],bool(3 = y & Bool(b))))
+                        (reveq2[2](s2)))
+                    (drop(1,r)))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (reveq2[2](tail(drop(1,r)))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (reveq2[2](drop(2,r))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (fun(~(y:s2),
+                         fun((r,b),(r++[2],bool(2 = y & Bool(b))))
+                            (reveq2[](s2)))
+                        (drop(2,r))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (fun((r0,b),(r0++[2],bool(2 = head(drop(2,r)) & Bool(b))))
+                        (reveq2[](tail(drop(2,r))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (fun((r0,b),(r0++[2],bool(2 = head(drop(2,r)) & Bool(b))))
+                        (reveq2[](drop(3,r)))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (fun((r0,b),(r0++[2],bool(2 = head(drop(2,r)) & Bool(b))))
+                        (fun(~[],([],bool(True)))(drop(3,r)))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (fun((r0,b),(r0++[2],bool(2 = head(drop(2,r)) & Bool(b))))
+                        (([],bool(True)))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (([]++[2],bool(2 = head(drop(2,r)) & Bool(bool(True))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (fun((r0,b),(r0++[3],bool(3 = head(drop(1,r)) & Bool(b))))
+                    (([2],bool(2 = head(drop(2,r))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (([2]++[3],
+                  bool(3 = head(drop(1,r)) & Bool(bool(2 = head(drop(2,r)))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(fun((r0,b),(r0++[2],bool(2 = head(r) & Bool(b))))
+                (([2,3],bool(3 = head(drop(1,r)) & 2 = head(drop(2,r)))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(([2,3]++[2],
+              bool(2 = head(r) & 
+                   Bool(bool(3 = head(drop(1,r)) & 2 = head(drop(2,r))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(mu r b.(([2,3,2],
+              bool(2 = head(r) & 3 = head(drop(1,r)) & 2 = head(drop(2,r))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+get1(([2,3,2],
+      bool(2 = head(get0(mu r b.(([2,3,2],
+                                  bool(2 = head(r) & 3 = head(drop(1,r)) & 
+                                       2 = head(drop(2,r))))))) & 
+           3 = head(drop(1,
+                         get0(mu r b.(([2,3,2],
+                                       bool(2 = head(r) & 3 = head(drop(1,r)) & 
+                                            2 = head(drop(2,r)))))))) & 
+           2 = head(drop(2,
+                         get0(mu r b.(([2,3,2],
+                                       bool(2 = head(r) & 3 = head(drop(1,r)) & 
+                                            2 = head(drop(2,r)))))))))))
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(2 = head[2,3,2] & 3 = head(drop(1,[2,3,2])) & 2 = head(drop(2,[2,3,2])))
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(2 = 2 & 3 = 3)
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(True & 3 = 3)
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(3 = 3)
+
+Simplifying the preceding term (1 step) leads to 
+
+bool(True)
+
+Number of proof steps: 24

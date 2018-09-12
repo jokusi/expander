@@ -1,0 +1,49 @@
+-- natloop
+
+
+Derivation of
+
+Nat(n) ==> ((loop(f)$n)$f(x)) = f((loop(f)$n)$x)
+
+SELECTING INDUCTION VARIABLES at position [0,0] of the preceding formula leads to 
+
+All f x:(Nat(!n) ==> ((loop(f)$!n)$f(x)) = f((loop(f)$!n)$x))
+
+Applying the AXIOMS
+
+  ((loop(f)$0)$x) = x
+& ((loop(f)$suc(n))$x) = f((loop(f)$n)$x)
+
+at position [0,1,0] of the preceding formula leads to 
+
+All f x:(Nat(!n) ==> 
+         !n = 0 | 
+         Any n:(f((loop(f)$n)$f(x)) = f(f((loop(f)$n)$x)) & !n = suc(n)))
+
+The reducts have been simplified.
+
+Applying the INDUCTION HYPOTHESIS
+
+((loop(f)$n)$f(x)) = f((loop(f)$n)$x) <=== Nat(n) & !n >> n
+
+at position [0,1,1,0,0,0,0]
+of the preceding formula leads to 
+
+Nat(!n) ==> !n = 0 | Any n:(!n = suc(n) & suc(n) >> n & Nat(n))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+Nat(!n) ==> !n = 0 | Any n:(!n = suc(n) & Nat(n))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+True
+
+The reducts have been simplified.
+
+Number of proof steps: 5

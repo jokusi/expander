@@ -1,0 +1,13 @@
+-- trans2sols
+
+
+Derivation of
+
+map(sol)[bool(three),bool(NOTthree),bool(four),bool(five),bool(six),bool(seven),
+         bool(eight)]
+
+Simplifying the preceding term (23 steps) leads to 
+
+[[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]
+
+Number of proof steps: 1

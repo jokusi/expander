@@ -1,0 +1,48 @@
+-- phil1
+
+constructs:	think wait eat avail
+defuncts:   	procs lg rf idles forks forksL neighbours 
+		atoms /\ \/ And Or EF
+fovars:     	xs ys
+
+axioms:
+
+states == [start] &
+start == ([],[]) & 
+
+idles(xs,ys) == procs-xs-ys &
+
+lg == length(procs) &
+
+rf(x) == (x+1)`mod`lg & 
+
+forks(x) == [x,rf(x)] & 
+forksL(xs) == concatMap(forks)(xs) &
+
+neighbours == map(fun(x,forks(x)))(procs) &
+
+(xs,ys) -> branch(map(fun(x,(x:xs,ys)))(idles(xs,ys))) &  	  
+						-- x waits for her forks
+(xs =/= [] & last(xs) = x & forks(x) `NOTshares` forksL(ys)
+   	   ==> (xs,ys) -> (init(xs),insert(x,ys))) &  		  
+						-- x starts eating
+(ys =/= [] ==> (xs,ys) -> branch(map(fun(x,(xs,ys-[x])))(ys))) &  
+						-- x stops eating
+
+atoms == map($)$prodL[[think,wait,eat],procs] & 
+
+think(x) -> branch(filter(rel(xs,ys,x `in` idles(xs,ys)))(states)) &
+wait(x)  -> branch(filter(rel(xs,ys,x `in` xs))(states)) &
+eat(x)   -> branch(filter(rel(xs,ys,x `in` ys))(states)) &
+avail(x) -> branch(filter(rel(xs,ys,x `NOTin` forksL(ys)))(states)) 
+	  
+terms:
+
+eat(2) <+> 
+EF(eat(2))(([],[])) <+> 
+Or(map(eat)(procs)) <+>
+And(map(eat)(procs)) <+>
+EF(And(map(eat)(procs))) <+>
+And(map(EF.eat)(procs)) <+>
+Or(map(fun([x,y],eat(x)/\eat(y)))(neighbours)) <+>
+Or(map(fun(x,avail(x)\/eat(x)\/eat((x-1)`mod`lg)))(procs)) 

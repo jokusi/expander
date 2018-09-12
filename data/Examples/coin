@@ -1,0 +1,22 @@
+-- coin
+
+specs: 		modal
+constructs: 	start coin coffee tea odd
+defuncts:   	states labels
+
+axioms:
+
+states == [0] &
+labels == [start,coin,coffee,tea] &
+
+(0,start) -> branch[1,5] & (2,coffee) -> 3 &
+(1,coin) -> 2 & (2,tea) -> 4 &
+(5,coin) -> branch[6,7] & (6,coffee) -> 8 & 
+(7,tea) -> 9
+
+-- specification->state equivalence  -->  [(3,9),(4,8)]
+
+terms:
+
+    eval$AF$atom(<5)\/atom(=6)  -->  [0,1,2,3,4,6]
+<+> eval$FE$atom(<5)\/atom(=6)  -->  [0..9]

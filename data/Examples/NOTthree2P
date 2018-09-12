@@ -1,0 +1,19 @@
+-- NOTthree2P
+
+
+Derivation of
+
+NOTthree(st) & st `in` states ==> st = 1 | st = 3
+
+Narrowing the preceding formula (3 steps) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 1
+
+Solutions:
+
+True

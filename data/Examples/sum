@@ -1,0 +1,33 @@
+-- sum
+
+
+Derivation of
+
+sum(x) = y ==> (x*(x+1)) = (2*y)
+
+Adding
+
+  (sum0(x,y) ===> (x*(x+1)) = (2*y))
+
+to the axioms and applying FIXPOINT INDUCTION wrt
+
+  sum(0) = 0
+& (sum(suc(x)) = ((z0+x)+1) <=== sum(x) = z0)
+
+at position [] of the preceding formula leads to 
+
+All x z0:((0*(0+1)) = (2*0)) & 
+All x z0:((suc(x)*(suc(x)+1)) = (2*((z0+x)+1)) <=== sum0(x,z0))
+
+NARROWING the preceding formula (1 step) leads to 
+
+All x z0:((0*(0+1)) = (2*0)) & 
+All x z0:((suc(x)*(suc(x)+1)) = (2*((z0+x)+1)) <=== (x*(x+1)) = (2*z0))
+
+The axioms were MATCHED against their redices.
+
+SIMPLIFYING the preceding formula (40 steps) leads to 
+
+True
+
+Number of proof steps: 3

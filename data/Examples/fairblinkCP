@@ -1,0 +1,199 @@
+-- /Users/padawitz/Examples/fairblinkCP
+
+0. Derivation of
+
+G(F((=0).head))$blink
+
+All axioms are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING the preceding formulas (one step) leads to 
+
+NU X.(F((=0).head)/\(X.tail))$blink
+
+2. SIMPLIFYING the preceding formulas (one step) leads to 
+
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+THE CURRENT GOAL COINCIDES WITH GOAL NO. 35
+
+3. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(MU X.(((=0).head)\/(X.tail))/\
+ (NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail)).tail))$
+blink
+
+4. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & 
+(NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail)).tail)$blink
+
+5. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$tail(blink)
+
+6. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+7. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)\/(MU X.(((=0).head)\/(X.tail)).tail))$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+8. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)$blink | (MU X.(((=0).head)\/(X.tail)).tail)$blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+9. SIMPLIFYING the preceding formulas (one step) leads to 
+
+((=0).head)$blink & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+10. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(=0)$head(blink) & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+11. SIMPLIFYING the preceding formulas (one step) leads to 
+
+head(blink) = 0 & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+12. SIMPLIFYING the preceding formulas (one step) leads to 
+
+0 = 0 & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+13. SIMPLIFYING the preceding formulas (one step) leads to 
+
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink) | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+14. SIMPLIFYING the preceding formulas (one step) leads to 
+
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$(1:blink)
+
+15. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(MU X.(((=0).head)\/(X.tail))/\
+ (NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail)).tail))$
+(1:blink)
+
+16. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+(NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail)).tail)$(1:blink)
+
+17. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$tail(1:blink)
+
+18. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+19. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)\/(MU X.(((=0).head)\/(X.tail)).tail))$(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+20. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)$(1:blink) | (MU X.(((=0).head)\/(X.tail)).tail)$(1:blink)) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+21. SIMPLIFYING the preceding formulas (one step) leads to 
+
+((=0).head)$(1:blink) & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+22. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(=0)$head(1:blink) & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+23. SIMPLIFYING the preceding formulas (one step) leads to 
+
+head(1:blink) = 0 & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+24. SIMPLIFYING the preceding formulas (one step) leads to 
+
+1 = 0 & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+25. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(MU X.(((=0).head)\/(X.tail)).tail)$(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+26. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$tail(1:blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+27. SIMPLIFYING the preceding formulas (one step) leads to 
+
+MU X.(((=0).head)\/(X.tail))$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+28. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)\/(MU X.(((=0).head)\/(X.tail)).tail))$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+29. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(((=0).head)$blink | (MU X.(((=0).head)\/(X.tail)).tail)$blink) & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+30. SIMPLIFYING the preceding formulas (one step) leads to 
+
+((=0).head)$blink & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+31. SIMPLIFYING the preceding formulas (one step) leads to 
+
+(=0)$head(blink) & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+32. SIMPLIFYING the preceding formulas (one step) leads to 
+
+head(blink) = 0 & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+33. SIMPLIFYING the preceding formulas (one step) leads to 
+
+0 = 0 & NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+34. SIMPLIFYING the preceding formulas (one step) leads to 
+
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink | 
+(MU X.(((=0).head)\/(X.tail)).tail)$blink & 
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+
+35. SIMPLIFYING the preceding formulas (one step) leads to 
+
+NU X.(MU X.(((=0).head)\/(X.tail))/\(X.tail))$blink
+THE CURRENT GOAL COINCIDES WITH GOAL NO. 2
+
+Number of proof steps: 35

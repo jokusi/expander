@@ -1,0 +1,44 @@
+-- POPEMPTY
+
+
+Derivation of
+
+pop(empty) ~ empty
+
+Applying the axiom
+
+empty = (new,0)
+
+at positions [],[] of the preceding formula leads to the formula
+
+pop((new,0)) ~ (new,0)
+
+Simplifying the preceding formula leads to the formula
+
+pop(new,0) ~ (new,0)
+
+Applying the axiom
+
+pop(f,i) = (f,pred(i))
+
+at position [] of the preceding formula leads to the formula
+
+(new,pred(0)) ~ (new,0)
+
+Applying the axiom
+
+pred(0) = 0
+
+at position [] of the preceding formula leads to the formula
+
+(new,0) ~ (new,0)
+
+Simplifying the preceding formula leads to the formula
+
+True
+
+Number of proof steps: 5
+
+Solutions:
+
+True

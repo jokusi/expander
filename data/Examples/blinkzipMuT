@@ -1,0 +1,2 @@
+-- blinkzipMuT
+[DeriveMode (False,False), Match 0, Mark [], Induction False 0, Mark [], Simplify True 100 False False, Mark [], Induction False 0, Mark [], Simplify True 100 False False, Mark [], Narrow 1 True, Mark [], Simplify True 100 False False, Mark []]

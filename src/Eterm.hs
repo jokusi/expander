@@ -178,7 +178,7 @@ minmax4 :: (Num a, Num a1, Num a2, Num a3, Ord a, Ord a1, Ord a2, Ord a3) =>
 minmax4 p (0,0,0,0) = p
 minmax4 (0,0,0,0) p = p
 minmax4 (x1,y1,x2,y2) (x1',y1',x2',y2') = (min x1 x1',min y1 y1',
-                    max x2 x2',max y2 y2')
+                                           max x2 x2',max y2 y2')
 
 mkArray :: Ix a => (a,a) -> (a -> b) -> Array a b
 mkArray bounds f = array bounds [(i,f i) | i <- range bounds]
@@ -240,11 +240,12 @@ hue :: Int -- ^ mode
     -> Int -- ^ n
     -> Int -- ^ i
     -> Color
-hue 1 col n i = iterate nextCol col!!round (fromInt i*1530/fromInt n) 
-hue 2 col _ 0 = col
-hue 2 col n i = if odd i then complColor $ hue 2 col n $ i-1
-                         else nextColor 1 (n `div` 2) $ hue 2 col n $ i-2
-hue 3 col n i = if odd i then complColor d else d where d = hue 1 col n i
+hue 0 col n i = iterate nextCol col!!(i*1530`div`n)
+                                  -- round (fromInt i*1530/fromInt n)
+hue 1 col n i | i > 0 = if odd i then complColor $ hue 1 col n $ i-1
+                                 else nextColor 0 (n`div`2) $ hue 1 col n $ i-2
+hue 2 col n i = if odd i then complColor d else d where d = hue 0 col n i
+hue 3 col n i = if odd i then complColor d else d where d = hue 0 col (2*n) i
 hue _ col _ _ = col
 
 nextColor :: Int -> Int -> Color -> Color
@@ -360,8 +361,8 @@ split _ _     = nil2
 
 split2 :: (a -> Bool) -> (a -> Bool) -> [a] -> Maybe ([a],[a])
 split2 f g (x:s) = do (s1,s2) <- split2 f g s
-                      if f x then Just (x:s1,s2) 
-                             else do guard $ g x; Just (s1,x:s2) 
+                      if f x then Just (x:s1,s2)
+                             else do guard $ g x; Just (s1,x:s2)
 split2 _ _ _     = Just nil2
 
 prod2 :: [t] -> [t1] -> [(t, t1)]
@@ -409,9 +410,13 @@ lookupL :: (Eq a,Eq b) => a -> b -> [(a,b,c)] -> Maybe c
 lookupL a b ((x,y,z):s) = if a == x && b == y then Just z else lookupL a b s
 lookupL _ _ _           = Nothing
 
-lookupLM :: Eq a => a -> [(a,b,c)] -> [c]
-lookupLM a ((x,_,z):s) = if a == x then z:lookupLM a s else lookupLM a s
-lookupLM _ _           = []
+lookupL1 :: Eq a => a -> [(a,b,c)] -> [c]
+lookupL1 a ((x,_,z):s) = if a == x then z:lookupL1 a s else lookupL1 a s
+lookupL1 _ _           = []
+
+lookupL2 :: Eq a => a -> [(a,b,c)] -> [(b,c)]
+lookupL2 a ((x,y,z):s) = if a == x then (y,z):lookupL2 a s else lookupL2 a s
+lookupL2 _ _           = []
 
 -- @i in invertRel as bs iss !! k iff k in iss !! i@.
 invertRel
@@ -656,7 +661,7 @@ mkAcyclicL ps qs = case f [] qs of Just qs -> mkAcyclicL ps qs; _ -> ps++qs
                     if back x [] y then Just y else g x xs
         back x xs y = x == y || y `notElem` xs && 
                                        any (back x $ y:xs) zs
-                                where zs = concat $ lookupLM y $ ps++qs
+                                where zs = concat $ lookupL1 y $ ps++qs
 
 -- | extensional equality
 eqFun :: (a1 -> b -> Bool) -> (a -> a1) -> (a -> b) -> [a] -> Bool
@@ -722,10 +727,6 @@ zipWith2 :: (t -> t1 -> t2 -> [a]) -> [t] -> [t1] -> [t2] -> [a]
 zipWith2 f (x:xs) (y:ys) (z:zs) = f x y z++zipWith2 f xs ys zs
 zipWith2 _ _ _ _                = []
 
-zipWithL :: (t -> a1 -> a) -> [t] -> [[a1]] -> [a]
-zipWithL f (x:xs) (ys:yss) = map (f x) ys++zipWithL f xs yss
-zipWithL _ _ _             = []
-
 pascal :: Int -> [Int]
 pascal 0 = [1]
 pascal n = zipWith (+) (s++[0]) (0:s) where s = pascal $ n-1
@@ -769,9 +770,10 @@ mirror :: Int -> [a] -> [a]
 mirror n s = [s!!(x i*n+y i) | i <- indices_ s] where x i = n-1-i`div`n
                                                       y i = i`mod`n
 
-splitAndShuffle :: Int -> [a] -> [a]
-splitAndShuffle n = shuffle . f 
-                where f s = if length s <= n then [s] else take n s:f (drop n s)
+splitAndShuffle :: Int -> [a] -> [a]    -- not used
+splitAndShuffle n = shuffle . f where f s = if length s <= n then [s]
+                                            else take n s:f (drop n s)
+
 
 -- | @shuffle ss@ zips the lists of @ss@ before concatenating them.
 shuffle
@@ -1078,8 +1080,8 @@ sortDoms2 = sortDoms . map (pr1 *** pr2)
 insert :: Eq a => (a -> a -> Bool) -> a -> [a] -> [a]
 insert r x s@(y:ys) | x == y = s
                     | r x y  = x:s
-                    | otherwise = y:insert r x ys
-insert _ x _                       = [x]
+                    | True   = y:insert r x ys
+insert _ x _                 = [x]
 
 -- nextPerm s computes the successor of s with respect to the reverse
 -- lexicographic ordering (see Paulson, ML for the Working Programmer, p. 95f.)
@@ -1138,8 +1140,7 @@ maxima f s = [x | x <- s, f x == maximum (map f s)]
 minima f s = [x | x <- s, f x == minimum (map f s)]
 
 -- minmax ps computes minimal and maximal coordinates of the point list ps.
-minmax :: (Num t, Num t1, Ord t, Ord t1) =>
-          [(t, t1)] -> (t, t1, t, t1)
+minmax :: (Ord a,Ord b,Num a,Num b) => [(a,b)] -> (a,b,a,b)
 minmax ps@((x,y):_) = foldl f (x,y,x,y) ps
             where f (x1,y1,x2,y2) (x,y) = (min x x1,min y y1,max x x2,max y y2)
 minmax _ = (0,0,0,0)
@@ -1308,7 +1309,7 @@ enclosed p    = (do tchar '('; r <- p; tchar ')'; return r) ++ token p
 
 bool :: Parser Bool
 bool                = (do symbol "True"; return True) ++
-                 (do symbol "False"; return False)
+                      (do symbol "False"; return False)
 
 letters :: String
 letters       = ['a'..'z']++['A'..'Z']
@@ -1360,12 +1361,12 @@ doublePos     = do n <- nat; char '.'; ds <- some digit
                    let m = foldl1 f ds
                        r = fromInt n+fromInt m*0.1**fromInt (length ds)
                    i <- expo; return $ r*10**fromInt i
-             where f n d = 10*n+d
-                   expo = concat [ do string "e+"; nat
-                               , do string "e-"; n <- nat; return $ -n
-                               , do string "e"; nat
-                               , return 0
-                               ]
+                where f n d = 10*n+d
+                      expo = concat [ do string "e+"; nat
+                                    , do string "e-"; n <- nat; return $ -n
+                                    , do string "e"; nat
+                                    , return 0
+                                    ]
 
 real :: Parser Double
 real          = (do r <- double; return $ fromDouble r) ++
@@ -1385,19 +1386,19 @@ hexcolor      = do char '#'
 
 color :: Parser Color
 color         = concat [ do symbol "dark"; c <- color; return $ dark c
-                     , do symbol "light"; c <- color; return $ light c
-                     , do symbol "black"; return black
-                     , do symbol "grey"; return grey
-                     , do symbol "white"; return white
-                     , do symbol "red"; return red
-                     , do symbol "magenta"; return magenta
-                     , do symbol "blue"; return blue
-                     , do symbol "cyan"; return cyan
-                     , do symbol "green"; return green
-                     , do symbol "yellow"; return yellow
-                     , do symbol "orange"; return orange
-                     , rgbcolor,token hexcolor
-                     ]
+                       , do symbol "light"; c <- color; return $ light c
+                       , do symbol "black"; return black
+                       , do symbol "grey"; return grey
+                       , do symbol "white"; return white
+                       , do symbol "red"; return red
+                       , do symbol "magenta"; return magenta
+                       , do symbol "blue"; return blue
+                       , do symbol "cyan"; return cyan
+                       , do symbol "green"; return green
+                       , do symbol "yellow"; return yellow
+                       , do symbol "orange"; return orange
+                       , rgbcolor,token hexcolor
+                       ]
 
 colPre :: Parser (Color, String)
 colPre        = do col <- color; char '_'; x <- p; return (col,x)
@@ -1585,9 +1586,6 @@ maybeSum sig t = concat [ do x <- oneOf addOps; u <- prodTerm sig
 addOps, mulOps :: [String]
 addOps = words "+ -"
 mulOps = words "** * /"
-
-unit :: TermS
-unit = leaf "()"
 
 prodTerm :: Sig -> Parser TermS
 prodTerm sig = do t <- singleTerm sig; maybeProd sig t
@@ -3273,37 +3271,19 @@ turnIntoUndef sig t p redex =
 leaf :: String -> TermS
 leaf a = F a []
 
-mkStrPair :: (String,String) -> TermS
-mkStrPair (a,b) = mkTup $ map leaf [a,b]
-
-mkStrLPair :: ([String],[String]) -> TermS
-mkStrLPair (as,bs) = mkTup $ map leaves [as,bs]
-
 leaves :: [String] -> TermS
 leaves = mkList' . map leaf
 
-mkZero, mkOne :: TermS
-mkZero = F "0" []
-mkOne  = F "1" []
+mkZero, mkOne, unit :: TermS
+mkZero = leaf "0"
+mkOne  = leaf "1"
+unit   = leaf "()"
 
 mkConst :: Show a => a -> TermS
-mkConst a = F (show a) []
+mkConst = leaf . show
 
 jConst :: Show a => a -> Maybe TermS
 jConst  = Just . mkConst
-
-jConsts :: Show a => [a] -> Maybe TermS
-jConsts = Just . mkConsts
-
-jList :: [TermS] -> Maybe TermS
-jList = Just . mkList
-
-mkConstPair :: (Show a, Show a1) =>
-               (a, a1) -> TermS
-mkConstPair (a,b) = mkPair (mkConst a) $ mkConst b
-
-mkConsts :: Show a => [a] -> TermS
-mkConsts = mkList . map mkConst
 
 mkSuc :: TermS -> TermS
 mkSuc t = F "suc" [t]
@@ -3324,7 +3304,25 @@ mkNil = mkList []
 mkList' :: [TermS] -> TermS
 mkList' [a] = a
 mkList' as  = mkList as
- 
+
+jList :: [TermS] -> Maybe TermS
+jList = Just . mkList
+
+mkConsts :: Show a => [a] -> TermS
+mkConsts = mkList . map mkConst
+
+jConsts :: Show a => [a] -> Maybe TermS
+jConsts = Just . mkConsts
+
+mkConstPair :: (Show a, Show b) => (a, b) -> TermS
+mkConstPair (a,b) = mkPair (mkConst a) $ mkConst b
+
+mkStrPair :: (String,String) -> TermS
+mkStrPair (a,b) = mkTup $ map leaf [a,b]
+
+mkStrLPair :: ([String],[String]) -> TermS
+mkStrLPair (as,bs) = mkTup $ map leaves [as,bs]
+
 mkGets :: [a] -> TermS -> [TermS]
 mkGets xs t = case xs of [_] -> [t]; _ -> map f $ indices_ xs
               where f i = F ("get"++show i) [t]
@@ -3791,20 +3789,16 @@ freeXPositions sig x t = [p | p <- freePositions sig t, label t p == x]
 
 -- fixPositions t returns all MU- resp. NU-positions p of t.
 fixPositions :: TermS -> [[Int]]
-fixPositions (F x [t,_]) | isFixF x  = []:map (0:) (fixPositions t)
-fixPositions (F x ts) | isFlowNode x = liftPoss fixPositions $ init ts
-fixPositions _                       = []
+fixPositions = filterPositions $ isFixF . take 2
 
 -- valPositions t returns the value positions of flowtree nodes of t.
 valPositions :: TermS -> [[Int]]
 valPositions (F x ts) | isFlowNode x = [last $ indices_ ts]:f (init ts) 
                       | otherwise    = f ts where f = liftPoss valPositions
-valPositions _                       = []
+valPositions _ = []
 
-widgPositions :: TermS -> [[Int]]
-widgPositions (F x ts) | x == "widg" = [last $ indices_ ts]:f (init ts)
-                       | otherwise   = f ts where f = liftPoss widgPositions
-widgPositions _                      = []
+isFlowNode :: String -> Bool
+isFlowNode x = x `elem` words "assign ite fork not \\/ /\\ <> # MU NU"
 
 (<<=), (<<) :: Eq a => [a] -> [a] -> Bool
 
@@ -3975,7 +3969,7 @@ natToLabel t = mkFun [t] (const Nothing) $ -1
 
 -- level/pre/heap/hillTerm col lab t labels each node of t with its position 
 -- within t with respect to level, prefix, heap or hill order. lab labels the 
--- nodes of t in accordance with the color function hue 1 col n where n is the 
+-- nodes of t in accordance with the color function hue 0 col n where n is the
 -- maximum of positions of t and col is the start color.
 levelTerm,preordTerm,heapTerm,hillTerm ::
                          Color -> (Color -> Int -> b) -> Term a -> (Term b,Int)
@@ -3984,7 +3978,7 @@ levelTerm col lab t = un where un@(_,n) = f 0 t
                                f i (F _ ts@(_:_)) = (F (label i) us,maximum ks)
                                         where (us,ks) = unzip $ map (f $ i+1) ts
                                f i _= (F (label i) [],i+1)
-                               label i = lab (hue 1 col n i) i
+                               label i = lab (hue 0 col n i) i
 
 preordTerm col lab t = un where un@(_,n) = f 0 t
                                 f i (F _ ts) = (F (label i) us,n)
@@ -3993,7 +3987,7 @@ preordTerm col lab t = un where un@(_,n) = f 0 t
                                 g i (t:ts) = (u:us,n) where (u,m) = f i t
                                                             (us,n) = g m ts
                                 g i _      = ([],i)
-                                label i = lab (hue 1 col n i) i
+                                label i = lab (hue 0 col n i) i
 
 heapTerm col lab t = (u,n+1)
      where (u:_,n) = f (-1) [t]
@@ -4005,7 +3999,7 @@ heapTerm col lab t = (u,n+1)
                           (vs,_,_) = foldl h ([],us,i+1) lgs
                           h (ts,us,i) lg = (ts++[F (label i) vs],ws,i+1)
                                            where (vs,ws) = splitAt lg us
-           label i = lab (hue 1 col n i) i
+           label i = lab (hue 0 col n i) i
               
 hillTerm col lab t = un where un@(_,n) = f 0 t
                               f i (F _ ts) = (F (label i) us,maximum $ n:ns)
@@ -4015,7 +4009,7 @@ hillTerm col lab t = un where un@(_,n) = f 0 t
                                         is = [0..k-1]; js = [k-1,k-2..0]
                                         ks = is++(if even lg then js else k:js)
                               f i _ = (F (label i) [],i)
-                              label i = lab (hue 1 col n i) i
+                              label i = lab (hue 0 col n i) i
 
 -- cutTree max t ps col qs hides each subtree of t whose root position is in qs 
 -- or greater than max (wrt the heap order). Each subtrees of t whose root 
@@ -4446,7 +4440,7 @@ colorClassesL sig = g where
 setColor :: [String] -> [[Int]] -> Int -> String -> String
 setColor sts part n x = if x `notElem` sts then x
                         else case searchGet (elem $ getInd x sts) part of
-                          Just (k,_) -> show (hue 1 red n k) ++ '_':x
+                          Just (k,_) -> show (hue 0 red n k) ++ '_':x
                           _          -> x
 
 -- concept ts posExas negExas computes the minimal concept wrt the feature trees
@@ -4524,58 +4518,97 @@ data Flow a = In (Flow a) a | Assign String TermS (Flow a) a |
               Comb Bool [Flow a] a | Mop Bool TermS (Flow a) a | 
               Fix Bool (Flow a) a | Pointer [Int]
  
-parseFlow :: Sig -> TermS -> (TermS -> Maybe a) -> Maybe (Flow a)
-parseFlow sig t parseVal = f t where
-      f (F "inflow" [u,val])        = do g <- f u; val <- parseVal val
-                                         Just $ In g val
-      f (F "assign" [V x,e,u,val])  = do g <- f u; val <- parseVal val
-                                         Just $ Assign x e g val
-      f (F "ite" [c,u1,u2,val])     = do g1 <- f u1; g2 <- f u2
-                                         val <- parseVal val
-                                         Just $ Ite c g1 g2 val
-      f (F "fork" ts@(_:_))         = do gs <- mapM f $ init ts
-                                         val <- parseVal $ last ts
-                                         Just $ Fork gs val
-      f (F "not" [u,val])           = do g <- f u; val <- parseVal val
-                                         Just $ Neg g val
-      f (F "\\/" ts@(_:_))          = do gs <- mapM f $ init ts
-                                         val <- parseVal $ last ts
-                                         Just $ Comb True gs val
-      f (F "/\\" ts@(_:_))          = do gs <- mapM f $ init ts
-                                         val <- parseVal $ last ts
-                                         Just $ Comb False gs val
-      f (F "<>" [lab,u,val])        = do g <- f u; val <- parseVal val
-                                         guard $ lab `elem` leaf"":(sig&labels)
-                                         Just $ Mop True lab g val
-      f (F "#" [lab,u,val])         = do g <- f u; val <- parseVal val
-                                         guard $ lab `elem` leaf"":(sig&labels)
-                                         Just $ Mop False lab g val
-      f (F "MU" [u,val])            = do g <- f u; val <- parseVal val
-                                         Just $ Fix True g val
-      f (F "NU" [u,val])            = do g <- f u; val <- parseVal val
-                                         Just $ Fix False g val
-      f (V x) | isPos x             = do guard $ q `elem` positions t
-                                         Just $ Pointer q where q = getPos x
-      f val                         = do val <- parseVal val; Just $ Atom val
+parseFlow :: Bool -> Sig -> TermS -> (TermS -> Maybe a) -> Maybe (Flow a)
+parseFlow True sig t parseVal = f t where
+     f (F x [u]) | take 8 x == "inflow::" =
+                     do g <- f u; val <- dropVal 8 x; Just $ In g val
+     f (F x [V z,e,u]) | take 8 x == "assign::" =
+                     do g <- f u; val <- dropVal 8 x; Just $ Assign z e g val
+     f (F x [c,u1,u2]) | take 5 x == "ite::" =
+                     do g1 <- f u1; g2 <- f u2; val <- dropVal 5 x
+                        Just $ Ite c g1 g2 val
+     f (F x ts) | take 6 x == "fork::" =
+                     do gs <- mapM f ts; val <- dropVal 6 x; Just $ Fork gs val
+     f (F x [u]) | take 5 x == "not::" =
+                     do g <- f u; val <- dropVal 5 x; Just $ Neg g val
+     f (F x ts) | take 4 x == "\\/::" =
+                     do gs <- mapM f ts; val <- dropVal 4 x
+                        Just $ Comb True gs val
+     f (F x ts) | take 4 x == "/\\::" =
+                     do gs <- mapM f ts; val <- dropVal 4 x
+                        Just $ Comb False gs val
+     f (F x [lab,u]) | take 4 x == "<>::" =
+                     do g <- f u;  guard $ lab `elem` leaf "":(sig&labels)
+                        val <- dropVal 4 x; Just $ Mop True lab g val
+     f (F x [lab,u]) | take 3 x == "#::" =
+                     do g <- f u;  guard $ lab `elem` leaf "":(sig&labels)
+                        val <- dropVal 3 x; Just $ Mop False lab g val
+     f (F x [u]) | take 4 x == "MU::" =
+                     do g <- f u; val <- dropVal 4 x; Just $ Fix True g val
+     f (F x [u]) | take 4 x == "NU::" =
+                     do g <- f u; val <- dropVal 4 x; Just $ Fix False g val
+     f (V x) | isPos x = do guard $ q `elem` positions t
+                            Just $ Pointer q where q = getPos x
+     f val             = do val <- parseVal val; Just $ Atom val
+     dropVal n x = do val <- parse (term sig) $ drop n x; parseVal val
+parseFlow _ sig t parseVal = f t where
+     f (F "inflow" [u,val])        = do g <- f u; val <- parseVal val
+                                        Just $ In g val
+     f (F "assign" [V x,e,u,val])  = do g <- f u; val <- parseVal val
+                                        Just $ Assign x e g val
+     f (F "ite" [c,u1,u2,val])     = do g1 <- f u1; g2 <- f u2
+                                        val <- parseVal val
+                                        Just $ Ite c g1 g2 val
+     f (F "fork" ts@(_:_))         = do gs <- mapM f $ init ts
+                                        val <- parseVal $ last ts
+                                        Just $ Fork gs val
+     f (F "not" [u,val])           = do g <- f u; val <- parseVal val
+                                        Just $ Neg g val
+     f (F "\\/" ts@(_:_))          = do gs <- mapM f $ init ts
+                                        val <- parseVal $ last ts
+                                        Just $ Comb True gs val
+     f (F "/\\" ts@(_:_))          = do gs <- mapM f $ init ts
+                                        val <- parseVal $ last ts
+                                        Just $ Comb False gs val
+     f (F "<>" [lab,u,val])        = do g <- f u
+                                        guard $ lab `elem` leaf "":(sig&labels)
+                                        val <- parseVal val
+                                        Just $ Mop True lab g val
+     f (F "#" [lab,u,val])         = do g <- f u
+                                        guard $ lab `elem` leaf "":(sig&labels)
+                                        val <- parseVal val
+                                        Just $ Mop False lab g val
+     f (F "MU" [u,val])            = do g <- f u; val <- parseVal val
+                                        Just $ Fix True g val
+     f (F "NU" [u,val])            = do g <- f u; val <- parseVal val
+                                        Just $ Fix False g val
+     f (V x) | isPos x             = do guard $ q `elem` positions t
+                                        Just $ Pointer q where q = getPos x
+     f val                         = do val <- parseVal val; Just $ Atom val
+
+parseVal sig (t@(F "()" [])) = Just t
+parseVal sig t = do F "[]" ts <- Just t; guard $ ts `subset`(sig&states); Just t 
 
 -- mkFlow computes the term representation of a flow graph
 
-mkFlow :: Sig -> Flow a -> (a -> TermS) -> TermS
-mkFlow sig flow mkVal = f flow
-    where f (In g val)         = F "inflow" [f g,mkVal val]
-          f (Assign x e g val) = F "assign" [V x,e,f g,mkVal val]
-          f (Ite c g1 g2 val)  = F "ite" [c,f g1,f g2,mkVal val]
-          f (Fork gs val)      = F "fork" $ map f gs++[mkVal val]
-          f (Atom val)         = mkVal val
-          f (Neg g val)        = F "not" [f g,mkVal val]
-          f (Comb b gs val)    = F (if b then "\\/" else "/\\") $ map f gs ++
-                                                                  [mkVal val]
-          f (Mop b lab g val)  = F (if b then "<>" else "#") [lab,f g,mkVal val]
-          f (Fix b g val)      = F (if b then "MU" else "NU") [f g,mkVal val]
-          f (Pointer p)        = mkPos p
-           
-isFlowNode x = x `elem` words "assign ite fork not \\/ /\\ <> # MU NU"
- 
+mkFlow :: Bool -> Sig -> Flow a -> (a -> TermS) -> TermS
+mkFlow b sig flow mkVal = f flow
+       where f (In g val)           = h "inflow" val [f g]
+             f (Assign x e g val)   = h "assign" val [V x,e,f g]
+             f (Ite c g1 g2 val)    = h "ite" val [c,f g1,f g2]
+             f (Fork gs val)        = h "fork" val $ map f gs
+             f (Atom val)           = mkVal val
+             f (Neg g val)          = h "not" val [f g]
+             f (Comb True gs val)   = h "\\/" val $ map f gs
+             f (Comb _ gs val)      = h "/\\" val $ map f gs
+             f (Mop True lab g val) = h "<>" val [lab,f g]
+             f (Mop _ lab g val)    = h "#" val [lab,f g]
+             f (Fix True g val)     = h "MU" val [f g]
+             f (Fix _ g val)        = h "NU" val [f g]
+             f (Pointer p)          = mkPos p
+             h op val ts = if b then F (op ++ "::" ++ showTerm0 (mkVal val)) ts
+                                else F op $ ts ++ [mkVal val]
+
 -- getVal g p returns the value at the first non-pointer position of g that is
 -- reachable from p.
 
@@ -4600,89 +4633,111 @@ getVal f p = h f p p where
         h (Fix _ g _) (0:p) q      = h g p q
         h (Fix _ _ val) _ q        = (val,q)
         h (Pointer p) _ _          = h f p p
-        h' (g:_) (0:p)  = h g p
+        h' (g:_)  (0:p) = h g p
         h' (_:gs) (n:p) = h' gs ((n-1):p)
- 
-progVars (In g _)         = progVars g
-progVars (Assign x _ g _) = progVars g `join1` x
-progVars (Ite _ g1 g2 _)  = progVars g1 `join` progVars g2
-progVars (Fork gs _)      = joinMap progVars gs
-progVars flow             = []
-         
+
 -- global model checking of state formulas (backward analysis)
 
-initStates :: Sig -> TermS -> Maybe TermS
-initStates sig = f
-           where sts = mkList (sig&states)
-                 f (F "true" [])      = Just sts
-                 f (F "false" [])     = Just mkNil
-                 f (F "`then`" [t,u]) = f (F "\\/" [F "not" [t],u])
-                 f (F "MU" [t])   = do t <- f t; Just $ F "MU" [t,mkNil]
-                 f (F "NU" [t])   = do t <- f t; Just $ F "NU" [t,sts]
-                 f (t@(V x))      = do guard $ isPos x; Just t
-                 f (F "EX" [t])   = do t <- f t; Just $ F "<>" [leaf"",t,unit]
-                 f (F "AX" [t])   = do t <- f t; Just $ F "#" [leaf"",t,unit]
-                 f (F x [lab,t]) | x `elem` words "<> #" 
-                                  = do guard $ isJust
-                                         $ search (== lab) (sig&labels)
-                                       t <- f t; Just $ F x [lab,t,unit]
-                 f (F x ts) | x `elem` words "not \\/ /\\"
-                                  = do ts <- mapM f ts; Just $ F x $ ts++[unit]
-                 f at                 = do i <- search (== at) (sig&atoms)
-                                           Just $ mkList $ map ((sig&states)!!) 
-                                                         $ (sig&value)!!i
+initStates :: Bool -> Sig -> TermS -> Maybe TermS
+initStates True sig = f
+     where sts = mkList (sig&states)
+           f (F "true" [])      = Just sts
+           f (F "false" [])     = Just mkNil
+           f (F "`then`" [t,u]) = f (F "\\/" [F "not" [t],u])
+           f (F "MU" [t])       = do t <- f t; jOP "MU" "[]" [t]
+           f (F "NU" [t])       = do t <- f t; jOP "NU" (showTerm0 sts) [t]
+           f (t@(V x))          = do guard $ isPos x; Just t
+           f (F "EX" [t])       = do t <- f t; jOP "<>" "()" [leaf "",t]
+           f (F "AX" [t])       = do t <- f t; jOP "#" "()" [leaf "",t]
+           f (F "<>" [lab,t])   = do p lab; t <- f t; jOP "<>" "()" [lab,t]
+           f (F "#" [lab,t])    = do p lab; t <- f t; jOP "#" "()" [lab,t]
+           f (F "not" [t])      = do t <- f t; jOP "not" "()" $ [t]
+           f (F "\\/" ts)       = do ts <- mapM f ts; jOP "\\/" "()" ts
+           f (F "/\\" ts)       = do ts <- mapM f ts; jOP "/\\" "()" ts
+           f at                 = do i <- search (== at) (sig&atoms)
+                                     Just $ mkList $ map ((sig&states)!!)
+                                                   $ (sig&value)!!i
+           p lab = guard $ just $ search (== lab) (sig&labels)
+           jOP op val = Just . F (op++"::"++val)
+initStates _ sig = f
+     where sts = mkList (sig&states)
+           f (F "true" [])      = Just sts
+           f (F "false" [])     = Just mkNil
+           f (F "`then`" [t,u]) = f (F "\\/" [F "not" [t],u])
+           f (F "MU" [t])       = do t <- f t; jOP "MU" [t,mkNil]
+           f (F "NU" [t])       = do t <- f t; jOP "NU" [t,sts]
+           f (t@(V x))          = do guard $ isPos x; Just t
+           f (F "EX" [t])       = do t <- f t; jOP "<>" [leaf "",t,unit]
+           f (F "AX" [t])       = do t <- f t; jOP "#" [leaf "",t,unit]
+           f (F "<>" [lab,t])   = do p lab; t <- f t; jOP "<>" [lab,t,unit]
+           f (F "#" [lab,t])    = do p lab; t <- f t; jOP "#" [lab,t,unit]
+           f (F "not" [t])      = do t <- f t; jOP "not" $ [t,unit]
+           f (F "\\/" ts)       = do ts <- mapM f ts; jOP "\\/" $ ts++[unit]
+           f (F "/\\" ts)       = do ts <- mapM f ts; jOP "/\\" $ ts++[unit]
+           f at                 = do i <- search (== at) (sig&atoms)
+                                     Just $ mkList $ map ((sig&states)!!)
+                                                   $ (sig&value)!!i
+           p lab = guard $ just $ search (== lab) (sig&labels)
+           jOP op = Just . F op
 
-evalStates :: Sig -> Flow TermS -> [[Int]] -> (Flow TermS,Bool)
-evalStates sig flow ps = up [] flow
-  where up p (Neg g val) 
-             | val1 == unit || any (p<<) ps = (Neg g1 val, b)
-             | True = if null ps then (Atom val2, True)
-                                 else (Neg g1 val2, b || val /= val2)
-                        where q = p++[0]; (g1,b) = up q g
-                              val1 = fst $ getVal flow q
-                              val2 = mkList $ minus (sig&states) $ subterms val1
-        up p (Comb c gs val)
-             | any (== unit) vals || any (p<<) ps = (Comb c gs1 val, or bs)
-             | True = if null ps then (Atom val1, True)
-                                 else (Comb c gs1 val1, or bs || val /= val1)
-                      where qs = succsInd p gs
-                            (gs1,bs) = unzip $ zipWith up qs gs
-                            vals = map (fst . getVal flow) qs
-                            val1 = mkList $ foldl1 (if c then join else meet) 
-                                          $ map subterms vals
-        up p (Mop c lab g val)
-             | val1 == unit || any (p<<) ps = (Mop c lab g1 val, b)
-             | True = if null ps then (Atom val2, True)
-                                 else (Mop c lab g1 val2, b || val /= val2)
-                      where q = p++[1]; (g1,b) = up q g
-                            val1 = fst $ getVal flow q
-                            f True = shares; f _ = flip subset
-                            val2 = mkList $ filter (f c (subterms val1) . h) 
-                                            (sig&states)
-                            h st = map ((sig&states)!!) $ tr i
-                                where i = fromJust $ search (== st) (sig&states)
-                            tr i = if lab == leaf"" then (sig&trans)!!i
-                                   else (sig&transL)!!i!!
-                                         fromJust (search (== lab) (sig&labels))
-        up p (Fix c g val)
-             | val1 == unit || any (p<<) ps = (Fix c g1 val, b)
-             | True = if f c subset valL val1L 
-                      then if not b && p `elem` ps then (Atom val, True)
-                                                   else (Fix c g1 val, b)
-                           else (Fix c g1 $ mkList $ h c valL val1L, True)
-                      where f True = flip; f _ = id
-                            h True = join; h _ = meet
-                            q = p++[0]; (g1,b) = up q g
-                            val1 = fst $ getVal flow q
-                            valL = subterms val; val1L = subterms val1
-        up _ g = (g,False)
+evalStates :: Sig -> TermS -> Flow TermS -> (Flow TermS,Bool)
+evalStates sig t flow = up [] flow
+ where ps = maxis (<<=) $ fixPositions t
+       up p (Neg g val)
+            | val1 == unit || any (p<<) ps = (Neg g1 val, b)
+            | True = if null ps then (Atom val2, True)
+                                else (Neg g1 val2, b || val /= val2)
+                       where q = p++[0]; (g1,b) = up q g
+                             val1 = fst $ getVal flow q
+                             val2 = mkList $ minus (sig&states) $ subterms val1
+       up p (Comb c gs val)
+            | any (== unit) vals || any (p<<) ps = (Comb c gs1 val, or bs)
+            | True = if null ps then (Atom val1, True)
+                                else (Comb c gs1 val1, or bs || val /= val1)
+                     where qs = succsInd p gs
+                           (gs1,bs) = unzip $ zipWith up qs gs
+                           vals = map (fst . getVal flow) qs
+                           val1 = mkList $ foldl1 (if c then join else meet) 
+                                         $ map subterms vals
+       up p (Mop c lab g val)
+            | val1 == unit || any (p<<) ps = (Mop c lab g1 val, b)
+            | True = if null ps then (Atom val2, True)
+                                else (Mop c lab g1 val2, b || val /= val2)
+                     where q = p++[1]; (g1,b) = up q g
+                           val1 = fst $ getVal flow q
+                           f True = shares; f _ = flip subset
+                           val2 = mkList $ filter (f c (subterms val1) . h) 
+                                           (sig&states)
+                           h st = map ((sig&states)!!) $ tr i
+                               where i = fromJust $ search (== st) (sig&states)
+                           tr i = if lab == leaf "" then (sig&trans)!!i
+                                  else (sig&transL)!!i!!j
+                                  where j = get $ search (== lab) (sig&labels)
+       up p (Fix c g val)
+            | val1 == unit || any (p<<) ps = (Fix c g1 val, b)
+            | True = if f c subset valL val1L 
+                     then if not b && p `elem` ps then (Atom val, True)
+                                                  else (Fix c g1 val, b)
+                          else (Fix c g1 $ mkList $ h c valL val1L, True)
+                     where f True = flip; f _ = id
+                           h True = join; h _ = meet
+                           q = p++[0]; (g1,b) = up q g
+                           val1 = fst $ getVal flow q
+                           valL = subterms val; val1L = subterms val1
+       up _ g = (g,False)
 
 -- verification of postconditions (backward-all analysis)
  
 initPost :: TermS -> TermS
-initPost (F x ts) | x `elem` words "assign fork ite"
-           = F x $ map initPost ts++[F "bool" [mkTrue]]
+initPost (F op ts) | op `elem` words "assign fork ite"
+           = F (op++"::bool(True)") $ map initPost ts
 initPost t = t
+
+initPost' :: TermS -> TermS
+initPost' (F x ts) | x `elem` words "assign fork ite"
+            = F x $ map initPost ts++[F "bool" [mkTrue]]
+initPost' t = t
+
 
 evalPost :: (TermS -> TermS) -> Flow TermS -> (Flow TermS,Bool)
 evalPost simplify flow = up [] flow where
@@ -4711,11 +4766,22 @@ evalPost simplify flow = up [] flow where
 -- computation of program states (forward-any analysis)
 
 initSubs :: TermS -> TermS
-initSubs (F "inflow" [c,val]) = F "inflow" [initSubs c,val]
-initSubs (F "assign" [x,e,c]) = F "assign" [x,e,initSubs c,mkList [mkNil]]
-initSubs (F "ite" [b,c,c'])   = F "ite" [b,initSubs c,initSubs c',mkNil]
-initSubs (F "fork" ts)        = F "fork" $ map initSubs ts++[mkNil]
-initSubs t = t
+initSubs = f
+     where f (F "inflow" [c,val]) = h "inflow" (showTerm0 val) [initSubs c]
+           f (F "assign" [x,e,c]) = h "assign" "[[]]" [x,e,initSubs c]
+           f (F "ite" [b,c,c'])   = h "ite" "[]" [b,initSubs c,initSubs c']
+           f (F "fork" ts)        = h "fork" "[]" $ map initSubs ts
+           f t = t
+           h op val = F $ op++"::"++val
+
+initSubs' :: TermS -> TermS
+initSubs' = f
+    where f (F "inflow" [c,val]) = h "inflow" val [initSubs c]
+          f (F "assign" [x,e,c]) = h "assign" (mkList [mkNil]) [x,e,initSubs c]
+          f (F "ite" [b,c,c'])   = h "ite" mkNil [b,initSubs c,initSubs c']
+          f (F "fork" ts)        = h "fork" mkNil $ map initSubs ts
+          f t = t
+          h op val ts = F op $ ts++[val]
 
 evalSubs :: (TermS -> TermS) -> Flow [SubstS] -> [String] 
                                               -> (Flow [SubstS],Bool)

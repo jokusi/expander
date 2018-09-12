@@ -1,0 +1,25 @@
+-- RELALGDB (database operators)
+
+preds:      P Q R proj1 proj2 sel1 sel2 prod join njoin
+copreds:    div
+fovars:     x y z x' y' z' X Y Z
+hovars:     P Q R
+
+axioms:
+
+   (proj1(P)(x) <=== P(x,y))
+ & (proj2(P)(y) <=== P(x,y))
+ & (sel1(P,Q)(x,y) <=== P(x,y) & Q(y))
+ & (sel2(P,Q)(x,y) <=== P(x,y) & Q(x))
+ & (prod(P,Q)(x,y) <=== P(x) & Q(y))
+ & (join(P,Q,R)(x,y) <=== P(x) & Q(x,y) & R(y))
+ & (njoin(P,Q)(x,z) <=== P(x,y) & Q(y,z))
+ & (div(P,Q)(x) ===> (Q(y) ==> P(x,y)))
+ 
+conjects:
+
+rprod(P,rprod(Q,R))(4,(5,6)) &
+
+join(P,=,Q)(5,6) &
+
+join(P,<=,Q)(5,6)

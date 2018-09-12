@@ -1,0 +1,11 @@
+-- copyrem
+draw(0(eps(2(eps(4(a(5(eps(pos 0 0 0 0 0,3(eps(pos 0 0 0,pos 0 0 1)))))),
+                 6(b(8(c(7(pos 2 0 0 0 0 0 0))))))),
+           1)),
+     0(eps(2(eps(4(a(5(eps(pos 1 0 0 0 0,3(eps(pos 0 0 0 0 1 0 0,pos 1 0 1)))))),
+                 6(b(8(c(7(eps(pos 1 0 0 0 1,pos 2 0 0 0 0 0 0)))))))),
+           1)),
+     0(eps(2(eps(4(a(5(eps(pos 2 0 0 0 0,3(eps(pos 2 0 0,pos 2 0 1)))))),
+                 6(b(8(c(7(eps(pos 2 0 0 0 1,pos 2 0 0 0 0 0 0 0 1)))))))),
+           1)),
+     9)

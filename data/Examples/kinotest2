@@ -1,0 +1,5 @@
+-- kinotest2
+
+   concept(map(baum)(range(1,10)),           [(hoch,zuschlag,ja,schlecht,ja,top,action,inter,ja,freunde)],           [(mittel,normal,nein,mittel,ja,mittel,drama,inter,nein,freunde)])
+
+((hoch,preis,loge,wetter,warten,besetzung,kategorie,land,reservierung,gruppe)<+>(attraktivitaet,zuschlag,loge,wetter,warten,besetzung,kategorie,land,reservierung,gruppe)<+>(attraktivitaet,preis,ja,wetter,warten,besetzung,kategorie,land,reservierung,gruppe)<+>(attraktivitaet,preis,loge,schlecht,warten,besetzung,kategorie,land,reservierung,gruppe)<+>(attraktivitaet,preis,loge,wetter,warten,top,kategorie,land,reservierung,gruppe)<+>(attraktivitaet,preis,loge,wetter,warten,besetzung,action,land,reservierung,gruppe)<+>(attraktivitaet,preis,loge,wetter,warten,besetzung,kategorie,land,ja,gruppe))

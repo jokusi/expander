@@ -1,0 +1,72 @@
+-- COMMPROOF
+
+Derivation of:
+
+Nat(X)
+==> X+Y = Y+X
+
+Selecting induction variables at position [] of the current tree leads to
+
+All Y:
+(Nat(!X)
+ ==> !X+Y = Y+!X)
+
+Applying the axioms
+x+0 = x
+& x+suc(y) = suc(x+y)
+at position [0,1,1] of the current tree leads to
+
+All Y:
+(Nat(!X)
+ ==> 0+Y = Y
+       & !X = 0
+     | Any y0:
+       (suc(y0)+Y = suc(Y+y0)
+        & !X = suc(y0)))
+
+Simplification steps turn the preceding formula into
+
+All Y:
+(Nat(!X)
+ ==> !X = 0
+     | Any y0:
+       (suc(y0)+Y = suc(Y+y0)
+        & !X = suc(y0)))
+
+Applying the Horn theorem
+
+suc(x)+y = suc(x+y)
+
+at position [0,1,1,0,0,0] of the current tree leads to
+
+All Y:
+(Nat(!X)
+ ==> !X = 0
+     | Any y0:
+       (suc(y0+Y) = suc(Y+y0)
+        & !X = suc(y0)))
+
+Simplification steps turn the preceding formula into
+
+Nat(!X)
+==> !X = 0
+    | Any y0:
+      (!X = suc(y0))
+
+Applying the axioms
+Nat(0)
+& (Nat(suc(x))
+   <=== Nat(x))
+at position [0] of the current tree leads to
+
+!X = 0
+    | Any x0:
+      (Nat(x0)
+       & !X = suc(x0))
+==> !X = 0
+    | Any y0:
+      (!X = suc(y0))
+
+Simplification steps lead to
+
+True

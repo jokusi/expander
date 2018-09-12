@@ -1194,12 +1194,20 @@ simplifyS sig (F "evalG" [phi]) = do sts <- foldModal sig phi
 -- flow graph initialization
 
 simplifyS sig (F "stateflow" [t]) | just eqs =
-                                    initStates sig $ eqsToGraph [0] $ get eqs
-                                    where eqs = parseEqs t
- 
+                                 initStates True sig $ eqsToGraph [0] $ get eqs
+                                 where eqs = parseEqs t
+
+simplifyS sig (F "stateflowT" [t]) | just eqs =
+                                initStates False sig $ eqsToGraph [0] $ get eqs
+                                where eqs = parseEqs t
+
 simplifyS sig (F "stateflow" [t]) | isFixF $ root t =
-                                    initStates sig $ eqsToGraph [0] eqs
+                                    initStates True sig $ eqsToGraph [0] eqs
                                     where (_,eqs,_) = fixToEqs t 0
+
+simplifyS sig (F "stateflowT" [t]) | isFixF $ root t =
+                                     initStates False sig $ eqsToGraph [0] eqs
+                                     where (_,eqs,_) = fixToEqs t 0
 
 simplifyS _ (F "postflow" [t]) = do eqs <- parseEqs t
                                     Just $ initPost $ eqsToGraph [0] eqs
@@ -1209,35 +1217,40 @@ simplifyS _ (F "subsflow" [t]) = do eqs <- parseEqs t
 
 -- flowgraph transformation
 
-simplifyS sig t | just flow = do guard changed; Just $ mkFlow sig ft id
-        where flow = parseFlow sig t parseVal
-              (ft,changed) = evalStates sig (fromJust flow) $ 
-                               maxis (<<=) $ fixPositions t
-              parseVal (t@(F "()" [])) = Just t
-              parseVal t = do F "[]" ts <- Just t
-                              guard $ ts `subset` (states sig); Just t 
+simplifyS sig t | just flow = do guard changed; Just $ mkFlow True sig ft id
+                   where flow = parseFlow True sig t $ parseVal sig
+                         (ft,changed) = evalStates sig t $ get flow
+
+simplifyS sig t | just flow = do guard changed; Just $ mkFlow False sig ft id
+                   where flow = parseFlow False sig t $ parseVal sig
+                         (ft,changed) = evalStates sig t $ get flow
 
 simplifyS sig t | just flow = do guard changed
-                                 Just $ mkFlow sig ft $ F "bool" . single
-             where flow = parseFlow sig t mkVal
-                   (ft,changed) = evalPost (simplifyIter sig) $ fromJust flow
-                   mkVal t = do F "bool" [t] <- Just t; Just t
+                                 Just $ mkFlow True sig ft $ F "bool" . single
+                   where flow = parseFlow True sig t mkVal
+                         (ft,changed) = evalPost (simplifyIter sig) $ get flow
+                         mkVal t = do F "bool" [t] <- Just t; Just t
 
 simplifyS sig t | just flow = do guard changed
-                                 Just $ mkFlow sig ft 
+                                 Just $ mkFlow True sig ft
                                       $ mkList . concatMap mkSub
-        where flow = parseFlow sig t parseSubs
-              flow' = fromJust flow
-              xs = progVars flow'
-              (ft,changed) = evalSubs (simplifyIter sig) flow' xs
-              parseSubs t = do F "[]" ts <- Just t; mapM parseSub ts
-              parseSub t = do s <- parseList parseEq t
-                              let (xs,ts) = unzip s
-                              Just $ forL ts xs
-              parseEq t = do F "=" [V x,t] <- Just t; Just (x,t)
-              mkSub f = if null ys then [] else [mkList $ map g ys]
-                  where ys = domSub xs f
-                        g x = mkEq (V x) $ f x
+                   where flow = parseFlow True sig t parseSubs
+                         flow' = get flow
+                         xs = vars flow'
+                         vars (In g _)         = vars g
+                         vars (Assign x _ g _) = vars g `join1` x
+                         vars (Ite _ g1 g2 _)  = vars g1 `join` vars g2
+                         vars (Fork gs _)      = joinMap vars gs
+                         vars flow             = []
+                         (ft,changed) = evalSubs (simplifyIter sig) flow' xs
+                         parseSubs t = do F "[]" ts <- Just t; mapM parseSub ts
+                         parseSub t = do s <- parseList parseEq t
+                                         let (xs,ts) = unzip s
+                                         Just $ forL ts xs
+                         parseEq t = do F "=" [V x,t] <- Just t; Just (x,t)
+                         mkSub f = if null ys then [] else [mkList $ map g ys]
+                             where ys = domSub xs f
+                                   g x = mkEq (V x) $ f x
 
 -- regular expressions and acceptors
 
@@ -1284,6 +1297,12 @@ getRHS sig x = do [rhs] <- Just $ simplReducts sig False $ F "step" [leaf x]
 
 simplifyT :: TermS -> Maybe TermS
 
+simplifyT (F x [F "skip" []])             = Just $ F "skip" []
+
+simplifyT (F "$" [F "lsec" [t,F x []],u]) = Just $ F x [t,u]
+
+simplifyT (F "$" [F "rsec" [F x [],t],u]) = Just $ F x [u,t]
+ 
 simplifyT (F "CASE" (F "->" [F "True" [],t]:_))   = Just t
 simplifyT (F "CASE" (F "->" [F "False" [],_]:ts)) = Just $ F "CASE" ts
 simplifyT (F "CASE" [])                            = Just $ F "undefined" []
@@ -1296,10 +1315,6 @@ simplifyT (F "getCols" [F x ts]) = Just $ if null z then F x $ map f ts
                                           else F col [F (tail z) $ map f ts]
                                  where (col,z) = span (/= '_') x
                                        f t = F "erect" [t]
-
-simplifyT (F "$" [F "lsec" [t,F x []],u]) = Just $ F x [t,u]
-
-simplifyT (F "$" [F "rsec" [F x [],t],u]) = Just $ F x [u,t]
 
 -- projection
 

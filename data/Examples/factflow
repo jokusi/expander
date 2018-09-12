@@ -1,28 +1,41 @@
 -- FACTFLOW
 
-constructs: :=
-defuncts:   fact flow
+constructs: := 
+defuncts:   fact flow flowP
 fovars:     X Y n
 
 axioms:
-flow(n) == subsflow(X = in(assign(x:=n,assign(y:=1,Y))) &
-                    Y = ite(x>0,assign(y:=x*y,assign(x:=x-1,Y)),con)) &
+-- flow(n) == subsflow(X = assign(x,n,assign(y,1,Y)) & 
+flow(n) == subsflow(X = inflow(assign(y,1,Y),[[x`is`n]]) & 
+                    Y = ite(x>0,assign(y,x*y,assign(x,x-1,Y)),[])) &
+
+flowP(n) == postflow(X = IN(assign(x,n,assign(y,1,Y))) &
+                     Y = ite(x > 0 & fact(n) = fact(x)*y,
+	                     assign(y,x*y,assign(x,x-1,Y)),
+			     bool(x=0 & y=fact(n)))) &
 
 fact(0) == 1 &
 fact(1) == 1 &
-fact(x-1)*(x*y) == fact(x)*y
+fact(x-1)*(x*y) == fact(x)*y 
 		    
 --  theorems:
 --  (x > 0 <=== x > 1) &
 --  (x > 1 | x = 1 <=== x > 0)
 
 terms:
-flow(3) <+>
+flow$3 <+> flowP$3
 
-{-> sflow(in(assign(x:=3,                   assign(y:=1,                          ite(x > 0,                              assign(y:=(x*y),                                     assign(x:=(x-1),pos 0 0 1 1,                                            [[x=1,y=6],[x=2,y=6],[x=3,y=3]]),                                     [[x=1,y=6],[x=2,y=3],[x=3,y=1]]),                              con[[x=0,y=6]],                              [[x=0,y=6],[x=1,y=6],[x=2,y=3],[x=3,y=1]]),                          [[x=3]]),                   [[]]),            [[]]))
+{- flow$3 -> assign(x,3,
+                   assign(y,1,
+                          ite(x > 0,
+                              assign(y,x*y,
+                                     assign(x,x-1),pos 0 0 1 1,
+                                            [[x=1,y=6],[x=2,y=6],[x=3,y=3]]),
+                                     [[x=1,y=6],[x=2,y=3],[x=3,y=1]]),
+                              [[x=0,y=6]],
+                              [[x=0,y=6],[x=1,y=6],[x=2,y=3],[x=3,y=1]]),
+                          [[x=3]]),
+                   [[]])
 -}
-postflow(X = in(assign(x:=n,assign(y:=1,Y))) &
-         Y = ite(x > 0 & fact(n) = fact(x)*y,
-	         assign(y:=x*y,assign(x:=x-1,Y)),
-                 con(bool(x=0 & y=fact(n)))))
+
 

@@ -1,0 +1,63 @@
+-- blinkzipMu
+
+
+Derivation of
+
+blink ~ zip(zero,one)
+
+Adding
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = blink & z1 = zip(zero,one))
+& (x ~/~0 y ===> x =/= y)
+& (x ~/~0 y ===> Not(y ~0 x))
+& (x ~/~0 z ===> Not(x ~0 y) | Not(y ~0 z))
+& (z0 ~/~0 z1 ===> z0 =/= mu s | z1 =/= zip(mu s,mu s))
+
+to the axioms and applying coinduction wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at position [] of the preceding formula leads to 
+
+All s s':(s = blink & s' = zip(zero,one) ===> 
+          head(s) = head(s') & tail(s) ~0 tail(s'))
+
+Simplifying the preceding formula (19 steps) leads to 
+
+(1:mu s) ~0 zip(1:mu s,0:mu s)
+
+Adding
+
+  (z2 ~0 z3 <=== z2 = (1:mu s) & z3 = zip(1:mu s,0:mu s))
+& (z2 ~/~0 z3 ===> z2 =/= (1:mu s) | z3 =/= zip(1:mu s,0:mu s))
+
+to the axioms and applying coinduction wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at position [] of the preceding formula leads to 
+
+All s s':(s = (1:mu s0) & s' = zip(1:mu s0,0:mu s0) ===> 
+          head(s) = head(s') & tail(s) ~0 tail(s'))
+
+Simplifying the preceding formula (14 steps) leads to 
+
+(0:(1:mu s0)) ~0 zip(0:mu s0,1:mu s0)
+
+Narrowing the preceding formula (1 step) leads to 
+
+(0:(1:mu s0)) = (1:mu s) & zip(0:mu s0,1:mu s0) = zip(1:mu s,0:mu s) | 
+(0:(1:mu s0)) = zip(0:mu s0,1:mu s0) | zip(0:mu s0,1:mu s0) ~0 (0:(1:mu s0)) | 
+Any y:((0:(1:mu s0)) ~0 y & y ~0 zip(0:mu s0,1:mu s0)) | 
+(0:(1:mu s0)) = blink & zip(0:mu s0,1:mu s0) = zip(zero,one)
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (10 steps) leads to 
+
+True
+
+Number of proof steps: 6

@@ -1,0 +1,76 @@
+-- NEED0PROOF
+
+
+Derivation of
+
+f(f(x,y),z) = 0
+
+Narrowing the preceding formula leads to the formula
+
+  f(f(x,y),0) = 0
+& z = 0
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to the formula
+
+    f(0,0) = 0
+  & x = 0
+  & y = 0
+  & z = 0
+|   f(1,0) = 0
+  & Any x2:
+    (x = suc(x2))
+  & y = 0
+  & z = 0
+|   f(2,0) = 0
+  & Any y3:
+    (y = suc(y3))
+  & z = 0
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to the formula
+
+    x = 0
+  & y = 0
+  & z = 0
+|   f(1,0) = 0
+  & Any x2:
+    (x = suc(x2))
+  & y = 0
+  & z = 0
+|   f(2,0) = 0
+  & Any y3:
+    (y = suc(y3))
+  & z = 0
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to the formula
+
+    x = 0
+  & y = 0
+  & z = 0
+|   f(2,0) = 0
+  & Any y3:
+    (y = suc(y3))
+  & z = 0
+
+Reducts have been simplified.
+
+Narrowing the preceding formula leads to the formula
+
+  x = 0
+& y = 0
+& z = 0
+
+Reducts have been simplified.
+
+Number of proof steps: 5
+
+Solutions:
+
+  x = 0
+& y = 0
+& z = 0

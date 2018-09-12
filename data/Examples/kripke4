@@ -1,0 +1,29 @@
+-- KRIPKE4
+
+specs:    	modalS
+constructs: 	A B
+defuncts: 	states atoms
+
+axioms:
+
+states == [1] & atoms == [A,B] &
+
+1 -> 1<+>2 &
+2 -> 3 &
+3 -> 1 &
+
+A -> 1<+>3 &
+B -> 1<+>2
+
+conjects: 
+
+  1 `sats` EF$(A\/AG$B)`then`B			--> True
+& And$map(`sats`(EF$(A\/AG$B)`then`B))$states	--> True
+
+terms: 
+
+    sols(EF$(A\/AG$B)`then`B)		--> [1,2,3] 			
+<+> stateflow(EF$(A\/AG$B)`then`B)	--> [1,2,3] (see kripke4flow.html)
+<+> sols(EX$(A\/AX$B)`then`B)		--> [1,3] 			
+<+> stateflow(EX$(A\/AX$B)`then`B)	--> [1,2,3] 
+

@@ -1,0 +1,94 @@
+-- /Users/Padawitz/ExpanderLib/eosum1P
+
+0. Derivation of
+
+(h(deltaEO(st)$x)$w) = ((deltaBeh(h(st))$x)$w)
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Applying the axioms
+
+  ((deltaEO(esum)$x) = esum <=== even(x))
+& ((deltaEO(esum)$x) = osum <=== odd(x))
+& ((deltaEO(osum)$x) = esum <=== odd(x))
+& ((deltaEO(osum)$x) = osum <=== even(x))
+
+at positions
+[0,0,0]
+of the preceding formulas leads to 
+
+(h(esum)$w) = ((deltaBeh(h(esum))$x)$w) & even(x) & st = esum | 
+(h(osum)$w) = ((deltaBeh(h(esum))$x)$w) & odd(x) & st = esum | 
+(h(esum)$w) = ((deltaBeh(h(osum))$x)$w) & odd(x) & st = osum | 
+(h(osum)$w) = ((deltaBeh(h(osum))$x)$w) & even(x) & st = osum
+
+2. SIMPLIFYING the preceding formulas (4 steps) leads to 
+
+(h(esum)$w) = (h(esum)$(x:w)) & even(x) & st = esum | 
+(h(osum)$w) = (h(esum)$(x:w)) & odd(x) & st = esum | 
+(h(esum)$w) = (h(osum)$(x:w)) & odd(x) & st = osum | 
+(h(osum)$w) = (h(osum)$(x:w)) & even(x) & st = osum
+
+3. Applying the axioms
+
+  ((h(osum)$(x:w)) = (h(esum)$w) <=== odd(x))
+& ((h(osum)$(x:w)) = (h(osum)$w) <=== even(x))
+& ((h(esum)$(x:w)) = (h(esum)$w) <=== even(x))
+& ((h(esum)$(x:w)) = (h(osum)$w) <=== odd(x))
+
+at positions
+[3,0,1]
+[2,0,1]
+[1,0,1]
+[0,0,1]
+of the preceding formulas leads to 
+
+((h(esum)$w) = (h(esum)$w) & even(x) | (h(esum)$w) = (h(osum)$w) & odd(x)) & 
+even(x) & st = esum | 
+((h(osum)$w) = (h(esum)$w) & even(x) | (h(osum)$w) = (h(osum)$w) & odd(x)) & 
+odd(x) & st = esum | 
+((h(esum)$w) = (h(esum)$w) & odd(x) | (h(esum)$w) = (h(osum)$w) & even(x)) & 
+odd(x) & st = osum | 
+((h(osum)$w) = (h(esum)$w) & odd(x) | (h(osum)$w) = (h(osum)$w) & even(x)) & 
+even(x) & st = osum
+
+The axioms have been MATCHED against their redices.
+
+4. SIMPLIFYING the preceding formulas (5 steps) leads to 
+
+even(x) & st = esum | odd(x) & st = esum | odd(x) & st = osum | 
+even(x) & st = osum
+
+5. Applying the theorem
+
+even(x) | odd(x)
+
+at positions
+[0,0]
+[1,0]
+of the preceding formulas leads to 
+
+st = esum | odd(x) & st = osum | even(x) & st = osum
+
+6. Applying the theorem
+
+even(x) | odd(x)
+
+at positions
+[2,0]
+[1,0]
+of the preceding formulas leads to 
+
+st = osum | st = esum
+
+7. Applying the theorem
+
+st = esum | st = osum
+
+at positions
+[]
+of the preceding formulas leads to 
+
+True
+

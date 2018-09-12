@@ -1,0 +1,389 @@
+-- ABPPROOFF
+
+
+Derivation of
+
+trans(b,m,b,n,is,cs) ~ n:is
+
+Applying coinduction w.r.t.
+
+     s ~ s'
+===>   head(s) = head(s')
+     & tail(s) ~ tail(s')
+
+at position [] of the preceding formula leads to the formula
+
+All s s':
+(     Any b0 m0 n0 is0 cs0:
+      (  s = trans(b0,m0,b0,n0,is0,cs0)
+       & s' = n0:is0)
+ ===>   head(s) = head(s')
+      & Any b1 m1 n1 is1 cs1:
+        (  tail(s) = trans(b1,m1,b1,n1,is1,cs1)
+         & tail(s') = n1:is1))
+
+Simplifying the preceding formula (15 steps) leads to 2 factors. The current factor is given by
+
+All b0 m0 n0 is0 cs0:
+(head(trans(b0,m0,b0,n0,is0,cs0)) = n0)
+
+Applying the theorem
+
+     True
+===>   fhead2(cs) = ok
+     | fhead2(cs) = error
+
+at position [] of the preceding factor leads to the factor
+
+All b0 m0 n0 is0 cs0:
+(    All cs:
+     (  fhead2(cs) = ok
+      | fhead2(cs) = error)
+ ==> head(trans(b0,m0,b0,n0,is0,cs0)) = n0)
+
+Substituting cs0 for cs at position [0,0,0] of the preceding factor leads to 3 factors. The current factor is given by
+
+All b0 m0 n0 is0 cs0:
+(    fhead2(cs0) = ok
+ ==> head(trans(b0,m0,b0,n0,is0,cs0)) = n0)
+
+Applying the theorem
+
+     trans(b,m,b,n,is,cs) = trans(not(b),head(is),b,n,tail(is),next1(ftail(cs)))
+<=== fhead2(cs) = ok
+
+at position [0,1,0,0] of the preceding factor leads to the factor
+
+All b0 n0 is0 cs0:
+(    fhead2(cs0) = ok
+ ==> head(trans(not(b0),head(is0),b0,n0,tail(is0),next1(ftail(cs0)))) = n0)
+
+Applying the theorem
+
+     head(trans(b,m,b',n,is,cs)) = n
+<===   b =/= b'
+     & fhead1(cs) = ok
+
+at position [0,1] of the preceding factor leads to 4 factors. The current factor is given by
+
+All b0 cs0:
+(    fhead2(cs0) = ok
+ ==> not(b0) =/= b0)
+
+Applying the theorem
+
+not(b) =/= b
+
+at position [0,1] of the preceding factor leads to 3 factors. The current factor is given by
+
+All cs0:
+(    fhead2(cs0) = ok
+ ==> fhead1(next1(ftail(cs0))) = ok)
+
+Applying the theorem
+
+fhead1(next1(cs)) = ok
+
+at position [0,1,0] of the preceding factor leads to 2 factors. The current factor is given by
+
+All b0 m0 n0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> head(trans(b0,m0,b0,n0,is0,cs0)) = n0)
+
+Applying the theorem
+
+     trans(b,m,b,n,is,cs) = trans(b,m,b,n,is,next2(ftail(cs)))
+<=== fhead2(cs) = error
+
+at position [0,1,0,0] of the preceding factor leads to the factor
+
+All b0 m0 n0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> head(trans(b0,m0,b0,n0,is0,next2(ftail(cs0)))) = n0)
+
+Applying the theorem
+
+     trans(b,m,b,n,is,cs) = trans(not(b),head(is),b,n,tail(is),next1(ftail(cs)))
+<=== fhead2(cs) = ok
+
+at position [0,1,0,0] of the preceding factor leads to 3 factors. The current factor is given by
+
+All b0 n0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> head(trans(not(b0),head(is0),b0,n0,tail(is0),next1(ftail(next2(ftail(cs0)))))) = n0)
+
+Applying the theorem
+
+     head(trans(b,m,b',n,is,cs)) = n
+<===   b =/= b'
+     & fhead1(cs) = ok
+
+at position [0,1] of the preceding factor leads to 4 factors. The current factor is given by
+
+All b0 cs0:
+(    fhead2(cs0) = error
+ ==> not(b0) =/= b0)
+
+Applying the theorem
+
+not(b) =/= b
+
+at position [0,1] of the preceding factor leads to 3 factors. The current factor is given by
+
+All cs0:
+(    fhead2(cs0) = error
+ ==> fhead1(next1(ftail(next2(ftail(cs0))))) = ok)
+
+Applying the theorem
+
+fhead1(next1(cs)) = ok
+
+at position [0,1] of the preceding factor leads to 2 factors. The current factor is given by
+
+All cs0:
+(    fhead2(cs0) = error
+ ==> fhead2(next2(ftail(cs0))) = ok)
+
+Applying the theorem
+
+fhead2(next2(cs)) = ok
+
+at position [0,1] of the preceding factor leads to a single formula, which is given by
+
+All b0 m0 n0 is0 cs0:
+(Any b1 m1 n1 is1 cs1:
+ (  is0 = n1:is1
+  & tail(trans(b0,m0,b0,n0,n1:is1,cs0)) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Applying the theorem
+
+     True
+===>   fhead2(cs) = ok
+     | fhead2(cs) = error
+
+at position [] of the preceding formula leads to the formula
+
+All b0 m0 n0 is0 cs0:
+(    All cs:
+     (  fhead2(cs) = ok
+      | fhead2(cs) = error)
+ ==> Any b1 m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & tail(trans(b0,m0,b0,n0,n1:is1,cs0)) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Substituting cs0 for cs at position [0,0,0] of the preceding formula leads to 2 factors. The current factor is given by
+
+All b0 m0 n0 is0 cs0:
+(    fhead2(cs0) = ok
+ ==> Any b1 m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & tail(trans(b0,m0,b0,n0,n1:is1,cs0)) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Applying the theorem
+
+     trans(b,m,b,n,is,cs) = trans(not(b),head(is),b,n,tail(is),next1(ftail(cs)))
+<=== fhead2(cs) = ok
+
+at position [0,1,0,1,0,0] of the preceding factor leads to the factor
+
+All b0 n0 is0 cs0:
+(    fhead2(cs0) = ok
+ ==> Any b1 m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & tail(trans(not(b0),n1,b0,n0,is1,next1(ftail(cs0)))) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Applying the theorem
+
+     tail(trans(b,m,b',n,is,cs)) = trans(b,m,b,m,is,ftail(cs))
+<===   b =/= b'
+     & fhead1(cs) = ok
+
+at position [0,1,0,1,0] of the preceding factor leads to 4 factors. The current factor is given by
+
+All b0 is0 cs0:
+(    fhead2(cs0) = ok
+ ==> Any b1 m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & trans(not(b0),n1,not(b0),n1,is1,ftail(next1(ftail(cs0)))) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Substituting not(b0) for b1 at position [0,1,0] of the preceding factor leads to the factor
+
+All b0 is0 cs0:
+(    fhead2(cs0) = ok
+ ==> Any m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & trans(not(b0),n1,not(b0),n1,is1,ftail(next1(ftail(cs0)))) = trans(not(b0),m1,not(b0),n1,is1,cs1)))
+
+Substituting n1 for m1 at position [0,1,0] of the preceding factor leads to the factor
+
+All b0 is0 cs0:
+(    fhead2(cs0) = ok
+ ==> Any n1 is1 cs1:
+     (  is0 = n1:is1
+      & trans(not(b0),n1,not(b0),n1,is1,ftail(next1(ftail(cs0)))) = trans(not(b0),n1,not(b0),n1,is1,cs1)))
+
+Substituting ftail(next1(ftail(cs0))) for cs1 at position [0,1,0] of the preceding factor leads to the factor
+
+All is0 cs0:
+(    fhead2(cs0) = ok
+ ==> Any n1 is1:
+     (is0 = n1:is1))
+
+Applying the theorem
+
+     True
+===> Any n is':
+     (is = n:is')
+
+at position [] of the preceding factor leads to the factor
+
+All is0 cs0:
+(      All is:
+       (Any n is':
+        (is = n:is'))
+     & fhead2(cs0) = ok
+ ==> Any n1 is1:
+     (is0 = n1:is1))
+
+Substituting is0 for is at position [0,0,0,0] of the preceding factor leads to 3 factors. The current factor is given by
+
+All b0 cs0:
+(    fhead2(cs0) = ok
+ ==> not(b0) =/= b0)
+
+Applying the theorem
+
+not(b) =/= b
+
+at position [0,1] of the preceding factor leads to 2 factors. The current factor is given by
+
+All cs0:
+(    fhead2(cs0) = ok
+ ==> fhead1(next1(ftail(cs0))) = ok)
+
+Applying the theorem
+
+fhead1(next1(cs)) = ok
+
+at position [0,1] of the preceding factor leads to a single formula, which is given by
+
+All b0 m0 n0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> Any b1 m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & tail(trans(b0,m0,b0,n0,n1:is1,cs0)) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Applying the theorem
+
+     trans(b,m,b,n,is,cs) = trans(b,m,b,n,is,next2(ftail(cs)))
+<=== fhead2(cs) = error
+
+at position [0,1,0,1,0,0] of the preceding formula leads to the formula
+
+All b0 m0 n0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> Any b1 m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & tail(trans(b0,m0,b0,n0,n1:is1,next2(ftail(cs0)))) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Applying the theorem
+
+     trans(b,m,b,n,is,cs) = trans(not(b),head(is),b,n,tail(is),next1(ftail(cs)))
+<=== fhead2(cs) = ok
+
+at position [0,1,0,1,0,0] of the preceding formula leads to 2 factors. The current factor is given by
+
+All b0 n0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> Any b1 m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & tail(trans(not(b0),n1,b0,n0,is1,next1(ftail(next2(ftail(cs0)))))) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Applying the theorem
+
+     tail(trans(b,m,b',n,is,cs)) = trans(b,m,b,m,is,ftail(cs))
+<===   b =/= b'
+     & fhead1(cs) = ok
+
+at position [0,1,0,1,0] of the preceding factor leads to 4 factors. The current factor is given by
+
+All b0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> Any b1 m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & trans(not(b0),n1,not(b0),n1,is1,ftail(next1(ftail(next2(ftail(cs0)))))) = trans(b1,m1,b1,n1,is1,cs1)))
+
+Substituting not(b0) for b1 at position [0,1,0] of the preceding factor leads to the factor
+
+All b0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> Any m1 n1 is1 cs1:
+     (  is0 = n1:is1
+      & trans(not(b0),n1,not(b0),n1,is1,ftail(next1(ftail(next2(ftail(cs0)))))) = trans(not(b0),m1,not(b0),n1,is1,cs1)))
+
+Substituting n1 for m1 at position [0,1,0] of the preceding factor leads to the factor
+
+All b0 is0 cs0:
+(    fhead2(cs0) = error
+ ==> Any n1 is1 cs1:
+     (  is0 = n1:is1
+      & trans(not(b0),n1,not(b0),n1,is1,ftail(next1(ftail(next2(ftail(cs0)))))) = trans(not(b0),n1,not(b0),n1,is1,cs1)))
+
+Substituting ftail(next1(ftail(next2(ftail(cs0))))) for cs1 at position [0,1,0] of the preceding factor leads to the factor
+
+All is0 cs0:
+(    fhead2(cs0) = error
+ ==> Any n1 is1:
+     (is0 = n1:is1))
+
+Applying the theorem
+
+     True
+===> Any n is':
+     (is = n:is')
+
+at position [] of the preceding factor leads to the factor
+
+All is0 cs0:
+(      All is:
+       (Any n is':
+        (is = n:is'))
+     & fhead2(cs0) = error
+ ==> Any n1 is1:
+     (is0 = n1:is1))
+
+Substituting is0 for is at position [0,0,0,0] of the preceding factor leads to 3 factors. The current factor is given by
+
+All b0 cs0:
+(    fhead2(cs0) = error
+ ==> not(b0) =/= b0)
+
+Applying the theorem
+
+not(b) =/= b
+
+at position [0,1] of the preceding factor leads to 2 factors. The current factor is given by
+
+All cs0:
+(    fhead2(cs0) = error
+ ==> fhead1(next1(ftail(next2(ftail(cs0))))) = ok)
+
+Applying the theorem
+
+fhead1(next1(cs)) = ok
+
+at position [0,1] of the preceding factor leads to a single formula, which is given by
+
+All cs0:
+(    fhead2(cs0) = error
+ ==> fhead2(next2(ftail(cs0))) = ok)
+
+Applying the theorem
+
+fhead2(next2(cs)) = ok
+
+at position [0,1] of the preceding formula leads to the formula
+
+True
+
+Number of proof steps: 36

@@ -1,49 +1,56 @@
 -- phil2
 
-{- see Moller, Struth, Modelling Computing Systems, 14.4.1
+{- Moller, Struth, Modelling Computing Systems, 14.4.1
 
    LTS for Phil1||...||Philn||Fork1||...||Forkn
-	   Phil0 = tL.tR.eat.drop.Phil0
-	   Phili = tR.tL.eat.drop.Phili  i > 0
-	   Forki = take.drop.Forki
-           sync$Phili = [tR,tL,eat,drop] 
-	   sync$Forki = [take,drop] 
+	   Phil0 = tL.tR.eat.dL.dR.Phil0
+	   Phili = tR.tL.eat.dL.dR.Phili  i > 0
+	   Forki = t.d.Forki
+           sync$Phili = [tR,tL,eat,dR,dL] 
+	   sync$Forki = [t,d] 
 -}
 
-constructs:	tR tL drop eat take drop
-defuncts:   	procs lg left /\ \/ And Or EF		
+constructs:	tR tL dR dL eat t d
+defuncts:   	procs lg procs neighbours /\ \/ And Or EF		
 fovars:     	i j phils forks
 
 axioms:
 
 lg == length(procs) &
 
-left$i == (i+1)`mod`lg &		       -- fork left of philosopher i
+neighbours$i == [(i-1)`mod`lg,(i+1)`mod`lg] &
 
-states == [(tL:replicate(lg-1)$tR,replicate(lg)$take)] &  -- [(phils,forks)]
+states == [(tL:replicate(lg-1)$tR,replicate(lg)$t)] & -- (phils,forks)
 
-labels == map($)$prodL[[tR,tL,eat],procs] &
+labels == map($)$prodL[[tR,tL,dR,dL,eat],procs] &
 
-(phils!!0 = tL & forks!!1 = take
+(phils!!0 = tL & forks!!1 = t 
 	==> ((phils,forks),tL$0) 
-			-> (upd(phils)(0)$tR,upd(forks)(1)$drop)) &
+			-> (upd(phils)(0)$tR,upd(forks)(1)$d)) &
 
-(phils!!0 = tR & forks!!0 = take 
-	==> ((phils,forks),tR$0) 
-			-> (upd(phils)(0)$eat,upd(forks)(0)$drop)) &
-
-(i`in`tail$procs & phils!!i = tR & forks!!i = take 
+(i`in`tail$procs & phils!!i = tR & forks!!i = t 
 	==> ((phils,forks),tR$i) 
-			-> (upd(phils)(i)$tL,upd(forks)(i)$drop)) &
+			-> (upd(phils)(i)$tL,upd(forks)(i)$d)) &
 
-(i`in`tail$procs & phils!!i = tL & forks!!left$i = take
+(phils!!0 = tR & forks!!0 = t 
+	==> ((phils,forks),tR$0) 
+			-> (upd(phils)(0)$eat,upd(forks)(0)$d)) &
+
+(i`in`tail$procs & phils!!i = tL & forks!!(i+1`mod`lg) = t 
 	==> ((phils,forks),tL$i) 
-			-> (upd(phils)(i)$eat,upd(forks)(left$i)$drop)) &
+			-> (upd(phils)(i)$eat,upd(forks)(i+1`mod`lg)$d)) &
 
-(i`in`procs & phils!!i = eat & forks!!i = drop & forks!!left$i = drop
-	==> ((phils,forks),eat$i) 
-			-> (upd(phils)(i)$ite(i=0,tL,tR),
-			    upd(upd(forks)(left$i)(take))(i)$take))	  
+(i`in`procs & phils!!i = eat
+	==> ((phils,forks),eat$i) -> (upd(phils)(i)$dR,forks)) &
+
+(i`in`procs & phils!!i = dR & forks!!i = d 
+	==> ((phils,forks),dR$i) 
+			-> (upd(phils)(i)$dL,upd(forks)(i)$t)) &
+
+(i`in`procs & phils!!i = dL & forks!!(i+1`mod`lg) = d 
+	==> ((phils,forks),dL$i) 
+			-> (upd(phils)(i)$tR,upd(forks)(i+1`mod`lg)$t)) 
+	  
 terms:
 
 eat(2) <+> 
@@ -52,5 +59,6 @@ Or(map(eat)(procs)) <+>
 And(map(eat)(procs)) <+>
 EF(And(map(eat)(procs))) <+>
 And(map(EF.eat)(procs)) <+>
+Or(map(fun([x,y],eat(x)/\eat(y)))(neighbours)) <+>
 Or(map(fun(x,avail(x)\/eat(x)\/eat((x-1)`mod`lg)))(procs))
 

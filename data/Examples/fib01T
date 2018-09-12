@@ -1,0 +1,2 @@
+-- fib01T
+[DeriveMode True False, Match 0, Mark [], Induction False 0, Mark [], Narrow 1 True, Mark [[0, 3, 0]], Theorem False (F "=" [F "tail" [F "fib1" [V "n"]], F "fib1" [F "+" [V "n", F "1" []]]]), Mark []]

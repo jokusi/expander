@@ -1,0 +1,17 @@
+-- rotate
+
+terms:
+    repeat(poly(6,[33,11],red),rotate(turt(J(66),		-- rotpoly2-2
+		poly(6,[33,11],green),J(66),poly(6,[33,11],blue))))
+<+> repeat(rotate(turt(poly(6,[33,11],red),J(66),		-- rotpoly3-2
+		poly(6,[33,11],green),J(66),poly(6,[33,11],blue))))
+<+> repeat(shuffleA(rotateC(poly(6,[33,11],red)),		-- rotCpoly3
+		rotateC(turt(J(66),poly(6,[33,11],green))),
+                rotateC(turt(J(132),poly(6,[33,11],blue)))))
+<+> repeat(rotateC(turt(poly(6,[33,11],red),J(66),		-- rotCpoly3-2
+    		poly(6,[33,11],green),J(66),poly(6,[33,11],blue))))
+<+> repeat(shuffleA(rotate(poly(6,[33,11],red)),
+		rotate(turt(J(66),poly(6,[33,11],green))),	-- srotpoly
+                rotate(turt(J(132),poly(6,[33,11],blue)))))
+<+> repeat(poly(6,[33,11],red),shuffleA(rotate(turt(J(66),	-- srotpoly2
+	   poly(6,[33,11],green))),rotate(turt(J(132),poly(6,[33,11],blue)))))

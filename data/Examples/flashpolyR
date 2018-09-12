@@ -1,0 +1,2 @@
+-- flashpolyR
+repeat(flash(polyR(8,[33,11],yellow)))

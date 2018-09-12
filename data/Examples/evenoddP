@@ -1,0 +1,53 @@
+-- /Users/Padawitz/ExpanderLib/evenoddP
+
+0. Derivation of
+
+Nat(x) ==> even(x) | odd(x)
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Adding
+
+  (Nat0(x) ===> even(x) | odd(x))
+
+to the axioms and applying FIXPOINT INDUCTION wrt
+
+  Nat(0)
+& (Nat(suc(x)) <=== Nat(x))
+
+at positions
+[]
+of the preceding formulas leads to 
+
+All x:(even(0) | odd(0)) & All x:(even(suc(x)) | odd(suc(x)) <=== Nat0(x))
+
+2. NARROWING the preceding formulas (one step) leads to 
+
+All x:(True | odd(0)) & All x:(even(suc(x)) | odd(suc(x)) <=== Nat0(x))
+
+The axioms have been MATCHED against their redices.
+THIS GOAL COINCIDES WITH GOAL NO. 2
+
+3. NARROWING the preceding formulas (one step) leads to 
+
+All x:(True | odd(0)) & All x:(odd(x) | odd(suc(x)) <=== Nat0(x))
+
+The axioms have been MATCHED against their redices.
+
+4. NARROWING the preceding formulas (one step) leads to 
+
+All x:(True | odd(0)) & All x:(odd(x) | even(x) <=== Nat0(x))
+
+The axioms have been MATCHED against their redices.
+
+5. NARROWING the preceding formulas (one step) leads to 
+
+All x:(True | odd(0)) & All x:(odd(x) | even(x) <=== even(x) | odd(x))
+
+The axioms have been MATCHED against their redices.
+
+6. SIMPLIFYING the preceding formulas (one step) leads to 
+
+True
+

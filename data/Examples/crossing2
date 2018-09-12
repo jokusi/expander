@@ -4,7 +4,7 @@
 
    LTS for Road||Rail||Control
 	   Road = car.up.ccross.down.Road 
-	   Rail = train.green.tcross.red Rail 
+	   Rail = train.green.tcross.red.Rail 
            Control = green.red.Control + up.down.Control
            sync$Road 	= [up,down] 
 	   sync$Rail    = [green,red] 

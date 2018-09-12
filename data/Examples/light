@@ -1,0 +1,3 @@
+-- light
+turt(dark(dark(tria(22,yellow))),J(55),dark(tria(22,yellow)),J(55),tria(22,yellow),J(55),light(tria(22,yellow)),J(55),
+     light(light(tria(22,yellow)),10))

@@ -1,0 +1,358 @@
+-- coregsC1
+
+
+Derivation of
+
+parse(S)[a,b,a,b,b,a]
+
+Narrowing the preceding formula (1 step) leads to 
+
+parse(((sym(a)*B)+(sym(b)*A))+eps)[a,b,a,b,b,a]
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (22 steps) leads to 
+
+(parse((((((sym(a)#a)#b)#a)#b)#b)*B)[a] | parse(0)[a]) | parse(0)[b,a] | 
+parse(0)[b,b,a] | parse(B#b)[a,b,b,a] | parse(0)[b,a,b,b,a] | 
+parse(sym(b)*A)[a,b,a,b,b,a] | parse(eps)[a,b,a,b,b,a]
+
+The tree has been split.
+The current formula is given by
+
+parse((((((sym(a)#a)#b)#a)#b)#b)*B)[a]
+
+Simplifying the preceding summands (13 steps) leads to 7 summands.
+The current summand is given by
+
+parse(0)[a]
+
+Simplifying the preceding summands (1 step) leads to 6 summands.
+The current summand is given by
+
+parse(0)[b,a]
+
+Simplifying the preceding summands (1 step) leads to 5 summands.
+The current summand is given by
+
+parse(0)[b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 4 summands.
+The current summand is given by
+
+parse(B#b)[a,b,b,a]
+
+The previous summand is simplified.
+The current summand is given by
+
+parse(0)[b,a,b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 3 summands.
+The current summand is given by
+
+parse(sym(b)*A)[a,b,a,b,b,a]
+
+Simplifying the preceding summands (22 steps) leads to 9 summands.
+The current summand is given by
+
+parse(((((((sym(b)#a)#b)#a)#b)#b)#a)*A)[]
+
+Simplifying the preceding summands (8 steps) leads to 8 summands.
+The current summand is given by
+
+parse(0)[]
+
+Simplifying the preceding summands (1 step) leads to 7 summands.
+The current summand is given by
+
+parse(0)[a]
+
+Simplifying the preceding summands (1 step) leads to 6 summands.
+The current summand is given by
+
+parse(0)[b,a]
+
+Simplifying the preceding summands (1 step) leads to 5 summands.
+The current summand is given by
+
+parse(0)[b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 4 summands.
+The current summand is given by
+
+parse(0)[a,b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 3 summands.
+The current summand is given by
+
+parse(0)[b,a,b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 2 summands.
+The current summand is given by
+
+parse(eps)[a,b,a,b,b,a]
+
+Simplifying the preceding summands (2 steps) leads to a single formula,
+which is given by
+
+parse(B#b)[a,b,b,a]
+
+Narrowing the preceding formula (1 step) leads to 
+
+parse(((sym(b)*S)+((sym(a)*B)*B))#b)[a,b,b,a]
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (22 steps) leads to 7 summands.
+The current summand is given by
+
+epsIn(((((sym(b)#b)#a)#b)#b)#a)
+
+Simplifying the preceding summands (6 steps) leads to 6 summands.
+The current summand is given by
+
+parse(0)[]
+
+Simplifying the preceding summands (1 step) leads to 5 summands.
+The current summand is given by
+
+parse(0)[a]
+
+Simplifying the preceding summands (1 step) leads to 4 summands.
+The current summand is given by
+
+parse(0)[b,a]
+
+Simplifying the preceding summands (1 step) leads to 3 summands.
+The current summand is given by
+
+parse(S#a)[b,b,a]
+
+The previous summand is simplified.
+The current summand is given by
+
+parse(0)[a,b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 2 summands.
+The current summand is given by
+
+parse(((sym(a)*B)*B)#b)[a,b,b,a]
+
+Simplifying the preceding summands (22 steps) leads to 7 summands.
+The current summand is given by
+
+epsIn(((((((sym(a)#b)*B)#a)#b)+((0#a)#b))#b)#a)
+
+Simplifying the preceding summands (22 steps) leads to 12 summands.
+The current summand is given by
+
+epsIn(((((sym(a)#b)#a)#b)#b)#a) & epsIn(B)
+
+Simplifying the preceding summands (7 steps) leads to 11 summands.
+The current summand is given by
+
+epsIn(0)
+
+Simplifying the preceding summands (1 step) leads to 10 summands.
+The current summand is given by
+
+epsIn(0#a)
+
+Simplifying the preceding summands (2 steps) leads to 9 summands.
+The current summand is given by
+
+epsIn((0#b)#a)
+
+Simplifying the preceding summands (3 steps) leads to 8 summands.
+The current summand is given by
+
+epsIn(((0#b)#b)#a)
+
+Simplifying the preceding summands (4 steps) leads to 7 summands.
+The current summand is given by
+
+epsIn((((0#a)#b)#b)#a)
+
+Simplifying the preceding summands (5 steps) leads to 6 summands.
+The current summand is given by
+
+parse(0)[]
+
+Simplifying the preceding summands (1 step) leads to 5 summands.
+The current summand is given by
+
+parse(0)[a]
+
+Simplifying the preceding summands (1 step) leads to 4 summands.
+The current summand is given by
+
+parse(0)[b,a]
+
+Simplifying the preceding summands (1 step) leads to 3 summands.
+The current summand is given by
+
+parse(0)[b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 2 summands.
+The current summand is given by
+
+parse(0)[a,b,b,a]
+
+Simplifying the preceding summands (1 step) leads to a single formula,
+which is given by
+
+parse(S#a)[b,b,a]
+
+Narrowing the preceding formula (1 step) leads to 
+
+parse((((sym(a)*B)+(sym(b)*A))+eps)#a)[b,b,a]
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (22 steps) leads to 7 summands.
+The current summand is given by
+
+epsIn(((eps#b)#b)#a)
+
+Simplifying the preceding summands (4 steps) leads to 6 summands.
+The current summand is given by
+
+parse(0)[]
+
+Simplifying the preceding summands (1 step) leads to 5 summands.
+The current summand is given by
+
+parse(0)[a]
+
+Simplifying the preceding summands (1 step) leads to 4 summands.
+The current summand is given by
+
+parse(B#b)[b,a]
+
+The previous summand is simplified.
+The current summand is given by
+
+parse(0)[b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 3 summands.
+The current summand is given by
+
+parse((sym(b)*A)#a)[b,b,a]
+
+Simplifying the preceding summands (22 steps) leads to 5 summands.
+The current summand is given by
+
+parse(0)[a]
+
+Simplifying the preceding summands (1 step) leads to 4 summands.
+The current summand is given by
+
+parse(0)[b,a]
+
+Simplifying the preceding summands (1 step) leads to 3 summands.
+The current summand is given by
+
+parse(0)[b,b,a]
+
+Simplifying the preceding summands (1 step) leads to 2 summands.
+The current summand is given by
+
+parse(eps#a)[b,b,a]
+
+Simplifying the preceding summands (2 steps) leads to a single formula,
+which is given by
+
+parse(B#b)[b,a]
+
+Narrowing the preceding formula (1 step) leads to 
+
+parse(((sym(b)*S)+((sym(a)*B)*B))#b)[b,a]
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (22 steps) leads to 2 summands.
+The current summand is given by
+
+parse(S#b)[a]
+
+The previous summand is simplified.
+The current summand is given by
+
+parse(((sym(a)*B)*B)#b)[b,a]
+
+Simplifying the preceding summands (22 steps) leads to 8 summands.
+The current summand is given by
+
+epsIn((((sym(a)#b)#b)#a)*B)
+
+Simplifying the preceding summands (6 steps) leads to 7 summands.
+The current summand is given by
+
+epsIn(0)
+
+Simplifying the preceding summands (1 step) leads to 6 summands.
+The current summand is given by
+
+epsIn(0#a)
+
+Simplifying the preceding summands (2 steps) leads to 5 summands.
+The current summand is given by
+
+epsIn((0#b)#a)
+
+Simplifying the preceding summands (3 steps) leads to 4 summands.
+The current summand is given by
+
+parse(0)[]
+
+Simplifying the preceding summands (1 step) leads to 3 summands.
+The current summand is given by
+
+parse(0)[a]
+
+Simplifying the preceding summands (1 step) leads to 2 summands.
+The current summand is given by
+
+parse(0)[b,a]
+
+Simplifying the preceding summands (1 step) leads to a single formula,
+which is given by
+
+parse(S#b)[a]
+
+Narrowing the preceding formula (1 step) leads to 
+
+parse((((sym(a)*B)+(sym(b)*A))+eps)#b)[a]
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (22 steps) leads to 2 summands.
+The current summand is given by
+
+parse(((sym(b)#b)*A)+0)[a]
+
+Simplifying the preceding summands (12 steps) leads to the summand
+
+parse(A#a)[]
+
+The previous summand is simplified.
+The current summand is given by
+
+parse(eps#b)[a]
+
+Simplifying the preceding summands (2 steps) leads to a single formula,
+which is given by
+
+parse(A#a)[]
+
+Narrowing the preceding formula (1 step) leads to 
+
+parse(((sym(a)*S)+((sym(b)*A)*A))#a)[]
+
+The axioms were MATCHED against their redices.
+
+Simplifying the preceding formula (9 steps) leads to 
+
+True
+
+Number of proof steps: 69

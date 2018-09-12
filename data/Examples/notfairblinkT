@@ -1,0 +1,2 @@
+-- notfairblinkT
+[DeriveMode True True, Match 2, Mark [], DeriveMode True False, Simplify True 100 False False, Mark [], Narrow 1 True, Mark [[0]], Induction False 0, Mark [[0, 1]], DeriveMode False False, RemoveSubtrees, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark [], Simplify True 1 True False, Mark []]

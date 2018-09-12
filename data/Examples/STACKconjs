@@ -1,0 +1,12 @@
+-- STACKCONJS
+
+fovars: i j x f s s'
+
+conjects:
+
+top(empty) = nothing
+& top(push(x,s)) = just(x) 
+& pop(empty) ~ empty
+& pop(push(x,s)) ~ s
+& (s ~ s' ==> push(x,s) ~ push(x,s'))
+& (i > j ==> (upd(i,x,f),j) ~ (f,j))

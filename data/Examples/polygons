@@ -7,42 +7,73 @@ axioms:
 
   polyR(5,99,33) -> blue$polyR(5,99,33)
 & blue$polyR(5,99,33) -> polyR(5,99,33)
-
+			
 & shinepolys == map(fun(x,shine(x)$polyR(5,99,33)))
 		   [(21,0,0),(-21,0,0),(21,1,0),(-21,1,0),(21,0,2),(-21,0,2)]
 
-& polys(1) == [polyS(11,33,4),J(77),dark(polyR(5,33,11,blue)),J(77),gif(TweetyS),J(77),
-               flipH(polyR(5,33,11)),J(77),flipV(light(polyR(5,33,11))),J(77),
- 	       flipV(polyS(11,33,4,dark cyan)),J(66),pie(6,30),J(44),light red$slice(44,50),
- 	       J(111),flipV(slice(44,50))]
+& polys(1) == [polyS(11,33,4),J(77),dark(polyR(5,33,11,blue)),J(77),
+	       gif(TweetyS),J(77),flipH(polyR(5,33,11)),J(77),
+	       flipV(light(polyR(5,33,11))),J(77),
+ 	       flipV(polyS(11,33,4,dark cyan)),J(66),pie(6,30),J(44),
+	       light red$slice(44,50),J(111),flipV(slice(44,50))]
 
 & polys(2) == [polyF(5,[33,11],light blue),flipV(polyF(5,[33,11],dark cyan)),               polyR(5,[33,11]),flipH(polyR(5,33,11)),flipV(polyR(5,33,11)),               flipH(flipV(polyR(5,33,11))),pie(6,30),slice(44,50,light red),               flipV(slice(44,50)),flipH(slice(44,50)),gif(TweetyS)]
 
-& polys(3) == turt$[polyS(11,33,4),J(66),flipV$dark$polyR(5,33,11),J(111),gif(tweety,0),               J(111),flipH(polyR(5,33,11)),J(66),flipV(light(polyR(5,33,11))),J(55),               dark cyan$polySF(8,33,11),J$111,gif(nemo,0)]
+& polys(3) == turt[polyS(11,33,4),J(66),flipV$dark$polyR(5,33,11),J(111),
+		   gif(tweety,0),J(111),flipH(polyR(5,33,11)),J(66),
+		   flipV(light(polyR(5,33,11))),J(55),                   dark cyan$polySF(8,33,11),J$111,gif(nemo,0)]
 
 & polys(4) == [light $ polyR(10,[44,22]),T(45),M(444),dark $ polyR(10,[44,22])]
 
-& polys(5) == [dark $ polyR(10,[44,22]),J(77),light $ polyR(10,[44,22]),J(77),polyR(10,[44,22])]
+& polys(5) == [dark $ polyR(10,[44,22]),J(77),light $ polyR(10,[44,22]),J(77),
+	       polyR(10,[44,22])]
 
-& polys(6) == [polyS(11,[33,4]),J(66),A(flipV(dark(polyR(5,[33,11],blue)))),J(55),
-               gif(TweetyS),J(55),A(flipH(polyR(5,[33,11]))),J(66),
-     	       A(flipV(light(polyR(5,[33,11])))),J(55),polySF(8,[33,11],dark cyan)]
+& polys(6) == [polyS(11,[33,4]),J(66),A(flipV(dark(polyR(5,[33,11],blue)))),
+	       J(55),gif(TweetyS),J(55),A(flipH(polyR(5,[33,11]))),J(66),
+     	       A(flipV(light(polyR(5,[33,11])))),J(55),polySF(8,[33,11],
+	       dark cyan)]
 
 & polys(7) == [polyS(11,[33,4]),J(66),flipV(dark(polyR(5,[33,11],blue))),J(55),
                gif(TweetyS),J(55),A(flipH(polyR(5,[33,11]))),J(66),
      	       flipV(light(polyR(5,[33,11]))),J(55),polySF(8,[33,11],dark cyan)]
 
 & polys(8) == [polyS(11,[33,4]),J(77),dark(polyR(5,[33,11],blue)),J(77),
-               turt(J(111),gif(tweety,111),J(77),gif(nemo,111)),J(77),flipH(polyR(5,[33,11])),
- 	       J(77),poly(5,[33,11]),J(77),circ(66,white)]
+               turt(J(111),gif(tweety,111),J(77),gif(nemo,111)),J(77),
+	       flipH(polyR(5,[33,11])),J(77),
+	       poly(5,[33,11]),J(77),circ(66,white)]
 
 terms:
-    odots(polySF(5,[22,55,44],light dark yellow))	-- starfish
-<+> rainbow(polySF(5,[22,55,44],light blue),51)		-- starfish3
-<+> rainbow(0,51)$hframe$yellow$rect(66,66) 
-<+> pie(0,102,95)					-- pyramid
-<+> polyR(5,99,33)<+>blue$polyR(5,99,33)
-<+> repeat $ rotate(11)$red$polySF(5,99,33)
+
+    magenta$polyS(5,33,11)
+<+> shine(42)$red$polyR(5,222,55)				-- polyshine0
+<+> scale(11)$polyS(9,11,22,33,22,11)
+<+> dots(44)$red$polySF(10,111)
+
+<+> blue$polyL(6,222,111)
+<+> blue$polyL2(6,222,155)
+<+> red$polyL2(15,111,222)
+<+> red$polyL2(15,222,111)
+<+> red$polyR(5,222,0,111)
+<+> red$polyL(5,222,111,0,0,0,111)
+<+> red$polyL(5,88,0,111,0,0,144,0,0,0)			
+<+> yellow$polyL(5,88,0,88,111,0,0,111,144,0,0,0,144)		-- polyL
+<+> yellow$polyL1(5,88,0,88,111,0,0,111,144,0,0,0,144)		-- polyL1
+<+> yellow$polyL2(5,88,0,88,111,0,0,111,144,0,0,0,144)		-- polyL2
+<+> yellow$polyR2(22,155,222,333,222)				-- polyR2
+<+> yellow$polyLT1(11,199,333,222,177)				-- poly3
+<+> yellow$polyLT1(6,199,266,222,0,0,122,0)			-- poly4
+<+> shine(42)$track(ascSF)$red$polyF(3,199,266,222,0,0,122,0)	-- polyshine1
+<+> track(ascSF)$shine(42)$green$polyF(3,199,266,222,0,0,122,0) -- polyshine3
+<+> track(angSF)$shine(42)$green$polyF(3,199,266,222,0,0,122,0) -- polyshine4
+<+> track(sloSF)$shine(42)$green$polyF(3,199,266,222,0,0,122,0) -- polyshine5
+<+> track2(sloSF)$shine(42)$green$polyF(3,199,266,222,0,0,122,0)-- polyshine6
+<+> track3(sloSF)$shine(42)$green$polyF(3,199,266,222,0,0,122,0)-- polyshine7
+<+> frame(0)$map($poly(5,33,55))[red,green,blue]
+<+> dots(66)$dark yellow$polySF(5,66,165,132)			-- starfish
+<+> rainbow(102)$green$polySF(5,66,165,132)			-- starfish3
+
+<+> blue$polyR(5,99,33)
+<+> repeat$rotate(11)$red$polySF(5,99,33)
 <+> rainbow(0,11)$red$star(5,111,33)<+>gif(nemo,111)
 <+> polyR(10,99,33)
 <+> polyR(38,222,188)
@@ -59,4 +90,43 @@ terms:
 <+> turt $ polys(9)
 <+> repeat[fade(21)$polyR(10,44,22),fade(-21)$polyR(10,44,22)]
 <+> repeat[shuffle[pulse(red$polyR(6,33,11)),                   pulse(turt(J(66),green$poly(6,33,11))),                   pulse(turt(J(132),blue$poly(6,33,11)))]]
+
 <+> table(6,22)$polys(2)
+
+<+> turt[cyan$polyR(99,44),red$polyR(33,44,0,44)] 		-- ufo
+
+<+> turt[red$polyR(34,44,44,0.1),				-- ufo2
+         green$polyR(34,44,0.1,44),
+         blue$polyR(34,0.1,44,44)]				
+
+<+> turt[shine(-42)$green$polyR(34,44,0.1,44),			-- ufo3
+         shine(42)$blue$polyR(34,0.1,44,44),
+         red$polyR(34,44,44,0.1)]				
+
+<+> shine(42)$turt[red$polyR(34,44,44,0.1),
+		   green$polyR(34,44,0.1,44),
+		   blue$polyR(34,0.1,44,44)]
+
+<+> (shine(-42)$red$polyR(34,44,44,0.1) <+> 
+     shine(42)$green$polyR(34,44,0.1,44) <+>
+     shine(-42)$blue$polyR(34,0.1,44,44))
+
+<+> turt[dark green$polyW(8,111),blue$poly(4,111),	 	-- hunscher 
+         T$45,light light blue$polyF(4,111),
+         blue$poly(4,111),T$22.5,red$polyW(8,85)]	
+
+<+> repeat(rotate(10,polyR(5,[33,11],blue),red$poly(5,[44,22,22])))
+
+<+> repeat[pulse(turt(plaitS(5,60,45,red),green$plaitS(5,60, -45)))]
+
+<+> repeat[peaksR(polyF(12,[32,16],blue))] 
+<+> repeat[peaksR(light(polyF(12,[32,16],blue), -21))] 
+<+> repeat[peaksR(polyF(3,[16,32,16],blue))] 
+<+> repeat[peaks(polyR(3,[16,32]))]
+
+<+> repeat(map(animate)(tup(id,reverse)(map(fun(n,polyR(n,[22,55,44],red)))  
+                                           [1..15])))
+<+> repeat(fork(rotate(10,poly(6,[33,11],red)):
+     map(fun((x,y,z),rotate(x,turt(J(y),poly(6,[33,11],z)))))
+        [(-10,66,green),(7.5,132,blue),(-7.5,198,magenta),(5,264,dark cyan)])) 
+

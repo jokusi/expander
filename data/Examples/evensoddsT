@@ -1,0 +1,2 @@
+-- evensoddsT
+[DeriveMode True False, Match 0, Mark [], Induction False 0, Mark [], Narrow 1 True, Mark []]

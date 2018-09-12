@@ -1,0 +1,38 @@
+-- /Users/Padawitz/ExpanderLib/three3P
+
+0. Derivation of
+
+((three(st)&(st`in`states))==>((st=2)|(st=4)))
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. SHIFTING SUBFORMULAS at positions
+[0,1]
+of the preceding formulas leads to 
+
+(three(st)==>((st`in`states)==>((st=2)|(st=4))))
+
+2. Adding
+
+  (three0(st) ===> (st `in` states ==> st = 2 | st = 4))
+
+to the axioms and applying FIXPOINT INDUCTION wrt
+
+  (three(st) <=== (a#(A\/three))$st)
+
+at positions
+[]
+of the preceding formulas leads to 
+
+(three0(1)==>False)
+
+The reducts have been simplified.
+
+3. NARROWING the preceding formulas (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+

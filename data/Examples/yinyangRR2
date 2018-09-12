@@ -1,0 +1,5 @@
+-- yinyangRR2
+tabB(12,0,
+     rainbow(turt[circ(120,blue),R,slice(120,180,red),J(60),B,circ(60,red),
+                  circ(12,blue),J(120.0),B,circ(60,blue),circ(12,red)],
+             144,0,360,0.25))

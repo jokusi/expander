@@ -1,0 +1,64 @@
+-- crossing1
+
+specs:		modal
+constructs:	car train green red up down ccross tcross
+		Road Rail Control || 	-- st1 st2
+defuncts:	Crossing sync draw
+fovars:		p q p' q' act 
+
+axioms:
+
+Crossing == Road||Rail||Control &
+
+states == [Road,Rail,Control,Rail||Control,Crossing] &
+
+labels == [car,train,up,down,green,red,ccross,tcross] &
+
+(Road,car)      -> up:ccross:down:Road &
+(Rail,train)    -> green:tcross:red:Rail &
+(Control,up)    -> down:Control &
+(Control,green) -> red:Control &
+
+sync$Road    == [up,down] &
+sync$Rail    == [green,red] &
+sync$Control == [up,down,green,red] &
+sync$act:p   == sync$p &
+sync(p||q)   == sync(p)`join`sync(q) &
+
+(act:p,act) -> p &
+
+-- transL muss weg!
+
+(act `NOTin` sync(p) 	-- & (p,q,act) =/= (up:ccross:down:Road,Rail||Control,train)
+     ==> (p||q,act) -> branch$map(fun(q',p||q'))$transL(q)$act) &
+
+(act `NOTin` sync(q) 	-- & (p,q,act) =/= (Road,(green:tcross:red:Rail)||Control,car)
+     ==> (p||q,act) -> branch$map(fun(p',p'||q))$transL(p)$act) & 
+
+(p||q,act) -> branch$map(fun((p',q'),p'||q'))
+		    $prodL[transL(p)$act,transL(q)$act] &
+
+-- ((up:ccross:down:Road)||Rail||Control,train) -> st1 & 
+-- (Road||(green:tcross:red:Rail)||Control,car) -> st2 & 
+
+-- (st1,up)    -> (ccross:down:Road)||(green:tcross:red:Rail)||down:Control &
+-- (st2,green) -> (up:ccross:down:Road)||(tcross:red:Rail)||red:Control 
+
+draw == wtree $ fun(x||y||z,shelf(1)$map(text.noBrackets)[x,y,z],
+                    x||y,shelf(1)$map(text.noBrackets)[x,y],
+                    x,text$noBrackets$x) 
+conjects: 
+
+(AG$(ccross#false)\/tcross#false)$Crossing &	-- (1)
+(AG$car#AF$ccross#true)$Crossing &   	 	-- (2)
+(AG$train#AF$tcross#true)$Crossing &		-- (3)
+
+terms:
+
+eval$(ccross<>true)/\tcross<>true	<+>     
+eval$car#AF$ccross#true			<+>	   
+eval$train#AF$tcross#true			 		     	   
+
+
+
+

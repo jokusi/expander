@@ -1,0 +1,1 @@
+[DeriveMode False False, Match 2, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Simplify 100 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Simplify 100 True, Mark [], Theorem False (F "===>" [F "True" [], F "Any f i" [F "=" [V "s", F "()" [V "f", V "i"]]]]), Mark [], Simplify 100 True, Mark []]

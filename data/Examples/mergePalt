@@ -1,0 +1,319 @@
+-- MERGEPROOF
+
+
+Derivation of
+
+      merge(s1,s2) = s
+    & sorted(s1)
+    & sorted(s2)
+==>   sorted(s)
+    & s ~ s1++s2
+
+Shifting the factors at positions [0,1],[0,2] of the preceding tree leads to the formula
+
+    merge(s1,s2) = s
+==> (      sorted(s1)
+         & sorted(s2)
+     ==>   sorted(s)
+         & s ~ s1++s2)
+
+Applying fixpoint induction w.r.t.
+
+  merge([],s) = s
+& merge(s,[]) = s
+& (     merge(x:s,y:s') = x:z3
+   <===   x <= y
+        & merge(s,y:s') = z3)
+& (     merge(x:s,y:s') = y:z3
+   <===   x > y
+        & merge(x:s,s') = z3)
+
+to the preceding tree leads to the formula
+
+All s6 s7 x s8 y s' z3 s9:
+(  merge0([],s6,s6)
+ & merge0(s7,[],s7)
+ & (     merge0(x:s8,y:s',x:z3)
+    <===   x <= y
+         & merge0(s8,y:s',z3))
+ & (     merge0(x:s9,y:s',y:z3)
+    <===   x > y
+         & merge0(x:s9,s',z3)))
+
+Applying the axiom
+
+     merge0(s1,s2,s)
+===> (      sorted(s1)
+          & sorted(s2)
+      ==>   sorted(s)
+          & s ~ s1++s2)
+
+at positions [0,3,1,1],[0,3,0],[0,2,1,1],[0,2,0],[0,1],[0,0] of the preceding tree leads to the formula
+
+All s6 s7 x s8 y s' z3 s9:
+(  (      sorted[]
+        & sorted(s6)
+    ==>   sorted(s6)
+        & s6 ~ []++s6)
+ & (      sorted(s7)
+        & sorted[]
+    ==>   sorted(s7)
+        & s7 ~ s7++[])
+ & (     (      sorted(x:s8)
+              & sorted(y:s')
+          ==>   sorted(x:z3)
+              & x:z3 ~ (x:s8)++(y:s'))
+    <===   x <= y
+         & (      sorted(s8)
+                & sorted(y:s')
+            ==>   sorted(z3)
+                & z3 ~ s8++(y:s')))
+ & (     (      sorted(x:s9)
+              & sorted(y:s')
+          ==>   sorted(y:z3)
+              & y:z3 ~ (x:s9)++(y:s'))
+    <===   x > y
+         & (      sorted(x:s9)
+                & sorted(s')
+            ==>   sorted(z3)
+                & z3 ~ (x:s9)++s')))
+
+Simplifying (45 steps) the preceding tree leads to new ones. The current factor is given by
+
+All x s8 y s' z3:
+(      x <= y
+     & (      sorted(s8)
+            & sorted(y:s')
+        ==> sorted(z3))
+     & (      sorted(s8)
+            & sorted(y:s')
+        ==> z3 ~ s8++(y:s'))
+     & sorted(x:s8)
+     & sorted(y:s')
+ ==> sorted(x:z3))
+
+Applying the theorem
+
+     sorted(s)
+<=== sorted(x:s)
+
+at positions [0,2,0,0],[0,1,0,0] of the preceding factor leads to the factor
+
+All x2 s8 y s' z3:
+(      x2 <= y
+     & (      Any x3:
+              (sorted(x3:s8))
+            & sorted(y:s')
+        ==> sorted(z3))
+     & (      Any x4:
+              (sorted(x4:s8))
+            & sorted(y:s')
+        ==> z3 ~ s8++(y:s'))
+     & sorted(x2:s8)
+     & sorted(y:s')
+ ==> sorted(x2:z3))
+
+Simplifying (4 steps) the preceding factor leads to the factor
+
+All x2 s8 y s':
+(      sorted(x2:s8)
+     & sorted(y:s')
+     & x2 <= y
+     & sorted(s8++(y:s'))
+ ==> sorted(x2:(s8++(y:s'))))
+
+Applying the theorem
+
+     sorted(x:(s++(y:s')))
+<===   sorted(x:s)
+     & sorted(y:s')
+     & x <= y
+     & sorted(s++(y:s'))
+
+at position [1] of the preceding factor leads to the factor
+
+All x2 s8 y2 s'2:
+(      sorted(x2:s8)
+     & sorted(y2:s'2)
+     & x2 <= y2
+     & sorted(s8++(y2:s'2))
+ ==>   sorted(x2:s8)
+     & sorted(y2:s'2)
+     & x2 <= y2
+     & sorted(s8++(y2:s'2)))
+
+Simplifying (12 steps) the preceding factor leads to new ones. The current factor is given by
+
+All x s8 y s' z3:
+(      x <= y
+     & (      sorted(s8)
+            & sorted(y:s')
+        ==> sorted(z3))
+     & (      sorted(s8)
+            & sorted(y:s')
+        ==> z3 ~ s8++(y:s'))
+     & sorted(x:s8)
+     & sorted(y:s')
+ ==> x:z3 ~ x:(s8++(y:s')))
+
+Applying the theorem
+
+     sorted(s)
+<=== sorted(x:s)
+
+at position [0,2,0,0] of the preceding factor leads to the factor
+
+All x6 s8 y s' z3:
+(      x6 <= y
+     & (      sorted(s8)
+            & sorted(y:s')
+        ==> sorted(z3))
+     & (      Any x7:
+              (sorted(x7:s8))
+            & sorted(y:s')
+        ==> z3 ~ s8++(y:s'))
+     & sorted(x6:s8)
+     & sorted(y:s')
+ ==> x6:z3 ~ x6:(s8++(y:s')))
+
+Simplifying (6 steps) the preceding factor leads to new ones. The current factor is given by
+
+All x y s' z3 s9:
+(      x > y
+     & (      sorted(x:s9)
+            & sorted(s')
+        ==> sorted(z3))
+     & (      sorted(x:s9)
+            & sorted(s')
+        ==> z3 ~ x:(s9++s'))
+     & sorted(x:s9)
+     & sorted(y:s')
+ ==> sorted(y:z3))
+
+Applying the theorem
+
+     sorted(s)
+<=== sorted(x:s)
+
+at positions [0,2,0,1],[0,1,0,1] of the preceding factor leads to the factor
+
+All x9 y s' z3 s9:
+(      x9 > y
+     & (      sorted(x9:s9)
+            & Any x10:
+              (sorted(x10:s'))
+        ==> sorted(z3))
+     & (      sorted(x9:s9)
+            & Any x11:
+              (sorted(x11:s'))
+        ==> z3 ~ x9:(s9++s'))
+     & sorted(x9:s9)
+     & sorted(y:s')
+ ==> sorted(y:z3))
+
+Simplifying (4 steps) the preceding factor leads to the factor
+
+All x9 y s' s9:
+(      sorted(x9:s9)
+     & sorted(y:s')
+     & x9 > y
+     & sorted(x9:(s9++s'))
+ ==> sorted(y:(x9:(s9++s'))))
+
+Applying the theorem
+
+     x > y
+===> y <= x
+
+at position [0,2] of the preceding factor leads to the factor
+
+All x9 y3 s' s9:
+(      sorted(x9:s9)
+     & sorted(y3:s')
+     & y3 <= x9
+     & sorted(x9:(s9++s'))
+ ==> sorted(y3:(x9:(s9++s'))))
+
+Applying the axiom
+
+     sorted(x:(y:s))
+<===   x <= y
+     & sorted(y:s)
+
+at position [1] of the preceding factor leads to the factor
+
+All x9 y3 s' s9:
+(      sorted(x9:s9)
+     & sorted(y3:s')
+     & y3 <= x9
+     & sorted(x9:(s9++s'))
+ ==>   y3 <= x9
+     & sorted(x9:(s9++s')))
+
+Simplifying (6 steps) the preceding factor leads to a new formula. The current formula is given by
+
+All x y s' z3 s9:
+(      x > y
+     & (      sorted(x:s9)
+            & sorted(s')
+        ==> sorted(z3))
+     & (      sorted(x:s9)
+            & sorted(s')
+        ==> z3 ~ x:(s9++s'))
+     & sorted(x:s9)
+     & sorted(y:s')
+ ==> y:z3 ~ x:(s9++(y:s')))
+
+Applying the theorem
+
+     sorted(s)
+<=== sorted(x:s)
+
+at position [0,0,2,0,1] of the preceding tree leads to the formula
+
+All x12 y s' z3 s9:
+(      x12 > y
+     & (      sorted(x12:s9)
+            & sorted(s')
+        ==> sorted(z3))
+     & (      sorted(x12:s9)
+            & Any x13:
+              (sorted(x13:s'))
+        ==> z3 ~ x12:(s9++s'))
+     & sorted(x12:s9)
+     & sorted(y:s')
+ ==> y:z3 ~ x12:(s9++(y:s')))
+
+Simplifying (3 steps) the preceding tree leads to the formula
+
+All x12 y s' s9:
+(      sorted(x12:s9)
+     & sorted(y:s')
+     & x12 > y
+     & (      sorted(x12:s9)
+            & sorted(s')
+        ==> sorted(x12:(s9++s')))
+ ==> y:(x12:(s9++s')) ~ x12:(s9++(y:s')))
+
+Applying the theorem
+
+x:y:(s1++s2) ~ y:(s1++(x:s2))
+
+at position [0,1] of the preceding tree leads to the formula
+
+All x12 y4 s' s9:
+(      sorted(x12:s9)
+     & sorted(y4:s')
+     & x12 > y4
+     & (      sorted(x12:s9)
+            & sorted(s')
+        ==> sorted(x12:(s9++s')))
+ ==> True)
+
+Simplifying (2 steps) the preceding tree leads to the formula
+
+True
+
+The following solutions were computed:
+
+True

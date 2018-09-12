@@ -1,0 +1,112 @@
+-- logConj0
+
+
+Derivation of
+
+perm([1,2,3],p)
+
+NARROWING the preceding formula (1 step) leads to 
+
+Any q:(perm([2,3],q) & insert(1,q,p))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+Any q q0:(perm([3],q0) & insert(2,q0,q) & insert(1,q,p))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+Any q q0 q1:
+ (perm([],q1) & insert(3,q1,q0) & insert(2,q0,q) & insert(1,q,p))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+Any q q0:(insert(3,[],q0) & insert(2,q0,q) & insert(1,q,p))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+Any q:(insert(2,[3],q) & insert(1,q,p))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+insert(1,[2,3],p) | Any p5:(insert(1,3:p5,p) & insert(2,[],p5))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | Any p6:(insert(1,[3],p6) & p = (2:p6)) | 
+Any p5:(insert(1,3:p5,p) & insert(2,[],p5))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | p = [2,1,3] | Any p7:(p = (2:(3:p7)) & insert(1,[],p7)) | 
+Any p5:(insert(1,3:p5,p) & insert(2,[],p5))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | p = [2,1,3] | p = [2,3,1] | 
+Any p5:(insert(1,3:p5,p) & insert(2,[],p5))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | p = [2,1,3] | p = [2,3,1] | 
+Any p5:(p = (1:(3:p5)) & insert(2,[],p5)) | 
+Any p5 p9:(insert(1,p5,p9) & p = (3:p9) & insert(2,[],p5))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | p = [2,1,3] | p = [2,3,1] | p = [1,3,2] | 
+Any p5 p9:(insert(1,p5,p9) & p = (3:p9) & insert(2,[],p5))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | p = [2,1,3] | p = [2,3,1] | p = [1,3,2] | 
+Any p5:(p = (3:(1:p5)) & insert(2,[],p5)) | 
+Any p11 q y:
+ (p = (3:(y:p11)) & insert(2,[],y:q) & insert(1,q,p11))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | p = [2,1,3] | p = [2,3,1] | p = [1,3,2] | p = [3,1,2] | 
+Any p11 q y:
+ (p = (3:(y:p11)) & insert(2,[],y:q) & insert(1,q,p11))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | p = [2,1,3] | p = [2,3,1] | p = [1,3,2] | p = [3,1,2] | 
+Any p11:(insert(1,[],p11) & p = (3:(2:p11)))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+p = [1,2,3] | p = [2,1,3] | p = [2,3,1] | p = [1,3,2] | p = [3,1,2] | 
+p = [3,2,1]
+
+The reducts have been simplified.
+
+Number of proof steps: 15

@@ -1,0 +1,277 @@
+-- safe
+
+
+Derivation of
+
+All st f:(safe(st) & enabled(f)$st ==> safe(f(st)))
+
+Applying the axioms
+
+  (enabled(request(x))(xs,ys) <=== x `NOTin` xs & x `NOTin` ys)
+& enabled(enter)(x:xs,[])
+& enabled(leave)(xs,[x])
+
+at position [0,0,1]
+of the preceding formula leads to 
+
+All st f:(safe(st) & 
+          (Any x xs ys:
+            (x `NOTin` xs & x `NOTin` ys & f = request(x) & st = (xs,ys)) | 
+           Any x xs:(f = enter & st = (x:xs,[])) | 
+           Any xs x:(f = leave & st = (xs,[x]))) ==> 
+          safe(f(st)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st f:(Any x xs ys:
+           (x `NOTin` xs & x `NOTin` ys & f = request(x) & st = (xs,ys)) & 
+          safe(st) | 
+          Any x xs:(f = enter & st = (x:xs,[])) & safe(st) | 
+          Any xs x:(f = leave & st = (xs,[x])) & safe(st) ==> 
+          safe(f(st)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st f:((Any x xs ys:
+            (x `NOTin` xs & x `NOTin` ys & f = request(x) & st = (xs,ys)) & 
+           safe(st) ==> 
+           safe(f(st))) & 
+          (Any x xs:(f = enter & st = (x:xs,[])) & safe(st) ==> safe(f(st))) & 
+          (Any xs x:(f = leave & st = (xs,[x])) & safe(st) ==> safe(f(st))))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st f:(Any x xs ys:
+           (x `NOTin` xs & x `NOTin` ys & f = request(x) & st = (xs,ys)) & 
+          safe(st) ==> 
+          safe(f(st))) & 
+All st f:(Any x xs:(f = enter & st = (x:xs,[])) & safe(st) ==> safe(f(st))) & 
+All st f:(Any xs x:(f = leave & st = (xs,[x])) & safe(st) ==> safe(f(st)))
+
+The tree has been split.
+The current formula is given by
+
+All st f:(Any x xs ys:
+           (x `NOTin` xs & x `NOTin` ys & f = request(x) & st = (xs,ys)) & 
+          safe(st) ==> 
+          safe(f(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st f:(Any ys xs x:
+           (x `NOTin` xs & x `NOTin` ys & f = request(x) & st = (xs,ys) & 
+            safe(st)) ==> 
+          safe(f(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st f:All x xs ys:
+          (x `NOTin` xs & x `NOTin` ys & f = request(x) & st = (xs,ys) & 
+           safe(st) ==> 
+           safe(f(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st f x xs ys:
+ (x `NOTin` xs & x `NOTin` ys & f = request(x) & st = (xs,ys) & safe(st) ==> 
+  safe(f(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st f x xs ys:
+ (st = (xs,ys) & safe(st) & x `NOTin` xs & x `NOTin` ys ==> safe(request(x)$st))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st x xs ys:
+ (st = (xs,ys) & safe(st) & x `NOTin` xs & x `NOTin` ys ==> safe(request(x)$st))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st x xs ys:
+ (safe((xs,ys)) & x `NOTin` xs & x `NOTin` ys ==> safe(request(x)(xs,ys)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All x xs ys:
+ (safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> safe(request(x)(xs,ys)))
+
+Narrowing at position [0,1]
+of the preceding factors (1 step) leads to the factor
+
+All x xs ys:
+ (safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> 
+  safe((x:xs,ys)) & enabled(request(x))(xs,ys))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All x xs ys:
+ (safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> 
+  safe(x:xs,ys) & enabled(request(x))(xs,ys))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All x xs ys:
+ ((safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> safe(x:xs,ys)) & 
+  (safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> enabled(request(x))(xs,ys)))
+
+Narrowing at position [0,1,1]
+of the preceding factors (1 step) leads to the factor
+
+All x xs ys:
+ ((safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> safe(x:xs,ys)) & 
+  (safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> x `NOTin` xs & x `NOTin` ys))
+
+Simplifying the preceding factors (1 step) leads to 4 factors.
+The current factor is given by
+
+All x xs ys:
+ (safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> safe(x:xs,ys))
+
+Narrowing at position [0,0,0]
+of the preceding factors (1 step) leads to the factor
+
+All x xs ys:
+ ((ys = [] | Any x:(ys = [x])) & x `NOTin` xs & x `NOTin` ys ==> safe(x:xs,ys))
+
+Narrowing at position [0,1]
+of the preceding factors (1 step) leads to the factor
+
+All x xs ys:
+ ((ys = [] | Any x:(ys = [x])) & x `NOTin` xs & x `NOTin` ys ==> 
+  ys = [] | Any x2:(ys = [x2]))
+
+Simplifying the preceding factors (1 step) leads to 3 factors.
+The current factor is given by
+
+All x xs ys:
+ (safe(xs,ys) & x `NOTin` xs & x `NOTin` ys ==> x `NOTin` xs & x `NOTin` ys)
+
+Simplifying the preceding factors (1 step) leads to 2 factors.
+The current factor is given by
+
+All st f:(Any x xs:(f = enter & st = (x:xs,[])) & safe(st) ==> safe(f(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st f:(Any xs x:(f = enter & st = (x:xs,[]) & safe(st)) ==> safe(f(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st f:All x xs:(f = enter & st = (x:xs,[]) & safe(st) ==> safe(f(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st f x xs:
+ (f = enter & st = (x:xs,[]) & safe(st) ==> safe(f(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st f x xs:
+ (st = (x:xs,[]) & safe(st) ==> safe(enter(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st x xs:
+ (st = (x:xs,[]) & safe(st) ==> safe(enter(st)))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All st x xs:
+ (safe((x:xs,[])) ==> safe(enter((x:xs,[]))))
+
+Simplifying the preceding factors (1 step) leads to the factor
+
+All x xs:(safe(x:xs,[]) ==> safe(enter(x:xs,[])))
+
+Narrowing at position [0,0]
+of the preceding factors (1 step) leads to the factor
+
+All x xs:(True ==> safe(enter(x:xs,[])))
+
+Narrowing at position [0,1]
+of the preceding factors (1 step) leads to the factor
+
+All x xs:(True ==> safe((init(x:xs),[last(x:xs)])) & enabled(enter)(x:xs,[]))
+
+Simplifying the preceding factors (1 step) leads to 3 factors.
+The current factor is given by
+
+All x xs:safe(init(x:xs),[last(x:xs)])
+
+Narrowing at position [0]
+of the preceding factors (1 step) leads to the factor
+
+All x xs:True
+
+Simplifying the preceding factors (1 step) leads to 2 factors.
+The current factor is given by
+
+All x xs:(enabled(enter)(x:xs,[]))
+
+Narrowing the preceding factors (1 step) leads to a single formula,
+which is given by
+
+All st f:(Any xs x:(f = leave & st = (xs,[x])) & safe(st) ==> safe(f(st)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st f:(Any x xs:(f = leave & st = (xs,[x]) & safe(st)) ==> safe(f(st)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st f:All xs x:(f = leave & st = (xs,[x]) & safe(st) ==> safe(f(st)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st f xs x:
+ (f = leave & st = (xs,[x]) & safe(st) ==> safe(f(st)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st f xs x:
+ (st = (xs,[x]) & safe(st) ==> safe(leave(st)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st xs x:
+ (st = (xs,[x]) & safe(st) ==> safe(leave(st)))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All st xs x:
+ (safe((xs,[x])) ==> safe(leave((xs,[x]))))
+
+Simplifying the preceding formula (1 step) leads to 
+
+All xs x:(safe(xs,[x]) ==> safe(leave(xs,[x])))
+
+Narrowing at position [0,0]
+of the preceding formula (1 step) leads to 
+
+All xs x:(True ==> safe(leave(xs,[x])))
+
+Narrowing at position [0,1]
+of the preceding formula (1 step) leads to 
+
+All xs x:(True ==> safe((xs,[])) & enabled(leave)(xs,[x]))
+
+Simplifying the preceding formula (1 step) leads to 2 factors.
+The current factor is given by
+
+All xs x:safe(xs,[])
+
+Narrowing the preceding factors (1 step) leads to a single formula,
+which is given by
+
+All xs x:(enabled(leave)(xs,[x]))
+
+Narrowing the preceding formula (1 step) leads to 
+
+All xs x:True
+
+Simplifying the preceding formula (1 step) leads to 
+
+True
+
+Number of proof steps: 47

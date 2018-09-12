@@ -1,0 +1,227 @@
+-- Req1badP
+
+
+Derivation of
+
+take(3,Requests1) = s
+
+Narrowing the preceding formula (1 step) leads to 
+
+take(3,Client1(0)(Responses1)) = s
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response' responses':(0:take(2,Client1(response'*2)(responses')) = s & 
+                          Responses1 = response':responses')
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response' responses'0 response'0:(Responses1 = response':
+                                                   response'0:responses'0 & 
+                                      0:
+                                      response'*2:
+                                      take(1,Client1(response'0*2)(responses'0)) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response' responses'0 response'0:(server(Requests1) = response':
+                                                          response'0:
+                                                          responses'0 & 
+                                      0:
+                                      response'*2:
+                                      take(1,Client1(response'0*2)(responses'0)) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response' responses'0 response'0:(server(Client1(0)(Responses1)) = response':
+                                                                       response'0:
+                                                                       responses'0 & 
+                                      0:
+                                      response'*2:
+                                      take(1,Client1(response'0*2)(responses'0)) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any responses'0 response'0 responses' response'1:(server(Client1(response'1*2)(responses')) = response'0:
+                                                                                              responses'0 & 
+                                                  Responses1 = response'1:
+                                                               responses' & 
+                                                  0:
+                                                  2:
+                                                  take(1,
+                                                       Client1(response'0*2)(responses'0)) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response'1 responses'1 response':(Responses1 = response'1:
+                                                   response':responses'1 & 
+                                      0:
+                                      2:
+                                      take(1,
+                                           Client1(((response'1*2)+1)*2)(server(Client1(response'*2)(responses'1)))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response'1 responses'1 response':(server(Requests1) = response'1:
+                                                          response':responses'1 & 
+                                      0:
+                                      2:
+                                      take(1,
+                                           Client1(((response'1*2)+1)*2)(server(Client1(response'*2)(responses'1)))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response'1 responses'1 response':(server(Client1(0)(Responses1)) = response'1:
+                                                                       response':
+                                                                       responses'1 & 
+                                      0:
+                                      2:
+                                      take(1,
+                                           Client1(((response'1*2)+1)*2)(server(Client1(response'*2)(responses'1)))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any responses'1 response' responses' response'2:(server(Client1(response'2*2)(responses')) = response':
+                                                                                             responses'1 & 
+                                                 Responses1 = response'2:
+                                                              responses' & 
+                                                 0:
+                                                 2:
+                                                 take(1,
+                                                      Client1(6)(server(Client1(response'*2)(responses'1)))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response'2 responses'2 response'3:(Responses1 = response'2:
+                                                    response'3:responses'2 & 
+                                       0:
+                                       2:
+                                       take(1,
+                                            Client1(6)(server(Client1(((response'2*2)+1)*2)(server(Client1(response'3*2)(responses'2)))))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response'2 responses'2 response'3:(server(Requests1) = response'2:
+                                                           response'3:
+                                                           responses'2 & 
+                                       0:
+                                       2:
+                                       take(1,
+                                            Client1(6)(server(Client1(((response'2*2)+1)*2)(server(Client1(response'3*2)(responses'2)))))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response'2 responses'2 response'3:(server(Client1(0)(Responses1)) = response'2:
+                                                                        response'3:
+                                                                        responses'2 & 
+                                       0:
+                                       2:
+                                       take(1,
+                                            Client1(6)(server(Client1(((response'2*2)+1)*2)(server(Client1(response'3*2)(responses'2)))))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any responses'2 response'3 responses' response':(server(Client1(response'*2)(responses')) = response'3:
+                                                                                            responses'2 & 
+                                                 Responses1 = response':
+                                                              responses' & 
+                                                 0:
+                                                 2:
+                                                 take(1,
+                                                      Client1(6)(server(Client1(6)(server(Client1(response'3*2)(responses'2)))))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response' responses'3 response'4:(Responses1 = response':
+                                                   response'4:responses'3 & 
+                                      0:
+                                      2:
+                                      take(1,
+                                           Client1(6)(server(Client1(6)(server(Client1(((response'*2)+1)*2)(server(Client1(response'4*2)(responses'3)))))))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response' responses'3 response'4:(server(Requests1) = response':
+                                                          response'4:
+                                                          responses'3 & 
+                                      0:
+                                      2:
+                                      take(1,
+                                           Client1(6)(server(Client1(6)(server(Client1(((response'*2)+1)*2)(server(Client1(response'4*2)(responses'3)))))))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any response' responses'3 response'4:(server(Client1(0)(Responses1)) = response':
+                                                                       response'4:
+                                                                       responses'3 & 
+                                      0:
+                                      2:
+                                      take(1,
+                                           Client1(6)(server(Client1(6)(server(Client1(((response'*2)+1)*2)(server(Client1(response'4*2)(responses'3)))))))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+Any responses'3 response'4 responses' response'5:(server(Client1(response'5*2)(responses')) = response'4:
+                                                                                              responses'3 & 
+                                                  Responses1 = response'5:
+                                                               responses' & 
+                                                  0:
+                                                  2:
+                                                  take(1,
+                                                       Client1(6)(server(Client1(6)(server(Client1(6)(server(Client1(response'4*2)(responses'3)))))))) = s)
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 18

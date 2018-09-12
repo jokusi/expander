@@ -1,0 +1,33 @@
+-- oddszip
+
+
+Derivation of
+
+odds(zip(s,s')) ~ s'
+
+Adding
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = odds(zip(s,s')) & z1 = s')
+
+to the axioms and applying COINDUCTION wrt
+
+  (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
+
+at position [] of the preceding formula leads to 
+
+All s'0 s0:
+ (evens(zip(tail(s'0),tail(tail(s0)))) ~0 tail(s'0))
+
+The reducts have been simplified.
+
+NARROWING the preceding formula (1 step) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 2

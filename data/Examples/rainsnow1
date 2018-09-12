@@ -1,0 +1,2 @@
+-- rainsnow1
+repeat(rainbow(snow(3,22,green),51,0),reverse(rainbow(snow(3,22,green),51,0)))

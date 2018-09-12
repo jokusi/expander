@@ -93,8 +93,7 @@ axioms:
 
 {- simplification of first-order path formulas
 
- & (head$tail$s = x ==>
-        (nxt(P)$s <==> x `in` trans$head$s & (P(tail$s) | x = head$s)))
+ & (nxt(P)$s <==> head$tail$s `in` trans$head$s & P$tail$s)
  & (nxt2(Q)(s,s') <==> head$tail$s `in` trans$head$s & 
 		       head$tail$s' `in` trans$head$s' & Q(tail$s,tail$s'))
  

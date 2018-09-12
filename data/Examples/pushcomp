@@ -1,0 +1,93 @@
+-- PUSHCOMP
+
+
+Derivation of
+
+    s ~ s'
+==> push(x,s) ~ push(x,s')
+
+Applying the axiom
+
+     s0 ~ s'0
+===>   top(s0) = top(s'0)
+     & pop(s0) ~ pop(s'0)
+
+at position [1] of the preceding formula leads to the formula
+
+    s ~ s'
+==>   top(push(x,s)) = top(push(x,s'))
+    & pop(push(x,s)) ~ pop(push(x,s'))
+
+Applying the theorem
+
+top(push(x0,s2)) = just(x0)
+
+at positions [1,0,1],[1,0,0] of the preceding formula leads to the formula
+
+    s ~ s'
+==>   just(x) = just(x)
+    & pop(push(x,s)) ~ pop(push(x,s'))
+
+Simplifying the preceding formula (4 steps) leads to the formula
+
+    s ~ s'
+==> pop(push(x,s)) ~ pop(push(x,s'))
+
+A transitivity axiom at position [1] of the preceding formula leads to the formula
+
+    s ~ s'
+==> Any z0:
+    (  pop(push(x,s)) ~ z0
+     & z0 ~ pop(push(x,s')))
+
+Applying the theorem
+
+pop(push(x3,s3)) ~ s3
+
+at position [1,0,0] of the preceding formula leads to the formula
+
+    s ~ s'
+==> Any z0:
+    (  z0 = s
+     & z0 ~ pop(push(x,s')))
+
+A transitivity axiom at position [1,0,1] of the preceding formula leads to the formula
+
+    s ~ s'
+==> Any z0:
+    (  z0 = s
+     & Any z1:
+       (  z0 ~ z1
+        & z1 ~ pop(push(x,s'))))
+
+Reversing the subtrees at positions [1,0,1,0,1,0],[1,0,1,0,1,1] of the preceding formula leads to the formula
+
+    s ~ s'
+==> Any z0:
+    (  z0 = s
+     & Any z1:
+       (  z0 ~ z1
+        & pop(push(x,s')) ~ z1))
+
+Applying the theorem
+
+pop(push(x4,s4)) ~ s4
+
+at position [1,0,1,0,1] of the preceding formula leads to the formula
+
+    s ~ s'
+==> Any z0:
+    (  z0 = s
+     & Any z1:
+       (  z0 ~ z1
+        & z1 = s'))
+
+Simplifying the preceding formula (4 steps) leads to the formula
+
+True
+
+Number of proof steps: 9
+
+Solutions:
+
+True

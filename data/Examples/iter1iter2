@@ -1,0 +1,36 @@
+-- iter1iter2
+
+
+Derivation of
+
+iter1(f,n) ~ iter2(f,n)
+
+Applying the THEOREM
+
+s = (map(loop(f)$0)$s)
+
+at position [1] of the preceding formula leads to 
+
+Any f0:(iter1(f,n) ~ (map(loop(f0)$0)$iter2(f,n)))
+
+Applying the THEOREM
+
+(map(loop(f)$n)$iter2(f,x)) = iter1(f,(loop(f)$n)$x)
+
+at position [0,1] of the preceding formula leads to 
+
+Any f0:(iter1(f,n) ~ iter1(f,(loop(f)$0)$n))
+
+SIMPLIFYING the preceding formula (2 steps) leads to 
+
+iter1(f,n) ~ iter1(f,n)
+
+Applying the THEOREM
+
+s ~ s
+
+at position [] of the preceding formula leads to 
+
+True
+
+Number of proof steps: 4

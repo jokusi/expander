@@ -1,0 +1,28 @@
+-- RELALGP1proof
+
+
+Derivation of
+
+All x y:(((Q*R)<=S)(x,y)) <==> All x y:(((T(Q)*C(S))<=C(R))(x,y))
+
+Narrowing the preceding formula (7 steps) leads to 
+
+All x y z:(Q(x,z) & R(z,y) ==> S(x,y)) <==> 
+All x y z0:(Q(z0,x) & notS(z0,y) ==> notR(x,y))
+
+The reducts have been simplified.
+
+Shifting subformulas at positions [1,0,0,1],[1,0,1] of the preceding formula leads to 
+
+All x y z:(Q(x,z) & R(z,y) ==> S(x,y)) <==> 
+All x y z0:(R(x,y) & Q(z0,x) ==> S(z0,y))
+
+Simplifying the preceding formula (2 steps) leads to 
+
+True
+
+Number of proof steps: 3
+
+Solutions:
+
+True

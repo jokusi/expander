@@ -1,0 +1,28 @@
+-- EXwait
+
+
+Derivation of
+
+Idle(x)(xs,ys) & length(xs) < maxwait ==> EX(Wait(x))(xs,ys)
+
+Narrowing the preceding formula (1 step) leads to 
+
+x `NOTin` xs & x `NOTin` ys & length(xs) < maxwait ==> 
+Any st':((xs,ys) -> st' & Wait(x)$st')
+
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+x `NOTin` xs & x `NOTin` ys & length(xs) < maxwait ==> 
+Any f:(enabled(f)(xs,ys) & Wait(x)$f(xs,ys))
+
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+True
+
+The reducts have been simplified.
+
+Number of proof steps: 3

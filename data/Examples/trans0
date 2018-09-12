@@ -9,6 +9,7 @@ axioms:
 
   states == [0,22] 
 & atoms == map(is)[0..44]
+
 -- & atoms == map($)$prodL[[is,less],[1,2,4,14]]
 		 
 & (st < 6 ==> st -> st+1<+>ite(st`mod`2 = 0,st,()))
@@ -17,6 +18,7 @@ axioms:
 & 22 -> 33<+>44
 
 & (st `in` states ==> is$st -> st)
+
 -- & less$st -> branch$filter(<st)$states
 
 & elem == foldl1(\/).map(is)

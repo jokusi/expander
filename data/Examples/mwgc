@@ -1,7 +1,8 @@
 -- mwgc
 
 constructs: 	m w g c
-defuncts:     	goods draw1 draw2 draw3 draw4 pic river river1 pair triple mkFile 
+defuncts:     	goods draw1 draw2 draw3 draw4 pic river river1 pair triple 
+		mkFile 
 preds:		final 
 fovars:	  	left
 

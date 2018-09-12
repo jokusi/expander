@@ -1,0 +1,2 @@
+-- Req1PT
+[DeriveMode True False, Match 0, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [[0, 1, 0, 1, 1, 1]], Narrow 0 False, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark []]

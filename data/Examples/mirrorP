@@ -1,0 +1,43 @@
+-- mirrorP
+
+
+Derivation of
+
+mirror(mirror(t)) ~ t
+
+Adding
+
+  (x ~0 y <=== x = y)
+& (x ~0 y <=== y ~0 x)
+& (x ~0 z <=== x ~0 y & y ~0 z)
+& (z0 ~0 z1 <=== z0 = mirror(mirror(t)) & z1 = t)
+& (x ~/~0 y ===> x =/= y)
+& (x ~/~0 y ===> Not(y ~0 x))
+& (x ~/~0 z ===> Not(x ~0 y) | Not(y ~0 z))
+& (z0 ~/~0 z1 ===> z0 =/= mirror(mirror(t)) | z1 =/= t)
+
+to the axioms and applying coinduction w.r.t.
+
+  (t ~ t' ===> left(t) ~ left(t') & root(t) = root(t') & right(t) ~ right(t'))
+
+at position [] of the preceding formula leads to 
+
+All t0:(left(t0) ~0 left(t0)) & All t0:(right(t0) ~0 right(t0))
+
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+All t0:(right(t0) ~0 right(t0))
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Narrowing the preceding formula (1 step) leads to 
+
+True
+
+The axioms were MATCHED against their redices.
+The reducts have been simplified.
+
+Number of proof steps: 3
