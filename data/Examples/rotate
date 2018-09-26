@@ -1,7 +1,15 @@
 -- rotate
 
 terms:
-    repeat(poly(6,[33,11],red),rotate(turt(J(66),		-- rotpoly2-2
+    repeat(shuffleA(rotate(poly(6,[33,11],red)),		-- rotpoly
+		rotate(turt(J(66),poly(6,[33,11],green))),	
+                rotate(turt(J(132),poly(6,[33,11],blue)))))
+<+> repeat(poly(6,[33,11],red),shuffleA(rotate(turt(J(66),	-- rotpoly2
+	   poly(6,[33,11],green))),rotate(turt(J(132),poly(6,[33,11],blue)))))
+<+> repeat(shuffleA(rotate(poly(6,[33,11],red)),		-- rotpoly3
+		    rotate(turt(J(66),poly(6,[33,11],green))),
+                    rotate(turt(J(132),poly(6,[33,11],blue)))))
+<+> repeat(poly(6,[33,11],red),rotate(turt(J(66),		-- rotpoly2-2
 		poly(6,[33,11],green),J(66),poly(6,[33,11],blue))))
 <+> repeat(rotate(turt(poly(6,[33,11],red),J(66),		-- rotpoly3-2
 		poly(6,[33,11],green),J(66),poly(6,[33,11],blue))))
@@ -10,8 +18,28 @@ terms:
                 rotateC(turt(J(132),poly(6,[33,11],blue)))))
 <+> repeat(rotateC(turt(poly(6,[33,11],red),J(66),		-- rotCpoly3-2
     		poly(6,[33,11],green),J(66),poly(6,[33,11],blue))))
-<+> repeat(shuffleA(rotate(poly(6,[33,11],red)),
-		rotate(turt(J(66),poly(6,[33,11],green))),	-- srotpoly
-                rotate(turt(J(132),poly(6,[33,11],blue)))))
-<+> repeat(poly(6,[33,11],red),shuffleA(rotate(turt(J(66),	-- srotpoly2
-	   poly(6,[33,11],green))),rotate(turt(J(132),poly(6,[33,11],blue)))))
+<+> turt(rotate(grow(trunk,grow(trunk,trunk))),J(122),new,	-- rotnew
+	 rotate(turt(J(4),poly(6,[33,11],red))),old,
+     	 J(122),rotate(grow(trunk,grow(trunk,trunk))))
+<+> repeat[rotate(plait(5,80))]					-- rotplait
+<+> repeat(rotate(poly(6,[33,11],red)),				-- rotpoly
+	   rotate(turt(J(66),poly(6,[33,11],green)), -10),
+           rotate(turt(J(132),poly(6,[33,11],blue))))   
+<+> repeat(poly(6,[33,11],red),shuffleA(rotate(turt(J(66),	-- rotpoly2
+           poly(6,[33,11],green))),
+	   rotate(turt(J(132),poly(6,[33,11],blue)))))
+<+> rotate(turt(OS(dark red),T(40),M(33),tria(11),M(55),	-- roturt
+	        tree(turt(M(55),rect(22,11))),T( -40),M(55),
+                text(peter hans peter hans)))
+<+> rotate(turt(plaitS(3,60,45,green),plaitS(3,60, -45,red)))	-- rotwave
+<+> repeat(rotateC(turt(polyS(10,[188,167],green),		-- rotweety
+           gif(TweetyS),J(66),gif(TweetyS),J(66),gif(TweetyS))))
+<+> repeat(fproduct(rotateC,fun(z,rotateC(z, -10)))		-- rotweety2
+	  (turt(polyR(10,[188,167],green),
+           turt(gif(TweetyS),J(66),gif(TweetyS),J(66),gif(TweetyS)))))
+<+> repeat(rotateC(turt(polyR(10,[188,167],green),		-- rotweety3
+	   turt(gif(TweetyS),J(66),gif(TweetyS),J(66),gif(TweetyS)))))
+<+> repeat[rotateC(turt(concatA(shineW(polySF(10,[188,167],	-- rotweetysh
+	green))),turt(gif(TweetyS),J(66),gif(TweetyS),J(66),gif(TweetyS))))]
+<+> (shineW(polyR(10,[188,167],green)),				-- rotweetyshR
+        turt(gif(TweetyS),J(66),gif(TweetyS),J(66),gif(TweetyS)))

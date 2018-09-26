@@ -1,4 +1,0 @@
--- shuttles
-tabBS(2,5,4,
-      tup(fun(F,F(dark cyan)),fun(F,flipV(F(dark yellow))),fun(F,flipV(F(dark magenta))),
-          fun(F,F(light green)))(fun(x,turt(shineW(polySF(1,[22,12,0,0,22,5,22,0,0,12],x))))))

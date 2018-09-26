@@ -1,8 +1,7 @@
 -- mwgc
 
 constructs: 	m w g c
-defuncts:     	goods draw1 draw2 draw3 draw4 pic river river1 pair triple 
-		mkFile 
+defuncts:     	goods draw1 draw2 draw3 pic river triple save' 
 preds:		final 
 fovars:	  	left
 
@@ -26,34 +25,27 @@ states == [labels] &
 
 -- widget interpreters:
 
-draw1 == wtree $ fun(x,ite(List$x,pair$x,text$x)) &
-
-draw2 == wtree $ fun(x,ite(List$x,triple$x,text$x)) &
-
-draw3 == wtree $ fun(x,ite(List$x,load$string$x,text$x)) &	-- lieber nicht
-
-draw4 == wtree $ fun(m,pic$m,
-		     w,shelf(2)[pic$m,pic$w],
-		     g,shelf(2)[pic$m,pic$g],
-		     c,shelf(2)[pic$m,pic$c],
-		     x,text$x) &
-
-pair$x == center$shelf(1)[shelf(4)$map(pic)$x,
-		          shelf(4)$map(pic)$labels-x] &
-
-triple$x == center$shelf(1)[shelf(4)$map(pic)$x,
-		            river,
-		            shelf(4)$map(pic)$labels-x] &
-
 pic$m == gif(man,8,15) &
 pic$w == gif(wolf,30,25) &
 pic$g == gif(goat,28,25) &
 pic$c == gif(cabbage,22,20) &
-river == gif(wave,77,17) &
+river == gif(wave,70,10) &
+      -- blue$waveSF(5,20,45) 
 
-river1 == blue$waveSF(5,20,45) &				-- lieber nicht
+triple$s == center$shelf(1,3)[shelf(4)$map(pic)$s,river,
+		              shelf(4)$map(pic)$labels-s] &
 
-(List$x ==> mkFile$x == string$x)
+save'$s == save(triple$s,s) &
+
+draw1 == wtree $ fun(x,ite(List$x,triple$x,text$x)) & 	-- paints states
+
+draw2 == wtree $ fun(x,ite(List$x,load$x,text$x)) &     -- paints saved states
+
+draw3 == wtree $ fun(m,pic$m,				-- paints labels
+		     w,center$shelf(2)[pic$m,pic$w],
+		     g,center$shelf(2)[pic$m,pic$g],
+		     c,center$shelf(2)[pic$m,pic$c],
+		     x,text$x) 
 
 conjects: 
 
@@ -61,14 +53,11 @@ x `in` goods & [m,x] `subset` [m,w,c]
 
 terms: 
 
-insertL(c)[w,g]$goods <+>
+insertL(c)[w,g]$goods <+>			--> [w,g,c]
 
-triple[m,g,c] <+>
+triple[m,g,c] <+>				-- paint widgets
+map(save')[[m,w,g,c],[w,c]] <+> 
+map(load)[[m,w,g,c],[w,c]] <+>
 
-fun(x,ite(List$x,triple$x,x))[m,g,c] <+>
-
-save(triple[w,c],mkFile[w,c]) <+> 
-
-load$string[w,c] <+>
-
-branch$map(fun(left,save(triple$left,mkFile$left)))$states
+gggg(widg(tt(zz,widg(tt(pos 0 0,kk),load[w,c])),load[m,w,g,c])) 
+						-- paint tree

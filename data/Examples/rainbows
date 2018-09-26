@@ -1,0 +1,59 @@
+-- rainbows
+
+terms:
+
+    rainbow(1,pie(1,2,51,111),51) 				-- rainpie
+<+> rainbow(2,pie(2,2,26,111),26)				-- rainpie2
+<+> rainbow(3,pie(3,2,29,111),29)				-- rainpie3
+<+> rainbow(5,pie(5,2,27,111),27)				-- rainpie5
+<+> shuffle(fproduct(fun(z,rainbow(z)),				-- rainplait
+		     fun(z,rainbow(turt(T(45),z))),
+                     fun(z,rainbow(turt(R,z))),fun(z,rainbow(turt(T(135),z))))   
+           (plaitS(5,80,yellow,yellow,0)))	
+<+> shuffle(fproduct(fun(z,rainbow(z,102,0)),			-- rainplait2
+		     fun(z,rainbow(turt(T(45),z),102,0)),
+	             fun(z,rainbow(turt(R,z),102,0)),
+                     fun(z,rainbow(turt(T(135),z),102,0)))
+ 	   (plaitS(5,80,yellow,yellow,0)))
+<+> rainbow(plaitS(5,80,yellow,yellow,0),102,0)			-- rainplait3
+<+> rainbow(plaitS(5,30,yellow,yellow,0),102,0,120)		-- rainplait4
+<+> repeat(rotateC(rainbow(polyS(6,[33,11],yellow)))) 		-- rainpoly
+<+> shuffle(fproduct(fun(z,rainbow(z,102,33,0)),
+	             fun(z,rainbow(z,102, -33,0)),
+                     fun(z,rainbow(z,102,33,90)),fun(z,rainbow(z,102,33, -90))) 
+	   (polySF(12,[33,11],yellow)))				-- rainpoly2
+<+> shuffle(fproduct(fun(z,rainbow(z,102,33,0)),fun(z,rainbow(z,102, -33,0)),
+                     fun(z,rainbow(z,102,33,90)),fun(z,rainbow(z,102,33, -90)))
+	   (polyS(12,[33,11],yellow)))				-- rainpoly2-1
+<+> shuffle(fproduct(fun(z,rainbow(z,102,33)),fun(z,rainbow(z,102, -33))) 
+	   (polySF(24,[33,11],yellow)))				-- rainpoly3
+<+> shuffle(tup(fun(z,rainbow(z,102,33)),fun(z,rainbow(z,102, -33)))
+	   (polyS(24,[33,11],yellow)))				-- rainpoly3-1
+<+> rainbow(polySF(12,[33,22,11,22,33],yellow),102,80) 		-- rainpoly5
+<+> rainbow(polyR(102,[33]))					-- rainpolyR
+<+> rainbow(pytree(4),102,20,0)    				-- rainpyt
+<+> light(rainbow(pytree(4),102,20,0), -21)			-- rainpytd
+<+> light(rainbow(pytree(4),102,20,0),21)			-- rainpytl
+<+> turt(list(flipV(rainbow(pytree(4),102, -20)),0),		-- rainpyt2
+	J(150),B,list(flipH(flipV(rainbow(pytree(4),102, -20))),0))
+<+> light(turt(list(flipV(rainbow(pytree(4),102, -20)),0),	-- rainpyt2d
+	J(150),B,list(flipH(flipV(rainbow(pytree(4),102, -20))),0)), -21)
+<+> light(turt(list(flipV(rainbow(pytree(4),102, -20)),0),	-- rainpyt2l
+	J(150),B,list(flipH(flipV(rainbow(pytree(4),102, -20))),0)),21)
+<+> rainbow(pytree(7),51,15)					-- rainpyt3
+<+> repeat(rainbow(rect(42,42,yellow),102,42,0),		-- rainrect
+	   rainbow(rect(42,42,yellow),102,-42,0),
+           reverse(rainbow(rect(42,42,yellow),102,42,0)),
+           reverse(rainbow(rect(42,42,yellow),102,-42,0)))
+<+> rainbow(frame(rect(22,11,blue)),16)				-- rainrect2
+<+> repeat(light(rainbow(rect(42,42,yellow),102,42,0),21),	-- rainrectld
+           light(rainbow(rect(42,42,yellow),102,-42,0),21),
+      	   light(reverse(rainbow(rect(42,42,yellow),102,42,0)), -21),
+       	   light(reverse(rainbow(rect(42,42,yellow),102,-42,0)), -21))
+<+> repeat(rainbow(snow(3,22,green),51),			-- rainsnow
+           reverse(rainbow(snow(3,22,green),51)))
+<+> repeat(rainbow(snow(3,22,green),51,0),			-- rainsnow1
+	   reverse(rainbow(snow(3,22,green),51,0)))
+<+> (rainbow(snow(3,25,green),51,51),				-- rainsnow2
+     rainbow(snow(3,25,green),51, -51))
+<+> rainbow(snow(3,33,green),51)				-- rainsnow3

@@ -1,2 +1,0 @@
--- rainpoly3
-shuffle(fproduct(fun(z,rainbow(z,102,33)),fun(z,rainbow(z,102, -33)))(polySF(24,[33,11],yellow)))

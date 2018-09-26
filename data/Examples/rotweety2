@@ -1,6 +1,0 @@
--- rotweety2
-repeat(fproduct(rotateC,fun(z,rotateC(z, -10)))(turt(polyR(10,[188,167],green),turt(gif(TweetyS),
-                                                                                    J(66),
-                                                                                    gif(TweetyS),
-                                                                                    J(66),
-                                                                                    gif(TweetyS)))))

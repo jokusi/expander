@@ -1,3 +1,0 @@
--- FPROD
-tup(id,suc,fun(z,z+2),fun(z,z*(5+3)))
-(3)

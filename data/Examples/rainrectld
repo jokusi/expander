@@ -1,5 +1,0 @@
--- rainrectld
-repeat(light(rainbow(rect(42,42,yellow),102,42,0),21),
-       light(rainbow(rect(42,42,yellow),102,-42,0),21),
-       light(reverse(rainbow(rect(42,42,yellow),102,42,0)), -21),
-       light(reverse(rainbow(rect(42,42,yellow),102,-42,0)), -21))

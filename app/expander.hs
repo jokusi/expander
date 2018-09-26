@@ -1,7 +1,8 @@
 module Main where
 
-import Gui.Base
-import System.Expander
+import Base.OHaskell
+import Base.Gui
+import Base.System
 import Epaint
 import Ecom
 

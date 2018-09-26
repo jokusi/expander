@@ -43,7 +43,8 @@
         <child>
           <object class="GtkLabel" id="lab">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
+            <property name="can_focus">True</property>
+            <property name="selectable">True</property>
             <property name="angle">0.01</property>
             <style>
               <class name="bg_blue"/>

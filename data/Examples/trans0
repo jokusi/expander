@@ -30,7 +30,7 @@ axioms:
 			      color(index(st,states),length$states)$circ$11,
 			      frame$blue$text$st))
 
-& drawS == wtree $ fun(sat$st,frame$text$st,st,text$x)
+& drawS == wtree $ fun(sat$st,red$frame(5)$dark$green$text$st,st,text$st)
 
 conjects:  
 

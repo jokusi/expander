@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, July 2018
-                  Jos Kusiek, July 2018
+Copyright   : (c) Peter Padawitz, September 2018
+                  Jos Kusiek, September 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -12,31 +12,12 @@ Ecom contains the main program, the solver and the enumerator.
 -}
 module Ecom where
 
-import Gui.Base hiding (delay)
-import qualified Gui.Base as Gui (delay)
-import System.Expander
-import Gui.Canvas
+import Prelude ()
+import qualified Base.Haskell as Haskell
+import Base.System
 import Eterm
 import Epaint
 import Esolve
-
-import Control.Monad (void, msum, when, unless)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.Maybe (runMaybeT)
-import Data.IORef
-import Data.Char (toLower,isDigit)
-import qualified Data.Text as Text
-import Data.Maybe (isJust, fromJust, isNothing, fromMaybe)
-import Data.List (find)
-import Graphics.UI.Gtk
-  hiding (Point, Action, rectangle, Color, Circle, Fill, Arrow, get, set)
-import qualified Graphics.UI.Gtk as Gtk (get, set)
-import qualified Graphics.UI.Gtk as Gtk (Color(..))
-import System.CPUTime (getCPUTime)
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath ((</>),(<.>),takeExtension)
-
-import Prelude hiding ((++),concat)
 
 initialFont :: String
 initialFont = sansSerif ++ " 18"
@@ -189,14 +170,14 @@ command = concat [do symbol "AddAxioms"; axs <- list linearTerm
                   do symbol "UnifySubtrees"; return UnifySubtrees]
 
 linearTerm :: Parser (Term String)
-linearTerm =   msum [do symbol "F"; x <- token quoted; ts <- list linearTerm
-                        return $ F x ts,
-                     do symbol "V"; x <- token quoted; return $ V x]
+linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
+                          return $ F x ts,
+                       do symbol "V"; x <- token quoted; return $ V x]
 
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (August 19, 2018)"
+start = "Welcome to Expander3 (September 22, 2018)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -776,7 +757,7 @@ solver this solveRef enum paint = do
           addContextClass item "font12"
           item `on` menuItemActivated $ cmd
           menuShellAppend m item
-          item `Gtk.set` [ widgetVisible := True ]
+          item `gtkSet` [ widgetVisible := True ]
           return item
         mkButF m cmd file = mkBut m file $ cmd file
         
@@ -786,7 +767,7 @@ solver this solveRef enum paint = do
         buildSolve' :: Action
         buildSolve' = do
           icon <- iconPixbuf
-          win `Gtk.set` [ windowTitle := this
+          win `gtkSet` [ windowTitle := this
                     , windowIcon := Just icon
                     , windowDefaultWidth := 1200
                     , windowDefaultHeight := 820
@@ -797,18 +778,18 @@ solver this solveRef enum paint = do
           da `on` buttonPressEvent $ do
               button <- eventButton
               pt <- round2 <$> eventCoordinates
-              liftIO $ case button of
+              lift $ case button of
                   LeftButton -> catchSubtree pt
                   MiddleButton -> catchTree pt
                   RightButton -> catchNode pt
                   _ -> return ()
               return False
           da `on` motionNotifyEvent $ do
-              liftIO $ do
+              lift $ do
                   dw <- widgetGetParentWindow da
                   (_, x, y, modifier) <- drawWindowGetPointerPos dw
                   let pt = (x, y)
-                      button = find (`elem` [Button1, Button2, Button3])
+                      button = Haskell.find (`elem` [Button1, Button2, Button3])
                                     modifier
                   case button of
                       Just Button1 -> moveSubtree pt
@@ -818,7 +799,7 @@ solver this solveRef enum paint = do
               return False
           da `on` buttonReleaseEvent $ do
               button <- eventButton
-              liftIO $ case button of
+              lift $ case button of
                   LeftButton -> releaseSubtree
                   MiddleButton -> releaseTree
                   RightButton -> releaseNode
@@ -826,15 +807,15 @@ solver this solveRef enum paint = do
               return False
 
           let takeCurr = do
-                  curr1 <- truncate <$> (treeSlider `Gtk.get` rangeValue)
+                  curr1 <- truncate <$> (treeSlider `gtkGet` rangeValue)
                   setCurr newCurr curr1
           treeSlider `on` valueChanged $ takeCurr
           
           widgetOverrideFont ent
               =<< Just <$> fontDescriptionFromString (monospace ++ " 18")
           ent `on` keyPressEvent $ do
-              name <- Text.unpack <$> eventKeyName
-              liftIO $ case name of
+              name <- unpack <$> eventKeyName
+              lift $ case name of
                   "Up" -> getFileAnd $ loadText True
                   "Down" -> getFileAnd saveTree
                   "Right" -> applyClause False False False
@@ -850,10 +831,10 @@ solver this solveRef enum paint = do
           
           widgetOverrideFont lab =<< Just <$> labFont
           setBackground lab blueback
-          lab `Gtk.set` [ labelLabel := start, labelSelectable := True ]
+          lab `gtkSet` [ labelLabel := start ]
           lab `on` keyPressEvent $ do
-              name <- Text.unpack <$> eventKeyName
-              liftIO $ case name of
+              name <- unpack <$> eventKeyName
+              lift $ case name of
                   "c" -> copySubtrees
                   "i" -> replaceText
                   "l" -> replaceNodes
@@ -879,8 +860,8 @@ solver this solveRef enum paint = do
               =<< Just <$> fontDescriptionFromString "Courier 12"
 
           tedit `on` keyPressEvent $ do
-              name <- Text.unpack <$> eventKeyName
-              liftIO $ case name of
+              name <- unpack <$> eventKeyName
+              lift $ case name of
                   "Up" -> parseText
                   "Down" -> parseTree
                   _ -> return ()
@@ -889,7 +870,7 @@ solver this solveRef enum paint = do
           matchBut `on` buttonActivated $ setNarrow True False
           randomBut `on` buttonActivated $ setNarrow False True
           
-          narrowBut `Gtk.set` [ buttonLabel := "" ]
+          narrowBut `gtkSet` [ buttonLabel := "" ]
           narrowBut `on` buttonActivated $ narrow'
 
           backButSignal <- backBut `on` buttonActivated $ backProof
@@ -960,21 +941,21 @@ solver this solveRef enum paint = do
           
           
           fontBut <- getObject castToFontButton "fontBut"
-          fontBut `Gtk.set` [ fontButtonUseSize  := False
+          fontBut `gtkSet` [ fontButtonUseSize  := False
                         , fontButtonFontName := initialFont
                         ]
           fontBut `onFontSet` do
               fd <- fontDescriptionFromString
-                  =<< (fontBut `Gtk.get` fontButtonFontName :: IO String)
+                  =<< (fontBut `gtkGet` fontButtonFontName :: IO String)
               setFont fd
           
           Just size <- fontDescriptionGetSize =<< readIORef fontRef
-          fontSize `Gtk.set` [ rangeValue := size ]
+          fontSize `gtkSet` [ rangeValue := size ]
           fontSize `on` valueChanged $ setFontSize
               
           fontSize `on` buttonReleaseEvent $ do
               button <- eventButton
-              when (button == LeftButton) $ liftIO drawNewCurr
+              when (button == LeftButton) $ lift drawNewCurr
               return False
           
           graphMenu <- getMenu "graphMenu"
@@ -1180,13 +1161,13 @@ solver this solveRef enum paint = do
           
           horBut <- getObject castToScale "horBut"
           horBut `on` valueChanged $ do
-              val <- truncate <$> horBut `Gtk.get` rangeValue
+              val <- truncate <$> horBut `gtkGet` rangeValue
               blowHor val
               drawNewCurr
           
           verBut <- getObject castToScale "verBut"
           verBut `on` valueChanged $ do
-              val <- truncate <$> verBut `Gtk.get` rangeValue
+              val <- truncate <$> verBut `gtkGet` rangeValue
               blowVer val
               drawShrinked            
 
@@ -1194,7 +1175,7 @@ solver this solveRef enum paint = do
           containerAdd scrollCanv $ getDrawingArea canv
           changeCanvasBackground white
 
-          win `on` deleteEvent $ liftIO mainQuit >> return False
+          win `on` deleteEvent $ lift mainQuit >> return False
           widgetShowAll win
 
 -- end of buildSolve
@@ -1241,7 +1222,7 @@ solver this solveRef enum paint = do
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
-               str <- ent `Gtk.get` entryText
+               str <- ent `gtkGet` entryText
                sig <- getSignature
                trees <- readIORef treesRef
                curr <- readIORef currRef
@@ -1291,7 +1272,7 @@ solver this solveRef enum paint = do
         addSpec' :: Bool -> FilePath -> Action
         addSpec' b file = do
             checking <- readIORef checkingRef
-            unless checking $ do
+            when (not checking) $ do
                 when b $ modifyIORef specfilesRef $ \specfiles -> file:specfiles
                 str <- get
                 if null str then labRed' $ file ++ " is not a file name."
@@ -1358,7 +1339,7 @@ solver this solveRef enum paint = do
         -- 'enterPT''.
         addText :: [String] -> Action
         addText ls = do
-            buffer <- tedit `Gtk.get` textViewBuffer
+            buffer <- tedit `gtkGet` textViewBuffer
             end <- textBufferGetEndIter buffer
             textBufferInsert buffer end text
          where addNo :: Int -> [String] -> [String]
@@ -1391,7 +1372,7 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else do
-                str <- ent `Gtk.get` entryText
+                str <- ent `gtkGet` entryText
                 numberedExps <- readIORef numberedExpsRef
                 let (exps,b) = numberedExps
                 case parse nat str of
@@ -1718,7 +1699,7 @@ solver this solveRef enum paint = do
                     setTreesFrame []
                     setProof True True (applied True str) qs
                                            $ thApplied k
-            when (isNothing k) $ enterText' str
+            when (nothing k) $ enterText' str
             if isTaut th then do
                 writeIORef varCounterRef vc
                 f t redices ps [] vc
@@ -1832,7 +1813,7 @@ solver this solveRef enum paint = do
                         proofPtr <- readIORef proofPtrRef
                         changeState proofPtr ps
                     let n = searchback deriveStep $ take proofTPtr proofTerm
-                    writeIORef proofTPtrRef $ fromMaybe 0 n
+                    writeIORef proofTPtrRef $ Haskell.fromMaybe 0 n
         
         -- | Minimize solver window. Exported by public 'Epaint.Solver' method
         -- 'Epaint.backWin'.
@@ -1931,7 +1912,7 @@ solver this solveRef enum paint = do
         buildKripke mode = do
           trees <- readIORef treesRef
           when (null trees) $ enterTree' False $ V""
-          str <- ent `Gtk.get` entryText
+          str <- ent `gtkGet` entryText
           sig <- getSignature
           let noProcs = if (sig&isDefunct) "procs" 
                            then case parse pnat str of Just n -> n; _ -> 0
@@ -1976,7 +1957,7 @@ solver this solveRef enum paint = do
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
-               str <- ent `Gtk.get` entryText
+               str <- ent `gtkGet` entryText
                sig <- getSignature
                let finish start = do
                       trees <- readIORef treesRef
@@ -2024,8 +2005,8 @@ solver this solveRef enum paint = do
             writeIORef joinedRef False
             writeIORef wtreeRef False
             writeIORef matchingRef 0
-            matchBut `Gtk.set` [ buttonLabel := "match" ]
-            splitBut `Gtk.set` [ buttonLabel := "join" ]
+            matchBut `gtkSet` [ buttonLabel := "match" ]
+            splitBut `gtkSet` [ buttonLabel := "join" ]
             setBackground matchBut blueback
             mapM_ (`setBackground` blueback)
                 [deriveBut,narrowBut,simplButD,simplButB]
@@ -2050,13 +2031,13 @@ solver this solveRef enum paint = do
                 ctree <- readIORef ctreeRef
 
                 -- should be fine without: (x,y) <- adaptPos pt
-                case getSubtree (fromJust ctree) x y of
+                case getSubtree (get ctree) x y of
                     Just (p,cu) -> do
                         let z = root cu
                         if last treeposs <<= p then drawNode z cyan
                                                else drawNode z magenta
                         writeIORef nodeRef $ Just (z,p)
-                        canv `Gtk.set` [ canvasCursor := SbUpArrow ]
+                        canv `gtkSet` [ canvasCursor := SbUpArrow ]
                     _ -> return ()
         
         -- | Initialize the 'moveSubtree' action. Called if the left mouse
@@ -2082,7 +2063,7 @@ solver this solveRef enum paint = do
                             writeIORef penposRef $ Just pt
                             writeIORef subtreeRef $ Just cu
                             writeIORef suptreeRef $ Just ct
-                            canv `Gtk.set` [ canvasCursor := Hand2 ]
+                            canv `gtkSet` [ canvasCursor := Hand2 ]
                             drawSubtrees
                     _ -> when (notnull treeposs) $ do -- deselect last
                             setTreeposs $ Remove $ last treeposs
@@ -2108,19 +2089,19 @@ solver this solveRef enum paint = do
                         writeIORef penposRef $ Just pt
                         writeIORef subtreeRef $ Just cu
                         writeIORef suptreeRef $ Just $ replace0 ct p $ V a
-                        canv `Gtk.set` [ canvasCursor := Hand2 ]
+                        canv `gtkSet` [ canvasCursor := Hand2 ]
                     _ -> do            -- move tree
                         writeIORef isSubtreeRef $ Just False
                         writeIORef penposRef $ Just pt
-                        canv `Gtk.set` [ canvasCursor := Crosshair ]
+                        canv `gtkSet` [ canvasCursor := Crosshair ]
         
         -- | Changes the background of the canvas area.
         changeCanvasBackground :: Color -> Action
         changeCanvasBackground c@(RGB r g b) = do
             let f n = fromIntegral $ n * 256
                 (r', g' , b') = (f r, f g, f b)
-            canv `Gtk.set` [ canvasBackground := c ]
-            widgetModifyBg scrollCanv StateNormal $ Gtk.Color r' g' b'
+            canv `gtkSet` [ canvasBackground := c ]
+            widgetModifyBg scrollCanv StateNormal $ gtkColor r' g' b'
         
         -- | Used by 'releaseSubtree' and 'replaceText''.
         changeMode :: TermS -> Action
@@ -2137,9 +2118,9 @@ solver this solveRef enum paint = do
                 writeIORef treesRef [t]
                 modifyIORef counterRef $ \counter -> upd counter 't' 1
                 writeIORef currRef 0
-                treeSlider `Gtk.set` [ widgetSensitive := False ]
+                treeSlider `gtkSet` [ widgetSensitive := False ]
                 setCurrInPaint paint 0
-                termBut `Gtk.set` [ labelText := str ]
+                termBut `gtkSet` [ labelText := str ]
                 setNarrow False False
             else do
                 curr <- readIORef currRef
@@ -2179,8 +2160,8 @@ solver this solveRef enum paint = do
             setTreesFrame ps
             setSubst' (peSubstitution proofElem)
             labGreen' (peMsgL proofElem)
-            safeBut `Gtk.set` [ menuItemLabel := eqsButMsg $ not safe ]
-            splitBut `Gtk.set` [ buttonLabel := if joined then "split" else "join" ]
+            safeBut `gtkSet` [ menuItemLabel := eqsButMsg $ not safe ]
+            splitBut `gtkSet` [ buttonLabel := if joined then "split" else "join" ]
         
         -- | Used by 'backProof'.
         checkBackward :: Action
@@ -2348,26 +2329,26 @@ solver this solveRef enum paint = do
                 writeIORef matchTermRef [m]
                 writeIORef treepossRef [[]]
                 initialize [] $ showTree fast $ trees!!curr
-                quit `Gtk.set` [ buttonLabel := "stop check" ]
+                quit `gtkSet` [ buttonLabel := "stop check" ]
                 setBackground quit redback
                 replaceCommandButton quitSignalRef quit setDeriveMode
                 labGreen' $ proofLoaded file
-                unless checkingP $ setInterpreter' "tree"
+                when (not checkingP) $ setInterpreter' "tree"
                 runChecker False
               _ -> labRed' $ "There is no proof term in " ++ file ++ "."
         
         -- | Called by check proof options in tree menu.
         checkProofF :: Bool -> Action
         checkProofF inPainter = do
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             case words str of
                 [file,sp] -> do
                     pterm <- lookupLibs file
                     writeIORef checkingRef True
                     writeIORef checkingPRef inPainter
                     let newSpeed = parse pnat sp
-                    when (isJust newSpeed)
-                       $ writeIORef speedRef $ fromJust newSpeed
+                    when (just newSpeed)
+                       $ writeIORef speedRef $ get newSpeed
                     checkProof pterm file
                 [file] -> do
                     pterm <- lookupLibs file
@@ -2382,9 +2363,9 @@ solver this solveRef enum paint = do
             pterm <- getTextHere
             writeIORef checkingRef True
             writeIORef checkingPRef inPainter
-            sp <- ent `Gtk.get` entryText
+            sp <- ent `gtkGet` entryText
             let newSpeed = parse pnat sp
-            when (isJust newSpeed) $ writeIORef speedRef $ fromJust newSpeed
+            when (just newSpeed) $ writeIORef speedRef $ get newSpeed
             checkProof pterm "the text field"
         
         -- | Used by many 'Epaint.Solver' methods.
@@ -2395,8 +2376,8 @@ solver this solveRef enum paint = do
         -- 'enterPT''. Called by "remove text" button.
         clearText :: Action
         clearText = do
-            buffer <- tedit `Gtk.get` textViewBuffer
-            buffer `Gtk.set` [ textBufferText := "" ]
+            buffer <- tedit `gtkGet` textViewBuffer
+            buffer `gtkSet` [ textBufferText := "" ]
         
         -- | Used by 'checkForward'. Called by menu item /collapse level/
         -- from /graph/ menu.
@@ -2455,7 +2436,7 @@ solver this solveRef enum paint = do
         compressAxioms :: Bool -> Action
         compressAxioms b = do
             sig <- getSignature
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             trees <- readIORef treesRef
             treeposs <- readIORef treepossRef
             axioms <- readIORef axiomsRef
@@ -2482,7 +2463,7 @@ solver this solveRef enum paint = do
         compressClauses :: Action
         compressClauses = do
             sig <- getSignature
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             numberedExps <- readIORef numberedExpsRef
             let (exps,b) = numberedExps
             case parse intRanges str of
@@ -2621,7 +2602,8 @@ solver this solveRef enum paint = do
             mapM_ (mkButF m cmd) specfiles1
             mkBut m (if add then "from file (Return)" else "from file")
                     $ getFileAnd cmd
-            when add $ void $ mkBut m "from text field" $ addSpecWithBase ""
+            when add
+              $ Haskell.void $ mkBut m "from text field" $ addSpecWithBase ""
             subMenu <- mkSub m "more"
             mapM_ (mkButF subMenu cmd) specfiles2
             subMenu <- mkSub subMenu "more"
@@ -2671,7 +2653,7 @@ solver this solveRef enum paint = do
                     _ -> labRed' atomNotDecomposed
         
         delay :: Action -> Action
-        delay = Gui.delay 100
+        delay = gtkDelay 100
         
         -- | Used by 'drawPointer', 'drawShrinked', 'drawThis', 'moveTree' and
         -- 'setInterpreter'.
@@ -2688,8 +2670,8 @@ solver this solveRef enum paint = do
                 size@(_,h) = (max 100 (maxx+sizefix),max 100 (maxy+sizefix))
             writeIORef canvSizeRef size
             -- TODO check
-            when (h > 100) $ tedit `Gtk.set` [ widgetHeightRequest := 0]
-            canv `Gtk.set` [ canvasSize := size]
+            when (h > 100) $ tedit `gtkSet` [ widgetHeightRequest := 0]
+            canv `gtkSet` [ canvasSize := size]
             if null treeposs then drawTree ct ct black blue []
             else drawTree2 ct ct black blue red darkGreen [] treeposs
             -- when (notnull treeDir)
@@ -2705,7 +2687,7 @@ solver this solveRef enum paint = do
         -}
         drawArc :: Pos -> TermSP -> Color -> Action
         drawArc (x,y) ct color =
-            unless (isPos a) $ do
+            when (not $ isPos a) $ do
                 font <- readIORef fontRef
 
                 (above,below) <- getTextHeight canv font
@@ -2736,7 +2718,7 @@ solver this solveRef enum paint = do
         -- 'moveNode', 'moveSubtree' and 'catchNode'.
         drawNode :: (String, Pos) -> Color -> Action
         drawNode (a,p) c =
-            unless (isPos a) $ do
+            when (not $ isPos a) $ do
                 font <- readIORef fontRef
 
                 canvasText canv p textOpt{ textFont = Just font
@@ -2774,7 +2756,7 @@ solver this solveRef enum paint = do
             spread <- readIORef spreadRef
             ctree <- readIORef ctreeRef
             when (notnull trees)
-                $ draw $ shrinkTree (snd corner) (snd spread) $ fromJust ctree
+                $ draw $ shrinkTree (snd corner) (snd spread) $ get ctree
         
         -- | Used by 'releaseSubtree', 'setSubtrees' and 'catchSubtree'.
         drawSubtrees :: Action
@@ -2890,7 +2872,7 @@ solver this solveRef enum paint = do
         enterFormulas' :: [TermS] -> Action
         enterFormulas' fs = do
             checking <- readIORef checkingRef
-            unless checking $ do
+            when (not checking) $ do
                 clearText
                 addText $ lines $ showFactors fs
                 writeIORef numberedExpsRef (fs,True)
@@ -2899,7 +2881,7 @@ solver this solveRef enum paint = do
         enterTerms :: [TermS] -> Action
         enterTerms ts = do
             checking <- readIORef checkingRef
-            unless checking $ do
+            when (not checking) $ do
                 clearText
                 addText $ lines $ showSum ts
                 writeIORef numberedExpsRef (ts,False)
@@ -2913,7 +2895,7 @@ solver this solveRef enum paint = do
         enterText' :: String -> Action
         enterText' str = do
             checking <- readIORef checkingRef
-            unless checking $ do
+            when (not checking) $ do
                 clearText
                 addText $ lines str
                 writeIORef numberedExpsRef ([],True)
@@ -2946,7 +2928,7 @@ solver this solveRef enum paint = do
             setTime
             writeIORef matchingRef 0
             matching <- readIORef matchingRef
-            matchBut `Gtk.set` [ buttonLabel := "match" ]
+            matchBut `gtkSet` [ buttonLabel := "match" ]
             writeIORef formulaRef b
             writeIORef treeModeRef "tree"
             writeIORef treesRef [t]
@@ -2989,7 +2971,7 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else do
-                limit <- ent `Gtk.get` entryText
+                limit <- ent `gtkGet` entryText
                 expandTree' b $ case parse pnat limit of Just n -> n; _ -> 0
         
         -- | Used by 'expandTree' and 'checkForward'.
@@ -3090,7 +3072,7 @@ solver this solveRef enum paint = do
                 when (proofTPtr < lg) $ do
                     let n = search deriveStep $ drop proofTPtr proofTerm
                     modifyIORef proofTPtrRef $ \proofTPtr
-                        -> if isJust n then proofTPtr + fromJust n+1 else lg
+                        -> if just n then proofTPtr + get n+1 else lg
         
         -- | Called by /generalize/ menu item
         -- from /transform selection/ menu.
@@ -3107,7 +3089,7 @@ solver this solveRef enum paint = do
                 sig <- getSignature
                 if isTerm sig cl then labRed' "Select a formula!"
                 else do
-                    str <- ent `Gtk.get` entryText
+                    str <- ent `gtkGet` entryText
                     numberedExps <- readIORef numberedExpsRef
                     let (exps,b) = numberedExps
                     case parse intRanges str of
@@ -3145,13 +3127,13 @@ solver this solveRef enum paint = do
         -- Get string from entry field ('ent'). Exported by public
         -- 'Epaint.Solver' method 'Epaint.getEntry'.
         getEntry' :: Request String
-        getEntry' = ent `Gtk.get` entryText
+        getEntry' = ent `gtkGet` entryText
         
         -- | Apply action @act@ on filename entered in entry field 'ent'. Used
         -- by all load and store operation on files.
         getFileAnd :: (String -> Action) -> Action
         getFileAnd act = do -- Note [Filechooser]
-            file <- ent `Gtk.get` entryText
+            file <- ent `gtkGet` entryText
             if null file then labMag "Enter a file name!" else act file
         
         {- Note [Filechooser]
@@ -3167,27 +3149,27 @@ solver this solveRef enum paint = do
         getFont' = readIORef fontRef
         
         -- | Used by 'showSubtreePicts' and 'showTreePicts'.
-        getInterpreterT = do
+        getInterpreter = do
           sig <- getSignature
           picEval <- readIORef picEvalRef
           return $ case picEval of 
-              "tree"               -> widgetTreeT
-              "widgets"            -> searchPicT widgetsT
-              "overlay"            -> searchPicT widgetsT
-              "matrices"           -> searchPicT matrixT
-              "matrix solution"    -> solPicT sig matrixT
-              "linear equations"   -> linearEqsT
-              "level partition"    -> searchPicT (partitionT 0)
-              "preord partition"   -> searchPicT (partitionT 1)
-              "heap partition"     -> searchPicT (partitionT 2)
-              "hill partition"     -> searchPicT (partitionT 3)
-              "alignment"          -> searchPicT alignmentT
-              "palindrome"         -> searchPicT alignmentT
-              _                    -> searchPicT dissectionT
+                        "tree"               -> widgetTree
+                        "widgets"            -> searchPic (widgets black)
+                        "overlay"            -> searchPic (widgets black)
+                        "matrices"           -> searchPic matrix
+                        "matrix solution"    -> solPic sig matrix
+                        "linear equations"   -> linearEqs
+                        "level partition"    -> searchPic (partition 0)
+                        "preord partition"   -> searchPic (partition 1)
+                        "heap partition"     -> searchPic (partition 2)
+                        "hill partition"     -> searchPic (partition 3)
+                        "alignment"          -> searchPic alignment
+                        "palindrome"         -> searchPic alignment
+                        _                    -> searchPic dissection
         
         -- | Get value of 'treeSize' scale. Used by 'drawThis'.
         getMaxHeap :: Request Int
-        getMaxHeap = truncate <$> (treeSize `Gtk.get` rangeValue)
+        getMaxHeap = truncate <$> (treeSize `gtkGet` rangeValue)
         
         getPicNo' = readIORef picNoRef
 
@@ -3205,10 +3187,10 @@ solver this solveRef enum paint = do
             return $ let
               isPred'       = (`elem` ps)  ||| projection
               isCopred'     = (`elem` cps) ||| projection
-              isConstruct'  = (`elem` cs)  ||| isJust . parse int
-                              ||| isJust . parse real
-                              ||| isJust . parse quoted
-                              ||| isJust . parse (strNat "inj")
+              isConstruct'  = (`elem` cs)  ||| just . parse int
+                              ||| just . parse real
+                              ||| just . parse quoted
+                              ||| just . parse (strNat "inj")
               isDefunct'    = (`elem` ds) ||| projection
               isFovar'      = (`elem` fs) . base
               isHovar'      = (`elem` (map fst hs)) . base
@@ -3256,8 +3238,8 @@ solver this solveRef enum paint = do
         -- by public 'Epaint.Solver' method 'Epaint.getText'.
         getTextHere :: Request String
         getTextHere = do 
-          buffer <- tedit `Gtk.get` textViewBuffer
-          strs <- lines <$> buffer `Gtk.get` textBufferText
+          buffer <- tedit `gtkGet` textViewBuffer
+          strs <- lines <$> buffer `gtkGet` textBufferText
           return $ removeDot $ unlines $ map (removeCommentL . f) strs
           where f (' ':' ':x:'>':str) | isDigit x           = str
                 f (' ':x:y:'>':str)   | all isDigit [x,y]   = str
@@ -3284,7 +3266,7 @@ solver this solveRef enum paint = do
                 drawCurr'
                 modifyIORef showStateRef not
                 showState <- readIORef showStateRef
-                hideBut `Gtk.set`
+                hideBut `gtkSet`
                     [ buttonLabel := if showState then "hide" else "show" ]
         
         -- | Minimize solver window. Exported by public 'Epaint.Solver' method
@@ -3316,14 +3298,14 @@ solver this solveRef enum paint = do
         -- buttons /entry-1/ ('minusBut') and /entry+1/ ('plusBut').
         incrEntry :: Bool -> Action
         incrEntry b = do
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             let k = parse nat str; f = entrySetText ent . show
             if b then case k of
                 Just n -> f $ n+1
-                _ -> ent `Gtk.set` [ entryText := "0" ]
+                _ -> ent `gtkSet` [ entryText := "0" ]
             else case k of
                 Just n | n > 0 -> f $ n-1
-                _ -> ent `Gtk.set` [ entryText := "" ]
+                _ -> ent `gtkSet` [ entryText := "" ]
         
         -- | Used by all menu items /[show graph].. in painter/ and
         -- /[show matrix].. of (...)/ from /graph/ menu.
@@ -3394,7 +3376,7 @@ solver this solveRef enum paint = do
             if null trees then labBlue' start
             else do
                 sig <- getSignature
-                str <- ent `Gtk.get` entryText
+                str <- ent `gtkGet` entryText
                 let str' = removeComment 0 str
                 case parseE (term sig) str' of
                     Correct t -> do
@@ -3411,7 +3393,7 @@ solver this solveRef enum paint = do
         kleeneAxioms :: Action
         kleeneAxioms = do
             sig <- getSignature
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             trees <- readIORef treesRef
             treeposs <- readIORef treepossRef
             curr <- readIORef currRef
@@ -3451,7 +3433,7 @@ solver this solveRef enum paint = do
         -- and  'labRed''.
         labColor :: String -> Background -> Action
         labColor str col = do
-            lab `Gtk.set` [ labelText := str ]
+            lab `gtkSet` [ labelText := str ]
             setBackground lab col
         
         -- | Used by 'checkBackward', 'narrowPar', 'narrowSubtree', 'setCurr',
@@ -3650,7 +3632,7 @@ solver this solveRef enum paint = do
                 case node of Just (z,p) -> do f p z red black; return ()
                              _ -> return ()
                 -- (x,y) <- adaptPos pt
-                case getSubtree (fromJust ctree) x y of
+                case getSubtree (get ctree) x y of
                     Just (p,cu) -> do
                         let a = root cu
                         f p a cyan magenta
@@ -3673,27 +3655,27 @@ solver this solveRef enum paint = do
             isSubtree <- readIORef isSubtreeRef
             penpos <- readIORef penposRef
 
-            when (isJust isSubtree && isJust penpos) $ do
+            when (just isSubtree && just penpos) $ do
                 Just ct <- readIORef ctreeRef
                 Just cu <- readIORef subtreeRef
                 treeposs <- readIORef treepossRef
                 firstMove <- readIORef firstMoveRef
                 node <- readIORef nodeRef
 
-                let (x0,y0) = fromJust penpos
+                let (x0,y0) = get penpos
                     cu' = transTree2 (x1-x0,y1-y0) cu
                     p = last treeposs
-                if firstMove && not (fromJust isSubtree)
+                if firstMove && not (get isSubtree)
                     then drawTree cu ct black blue p
                     else drawTree cu ct white white p
                 writeIORef firstMoveRef False
                 writeIORef penposRef $ Just pt
                 writeIORef subtreeRef $ Just cu'
-                when (isJust node) $ drawNode (fst $ fromJust node) black
+                when (just node) $ drawNode (fst $ get node) black
                 drawTree cu' ct red darkGreen p
                 -- (x,y) <- adaptPos pt
                 suptree <- readIORef suptreeRef
-                case getSubtree (fromJust suptree) x1 y1 of
+                case getSubtree (get suptree) x1 y1 of
                     Just (p,cu) -> do
                         let a = root cu
                         drawNode a magenta
@@ -3720,12 +3702,12 @@ solver this solveRef enum paint = do
                 Just _ -> do
                     penpos <- readIORef penposRef
 
-                    when (isJust penpos) $ do
+                    when (just penpos) $ do
                         ctree <- readIORef ctreeRef
 
-                        let (x0,y0) = fromJust penpos
+                        let (x0,y0) = get penpos
                             q@(i,j) = (x-x0,y-y0)
-                        draw $ transTree2 q $ fromJust ctree
+                        draw $ transTree2 q $ get ctree
                         modifyIORef cornerRef
                             $ \corner -> (fst corner+i,snd corner+j)
                         writeIORef penposRef $ Just p
@@ -3739,7 +3721,7 @@ solver this solveRef enum paint = do
 
             if null trees then labBlue' start
             else do
-                str <- ent `Gtk.get` entryText
+                str <- ent `gtkGet` entryText
                 case parse pnat str of
                     Just limit -> narrow'' limit True
                     _ -> case parse pnatSecs str of
@@ -4053,7 +4035,7 @@ solver this solveRef enum paint = do
         -- by pressing @n@ on left label ('lab').
         negateAxioms :: Action
         negateAxioms = do
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             sig <- getSignature
             trees <- readIORef treesRef
             treeposs <- readIORef treepossRef
@@ -4157,11 +4139,11 @@ solver this solveRef enum paint = do
         parseText = do
             numberedExps <- readIORef numberedExpsRef
 
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             let (exps, b) = numberedExps
             case parse intRanges str of
                 Just ns | all (< length exps) ns -> do
-                    ent `Gtk.set` [ entryText := "" ]
+                    ent `gtkSet` [ entryText := "" ]
                     let exps' = map (exps !!) ns
                     if b then enterTree' True $ mkConjunct exps'
                          else enterTree' False $ mkSum exps'
@@ -4211,7 +4193,7 @@ solver this solveRef enum paint = do
                         then do enter b "" [u]; labGreen' treeParsed
                         else if all (== b) $ map (isFormula sig) us
                                 then do
-                                    x <- ent `Gtk.get` entryText
+                                    x <- ent `gtkGet` entryText
                                     enter b x $ addNatsToPoss ts
                                     labGreen' $ init treeParsed ++ "s."
                                 else labMag "Select either formulas or terms!"
@@ -4226,7 +4208,7 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else do
-                str <- ent `Gtk.get` entryText
+                str <- ent `gtkGet` entryText
                 if null str then labRed' "Enter labels!"
                 else do
                     curr <- readIORef currRef
@@ -4244,7 +4226,7 @@ solver this solveRef enum paint = do
         -- lable ('lab').
         randomTree :: Action
         randomTree = do
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             if null str then labRed' "Enter labels!"
             else do
                 rand <- readIORef randRef
@@ -4326,7 +4308,7 @@ solver this solveRef enum paint = do
                             else labRed' dangling
                         drawCurr'
                         writeIORef nodeRef Nothing
-                        canv `Gtk.set` [ canvasCursor := LeftPtr ]
+                        canv `gtkSet` [ canvasCursor := LeftPtr ]
                     _ -> labMag "Select a non-root position!"
         
         -- | Finishes the 'moveSubtree' action. Called on left mouse button
@@ -4335,7 +4317,7 @@ solver this solveRef enum paint = do
         releaseSubtree = do
             isSubtree <- readIORef isSubtreeRef
 
-            when (isJust isSubtree) $ do
+            when (just isSubtree) $ do
                 node <- readIORef nodeRef
                 treeposs <- readIORef treepossRef
                 subtree <- readIORef subtreeRef
@@ -4343,7 +4325,7 @@ solver this solveRef enum paint = do
 
                 let source = last treeposs
                     finish = do
-                        drawTree (fromJust subtree) (fromJust ctree)
+                        drawTree (get subtree) (get ctree)
                             white white source
                         drawSubtrees
                 case node of
@@ -4398,7 +4380,7 @@ solver this solveRef enum paint = do
                     resetCatch
                 Just False -> do
                     writeIORef penposRef Nothing
-                    canv `Gtk.set` [canvasCursor := LeftPtr ]
+                    canv `gtkSet` [canvasCursor := LeftPtr ]
                     resetCatch
                 _ -> return ()
         
@@ -4406,7 +4388,7 @@ solver this solveRef enum paint = do
         -- /axioms/ menu.
         removeAxiomsFor :: Action
         removeAxiomsFor = do
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             trees <- readIORef treesRef
             treeposs <- readIORef treepossRef
             axioms <- readIORef axiomsRef
@@ -4428,7 +4410,7 @@ solver this solveRef enum paint = do
         -- and /[show conjects].. in entry field/ from menu /theorems/.
         removeClauses :: Int -> Action
         removeClauses n = do
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             numberedExps <- readIORef numberedExpsRef
             let (exps,_) = numberedExps
             case parse intRanges str of
@@ -4652,7 +4634,7 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else do
-                str <- ent `Gtk.get` entryText
+                str <- ent `gtkGet` entryText
                 renameVar' str
         
         -- | Used by 'checkForward' and 'renameVar'.
@@ -4689,7 +4671,7 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else do
-                x <- ent `Gtk.get` entryText
+                x <- ent `gtkGet` entryText
                 if null x then labRed' "The entry field is empty."
                 else replaceNodes' x
         
@@ -4740,7 +4722,7 @@ solver this solveRef enum paint = do
 
             let t = trees!!curr
                 x = label t target
-            unless (x == root u)
+            when (x /= root u)
                 $ case isAny t x target of
                     Just q | polarity True t q -> replaceVar x u q
                     _ -> case isAll t x target of
@@ -4827,8 +4809,8 @@ solver this solveRef enum paint = do
                 F z [v] = getSubterm t p
                 quant:xs = words z
                 zs = xs `join` [ x | x <- frees sig u `minus` frees sig t
-                               , isNothing $ isAny t x p
-                               , isNothing $ isAll t x p
+                               , nothing $ isAny t x p
+                               , nothing $ isAll t x p
                                ]
                 t1 = replace t p $ F (unwords $ quant:zs) [v>>>for u x]
             maybeSimplify sig t1
@@ -4851,7 +4833,7 @@ solver this solveRef enum paint = do
             writeIORef suptreeRef Nothing
             writeIORef isSubtreeRef Nothing
             writeIORef firstMoveRef True
-            canv `Gtk.set` [ canvasCursor := LeftPtr ]
+            canv `gtkSet` [ canvasCursor := LeftPtr ]
         
         -- | Used by 'checkForward'. Called by menu item /reverse/ from menu
         -- /transform selection/.
@@ -4929,9 +4911,9 @@ solver this solveRef enum paint = do
         runChecker :: Bool -> Action
         runChecker b = do
             when b $ do
-              sp <- ent `Gtk.get` entryText
+              sp <- ent `gtkGet` entryText
               let newSpeed = parse pnat sp
-              when (isJust newSpeed) $ writeIORef speedRef $ fromJust newSpeed
+              when (just newSpeed) $ writeIORef speedRef $ get newSpeed
             skipOpts backBut backButSignalRef
             skipOpts forwBut forwButSignalRef
             runOpts deriveBut deriveButSignalRef
@@ -4946,11 +4928,11 @@ solver this solveRef enum paint = do
             startRun runProofP speed
             writeIORef checkersRef [runProof,runProofP]
             where skipOpts btn cmd = do
-                    btn `Gtk.set` [ buttonLabel := "" ]
+                    btn `gtkSet` [ buttonLabel := "" ]
                     setBackground btn redback
                     replaceCommandButton cmd btn $ return ()
                   runOpts btn cmd = do
-                    btn `Gtk.set` [ buttonLabel := "stop run" ]
+                    btn `gtkSet` [ buttonLabel := "stop run" ]
                     setBackground btn redback
                     replaceCommandButton cmd btn stopRun'
         
@@ -4963,7 +4945,7 @@ solver this solveRef enum paint = do
         -}
         saveFile :: FilePath -> String -> Action
         saveFile file str = do
-            createDirectoryIfMissing True <$> home
+            mkDir <$> home
             path <- userLib file
             writeFile path $ "-- " ++ file ++'\n':str
         
@@ -4972,7 +4954,7 @@ solver this solveRef enum paint = do
         saveGraph dir = do
           dirPath <- pixpath dir
           let f n = do writeIORef currRef n
-                       treeSlider `Gtk.set` [rangeValue := fromIntegral n]
+                       treeSlider `gtkSet` [rangeValue := fromIntegral n]
                        clearTreeposs
                        drawCurr'
                        delay $ saveGraphDH True canv dir dirPath n
@@ -4984,7 +4966,7 @@ solver this solveRef enum paint = do
                                  let suffix = drop (length dir-4) dir
                                  dirPath <- pixpath dir -- ohaskell where
                                  file <- savePic suffix canv dirPath
-                                 lab2 `Gtk.set` [labelText := saved "tree" file]
+                                 lab2 `gtkSet` [labelText := saved "tree" file]
                         _   -> do
                                renewDir dirPath
                                saver <- runner2 f $ length trees-1
@@ -4997,7 +4979,7 @@ solver this solveRef enum paint = do
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
-               str <- ent `Gtk.get` entryText
+               str <- ent `gtkGet` entryText
                case parse nat str of Just n -> writeIORef picNoRef n
                                      _ -> return ()
                picNo <- readIORef picNoRef
@@ -5015,7 +4997,7 @@ solver this solveRef enum paint = do
         saveGraphDH b screen dir dirPath n = do
           mkHtml screen dir dirPath n
           let pic = if b then "tree" else "graph in the painter"
-          lab2 `Gtk.set` [ labelText := saved pic $ mkFile dirPath n]
+          lab2 `gtkSet` [ labelText := saved pic $ mkFile dirPath n]
         
         -- | Called by menu item /save proof to file/ from tree menu or by
         -- pressing key @s@ while left label ('lab') is active.
@@ -5028,7 +5010,7 @@ solver this solveRef enum paint = do
                 solPositions <- readIORef solPositionsRef
                 proofTerm <- readIORef proofTermRef
                 -- TODO use filechooser widget instead.
-                file <- ent `Gtk.get` entryText
+                file <- ent `gtkGet` entryText
                 filePath <- userLib file
                 let pfile = filePath ++ "P"
                     tfile = filePath ++ "T"
@@ -5077,7 +5059,7 @@ solver this solveRef enum paint = do
         setAdmitted block = do
             trees <- readIORef treesRef
             treeposs <- readIORef treepossRef
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             curr <- readIORef currRef
             setAdmitted' block $ if null trees || null treeposs then words str
                                  else map (label $ trees!!curr) treeposs
@@ -5100,9 +5082,9 @@ solver this solveRef enum paint = do
         setCollapse = do
             modifyIORef collSimplsRef not
             collSimpls <- readIORef collSimplsRef
-            simplButD `Gtk.set`[ buttonLabel := if collSimpls then "simplifyDC"
+            simplButD `gtkSet`[ buttonLabel := if collSimpls then "simplifyDC"
                                             else "simplifyD"]
-            simplButB `Gtk.set` [ buttonLabel :=  if collSimpls then "simplifyBC"
+            simplButB `gtkSet` [ buttonLabel :=  if collSimpls then "simplifyBC"
                                               else "simplifyB"]
         
         -- | Used by 'buildSolve'', 'checkForward', 'incrCurr',
@@ -5113,7 +5095,7 @@ solver this solveRef enum paint = do
 
             if n /= curr then do
                 writeIORef currRef n
-                treeSlider `Gtk.set` [ rangeValue := fromIntegral n ]
+                treeSlider `gtkSet` [ rangeValue := fromIntegral n ]
                 setCurrInPaint paint n
                 setProofTerm $ SetCurr msg n
                 setProof True False "MOVED" [] msg
@@ -5142,15 +5124,15 @@ solver this solveRef enum paint = do
                 mapM_ stopRun0 checkers
                 writeIORef checkingRef False
                 writeIORef speedRef 500
-                backBut `Gtk.set` [ buttonLabel := "<---" ]
+                backBut `gtkSet` [ buttonLabel := "<---" ]
                 replaceCommandButton backButSignalRef backBut backProof
-                forwBut `Gtk.set` [ buttonLabel := "--->" ]
+                forwBut `gtkSet` [ buttonLabel := "--->" ]
                 replaceCommandButton forwButSignalRef forwBut forwProof'
                 case (simplifying,refuting) of (True,True)  -> dsr
                                                (True,_)     -> ds
                                                (False,True) -> dr
                                                _ -> set' "derive"
-                quit `Gtk.set` [ buttonLabel := "quit" ]
+                quit `gtkSet` [ buttonLabel := "quit" ]
                 replaceCommandButton quitSignalRef quit mainQuit
                 setNarrow False False
                 setButtons paint (f "narrow/rewrite" narrow')
@@ -5174,13 +5156,13 @@ solver this solveRef enum paint = do
                 refuting <- readIORef refutingRef
                 setProofTerm $ DeriveMode simplifying refuting
          where f str act btn cmd = do
-                    btn `Gtk.set` [ buttonLabel := str ]
+                    btn `gtkSet` [ buttonLabel := str ]
                     replaceCommandButton cmd btn $ do
                         remote paint
                         act
                         showTreePicts
                set' str = do
-                    deriveBut `Gtk.set` [ buttonLabel := str ]
+                    deriveBut `gtkSet` [ buttonLabel := str ]
                     replaceCommandButton deriveButSignalRef
                         deriveBut setDeriveMode
                ds = set' "derive & simplify"
@@ -5198,7 +5180,7 @@ solver this solveRef enum paint = do
             size <- fontDescriptionGetSize fo
             -- By changing the font size slider, setFontSize is called, which
             -- handles the font changing of the GUI elements.
-            when (isJust size) $ fontSize `Gtk.set` [ rangeValue := fromJust size]
+            when (just size) $ fontSize `gtkSet` [ rangeValue := get size]
             trees <- readIORef treesRef
             when (notnull trees) drawCurr'
         
@@ -5210,7 +5192,7 @@ solver this solveRef enum paint = do
         setFontSize :: Action
         setFontSize = do
             fo <- readIORef fontRef
-            size <- fontSize `Gtk.get` rangeValue
+            size <- fontSize `gtkGet` rangeValue
             fontDescriptionSetSize fo size
             fo' <- fontDescriptionCopy fo
             fontDescriptionSetFamily fo' monospace
@@ -5244,10 +5226,10 @@ solver this solveRef enum paint = do
             sig <- getSignature
             writeIORef wtreeRef $ take 4 eval == "tree"
             writeIORef picEvalRef eval
-            interpreterLabel `Gtk.set` [ labelLabel := eval ]
+            interpreterLabel `gtkSet` [ labelLabel := eval ]
             spread <- readIORef spreadRef
             setEval paint eval spread
-            draw <- ent `Gtk.get` entryText
+            draw <- ent `gtkGet` entryText
             writeIORef drawFunRef
               $  if draw == "text" || (sig&isDefunct) draw then draw else ""
             drawFun <- readIORef drawFunRef
@@ -5266,9 +5248,9 @@ solver this solveRef enum paint = do
           let nar = formula || notnull treeposs &&
                           treeposs `subset` boolPositions sig (trees!!curr)
               set' str1 str2 = do
-                matchBut `Gtk.set` [ buttonLabel := str1 ]
-                randomBut `Gtk.set` [ buttonLabel := str2 ]
-                narrowBut `Gtk.set`
+                matchBut `gtkSet` [ buttonLabel := str1 ]
+                randomBut `gtkSet` [ buttonLabel := str2 ]
+                narrowBut `gtkSet`
                   [ buttonLabel := if nar then "narrow" else "rewrite"]
           when (chgMatch && nar) $ do
               modifyIORef matchingRef
@@ -5301,10 +5283,10 @@ solver this solveRef enum paint = do
 
         setPicDir :: Bool -> Action
         setPicDir b = do
-          dir <- ent `Gtk.get` entryText
+          dir <- ent `gtkGet` entryText
           writeIORef picDirRef $ if b || null dir then "picDir" else dir
           picDir <- readIORef picDirRef
-          lab2 `Gtk.set` [ labelText := picDir ++ " is the current directory"]
+          lab2 `gtkSet` [ labelText := picDir ++ " is the current directory"]
           pp <- pixpath picDir
           mkDir pp
           writeIORef picNoRef 0
@@ -5416,7 +5398,7 @@ solver this solveRef enum paint = do
             proofTPtr <- readIORef proofTPtrRef
             proofTerm <- readIORef proofTermRef
 
-            unless checking $ do
+            when (not checking) $ do
                 let pt = if proofTPtr+1 < length proofTerm
                                then take proofTPtr proofTerm else proofTerm
                 writeIORef proofTermRef $ addStep pt step
@@ -5454,12 +5436,12 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else do
-                str <- ent `Gtk.get` entryText
+                str <- ent `gtkGet` entryText
                 curr <- readIORef currRef
                 let f = natToLabel $ posTree [] $ trees!!curr
                 case parse intRanges str of
-                    Just ns | all (isJust . f) ns -> do
-                        let qs = map fromJust $ map f ns
+                    Just ns | all (just . f) ns -> do
+                        let qs = map get $ map f ns
                         treeposs <- readIORef treepossRef
                         setTreeposs $ Add $ qs `minus` treeposs
                         drawSubtrees
@@ -5510,11 +5492,11 @@ solver this solveRef enum paint = do
                 str = case treeMode of "tree" -> formString formula
                                        _ -> show lg ++ ' ':treeMode ++ "s"
             rangeSetRange treeSlider 0 $ fromIntegral (lg-1)
-            treeSlider `Gtk.set` [ widgetSensitive := True
+            treeSlider `gtkSet` [ widgetSensitive := True
                              , rangeValue := fromIntegral curr
                              ]
             setCurrInPaint paint curr
-            termBut `Gtk.set` [ labelText := str ]
+            termBut `gtkSet` [ labelText := str ]
             setTreeposs $ Replace ps
             drawCurr'
         
@@ -5635,7 +5617,7 @@ solver this solveRef enum paint = do
         -- pressing button @x@ while left label ('lab') is active.
         showAxiomsFor :: Action
         showAxiomsFor = do
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             treeposs <- readIORef treepossRef
             trees <- readIORef treesRef
             curr <- readIORef currRef
@@ -5688,7 +5670,7 @@ solver this solveRef enum paint = do
                 writeIORef restoreRef True
                 curr <- readIORef currRef
                 ctree <- readIORef ctreeRef
-                drawThis (cTree (trees!!curr) $ fromJust ctree) [] ""
+                drawThis (cTree (trees!!curr) $ get ctree) [] ""
         
         -- | Called by menu item /cycle targets/ from menu /nodes/.
         showCycleTargets :: Action
@@ -5738,7 +5720,7 @@ solver this solveRef enum paint = do
               t = getSubterm1 (trees!!curr) p
               f = if null ps then id else drop $ length p
               is = [i | [i,1] <- map f ps]
-          pict <- runMaybeT $ matrixT sizes0 spread t
+          pict <- runT $ matrix sizes0 spread t
           let u = case m of 0 -> Hidden $ BoolMat sts sts
                                         $ deAssoc0 $ mkPairs sts sts (sig&trans)
                             1 -> Hidden $ BoolMat ats sts
@@ -5756,17 +5738,17 @@ solver this solveRef enum paint = do
                             _ -> case parseEqs t of
                                     Just eqs -> mat m $ eqsToGraph is eqs
                                     _ -> if just pict then t else mat m t
-          pict <- runMaybeT $ matrixT sizes0 spread u
+          pict <- runT $ matrix sizes0 spread u
           if m > 5 && null trees then labBlue' start
           else
-              if isNothing pict then labMag "The matrix is empty."
+              if nothing pict then labMag "The matrix is empty."
               else do
                   font <- readIORef fontRef
-                  sizes <- mkSizes canv font $ stringsInPict $ fromJust pict
+                  sizes <- mkSizes canv font $ stringsInPict $ get pict
                   fast <- readIORef fastRef
                   spread <- readIORef spreadRef
                   setEval paint "" spread
-                  Just pict <- runMaybeT $ matrixT sizes spread u
+                  Just pict <- runT $ matrix sizes spread u
                   curr <- readIORef currRef
                   callPaint paint [pict] [curr] False True curr "white"
           where labs' trips = mkSet [x | (_,x,_:_) <- trips]
@@ -5784,7 +5766,7 @@ solver this solveRef enum paint = do
             if null trees then labBlue' start
             else do
                 writeIORef restoreRef True
-                col <- ent `Gtk.get` entryText
+                col <- ent `gtkGet` entryText
                 curr <- readIORef currRef
                 treeposs <- readIORef treepossRef
                 let t = trees!!curr
@@ -5982,10 +5964,10 @@ solver this solveRef enum paint = do
         
         -- | Used by 'showPicts''.
         showSubtreePicts :: Action
-        showSubtreePicts = do                    -- without transformer:
+        showSubtreePicts = do
             sig <- getSignature
-            eval <- getInterpreterT              -- getInterpreter
-            str <- ent `Gtk.get` entryText
+            eval <- getInterpreter
+            str <- ent `gtkGet` entryText
             trees <- readIORef treesRef
             curr <- readIORef currRef
             treeposs <- readIORef treepossRef
@@ -5994,17 +5976,17 @@ solver this solveRef enum paint = do
             let t = trees!!curr
                 ts = applyDrawFun sig drawFun str $ map (closedSub t) treeposs
                 picts = map (eval sizes0 spread) ts
-            picts <- mapM runMaybeT picts        -- return ()
+            picts <- mapM runT picts
             font <- readIORef fontRef
             sizes <- mkSizes canv font
-                $ concatMap (stringsInPict . fromJust) $ getJust picts
+                $ concatMap (stringsInPict . get) $ getJust picts
             fast <- readIORef fastRef
             setTime
-            back <- ent `Gtk.get` entryText
+            back <- ent `gtkGet` entryText
             spread <- readIORef spreadRef
             let picts = map (eval sizes spread) ts
-            picts <- mapM runMaybeT picts     -- return ()
-            (paint&callPaint) [concatMap fromJust $ getJust picts] [] True True
+            picts <- mapM runT picts
+            (paint&callPaint) [concatMap get $ getJust picts] [] True True
                 curr back
         
         -- | Called by menu item /successors/ from menu /nodes/.
@@ -6065,7 +6047,7 @@ solver this solveRef enum paint = do
         -- /theorems/.
         showTheoremsFor :: Action
         showTheoremsFor = do
-            str <- ent `Gtk.get` entryText
+            str <- ent `gtkGet` entryText
             trees <- readIORef treesRef
             treeposs <- readIORef treepossRef
             curr <- readIORef currRef
@@ -6081,7 +6063,7 @@ solver this solveRef enum paint = do
         
         showTransOrKripke m = do
           sig <- getSignature
-          str <- ent `Gtk.get` entryText
+          str <- ent `gtkGet` entryText
           varCounter <- readIORef varCounterRef
           let [sts,ats,labs] = map (map showTerm0)
                                    [sig&states,sig&atoms,sig&labels]
@@ -6099,13 +6081,13 @@ solver this solveRef enum paint = do
                            drawFun <- readIORef drawFunRef
                            let u = head $ applyDrawFun sig drawFun str [t]
                            spread <- readIORef spreadRef
-                           pict <- (widgetTreeT sizes0 spread u)&runT
+                           pict <- (widgetTree sizes0 spread u)&runT
                            if nothing pict then labMag "The tree is empty."
                            else do
                                 font <- readIORef fontRef
                                 sizes <- mkSizes canv font $ stringsInPict $ get pict
                                 (paint&setEval) "tree" spread
-                                pict <- (widgetTreeT sizes spread u)&runT
+                                pict <- (widgetTree sizes spread u)&runT
                                 curr <- readIORef currRef
                                 (paint&callPaint) [get pict] [curr] False True
                                                              curr "white"
@@ -6131,26 +6113,26 @@ solver this solveRef enum paint = do
         showTreePicts :: Action
         showTreePicts = do                          -- without transformer:
             sig <- getSignature
-            eval <- getInterpreterT                 -- getInterpreter
-            str <- ent `Gtk.get` entryText
+            eval <- getInterpreter                 -- getInterpreter
+            str <- ent `gtkGet` entryText
             drawFun <- readIORef drawFunRef
             trees <- readIORef treesRef
             spread <- readIORef spreadRef
             let ts = applyDrawFun sig drawFun str trees
                 picts = map (eval sizes0 spread) ts
-            picts <- mapM runMaybeT picts           -- return ()
+            picts <- mapM runT picts           -- return ()
             font <- readIORef fontRef
             sizes <- mkSizes canv font
-              $ concatMap (stringsInPict . fromJust) $ getJust picts
+              $ concatMap (stringsInPict . get) $ getJust picts
             fast <- readIORef fastRef
             setTime
-            back <- ent `Gtk.get` entryText
+            back <- ent `gtkGet` entryText
             checkingP <- readIORef checkingPRef
             checking <- readIORef checkingRef
             curr <- readIORef currRef
             let picts = map (eval sizes spread) ts
-            picts <- mapM runMaybeT picts           -- return ()
-            let picts' = map fromJust $ getJust picts
+            picts <- mapM runT picts           -- return ()
+            let picts' = map get $ getJust picts
             -- writeFile (userLib "testPic") $ show picts'
             (paint&callPaint) picts' (indices_ ts) False 
                 (checkingP || not checking) curr back
@@ -6175,7 +6157,7 @@ solver this solveRef enum paint = do
 
             if null trees then labBlue' start
             else do
-                str <- ent `Gtk.get` entryText
+                str <- ent `gtkGet` entryText
                 let act = simplify'' depthfirst
                 case parse pnat str of Just limit -> act limit True
                                        _ -> act 100 False
@@ -6270,7 +6252,7 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else do
-                str <- ent `Gtk.get` entryText
+                str <- ent `gtkGet` entryText
                 (exps,b) <- readIORef numberedExpsRef
                 case parse nat str of
                     k@(Just n) | n < length exps ->
@@ -6298,7 +6280,7 @@ solver this solveRef enum paint = do
                 setProofTerm SplitTree
                 if joined then do
                     writeIORef joinedRef False
-                    splitBut `Gtk.set` [ buttonLabel := "join" ]
+                    splitBut `gtkSet` [ buttonLabel := "join" ]
                     makeTrees sig
                     setTreesFrame []
                     setProof True False "SPLIT" []
@@ -6308,7 +6290,7 @@ solver this solveRef enum paint = do
                     formula <- readIORef formulaRef
 
                     writeIORef joinedRef True
-                    splitBut `Gtk.set` [ buttonLabel := "split" ]
+                    splitBut `gtkSet` [ buttonLabel := "split" ]
                     let t = joinTrees treeMode trees
                     writeIORef treeModeRef "tree"
                     writeIORef treesRef [t]
@@ -6325,7 +6307,7 @@ solver this solveRef enum paint = do
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
-               str <- ent `Gtk.get` entryText
+               str <- ent `gtkGet` entryText
                let pars = words str
                case pars of
                     ["ext",limit] | just k
@@ -6350,20 +6332,20 @@ solver this solveRef enum paint = do
             checkers <- readIORef checkersRef
             when checking $ do
                 mapM_ stopRun0 checkers
-                backBut `Gtk.set` [ buttonLabel := "<---" ]
+                backBut `gtkSet` [ buttonLabel := "<---" ]
                 replaceCommandButton backButSignalRef backBut backProof
-                forwBut `Gtk.set` [ buttonLabel := "--->" ]
+                forwBut `gtkSet` [ buttonLabel := "--->" ]
                 replaceCommandButton forwButSignalRef forwBut forwProof'
                 runOpts deriveBut deriveButSignalRef
                 setButtons paint backOpts forwOpts runOpts
             where backOpts btn cmd = do
-                    btn `Gtk.set` [ buttonLabel := "<---" ]
+                    btn `gtkSet` [ buttonLabel := "<---" ]
                     replaceCommandButton cmd btn $ actInPaint backProof
                   forwOpts btn cmd = do
-                    btn `Gtk.set` [ buttonLabel := "--->" ]
+                    btn `gtkSet` [ buttonLabel := "--->" ]
                     replaceCommandButton cmd btn $ actInPaint forwProof'
                   runOpts btn cmd = do
-                    btn `Gtk.set` [ buttonLabel := "run proof" ]
+                    btn `gtkSet` [ buttonLabel := "run proof" ]
                     setBackground btn redback
                     replaceCommandButton cmd btn $ runChecker True
                   actInPaint act = do act; showTreePicts
@@ -6449,7 +6431,7 @@ solver this solveRef enum paint = do
         switchFast = do
             modifyIORef fastRef not
             fast <- readIORef fastRef
-            fastBut `Gtk.set` [ buttonLabel := if fast then "indented text"
+            fastBut `gtkSet` [ buttonLabel := if fast then "indented text"
                                                    else "continuous text" ]
         
         -- | Alternate between safe and unsafe equation removal. Called by menu
@@ -6461,7 +6443,7 @@ solver this solveRef enum paint = do
             safeBut <- readIORef safeButRef
             setProofTerm SafeEqs
             setProof True False "EQS" [] $ equationRemoval $ not safe
-            safeBut `Gtk.set` [ menuItemLabel := eqsButMsg safe]
+            safeBut `gtkSet` [ menuItemLabel := eqsButMsg safe]
 
         transformGraph mode = do
           trees <- readIORef treesRef
@@ -6701,11 +6683,11 @@ enumerator solveRef = do
                 solve <- readIORef solveRef
                 labBlue solve $ startEnum obj
                 setForw solve $ \btn cmd -> do
-                    btn `Gtk.set` [ buttonLabel := "go" ]
+                    btn `gtkSet` [ buttonLabel := "go" ]
                     setBackground btn redback
                     replaceCommandButton cmd btn $ getInput obj
                 solve&setQuit $ \quit signal -> do
-                  quit `Gtk.set` [ buttonLabel := "quit " ++ obj]
+                  quit `gtkSet` [ buttonLabel := "quit " ++ obj]
                   replaceCommandButton signal quit finish
                   
 
@@ -6713,12 +6695,12 @@ enumerator solveRef = do
                 solve <- readIORef solveRef
                 labBlue solve start
                 setForw solve $ \btn cmd -> do
-                    btn `Gtk.set` [ buttonLabel := "--->" ]
+                    btn `gtkSet` [ buttonLabel := "--->" ]
                     setBackground btn greenback
                     solve <- readIORef solveRef
                     replaceCommandButton cmd btn (forwProof solve)
                 solve&setQuit $ \quit signal -> do
-                  quit `Gtk.set` [ buttonLabel := "quit" ]
+                  quit `gtkSet` [ buttonLabel := "quit" ]
                   replaceCommandButton signal quit mainQuit
                 solve&setInterpreter $ "tree"
                     

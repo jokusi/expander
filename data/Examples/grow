@@ -59,7 +59,8 @@ axioms:
 					        h(h2(b,d),b))),b),b)))))) 
 
 terms:	
-        blue$grow(rainbow(51),PY)
+	red$pytree$6
+<+>     blue$grow(rainbow(51),PY)
 		 [skip,grow(rainbow(51),PY)[skip,PY,rainbow(51)$PY],PY]
 <+>	red$grow(TR)[TR,TR,TR]
 <+>	red$grow(PY)$replicate(4)$wide$3 
@@ -79,7 +80,7 @@ terms:
 		      replicate(5)$turt[J$45,rainbow(4)$circ$22]]
 <+>     red$grow(shine(42)$polyF(16,111))$concat$replicate(8)      -- wheel3sh
 	   $[skip,grow(inCenter$rainbow3$6,CA)$
-		      replicate(5)$turt[J$45,rainbow(4)$circ$22]]
+		      replicateG(5)$turt[J$45,rainbow(4)$circ$22]]
 <+>     grow(rainbow(12)$center$green$PE)$			   -- penta1
 	    replicate(5)$rainbowT(12)$green$hcirc
 <+>     red$grow(base$polyF(5,44))$				   -- grow2
@@ -140,7 +141,6 @@ terms:
 <+>     repeat$fadeW$red$scale(4)$smooth$PY	
 <+>	repeat$flash$red$pytree1 	
 <+>	repeat$flash$red$pytree$5	
-<+>	file$pytree1      -- after the pic of pytree1 has been saved to pytree1
 <+>	pent$grow(PE)[skip,grow(PE)[skip,skip,PE],grow(PE)[skip,PE,PE]]
 <+>     pent$grow(PE)[skip,grow(PE)[skip,skip,grow(PE)[skip,PE,PE]],
 	              grow(PE)[skip,grow(PE)[skip,skip,PE],
@@ -156,3 +156,5 @@ terms:
 		    fadeB$rcirc,wcirc,R,J$110,
 		    flash$rcirc,wcirc,R,J$110,
     		    shine(21)$rcirc,wcirc,R,J$110] 
+<+> repeat(rotate(turt(J( -15),					-- rotgrow
+    grow(trunk,grow(trunk,grow(trunk,grow(trunk,grow(trunk,trunk))))))))

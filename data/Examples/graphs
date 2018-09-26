@@ -1,4 +1,4 @@
--- GRAPHS
+-- graphs
 
 defuncts:   G1 G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12 frame intcirc redassign 
 constructs: F C f g /\
@@ -79,10 +79,6 @@ terms:
 <+> (iterate(fun(x,widg(x,circ$22)))$widg$circ$44)!!3
 <+> drawLC(G7) <+> drawLO(G9) <+> drawLM(G9)
 <+> fun((F,C),F$C$circ$44,7777)((rainbow(0,5),red))
-<+> file(graph1)
-<+> file(fadeterm)
-<+> file(widg(widg$red$rect(22,11),
-              widg(widg$green$rect(11,22),yellow$tria$15),              circ$22),         FF)
 <+> string[5,6,7](f(g,h)/\h)
 <+> widg(f(g,h)/\h,text[5,6,7])
 <+> widg(f(g,h),g,h,shelf(1)[text(/\),text[5,6,7]])

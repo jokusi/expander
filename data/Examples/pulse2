@@ -1,3 +1,0 @@
--- pulse2
-repeat(pulse(oval(66,132,red),turt(J(222),oval(66,132,green)),
-             turt(J(444),oval(66,132,blue))))

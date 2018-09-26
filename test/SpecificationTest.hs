@@ -4,14 +4,15 @@ import Test.Framework
 import Test.Framework.Providers.HUnit
 import Test.HUnit
 
-import System.Expander
+import Base.OHaskell
+import Base.System
 import Eterm
 import Esolve
 
 import Control.Monad (void, msum, when, unless, filterM)
 import Data.IORef
 import Data.Maybe (isJust, fromJust, isNothing, fromMaybe)
-import Data.List (isSuffixOf, isInfixOf)
+import Data.List (isSuffixOf, isInfixOf, isPrefixOf)
 import Prelude hiding ((++),concat)
 import System.Directory
 import System.FilePath
@@ -32,6 +33,9 @@ isSpecification file = all (not . ($ file))
     , isSuffixOf "P"
     , isSuffixOf "C"
     , isSuffixOf "R"
+    , isSuffixOf "G"
+    , isSuffixOf "W"
+    , isPrefixOf "["
     ]
 
 -- generated with "script/fails.hs"
@@ -51,9 +55,6 @@ test_all_specifications = buildTest $ do
         tests = testGroup "specifications" listOfTests
     return tests
 
-type Cmd = IO
-type Action = Cmd ()
-type Request = Cmd
 
 loadSpec spec = do
     let -- messages

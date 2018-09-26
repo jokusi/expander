@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, April 2018
-                  Jos Kusiek, April 2018
+Copyright   : (c) Peter Padawitz, September 2018
+                  Jos Kusiek, September 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -16,29 +16,12 @@ Epaint contains:
 -}
 module Epaint where
 
-import Gui.Base hiding (smooth)
-import System.Expander
-import Gui.Canvas
+import Prelude ()
+import qualified Base.Haskell as Haskell
+import Base.System
 import Eterm
 
-import Control.Monad
-  (when, unless, guard, msum, mplus, mzero, zipWithM_, replicateM)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans (lift)
-import Control.Monad.Trans.Maybe (MaybeT(..))
-import Data.Foldable (forM_)
-import Data.IORef
-import Data.List (find)
-import Data.Maybe (isJust, isNothing, fromJust, fromMaybe)
-import Data.Array ((!))
-import qualified Data.Text as Text
-import Graphics.UI.Gtk
-  hiding (Color, Point, Dot, Action, Font, Fill, Arrow, get, set)
-import qualified Graphics.UI.Gtk as Gtk (get,set)
-import qualified Graphics.UI.Gtk as Gtk (Color(..))
-import System.FilePath ((</>), (<.>), splitExtension, takeExtension)
-
-import Prelude hiding ((++),concat)
+import Data.Array
 
 infixr 5 <:>, <++>
 
@@ -412,14 +395,14 @@ painter pheight solveRef solve2Ref = do
     
     let
         addOrRemove = do
-            file <- saveEnt `Gtk.get` entryText
+            file <- saveEnt `gtkGet` entryText
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
             edges <- readIORef edgesRef
             let graph = (pictures!!curr,edges!!curr)
             if null file then do
                 rect <- readIORef rectRef
-                if isJust rect
+                if just rect
                 then do
                     writeIORef oldRectRef rect
                     writeIORef oldRscaleRef =<< readIORef rscaleRef
@@ -458,7 +441,7 @@ painter pheight solveRef solve2Ref = do
                 scaleAndDraw msg
         
         arrangeButton graph@(pict,arcs) = do 
-            mode <- modeEnt `Gtk.get` entryText
+            mode <- modeEnt `gtkGet` entryText
             case mode of
                 "perm" -> do
                     old <- readIORef permutationRef
@@ -475,11 +458,11 @@ painter pheight solveRef solve2Ref = do
                             writeIORef arrangeModeRef [x,y]
                             let colsNo = parse pnat r; angle = parse real r
                             writeIORef colsRef
-                                $ fromMaybe (square pict) colsNo
+                                $ Haskell.fromMaybe (square pict) colsNo
                             writeIORef gradeRef
-                                $ fromMaybe 0 angle
+                                $ Haskell.fromMaybe 0 angle
                         _ -> writeIORef arrangeModeRef mode
-                    d <- spaceEnt `Gtk.get` entryText
+                    d <- spaceEnt `gtkGet` entryText
                     arrangeMode <- readIORef arrangeModeRef
                     let dist = parse real d; x = head arrangeMode
                     when (notnull arrangeMode) $ do
@@ -567,19 +550,19 @@ painter pheight solveRef solve2Ref = do
                     writeIORef edgesRef [arcs]
                     writeIORef noOfGraphsRef 1
                     writeIORef currRef 0
-                    pictSlider `Gtk.set` [widgetSensitive := False ]
+                    pictSlider `gtkSet` [widgetSensitive := False ]
                     arrangeButton graph
         
         buildPaint = do
             solve <- readIORef solveRef
             solver <- getSolver solve
             icon <- iconPixbuf
-            win `Gtk.set` [ windowTitle := "Painter" ++ [last solver]
-                      , windowDefaultHeight := pheight
-                      , windowIcon := Just icon
-                      ]
+            win `gtkSet` [ windowTitle := "Painter" ++ [last solver]
+                         , windowDefaultHeight := pheight
+                         , windowIcon := Just icon
+                         ]
             win `on` deleteEvent $ do
-                liftIO close
+                lift close
                 return True
             
             combiBut `on` buttonActivated $ combis
@@ -587,7 +570,7 @@ painter pheight solveRef solve2Ref = do
             edgeBut `on` buttonActivated $ switchConnect
             
             fast <- readIORef fastRef
-            fastBut `Gtk.set` [ buttonLabel := if fast then "slow" else "fast" ]
+            fastBut `gtkSet` [ buttonLabel := if fast then "slow" else "fast" ]
             fastBut `on` buttonActivated $ switchFast
             
             font <- fontDescriptionFromString $ sansSerif ++ " italic 12"
@@ -616,34 +599,34 @@ painter pheight solveRef solve2Ref = do
             solveName2 <- getSolver solve2
             
             closeBut <- getButton "closeBut"
-            closeBut `Gtk.set` [ buttonLabel := "back to " ++ solveName]
+            closeBut `gtkSet` [ buttonLabel := "back to " ++ solveName]
             closeBut `on` buttonActivated $ close
             
             colorSlider `on` valueChanged $ moveColor
             colorSlider `on` buttonPressEvent $ do
                 mb <- eventButton
-                liftIO $ when (mb == LeftButton) pressColorScale
+                lift $ when (mb == LeftButton) pressColorScale
                 return False
             colorSlider `on` buttonReleaseEvent $ do
                 mb <- eventButton
-                liftIO $ when (mb == LeftButton) releaseColor
+                lift $ when (mb == LeftButton) releaseColor
                 return False
             
             -- delaySlider `on` valueChanged
-            --    $ writeIORef delayRef =<< delaySlider `Gtk.get` rangeValue
+            --    $ writeIORef delayRef =<< delaySlider `gtkGet` rangeValue
             delaySlider `on` buttonReleaseEvent $ do
                 mb <- eventButton
-                liftIO $ when (mb == LeftButton) setDelay
+                lift $ when (mb == LeftButton) setDelay
                 return False
             modeBut <- getButton "modeBut"
             modeBut `on` buttonActivated $ arrangeOrCopy
             
             pictSlider `on` valueChanged $ do
-                n <- truncate <$> pictSlider `Gtk.get` rangeValue
+                n <- truncate <$> pictSlider `gtkGet` rangeValue
                 writeIORef currRef n
             pictSlider `on` buttonReleaseEvent $ do
                 mb <- eventButton
-                when (mb == LeftButton) $ liftIO remoteDraw
+                when (mb == LeftButton) $ lift remoteDraw
                 return False
             
             renewBut <- getButton "renewBut"
@@ -659,15 +642,15 @@ painter pheight solveRef solve2Ref = do
             scaleSlider `on` valueChanged $ moveScale
             scaleSlider `on` buttonPressEvent $ do
                 mb <- eventButton
-                liftIO $ when (mb == LeftButton) pressColorScale
+                lift $ when (mb == LeftButton) pressColorScale
                 return False
             scaleSlider `on` buttonReleaseEvent $ do
                 mb <- eventButton
-                liftIO $ when (mb == LeftButton) releaseScale
+                lift $ when (mb == LeftButton) releaseScale
                 return False
             
             solBut <- getButton "solBut"
-            solBut `Gtk.set` [ buttonLabel := "show in "++ solveName2 ]
+            solBut `gtkSet` [ buttonLabel := "show in "++ solveName2 ]
             solBut `on` buttonActivated $ showInSolver
             widgetOverrideFont spaceEnt
                 =<< Just <$> fontDescriptionFromString (monospace ++ " 14")
@@ -692,13 +675,14 @@ painter pheight solveRef solve2Ref = do
             drawingArea `on` buttonPressEvent $ do
                 p <- round2 <$> eventCoordinates
                 n <- fromEnum <$> eventButton
-                liftIO $ pressButton n p
+                lift $ pressButton n p
                 return False
             drawingArea `on` motionNotifyEvent $ do
                 p <- round2 <$> eventCoordinates
                 modifier <- eventModifierMouse
-                let button = find (`elem` [Button1, Button2, Button3]) modifier
-                liftIO $ case button of
+                let button = Haskell.find
+                      (`elem` [Button1, Button2, Button3]) modifier
+                lift $ case button of
                         Just Button1 -> moveButton 1 p
                         Just Button2 -> moveButton 2 p
                         Just Button3 -> moveButton 3 p
@@ -706,13 +690,12 @@ painter pheight solveRef solve2Ref = do
                 return False
             drawingArea `on` buttonReleaseEvent $ do
                 n <- fromEnum <$> eventButton
-                liftIO $ releaseButton n
+                lift $ releaseButton n
                 return False
             
-            lab `Gtk.set` [ labelSelectable := True ]
             lab `on` keyPressEvent $ do
-                key <- Text.unpack <$> eventKeyName
-                liftIO $ case key of
+                key <- unpack <$> eventKeyName
+                lift $ case key of
                     "p" -> mkPlanar
                     "t" -> mkTurtle
                     "u" -> unTurtle
@@ -720,8 +703,8 @@ painter pheight solveRef solve2Ref = do
                 return False
             
             saveEnt `on` keyPressEvent $ do
-                key <- Text.unpack <$> eventKeyName
-                liftIO $ case key of
+                key <- unpack <$> eventKeyName
+                lift $ case key of
                     "Up" -> addOrRemove
                     "Down" -> saveGraph
                     _ -> return ()
@@ -746,7 +729,7 @@ painter pheight solveRef solve2Ref = do
                 modifyIORef currRef $ \curr ->
                     if b then if curr < noOfGraphs 
                     then curr else 0
-                    else fromJust $ search (== n) poss`mplus`Just 0
+                    else get $ search (== n) poss++Just 0
                 isNew <- readIORef isNewRef
                 if isNew then buildPaint >> newPaint
                 else newPaint
@@ -756,8 +739,8 @@ painter pheight solveRef solve2Ref = do
         changeCanvasBackground c@(RGB r g b) = do
             let f n = fromIntegral $ n * 256
                 (r', g' , b') = (f r, f g, f b)
-            canv `Gtk.set` [ canvasBackground := c ]
-            widgetModifyBg scrollCanv StateNormal $ Gtk.Color r' g' b'
+            canv `gtkSet` [ canvasBackground := c ]
+            widgetModifyBg scrollCanv StateNormal $ gtkColor r' g' b'
             
         close = do
             scans <- readIORef scansRef
@@ -771,11 +754,11 @@ painter pheight solveRef solve2Ref = do
             drawCurr solve
         
         combis = do
-            str <- spaceEnt `Gtk.get` entryText
+            str <- spaceEnt `gtkGet` entryText
             modifyIORef drawModeRef $ \drawMode -> case parse nat str of
                 Just n | n < 16 -> n
                 _ -> (drawMode+1) `mod` 16
-            spaceEnt `Gtk.set` [ entryText :=  "" ]
+            spaceEnt `gtkSet` [ entryText :=  "" ]
             drawMode <- readIORef drawModeRef
             setBackground combiBut
                 $ if drawMode == 0 then blueback else redback
@@ -802,12 +785,12 @@ painter pheight solveRef solve2Ref = do
                     h sc = startScan0 sc delay
                 zipWithM_ g scans picts1
                 when (lgp > lgs) $ do
-                    scs <- replicateM (lgp - lgs) (scanner drawWidget)
+                    scs <- Haskell.replicateM (lgp - lgs) (scanner drawWidget)
                     zipWithM_ h scs picts2
                     modifyIORef scansRef $ \scans -> scans++scs
          where picts = if New `elem` pict then f pict [] [] else [pict]
                f (New:pict) picts pict' = f pict (picts++[pict']) []
-               f (w:pict) picts pict'   = f pict picts (pict'++[w])
+               f (w:pict) picts pict'   = f pict picts $ pict'++[w]
                f _ picts pict'                 = picts++[pict']
                lgp = length picts
         
@@ -917,24 +900,24 @@ painter pheight solveRef solve2Ref = do
                      | isPict w        = drawPict $ mkPict w
         drawWidget _                   = return ()
         
-        getDelay = truncate <$> delaySlider `Gtk.get` rangeValue
+        getDelay = truncate <$> delaySlider `gtkGet` rangeValue
         
         interrupt b = 
             if b then do
                 scans <- readIORef scansRef
                 mapM_ stopScan scans
-                stopBut `Gtk.set` [ buttonLabel := "go" ]
+                stopBut `gtkSet` [ buttonLabel := "go" ]
                 replaceCommandButton stopButSignalRef stopBut $ interrupt False
             else do
                 delay <- getDelay
                 scans <- readIORef scansRef
                 mapM_ (`startScan` delay) scans 
-                stopBut `Gtk.set` [ buttonLabel := "runnableStop" ]
+                stopBut `gtkSet` [ buttonLabel := "runnableStop" ]
                 replaceCommandButton stopButSignalRef stopBut $ interrupt True
         
         labColor :: String -> Background -> Action
         labColor str color = do
-            lab `Gtk.set` [ labelText := str ]
+            lab `gtkSet` [ labelText := str ]
             setBackground lab color
         
         labGreen = flip labColor greenback
@@ -955,14 +938,14 @@ painter pheight solveRef solve2Ref = do
                     _ -> return nil2
         
         mkPlanar = do
-            n <- saveEnt `Gtk.get` entryText  
+            n <- saveEnt `gtkGet` entryText  
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
             edges <- readIORef edgesRef
             let maxmeet = case parse pnat n of Just n -> n; _ -> 200
                 reduce = planarAll maxmeet (pictures!!curr,edges!!curr)
             rect <- readIORef rectRef
-            if isJust rect then do
+            if just rect then do
                 rectIndices <- readIORef rectIndicesRef
                 rscale <- readIORef rscaleRef
                 let (graph,is) = reduce rect rectIndices rscale
@@ -987,11 +970,11 @@ painter pheight solveRef solve2Ref = do
             rectIndices <- readIORef rectIndicesRef
             rscale <- readIORef rscaleRef
             let (pict,arcs) = (pictures!!curr,edges!!curr)
-                Rect (p@(x,y),_,_,_) b h = fromJust rect
+                Rect (p@(x,y),_,_,_) b h = get rect
                 ks@(k:rest) = rectIndices
                 w = transXY p
                     $ mkTurt (x-b,y-h) rscale $ map (pict!!) rectIndices
-            if isJust rect then
+            if just rect then
                 case map (pict!!) ks of
                 [Turtle{}] -> labGreen "The selection is already a turtle."
                 _ -> do
@@ -1007,10 +990,10 @@ painter pheight solveRef solve2Ref = do
                                                    
         moveButton n p@(x,y) = do
             penpos <- readIORef penposRef
-            when (isJust penpos) $ do 
+            when (just penpos) $ do 
                 pictures <- readIORef picturesRef
                 curr <- readIORef currRef
-                let (x0,y0) = fromJust penpos
+                let (x0,y0) = get penpos
                     q@(x1,y1) = fromInt2 (x-x0,y-y0)
                     pict = pictures!!curr
                 connect <- readIORef connectRef
@@ -1020,7 +1003,7 @@ painter pheight solveRef solve2Ref = do
                     case getWidget (fromInt2 p) scale pict of
                         widget@(Just (_,w)) -> do
                             source <- readIORef sourceRef
-                            if isNothing source
+                            if nothing source
                             then writeIORef sourceRef widget 
                             else writeIORef targetRef widget
                             drawPict [lightWidg w]
@@ -1036,11 +1019,11 @@ painter pheight solveRef solve2Ref = do
                             -- move selection
                             when (ns `shares` rectIndices) $
                                 modifyIORef rectRef
-                                    $ Just . translate . fromJust
+                                    $ Just . translate . get
                         2 -> do
                             rect <- readIORef rectRef
-                            when (isJust rect) $ do -- enlarge selection
-                                let r@(Rect (p,_,_,_) b h) = fromJust rect
+                            when (just rect) $ do -- enlarge selection
+                                let r@(Rect (p,_,_,_) b h) = get rect
                                     r' = Rect (add2 p q,0,black,0) (b+x1) $ h+y1
                                 writeIORef rectRef $ Just r'
                                 setFast True
@@ -1059,7 +1042,7 @@ painter pheight solveRef solve2Ref = do
 
         
         moveColor = do
-            n <- truncate <$> colorSlider `Gtk.get` rangeValue
+            n <- truncate <$> colorSlider `gtkGet` rangeValue
             when (n /= 0) $ do
                 modifyIORef colorScaleRef $ \(_, csSnd) -> (n,csSnd)
                 (_,ws) <- readIORef changedWidgetsRef
@@ -1068,14 +1051,14 @@ painter pheight solveRef solve2Ref = do
                     draw55 $ map (shiftCol n) ws
         
         moveScale = do 
-            n <- truncate <$> scaleSlider `Gtk.get` rangeValue
+            n <- truncate <$> scaleSlider `gtkGet` rangeValue
             when (n /= 0) $ do
                 rect <- readIORef rectRef
                 rscale <- readIORef rscaleRef
                 scale <- readIORef scaleRef
                 changedWidgets <- readIORef changedWidgetsRef
                 colorScale <- readIORef colorScaleRef
-                let sc = if isJust rect then rscale else scale
+                let sc = if just rect then rscale else scale
                     (_,us) = colorScale; (is,vs) = changedWidgets
                     ws = scalePict (sc+fromInt n/10*sc) us 
                 writeIORef colorScaleRef (n,us)
@@ -1100,19 +1083,19 @@ painter pheight solveRef solve2Ref = do
             setBackground narrowBut back
             setBackground simplifyD back
             setBackground simplifyB back
-            stopBut `Gtk.set` [buttonLabel := "runnableStop"]
+            stopBut `gtkSet` [buttonLabel := "runnableStop"]
             replaceCommandButton stopButSignalRef stopBut $ interrupt True
             noOfGraphs <- readIORef noOfGraphsRef
             rangeSetRange pictSlider 0 $ fromIntegral $ noOfGraphs-1
             curr <- readIORef currRef
-            pictSlider `Gtk.set` [ rangeValue := fromIntegral curr ]
+            pictSlider `gtkSet` [ rangeValue := fromIntegral curr ]
             writeIORef rectRef Nothing
             writeIORef rectIndicesRef []
             writeIORef changedWidgetsRef nil2
             writeIORef gradeRef 0
             writeIORef colsRef 6
             picEval <- readIORef picEvalRef
-            modeEnt  `Gtk.set`
+            modeEnt  `gtkSet`
                 [entryText := if picEval == "tree" then "s" else "m16"]
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
@@ -1148,7 +1131,7 @@ painter pheight solveRef solve2Ref = do
                     (pict,arcs) = (pictures!!curr,edges!!curr)
                     f sc = scalePict sc $ map (pict!!) rectIndices
                 connect <- readIORef connectRef
-                unless connect $ case n of                         
+                when (not connect) $ case n of                         
                     1 -> do
                         rect <- readIORef rectRef
                         case rect of
@@ -1158,13 +1141,13 @@ painter pheight solveRef solve2Ref = do
                                 rscale <- readIORef rscaleRef
                                 writeIORef changedWidgetsRef
                                     (rectIndices,f rscale)
-                                canv `Gtk.set` [ canvasCursor := Dotbox ]
+                                canv `gtkSet` [ canvasCursor := Dotbox ]
                             _ -> do
                                 scale <- readIORef scaleRef
                                 case getWidget p' scale pict of
                                     (Just (n,w)) -> do
                                         writeIORef changedWidgetsRef ([n],[w])
-                                        canv `Gtk.set` [ canvasCursor := Hand2]
+                                        canv `gtkSet` [ canvasCursor := Hand2]
                                     _ -> return ()             -- move widget
                     2 -> do
                         rect <- readIORef rectRef
@@ -1174,13 +1157,13 @@ painter pheight solveRef solve2Ref = do
                         scale <- readIORef scaleRef
                         let pict' = fold2 updList pict rectIndices $ f 
                                                             $ rscale/scale
-                        if isJust rect then do -- remove selection
+                        if just rect then do -- remove selection
                             setCurrGraph (pict',arcs) 
                             writeIORef rectRef Nothing
                             writeIORef rectIndicesRef []   
                         else do -- create selection
                             writeIORef rectRef $ Just (Rect (p',0,black,0) 0 0)
-                            canv `Gtk.set` [ canvasCursor := Icon ]
+                            canv `gtkSet` [ canvasCursor := Icon ]
                         writeIORef rscaleRef scale
                     _ -> do
                         rscale <- readIORef rscaleRef
@@ -1188,9 +1171,9 @@ painter pheight solveRef solve2Ref = do
                         scale <- readIORef scaleRef
                         rect <- readIORef rectRef
                         writeIORef changedWidgetsRef $ 
-                            if isJust rect then (rectIndices,f rscale)
+                            if just rect then (rectIndices,f rscale)
                             else (indices_ pict,scalePict scale pict)
-                        canv `Gtk.set` [ canvasCursor := Exchange] -- rotate
+                        canv `gtkSet` [ canvasCursor := Exchange] -- rotate
         
         pressColorScale = do 
             scans <- readIORef scansRef
@@ -1200,7 +1183,7 @@ painter pheight solveRef solve2Ref = do
             rectIndices <- readIORef rectIndicesRef
             let pict = pictures!!curr; ws = map (pict!!) rectIndices
             rect <- readIORef rectRef
-            if isJust rect then do
+            if just rect then do
                 rscale <- readIORef rscaleRef
                 writeIORef changedWidgetsRef (rectIndices,scalePict rscale ws)
                 writeIORef colorScaleRef (0,ws)
@@ -1219,12 +1202,12 @@ painter pheight solveRef solve2Ref = do
             if connect then do
                 source <- readIORef sourceRef
                 target <- readIORef targetRef
-                if isNothing source || isNothing target then nada
+                if nothing source || nothing target then nada
                 else do
-                    let (s,v) = fromJust source
-                        (t,w) = fromJust target
+                    let (s,v) = get source
+                        (t,w) = get target
                         ts = arcs!!s
-                        is = getSupport graph s t; redDots = isJust is
+                        is = getSupport graph s t; redDots = just is
                         connected = redDots || t `elem` ts
                         (_,_,c,i) = getState v
                         f (p,a,_,_) = (p,a,c,i)
@@ -1238,7 +1221,7 @@ painter pheight solveRef solve2Ref = do
                             else
                                 if connected then setDrawSwitch 
                                     (if redDots then removeSub graph
-                                        $ fromJust is
+                                        $ get is
                                     else (pict,updList arcs s $ ts `minus1` t)) 
                                     "An arc has been removed."
                                 else if s == t then nada
@@ -1251,7 +1234,7 @@ painter pheight solveRef solve2Ref = do
                                           then (exchgWidgets pict s t,arcs)
                                           else exchgPositions graph s t)
                                         "Source and target have been exchanged."
-                        _ -> if s == t && isJust is ||
+                        _ -> if s == t && just is ||
                              s /= t && connected && all (not . isRedDot) [v,w]
                              then nada
                              else setDrawSwitch
@@ -1279,7 +1262,7 @@ painter pheight solveRef solve2Ref = do
                         changedWidgets <- readIORef changedWidgetsRef
                         rscale <- readIORef rscaleRef
                         arrangeMode <- readIORef arrangeModeRef
-                        let f = if isJust rect then scaleWidg $ 1/rscale
+                        let f = if just rect then scaleWidg $ 1/rscale
                                else transXY (-5,-5) . scaleWidg (1/scale)
                             g = fold2 updList
                             pair w i j = (g pict [i,j] [f w,pict!!i],
@@ -1289,7 +1272,7 @@ painter pheight solveRef solve2Ref = do
                                               | k == j = i
                                               | otherwise = k
                             graph = case changedWidgets of 
-                                ([k],[w]) | isNothing rect ->
+                                ([k],[w]) | nothing rect ->
                                     case arrangeMode of 
                                         "back" -> pair w 0 k
                                         "front" -> pair w (length pict-1) k
@@ -1301,7 +1284,7 @@ painter pheight solveRef solve2Ref = do
                 writeIORef sourceRef Nothing
                 writeIORef targetRef Nothing
                 writeIORef changedWidgetsRef nil2
-                canv `Gtk.set` [canvasCursor := LeftPtr]
+                canv `gtkSet` [canvasCursor := LeftPtr]
             where nada = scaleAndDraw "Nothing can be done."
                   setDrawSwitch graph str = do
                                     setCurrGraph graph
@@ -1319,10 +1302,10 @@ painter pheight solveRef solve2Ref = do
                 setCurrGraph (zipWith f [0..] pict,arcs)
                 scaleAndDraw ""
                 writeIORef changedWidgetsRef nil2
-                colorSlider `Gtk.set` [ rangeValue := 0 ]
+                colorSlider `gtkSet` [ rangeValue := 0 ]
         
         releaseScale = do
-            mode <- modeEnt `Gtk.get` entryText
+            mode <- modeEnt `gtkGet` entryText
             (n,_) <- readIORef colorScaleRef
             rscale <- readIORef rscaleRef
             scale <- readIORef scaleRef
@@ -1331,7 +1314,7 @@ painter pheight solveRef solve2Ref = do
             curr <- readIORef currRef
             edges <- readIORef edgesRef
             rectIndices <- readIORef rectIndicesRef
-            let sc = if isJust rect then rscale+fromInt n/10*rscale 
+            let sc = if just rect then rscale+fromInt n/10*rscale 
                                      else scale+fromInt n/10*scale
                 f = updState $ \(p,a,c,i) -> (apply2 (*sc) p,a,c,i)
                 (pict,arcs) = (pictures!!curr,edges!!curr)
@@ -1352,11 +1335,11 @@ painter pheight solveRef solve2Ref = do
                       | otherwise   -> writeIORef scaleRef sc
                 scaleAndDraw ""
                 writeIORef changedWidgetsRef nil2
-                scaleSlider `Gtk.set` [rangeValue := 0 ]
+                scaleSlider `gtkSet` [rangeValue := 0 ]
         
         remote' = do
             subtrees <- readIORef subtreesRef
-            unless subtrees $ do
+            when (not subtrees) $ do
                 treeNumbers <- readIORef treeNumbersRef
                 curr <- readIORef currRef
                 solve <- readIORef solveRef
@@ -1377,7 +1360,7 @@ painter pheight solveRef solve2Ref = do
             pictures <- readIORef picturesRef
             if null pictures then labRed' "Enter pictures!"
             else do
-                file <- saveEnt `Gtk.get` entryText
+                file <- saveEnt `gtkGet` entryText
                 curr <- readIORef currRef
                 edges <- readIORef edgesRef
                 rectIndices <- readIORef rectIndicesRef
@@ -1395,10 +1378,10 @@ painter pheight solveRef solve2Ref = do
                     msg str = labGreen $ savedCode str usr
                     act1 = mkHtml canv prefix filePath
                     act2 n = do writeIORef currRef n
-                                pictSlider `Gtk.set`
+                                pictSlider `gtkSet`
                                       [ rangeValue := fromIntegral n ]
                                 remoteDraw
-                                delay 100 $ act1 n
+                                gtkDelay 100 $ act1 n
                                 return ()
                 if null file then labRed' "Enter a file name!"
                 else do
@@ -1425,7 +1408,7 @@ painter pheight solveRef solve2Ref = do
 
         saveGraphD = do
           solve <- readIORef solveRef
-          str <- saveEnt `Gtk.get` entryText
+          str <- saveEnt `gtkGet` entryText
           picNo <- (solve&getPicNo)
           (solve&saveGraphDP) False canv $ case parse nat str of Just n -> n
                                                                  _ -> picNo
@@ -1436,9 +1419,9 @@ painter pheight solveRef solve2Ref = do
             clear canv
             sc <- scanner drawWidget
             writeIORef scansRef [sc]
-            stopBut `Gtk.set` [ buttonLabel := "runnableStop" ]
+            stopBut `gtkSet` [ buttonLabel := "runnableStop" ]
             replaceCommandButton stopButSignalRef stopBut $ interrupt True
-            n <- saveEnt `Gtk.get` entryText
+            n <- saveEnt `gtkGet` entryText
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
             edges <- readIORef edgesRef
@@ -1452,7 +1435,7 @@ painter pheight solveRef solve2Ref = do
                 reduce = planarAll maxmeet graph
                 (graph',is) = if drawMode == 15 && 
                                    msg /= "A subgraph has been selected."
-                              then if isJust rect 
+                              then if just rect 
                                    then reduce rect rectIndices rscale
                                    else reduce Nothing [] scale
                               else (graph,rectIndices)
@@ -1461,8 +1444,8 @@ painter pheight solveRef solve2Ref = do
                 f i (ws,bds) = (w:ws,minmax4 (widgFrame w) bds)
                             where w = scaleWidg (sc i) $ pict!!i
                 sc i = if i `elem` is then rscale else scale
-                (x1,y1,x2,y2) = if isJust rect 
-                                then minmax4 (widgFrame $ fromJust rect) bds
+                (x1,y1,x2,y2) = if just rect 
+                                then minmax4 (widgFrame $ get rect) bds
                                 else bds
                 -- Expander2: Size does not fit. Added size to avoid crop.
                 sizefix = 100
@@ -1473,14 +1456,14 @@ painter pheight solveRef solve2Ref = do
             modifyIORef picturesRef $ \pictures ->
                 updList pictures curr $ zipWith g [0..] pict2
             modifyIORef edgesRef $ \edges -> updList edges curr arcs
-            canv `Gtk.set` [ canvasSize := size]
+            canv `gtkSet` [ canvasSize := size]
             arrangeMode <- readIORef arrangeModeRef
             treeNumbers <- readIORef treeNumbersRef
             curr <- readIORef currRef
             let pict3 = map (transXY (5,5)) pict2
                 pict4 = h pict3
                 h = filter propNode
-                ws = if isJust rect then h $ map (pict3!!) is else pict4
+                ws = if just rect then h $ map (pict3!!) is else pict4
                 (hull,qs) = convexPath (map coords ws) pict4
                 drawArrow ps = line canv (map round2 ps)
                                     $ if arrangeMode == "d1"
@@ -1504,7 +1487,7 @@ painter pheight solveRef solve2Ref = do
                 _ -> drawPict $ joinPict drawMode pict4
             when (arrangeMode /= "d2") $
                 mapM_ drawArrow $ buildAndDrawPaths (pict3,arcs)
-            when (isJust rect) $ do
+            when (just rect) $ do
                 let (x1,y1,x2,y2) = pictFrame $ map (pict2!!) is
                     (b,h) = (abs (x2-x1)/2,abs (y2-y1)/2)
                     r = Rect ((x1+b,y1+h),0,black,0) b h
@@ -1542,12 +1525,12 @@ painter pheight solveRef solve2Ref = do
             pictures <- readIORef picturesRef
             when (n < length pictures) $ do
                 writeIORef currRef n
-                pictSlider `Gtk.set` [ rangeValue := fromIntegral n ]
+                pictSlider `gtkSet` [ rangeValue := fromIntegral n ]
                 scaleAndDraw ""
         
         setDelay = do 
             fast <- readIORef fastRef
-            unless fast $ do
+            when (not fast) $ do
                 scans <- readIORef scansRef
                 runs <- mapM isRunning scans
                 let scs = [scans!!i | i <- indices_ scans, runs!!i]
@@ -1569,8 +1552,8 @@ painter pheight solveRef solve2Ref = do
         setFast b = do 
             writeIORef fastRef b
             isNew <- readIORef isNewRef
-            unless isNew
-                $ fastBut `Gtk.set` [ buttonLabel := if b then "slow" else "fast"]
+            when (not isNew)
+                $ fastBut `gtkSet` [ buttonLabel := if b then "slow" else "fast"]
         
         showInSolver = do
             pictures <- readIORef picturesRef
@@ -1618,26 +1601,24 @@ painter pheight solveRef solve2Ref = do
                 scaleAndDraw $ combi drawMode
         
         unTurtle = do
-            pictures <- readIORef picturesRef
-            curr <- readIORef currRef
-            edges <- readIORef edgesRef
-            let graph = (pictures!!curr,edges!!curr)
-            rect <- readIORef rectRef
-            if isJust rect 
-            then do
-                writeIORef oldRectRef rect
-                rscale <- readIORef rscaleRef
-                rectIndices <- readIORef rectIndicesRef
-                let (graph',n) = unTurtG graph rscale (`elem` rectIndices)
-                    k = length $ fst graph
-                setCurrGraph graph'
-                modifyIORef rectIndicesRef $ \rectIndices ->
-                    rectIndices++[k..k+n-1]
-                scaleAndDraw "The selection has been unturtled."
-            else do
-                scale <- readIORef scaleRef
-                setCurrGraph $ fst $ unTurtG graph scale $ const True
-                scaleAndDraw "The current graph has been unturtled."
+          pictures <- readIORef picturesRef
+          curr <- readIORef currRef
+          rectIndices <- readIORef rectIndicesRef
+          let pict = pictures!!curr
+              k = length pict
+              (pict1,n) = unTurt pict (`elem` rectIndices)
+              (pict2,_) = unTurt pict $ const True
+          rect <- readIORef rectRef
+          if just rect then do
+                            writeIORef oldRectRef rect
+                            setCurrGraph $ onlyNodes pict1
+                            modifyIORef rectIndicesRef
+                              $ \rectIndices -> rectIndices++[k..k+n-1]
+                            scaleAndDraw "The selection has been unturtled."
+                       else do
+                            setCurrGraph $ onlyNodes pict2
+                            scaleAndDraw "The current graph has been unturtled."
+
            
     return Painter
         { callPaint      = callPaint'
@@ -1741,7 +1722,7 @@ wait :: TurtleAct
 wait = widg Skip
 
 getJust :: [Maybe Picture] -> [Maybe Picture]
-getJust = map f where f pict = if isJust pict then pict else Just [Skip]
+getJust = map f where f pict = if just pict then pict else Just [Skip]
 
 noRepeat :: Widget_ -> Bool
 noRepeat (Repeat _) = False
@@ -1788,13 +1769,14 @@ reduceActs (act:acts) = act<:>reduceActs acts
 reduceActs _          = []
 
 turtle0 :: Color -> TurtleActs -> Widget_
-turtle0 c = Turtle (st0 c) 1
+turtle0 c = Turtle (st0 c) 1 . reduceActs
 
 turtle0B,turtle1 :: TurtleActs -> Widget_
 turtle0B     = turtle0 black
-turtle1 acts = (case acts of Open c _:_ -> turtle0 c
-                             Widg _ w:_ -> turtle0 $ getCol w
-                             _ -> turtle0B) $ reduceActs acts
+turtle1 acts = case acts of Open c _:_ -> turtle0 c acts
+                            Widg _ w:_ -> turtle0 (getCol w) acts
+                            _ -> turtle0B acts
+
 
 up, down, back :: TurtleAct
 up   = Turn $ -90
@@ -1807,15 +1789,17 @@ open = Open black 0
 close2 :: [TurtleAct]
 close2 = [Close,Close]
 
-text0 :: Sizes -> String -> Widget_
-text0 (n,width) x = Text_ st0B n strs $ map width strs where strs = words x
+text0 :: Color -> Sizes -> String -> Widget_
+text0 c (n,width) x = Text_ (st0 c) n strs $ map width strs
+                      where strs = words x
+
 
 inRect :: (Double, Double) -> Widget_ -> Bool
 (x',y') `inRect` Rect ((x,y),_,_,_) b h = x-b <= x' && x' <= x+b &&
                                            y-h <= y' && y' <= y+h
 
-onlyNodes :: [a] -> ([a], Arcs)
-onlyNodes pict = (pict,replicate (length pict) []::Arcs)
+onlyNodes :: Picture -> Graph
+onlyNodes pict = (pict,replicate (length pict) [])
 
 pictSize :: Picture -> Int
 pictSize = sum . map f where f (Path0 _ _ _ ps) = length ps
@@ -1889,7 +1873,7 @@ inCenter tr w = turtle0 (getCol w') $ jumpTo p ++ [widg w']
                       w' = tr $ shiftWidg p w
 
 addFrame :: Double -> Color -> Int -> Widget_ -> Widget_
-addFrame d c mode w = turtle0 c $ jumpTo (neg2 p) ++
+addFrame d c mode w = turtle0 (getCol w) $ jumpTo (neg2 p) ++
                                [widg $ path0 c mode $ last ps:ps] ++ getActs w
                     where (x1,y1,x2,y2) = widgFrame w
                           p = ((x1+x2)/2,(y1+y2)/2)
@@ -1924,7 +1908,7 @@ colorLevels alternate pict arcs = map f nodes
             f n = if propNode w then updCol (g alternate $ levels!!n) w else w
                   where w = pict!!n
             g True k = if odd k then complColor c else c
-            g _ k    = hue 1 c (maximum levels+1) k
+            g _ k    = hue 0 c (maximum levels+1) k
             c = case searchGet (not . isBW) $ map getCol $ filter propNode pict
                           of Just (_,d) -> d; _ -> red
 
@@ -2036,16 +2020,11 @@ mkTurt p sc pict = Turtle st0B (1/sc) $ actsToCenter acts
                          f = map $ coords***orient
                          acts = jumpTo (neg2 p) ++ mkActs pict' (f pict')
 
-unTurt :: Picture -> Double -> (Int -> Bool) -> (Picture,Int)
-unTurt pict sc b = (pr2***pr3) $ foldr f (length pict-1,[],0) pict
-       where f w (i,pict,k) = if b i && isTurtle w 
-                                   then (i-1,ws++pict,k+length ws-1)
-                              else (i-1,w:pict,k)
-                          where ws = scalePict (1/sc) $ mkPict $ scaleWidg sc w
-
-unTurtG :: Graph -> Double -> (Int -> Bool) -> (Graph,Int)
-unTurtG (pict,_) sc b = ((pict',replicate (length pict') []),n)
-                         where (pict',n) = unTurt pict sc b
+unTurt :: Picture -> (Int -> Bool) -> (Picture,Int)
+unTurt pict b = (pr2***pr3) $ foldr f (length pict-1,[],0) pict
+   where f w (i,pict,k) = if b i && isTurtle w
+                          then (i-1,ws++pict,k+length ws-1) else (i-1,w:pict,k)
+                          where ws = mkPict w
 
 -- | getRectIndices pict sc rect returns the indices of all widgets of pict
 -- within rect. getRectIndices is used by addOrRemove and releaseButton and undo
@@ -2137,10 +2116,10 @@ updState f (Turtle st sc acts)   = Turtle (f st) sc $ map g acts
                                                     where (_,_,d,_) = f $ st0 c
                                          g (Widg b w) = Widg b $ updState f w
                                          g act        = act
-updState f (Bunch w is) = Bunch (updState f w) is
-updState f (Fast w)     = Fast $ updState f w
-updState f (Repeat w)   = Repeat $ updState f w
-updState _ w            = w
+updState f (Bunch w is)          = Bunch (updState f w) is
+updState f (Fast w)              = Fast $ updState f w
+updState f (Repeat w)            = Repeat $ updState f w
+updState _ w                     = w
 
 -- Each widget is turned into a picture consisting of Arcs, Dots, Gifs, 
 -- horizontal or vertical Ovals, Path0s, Text_s and Trees before being drawn.
@@ -2236,8 +2215,9 @@ mkPict w = [w]
 -- inFrame is used by crossing and strands (see below).
 
 inFrame :: Point -> Point -> Point -> Bool
-inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 <= x && x <= max x1 x2 &&
-                                min y1 y2 <= y && y <= max y1 y2
+inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 `le` x && x `le` max x1 x2 &&
+                                min y1 y2 `le` y && y `le` max y1 y2
+                                where le a b = a < b || abs (a-b) < 0.5
 
 -- interior p lines returns True iff p is located within lines.
 -- interior is used by inWidget, joinPict and strands.
@@ -2249,8 +2229,7 @@ interior p = odd . length . filter (just . crossing ((p,q),q)) . addSuc
 -- inWidget is used by getWidget and joinPict 6 (see below).
 
 inWidget :: Point -> Widget_ -> Bool
-inWidget p = equal p . coords ||| any (interior p) . getFrameLns
-             where equal (x,y) (x',y') = abs (x-x') < 5 && abs (y-y') < 5
+inWidget p@(x,y) = (== p) . coords ||| any (interior p) . getFrameLns
 
 -- getWidget p scale pict returns a widget of pict close to p and scales it.
 -- getWidget is used by moveButton and pressButton (see below).
@@ -2284,6 +2263,8 @@ hulls edgy = f
                                          r' = r/20
                               g = circlePts p a (-b/36) . replicate 37
        f (Gif _ hull)                  = f hull
+       f (Oval st rx ry) | rx < 6      = f $ Rect st (2*rx) ry
+       f (Oval st rx ry) | ry < 6      = f $ Rect st rx (2*ry)
        f (Oval (p,0,c,i) rx ry)        = [Path0 c i (filled c) $
                                            map (successor2 p rx ry) [0,5..360]]
        f w@(Path0 c i m ps)            = [if edgy || even m then w
@@ -2320,9 +2301,9 @@ stringsInWidg  _                   = []
 
 stringsInWTree :: TermW -> [String]
 stringsInTree :: Term (String,Point,Int) -> [String]
-stringsInTree = foldT f where f (a,_,_) strs = delQuotes a:msum strs
+stringsInTree = foldT f where f (a,_,_) strs = delQuotes a:concat strs
 
-stringsInWTree = foldT f where f w strs = stringsInWidg w++msum strs
+stringsInWTree = foldT f where f w strs = stringsInWidg w++concat strs
 
 stringsInActs :: TurtleActs -> [String]
 stringsInActs = concatMap f
@@ -2333,78 +2314,79 @@ stringsInActs = concatMap f
 
 type InterpreterT = Sizes -> Pos -> TermS -> MaybeT Cmd Picture
 
-jturtle :: TurtleActs -> Maybe Picture
-jturtle = Just . single . turtle1
+jturtle :: TurtleActs -> Maybe Widget_
+jturtle = Just . turtle1
+
+jturtleP :: TurtleActs -> Maybe Picture
+jturtleP = Just . single . turtle1
 
 rturtle :: TurtleActs -> MaybeT Cmd Picture
-rturtle = lift' . jturtle
+rturtle = lift' . jturtleP
 
-loadWidget :: String -> Cmd Widget_
-loadWidget file = do
-    str <- lookupLibs file         
-    if null str then return Skip
-    else case parse widgString $ removeComment 0 $ str `minus1` '\n' of
-        Just w -> return w
-        _ -> return Skip
+loadWidget :: Sizes -> String -> Cmd Widget_
+loadWidget sizes file =
+  do str <- lookupLibs file
+     if null str then return $ text0 red sizes file
+     else return $ case parse widgString $ removeComment 0 $ str`minus1`'\n' of
+                        Just w -> w
+                        _ -> text0 red sizes file
 
 saveWidget :: Widget_ -> String -> Cmd ()
 saveWidget w file = do
   path <- userLib file
   writeFile path $ show w
 
-concatJust :: [Maybe [a]] -> Maybe [a]
-concatJust s = do guard $ any isJust s
-                  Just $ concat [as | Just as <- s]
+concatJust :: Monad m => [MaybeT m [a]] -> MaybeT m [a]
+concatJust s = maybeT $ do s <- mapM runT s
+                           return $ do guard $ any just s
+                                       Just $ concat [as | Just as <- s]
 
-concatJustT :: Monad m => [MaybeT m [a]] -> MaybeT m [a]
-concatJustT s = MaybeT $ do s <- mapM runMaybeT s
-                            return $ concatJust s
+type Interpreter = Sizes -> Pos -> TermS -> MaybeT Cmd Picture
 
--- | searchPicT eval ... t recognizes the maximal subtrees of t that are
+-- searchPic eval ... t recognizes the maximal subtrees of t that are
 -- interpretable by eval and combines the resulting pictures into a single one.
-searchPicT :: InterpreterT -> InterpreterT
-searchPicT eval sizes spread t = g [] $ expand 0 t []
-    where g p t = MaybeT $ do 
-            pict <- runMaybeT (eval sizes spread t)
-            if isJust pict then return pict
-            else case t of 
-                      F _ ts -> runMaybeT (concatJustT $ zipWithSucs g p ts)
-                      _ -> return Nothing
 
--- | solPicT sig eval ... t recognizes the terms of a solution t that are
+searchPic :: Interpreter -> Interpreter
+searchPic eval sizes spread t = g [] $ expand 0 t [] where
+ g p t = maybeT $ do pict <- runT (eval sizes spread t)
+                     if just pict then return pict
+                     else case t of
+                          F _ ts -> runT (concatJust $ zipWithSucs g p ts)
+                          _ -> return Nothing
+
+-- solPic sig eval ... t recognizes the terms of a solution t that are
 -- interpretable by eval and combines the resulting pictures into a single one.
-solPicT :: Sig -> InterpreterT -> InterpreterT
-solPicT sig eval sizes spread t = 
-                     case parseSol (solAtom sig) t of
-                              Just sol -> do let f = eval sizes spread . getTerm
-                                             concatJustT $ map f sol
-                              _ -> mzero
 
--- searchPicT and solPicT are used by Ecom.
+solPic :: Sig -> Interpreter -> Interpreter
+solPic sig eval sizes spread t = case parseSol (solAtom sig) t of
+                                      Just sol -> concatJust $ map f sol
+                                      _ -> zero
+                                 where f = eval sizes spread . getTerm
 
-partitionT :: Int -> InterpreterT
-partitionT mode sizes _ t = do guard $ not $ isSum t
-                               rturtle $ drawPartition sizes mode t
+-- searchPic and solPic are used by Ecom.
 
-alignmentT,dissectionT,linearEqsT,matrixT,widgetTreeT :: InterpreterT
+partition :: Int -> Interpreter
+partition mode sizes _ t = do guard $ not $ isSum t
+                              rturtle $ drawPartition sizes mode t
 
-alignmentT sizes _ t = lift' $ do ali <- parseAlignment t
-                                  jturtle $ drawAlignment sizes ali 
+alignment,dissection,linearEqs,matrix,widgetTree :: Interpreter
 
-dissectionT _ _ (Hidden (Dissect quads)) = rturtle $ drawDissection quads
-dissectionT _ _ t = lift' $ do quads <- parseList parseIntQuad t
-                               jturtle $ drawDissection quads
+alignment sizes _ t = lift' $ do ali <- parseAlignment t
+                                 jturtleP $ drawAlignment sizes ali
 
-linearEqsT sizes _ = f where
-        f :: TermS -> MaybeT Cmd Picture
-        f (F x [t]) | x `elem` words "bool gauss gaussI" = f t
-        f t = lift' $ do eqs <- parseLinEqs t
-                         jturtle $ matrixTerm sizes $ g eqs 1
-        g ((poly,b):eqs) n = map h poly++(str,"=",mkConst b):g eqs (n+1)
-                             where h (a,x) = (str,x,mkConst a); str = show n
-        g _ _              = []
+dissection _ _ (Hidden (Dissect quads)) = rturtle $ drawDissection quads
+dissection _ _ t = lift' $ do quads <- parseList parseIntQuad t
+                              jturtleP $ drawDissection quads
 
-matrixT sizes spread = f where
+linearEqs sizes _ = f where
+       f (F x [t]) | x `elem` words "bool gauss gaussI" = f t
+       f t = lift' $ do eqs <- parseLinEqs t
+                        jturtleP $ matrixTerm sizes $ g eqs 1
+       g ((poly,b):eqs) n = map h poly++(str,"=",mkConst b):g eqs (n+1)
+                            where h (a,x) = (str,x,mkConst a); str = show n
+       g _ _              = []
+
+matrix sizes spread = f where
         f :: TermS -> MaybeT Cmd Picture
         f (Hidden (BoolMat dom1 dom2 pairs@(_:_))) 
                             = rturtle $ matrixBool sizes dom1 dom2 pairs
@@ -2421,7 +2403,7 @@ matrixT sizes spread = f where
                                                      | i <- [1..k], j <- [1..m]]
                                   rturtle $ matrixTerm sizes ts
                                where u = parseBins t
-        f (F _ [])           = mzero
+        f (F _ [])           = zero
         f (F "pict" ts)      = do ts <- mapM (lift' . parseConsts2Term) ts
                                   rturtle $ matrixWidget sizes spread
                                           $ deAssoc3 ts
@@ -2433,348 +2415,236 @@ matrixT sizes spread = f where
                                where us = mapM parseConsts2Terms ts
                                      trs = deAssoc3 $ get us
                                      (dom1,dom2) = sortDoms2 trs
-        f _                  = mzero
+        f _                  = zero
 
-widgetTreeT sizes spread t = do t <- f [] t; return [WTree t] where
-        f :: [Int] -> TermS -> MaybeT Cmd TermW
-        f p (F "<+>" ts)        = do ts <- zipWithSucsM f p ts
-                                     return $ F Skip ts
-        f p (F "widg" ts@(_:_)) = do let u = expand 0 t $ p++[length ts-1]
-                                     [w] <- widgetsT sizes spread u
-                                     ts <- zipWithSucsM f p $ init ts
-                                     return $ F w ts
-        f p (F x ts) = do ts <- zipWithSucsM f p ts
-                          return $ F (text0 sizes x) ts
-        f _ (V x)    = return $ V $ if isPos x then posWidg x else text0 sizes x
-        f _ _        = return $ F (text0 sizes "blue_hidden") []
+widgetTree sizes spread t = do t <- f [] t; return [WTree t] where
+       f :: [Int] -> TermS -> MaybeT Cmd TermW
+       f p (F "<+>" ts)        = do ts <- zipWithSucsM f p ts
+                                    return $ F Skip ts
+       f p (F "widg" ts@(_:_)) = do let u = expand 0 t $ p++[length ts-1]
+                                    [w] <- widgets black sizes spread u
+                                    ts <- zipWithSucsM f p $ init ts
+                                    return $ F w ts
+       f p (F x ts)            = do ts <- zipWithSucsM f p ts
+                                    return $ F (text0 black sizes x) ts
+       f _ (V x)               = return $ V $ if isPos x then posWidg x
+                                              else text0 black sizes x
+       f _ _                   = return $ F (text0 blue sizes "hidden") []
 
-widgetsT :: InterpreterT
-widgetsT = widgetsCT black 
+widgets :: Color -> Interpreter
+widgets c sizes spread t = f c t where
+   next = nextColor 0 $ depth t
+   fs c t = do picts <- parseListT' (f c) t; return $ concat picts
+   f c (F x [t])     | just tr  = do [w] <- fs c t; return [get tr w]
+                                  where tr = widgTrans $ F x []
+   f c (F x [t])     | just tr  = do pict <- fs c t; return $ (get tr) pict
+                                  where tr = pictTrans c $ F x []
+   f c (F "$" [t,u]) | just tr  = do [w] <- fs c u; return [get tr w]
+                                  where tr = widgTrans t
+   f c (F "$" [t,u]) | just tr  = do pict <- fs c u; return $ (get tr) pict
+                                  where tr = pictTrans c t
+   f c (F "base" [t])  = do [w] <- fs c t; w <- lift' $ mkBased False c w
+                            return [w]
+   f c (F "baseR" [t]) = do [w] <- fs c t; w <- lift' $ mkBased True c w
+                            return [w]
+                        -- Based widgets are polygons with a horizontal line
+                        -- of 90 pixels starting in (90,0) and ending in (0,0).
+                        -- mkBased and mkTrunk generate based widgets.
+   f c (F "$" [F x [t],u]) | z == "flower"
+                                = do mode <- lift' $ parse nat mode
+                                     [w] <- f c t; pict <- fs (next c) u
+                                     rturtle $ widg w:flower mode pict
+                                     where (z,mode) = splitAt 6 x
+   f c (F "gifs" [d,n,b,h])     = do d <- lift' $ parseConst d
+                                     n <- lift' $ parsePnat n
+                                     b <- liftR b; h <- liftR h
+                                     let str i = d </> (d++'_':show i)
+                                         gif i = Gif (str i) $ Rect (st0 c) b h
+                                     return $ map gif [1..n]
+   f c (F "$" [F "grow" [t],u])    = fgrow c id t u
+   f c (F "$" [F "grow" [tr,t],u]) = do tr <- lift' $ widgTrans tr
+                                        fgrow c tr t u
+   f c (F x [acts]) | z == "hue"   = do acts <- parseActs c acts
+                                        hue <- lift' $ search (== hue) huemodes
+                                        return [turtle0 c $ mkHue hue c acts]
+                                     where (z,hue) = splitAt 3 x
+   f c (F "load" [t])              = do w <- lift $ loadWidget sizes
+                                                  $ showTree False t
+                                        return [updCol0 c w]
+   f c (F "save" [t,u])   = do [w] <- f black t
+                               lift $ saveWidget w $ showTree False u
+                               return [updCol0 c w]
+   f c (F "turt" [acts])  = do acts <- parseActs c acts
+                               return [turtle0 c acts]
+   f _ (F x [t]) | just c = f (get c) t where c = parse color x
+   f c t                  = do w <- lift' $ widgConst c sizes spread t
+                               return [w]
+   liftR = lift' . parseReal
+   fgrow c tr t u = do [w] <- fs c t; pict <- fs (next c) u
+                       rturtle $ grow tr (updCol c w) $ map getActs pict
 
-widgetsCT :: Color -> InterpreterT
-widgetsCT c sizes spread (F "load" [F file []]) 
-                                        = do w <- lift $ loadWidget file
-                                             return [w]
-widgetsCT c sizes spread (F "load" [F file [],sc]) 
-                                        = do w <- lift $ loadWidget file
-                                             sc <- lift' $ parseReal sc
-                                             return [scaleWidg sc w]
-widgetsCT c sizes spread (F "save" [t,F file []]) 
-                                       = do [w] <- widgetsCT c sizes spread t
-                                            lift $ saveWidget w file
-                                            return [w]
-widgetsCT c sizes spread t          = lift' $ widgetsC c sizes spread t
+   parseActs,g :: Color -> TermS -> MaybeT Cmd TurtleActs
+   parseActs c t = do acts <- parseListT' (g c) t; return $ concat acts
+   g c (V x) | isPos x = g c $ getSubterm t $ getPos x
+   g c (F "A" [t])     = widgAct True c t
+   g _ (F "B" [])      = return [back]
+   g _ (F "C" [])      = return [Close]
+   g _ (F "D" [])      = return [Draw]
+   g _ (F "J" [d])     = do d <- liftR d; return [Jump d]
+   g _ (F "J" p@[x,y]) = do x <- liftR x; y <- liftR y; return $ jumpTo (x,y)
+   g _ (F "L" [])      = return [up]
+   g _ (F "M" [d])     = do d <- liftR d; return [Move d]
+   g _ (F "M" p@[x,y]) = do x <- liftR x; y <- liftR y; return $ moveTo (x,y)
+   g c (F "O" [])      = return [Open c 0]
+   g _ (F "O" [c])     = open c 0
+   g c (F "OS" [])     = return [Open c 1]
+   g _ (F "OS" [c])    = open c 1
+   g c (F "OF" [])     = return [Open c 2]
+   g c (F "OFS" [])    = return [Open c 3]
+   g _ (F "OF" [c])    = open c 4
+   g _ (F "OFS" [c])   = open c 5
+   g _ (F "R" [])      = return [down]
+   g _ (F "SC" [sc])   = do sc <- liftR sc; return [Scale sc]
+   g _ (F "T" [a])     = do a <- liftR a; return [Turn a]
+   g c t               = widgAct False c t
+   open c mode = do c <- lift' $ parseColor c; return [Open c mode]
 
-type Interpreter = Sizes -> Pos -> TermS -> Maybe Picture
+   widgAct :: Bool -> Color -> TermS -> MaybeT Cmd TurtleActs
+   widgAct b c t = do [w] <- fs c t ++ return [text0 black sizes $ showTerm0 t]
+                      return [Widg b w]
 
-widgets :: Interpreter 
-widgets = widgetsC black 
-
-widgetsM,widgetsC :: Color -> Interpreter
-widgetsM c sizes spread t = do picts <- parseList' (widgetsC c sizes spread) t
-                               Just $ concat picts
- 
-widgetsC c sizes@(n,width) spread t = f t where           
-
-       fs  = widgetsM c sizes spread
-       fs' = widgetsM (nextColor 0 (depth t) c) sizes spread
-
-       f (F "$" [t,u]) | just tr          = do [w] <- fs u; Just [get tr w]
-                                            where tr = widgTrans t
-       f (F x [n]) | x `elem` fractals    = do n <- parsePnat n
-                                               jturtle $ fractal x c n
-       f (F x [tr,n]) | x `elem` polygons = do tr <- widgTrans tr
-                                               n <- parsePnat n
-                                               jturtle $ polygon x c tr n
-       f (F x [n]) | x `elem` polygons    = do n <- parsePnat n
-                                               jturtle $ polygon x c id n
-       f (F x [])  | x `elem` trunks      = Just [mkTrunk c x]
-       f (F "anim" [t])  = do pict <- fs t
-                              jturtle $ init $ init $ concatMap onoff pict
-       f (F "arc" [r,a]) = do r <- parseReal r; a <- parseReal a
-                              Just [Arc (st0 c) Perimeter r a]
-       f (F "bar" [i,h]) = do i <- parseNat i; h <- parsePnat h; guard $ i <= h
-                              jturtle $ bar sizes n i h c
-       f (F "baseR" [t]) = do [w] <- fs t; w' <- mkBased True c w; Just [w']
-       f (F "base" [t])  = do [w] <- fs t; w' <- mkBased False c w; Just [w']
-
-       -- Based widgets are polygons with a horizontal line of 90 pixels 
-       -- starting in (90,0) and ending in (0,0). mkBased and mkTrunk generate
-       -- based widgets.
-
-       f (F x [n,r,a]) | z == "blos"
-                              = do (hue,m,n,r,a) <- blosParse x n r a mode
-                                   let next1 = nextColor hue n
-                                       next2 = nextColor hue $ 2*n
-                                   jturtle $ if m < 4
-                                             then blossom next1 n c $
-                                                  case m of 
+widgConst :: Color -> Sizes -> Pos -> TermS -> Maybe Widget_
+widgConst c sizes@(n,width) spread = f where
+   f (F x [])     | x `elem` trunks   = Just $ mkTrunk c x
+   f (F x [n])    | x `elem` fractals = do n <- parsePnat n
+                                           jturtle $ fractal x c n
+   f (F x [n])    | x `elem` polygons = do n <- parsePnat n
+                                           jturtle $ polygon x c id n
+   f (F x [tr,n]) | x `elem` polygons = do tr <- widgTrans tr; n <- parsePnat n
+                                           jturtle $ polygon x c tr n
+   f (F "arc" [r,a])                  = do (r,a) <- parseReals r a
+                                           Just $ Arc (st0 c) Perimeter r a
+   f (F "bar" [i,h])                  = do i <- parseNat i; h <- parsePnat h
+                                           guard $ i <= h
+                                           jturtle $ bar sizes n i h c
+   f (F x [n,r,a]) | z == "blos" = do (hue,m,n,r,a) <- blosParse x n r a mode
+                                      let next1 = nextColor hue n
+                                          next2 = nextColor hue $ 2*n
+                                      jturtle $ if m < 4
+                                                then blossom next1 n c $
+                                                     case m of
                                                        0 -> \c -> leafD r a c c
                                                        1 -> \c -> leafA r a c c
                                                        2 -> \c -> leafC r a c c
                                                        _ -> leafS r a
-                                             else blossomD next2 n c $
-                                                  case m of 4 -> leafD r a
-                                                            5 -> leafA r a
-                                                            _ -> leafC r a
-                                where (z,mode) = splitAt 4 x
-       f (F "center" [t])     = do [w] <- fs t; Just [shiftWidg (center w) w]
-       f (F "chord" [r,a])    = do r <- parseReal r; a <- parseReal a
-                                   Just [Arc (st0 c) Chord r a]
-       f (F "chordL" [h,b])   = do h <- parseReal h; b <- parseReal b
-                                   jturtle $ chord True h b c
-       f (F "chordR" [h,b])   = do h <- parseReal h; b <- parseReal b
-                                   jturtle $ chord False h b c
-       f (F "circ" [r])       = do r <- parseReal r; Just [Oval (st0 c) r r]
-       f (F "colbars" [c])    = do c <- parseColor c
-                                   jturtle $ colbars sizes n c
-       f (F "dark" [t])       = do pict <- fs t
-                                   Just $ map (shiftLight $ -16) pict
-       f (F "$" [F "dots" [n],t]) = do n <- parsePnat n; pict <- fs t
-                                       Just $ dots n pict
-       f (F "fadeB" [t])      = do [w] <- fs t; jturtle $ fade False w
-       f (F "fadeW" [t])      = do [w] <- fs t; jturtle $ fade True w
-       f (F "fast" [t])       = do pict <- fs t; Just $ map fast pict
-       f (F "flash" [t])      = do [w] <- fs t; jturtle $ flash w
-       f (F "fern2" [n,d,r])  = do n <- parsePnat n; d <- parseReal d
-                                   r <- parseReal r; jturtle $ fern2 n c d r
-       f (F "flipH" [t])      = do pict <- fs t; Just $ flipPict True pict
-       f (F "flipV" [t])      = do pict <- fs t; Just $ flipPict False pict
-       f (F "$" [F "flower" [mode],t])
-                              = do pict <- fs' t; mode <- parseNat mode
-                                   jturtle $ flower c mode pict
-       f (F "fork" [t])       = do pict <- fs t; guard $ all isTurtle pict
-                                   jturtle $ tail $ concatMap h pict
-                                where h (Turtle _ _ as) = widg New:as
-                                      h _               = []
-       f (F "$" [F x [d],t]) | z == "frame"
-                                   = do d <- parseReal d; pict <- fs t
-                                        mode <- search (== mode) pathmodes
-                                        Just $ map (addFrame d c mode) pict
-                                     where (z,mode) = splitAt 5 x
-       f (F x [t]) | z == "frame"  = do pict <- fs t
-                                        mode <- search (== mode) pathmodes
-                                        Just $ map (addFrame 5 c mode) pict
-                                     where (z,mode) = splitAt 5 x
-       f (F "gif" [F file [],b,h]) = do b <- parseReal b; h <- parseReal h
-                                        Just [Gif file $ Rect (st0 c) b h]
-       f (F "gifs" [d,n,b,h]) = do d <- parseConst d; n <- parsePnat n
-                                   b <- parseReal b; h <- parseReal h
-                                   let str i = d </> (d ++ '_':show i)
-                                       gif i = Gif (str i) $ Rect (st0 c) b h
-                                   Just $ map gif [1..n]
-       f (F "grav" [t])       = do [w] <- fs t; Just [shiftWidg (gravity w) w]
-       f (F "$" [F "grow" [t],u])    = fgrow id t u
-       f (F "$" [F "grow" [tr,t],u]) = do tr <- widgTrans tr; fgrow tr t u
-       f (F x [n]) | z == "hilbP"    = do mode <- search (== mode) pathmodes
-                                          n <- parsePnat n
-                                          Just [turtle0 c $ hilbert n East]
+                                                else blossomD next2 n c $
+                                                     case m of 4 -> leafD r a
+                                                               5 -> leafA r a
+                                                               _ -> leafC r a
+                                   where (z,mode) = splitAt 4 x
+   f (F "chord" [r,a])           = do (r,a) <- parseReals r a
+                                      Just $ Arc (st0 c) Chord r a
+   f (F "chordL" [h,b])          = do (h,b) <- parseReals h b
+                                      jturtle $ chord True h b c
+   f (F "chordR" [h,b])          = do (h,b) <- parseReals h b
+                                      jturtle $ chord False h b c
+   f (F "circ" [r])              = do r <- parseReal r; Just $ Oval (st0 c) r r
+   f (F "colbars" [c])           = do c <- parseColor c
+                                      jturtle $ colbars sizes n c
+   f (F "fern2" [n,d,r])         = do n <- parsePnat n; (d,r) <- parseReals d r
+                                      jturtle $ fern2 n c d r
+   f (F "gif" [F file [],b,h])   = do (b,h) <- parseReals b h
+                                      Just $ Gif file $ Rect (st0 c) b h
+   f (F x [n]) | z == "hilbP"    = do mode <- search (== mode) pathmodes
+                                      n <- parsePnat n
+                                      Just $ turtle0 c $ hilbert n East
+                                   where (z,mode) = splitAt 5 x
+   f (F x [r,a]) | z == "leaf"   = do m <- search (== mode) leafmodes
+                                      (r,a) <- parseReals r a
+                                      jturtle $ case m of 0 -> leafD r a c c
+                                                          1 -> leafA r a c c
+                                                          2 -> leafC r a c c
+                                                          3 -> leafS r a c
+                                                          4 -> leafD r a c c'
+                                                          5 -> leafA r a c c'
+                                                          _ -> leafC r a c c'
+                                   where (z,mode) = splitAt 4 x
+                                         c' = complColor c
+   f (F "new" [])                = Just New
+   f (F "oleaf" [n])                 = do n <- parsePnat n; jturtle $ oleaf c n
+   f (F x [n,d,m]) | z == "owave"    = do mode <- search (== mode) pathmodes
+                                          n <- parsePnat n; d <- parseReal d
+                                          m <- parseInt m
+                                          jturtle $ owave mode c n d m
                                        where (z,mode) = splitAt 5 x
-       f (F x [t]) | z == "hue"     
-                              = do acts <- parseActs t
-                                   hue <- search (== hue) huemodes
-                                   let acts' = mkHue (nextColor hue) c acts
-                                   Just [turtle0 c acts']
-                                where (z,hue) = splitAt 3 x
-       f (F x [t]) | z == "join" 
-                              = do mode <- parse pnat mode
-                                   guard $ mode `elem` [6..14]; pict <- fs t
-                                   Just [mkTurt p0 1 $ joinPict mode pict]
-                                where (z,mode) = splitAt 4 x
-       f (F x [r,a]) | y == "leaf" 
-                              = do m <- search (== mode) leafmodes
-                                   r <- parseReal r; a <- parseReal a
-                                   let c' = complColor c
-                                   jturtle $ case m of 0 -> leafD r a c c
-                                                       1 -> leafA r a c c
-                                                       2 -> leafC r a c c
-                                                       3 -> leafS r a c
-                                                       4 -> leafD r a c c'
-                                                       5 -> leafA r a c c'
-                                                       _ -> leafC r a c c'
-                                where (y,mode) = splitAt 4 x
-       f (F "light" [t])      = do pict <- fs t
-                                   Just $ map (shiftLight 21) pict
-       f (F "$" [F x [n],t]) | z == "morph"
-                              = do hue:mode <- Just mode
-                                   hue <- parse nat [hue]
-                                   guard $ hue `elem` [0,1,2,3]
-                                   mode <- search (== mode) pathmodes
-                                   n <- parsePnat n; pict <- fs t
-                                   Just $ morphPict mode hue n pict 
-                                where (z,mode) = splitAt 5 x
-       f (F "new" [])         = Just [New]
-       f (F "oleaf" [n])      = do n <- parsePnat n; jturtle $ oleaf c n
-       f (F x [n,d,m]) | z == "owave" 
-                              = do mode <- search (== mode) pathmodes
-                                   n <- parsePnat n; d <- parseReal d
-                                   m <- parseInt m
-                                   jturtle $ owave mode c n d m
-                                where (z,mode) = splitAt 5 x
-       f (F "outline" [t])    = do pict <- fs t; Just $ outline pict
-       f (F "oval" [rx,ry])   = do rx <- parseReal rx; ry <- parseReal ry
-                                   Just [Oval (st0 c) rx ry]
-       f (F x [t]) | z == "path"
-                              = do mode <- search (== mode) pathmodes
-                                   ps <- parseList parseRealReal t
-                                   Just [path0 c mode ps]
-                                where (z,mode) = splitAt 4 x
-       {- f (F x ps) | z == "path"
-                              = do mode <- search (== mode) pathmodes
-                                   ps@((x,y):_) <- mapM parseRealReal ps
-                                   let h (i,j) = (i-x,j-y)
-                                   Just [path0 c mode $ map h ps]
-                                where (z,mode) = splitAt 4 x -}
-       f (F x rs@(_:_)) | z == "peaks"
-                              = do m:mode <- Just mode
-                                   mode <- search (== mode) polymodes
-                                   rs <- mapM parseReal rs
-                                   guard $ head rs /= 0
-                                   jturtle $ peaks (m == 'I') mode c rs
-                                where (z,mode) = splitAt 5 x
-       f (F x (n:rs@(_:_))) | z == "pie"
-                              = do mode:hue <- Just mode
-                                   let m = case mode of 'A' -> Perimeter
-                                                        'C' -> Chord
-                                                        _ -> Pie
-                                   hue <- search (== hue) huemodes
-                                   n <- parsePnat n; rs <- mapM parseReal rs
-                                   jturtle $ pie m (nextColor hue) c
-                                           $ concat $ replicate n rs
-                                 where (z,mode) = splitAt 3 x
-       f (F "pile" [h,i])     = do h <- parsePnat h; i <- parseNat i
-                                   guard $ i <= h; jturtle $ pile h i
-       f (F "pileR" [t])      = do h:is <- parseList parseNat t
-                                   guard $ all (< h) is; jturtle $ pileR h is
-       f (F "$" [F "place" [t],p]) = do [w] <- fs t; p <- parseRealReal p
-                                        jturtle $ jumpTo p ++ [widg w]
-       f (F x [n,d,m]) | z == "plait" 
-                              = do mode <- search (== mode) pathmodes
-                                   n <- parsePnat n; d <- parseReal d
-                                   m <- parsePnat m
-                                   jturtle $ plait mode c n d m
-                                where (z,mode) = splitAt 5 x
-       f (F "$" [F "planar" [n],t])   
-                              = do maxmeet <- parsePnat n; [w] <- fs t
-                                   Just [planarWidg maxmeet w]
-       f (F x (n:rs@(_:_))) | z == "poly"
-                              = do mode <- search (== mode) polymodes
-                                   n <- parsePnat n; rs <- mapM parseReal rs
-                                   let k = n*length rs; inc = 360/fromInt k
-                                   guard $ k > 1
-                                   Just [Poly (st0 c) mode 
-                                              (take k $ cycle rs) inc] 
-                                where (z,mode) = splitAt 4 x
-       f (F "pulse" [t])      = do pict <- fs t; jturtle $ pulse pict
-       f (F "rect" [b,h])     = do b <- parseReal b; h <- parseReal h
-                                   Just [Rect (st0 c) b h]
-       f (F "repeat" [t])     = do pict <- fs t
-                                   Just [Repeat $ turtle0B $ map widg pict]
-       f (F "revpic" [t])     = do pict <- fs t; Just $ reverse pict
-       f (F "rhomb" [])       = Just [rhombV c]
-       f (F "$" [F "rotate" [a],t])
-                              = do a <- parseReal a; guard $ a /= 0
-                                   pict <- fs t; jturtle $ rotatePict a pict
-       f (F "$" [F "scale" [sc],t]) 
-                              = do sc <- parseReal sc; pict <- fs t
-                                   Just $ scalePict sc pict
-       f (F "$" [F x (n:s),t]) | x `elem` ["shelf","tower","shelfS","towerS"]
-                          = do n <- parsePnat n
-                               pict <- fs t
-                               let k = if last x == 'S' then square pict else n
-                                   c = if take 5 x == "shelf" then '1' else '2'
-                                   h d a b = Just $ fst $ shelf (pict,[]) k 
-                                                        (d,d) a b False ['m',c]
-                               case s of 
-                                    d:s -> do
-                                           d <- parseReal d        -- spacing
-                                           case s of 
-                                            a:s -> do
-                                                  a <- parseChar a -- alignment
-                                                  case s of        -- centering
-                                                    b:s -> do
-                                                         b <- parseChar b
-                                                         h d a $ b == 'C'
-                                                    _ -> h d a False
-                                            _ -> h d 'M' False
-                                    _ -> h 0 'M' False
-       f (F "skip" [])        = Just [Skip]
-       f (F "slice" [r,a])    = do r <- parseReal r; a <- parseReal a
-                                   Just [Arc (st0 c) Pie r a]
-       f (F "smooth" [t])     = do pict <- fs t; Just $ smooth pict
-       f (F x [d,m,n,k,t]) | z == "snow"
-                              = do hue <- search (== mode) huemodes
-                                   d <- parseReal d; m <- parsePnat m
-                                   n <- parsePnat n; k <- parsePnat k
-                                   [w] <- fs t
-                                   Just [mkSnow True (hue+1) d m n k w]
-                                where (z,mode) = splitAt 4 x
-       f (F "spline" [t])     = do pict <- fs t; Just $ splinePict pict
-       f (F "star" [n,r,r'])  = do n <- parsePnat n; r <- parseReal r
-                                   r' <- parseReal r'; jturtle $ star n c r r'
-       f (F "$" [F "table" [n,d],t]) 
-                              = do n <- parsePnat n; d <- parseReal d
-                                   pict <- fs t; Just [table pict d n]
-       f (F "taichi" s)       = jturtle $ taichi sizes s c
-       f (F "text" ts)        = do guard $ notnull strs
-                                   Just [Text_ (st0 c) n strs $ map width strs]
-                                where strs = map (map h) $ words $ showTree
-                                             False $ colHidden $ mkTup ts
-                                      h x = if x == '\'' then ' ' else x
-       f (F "tree" [t])       = Just [Tree st0B n c $ mapT h ct]
-                                where ct = coordTree width spread 
-                                                     (20,20) $ colHidden t
-                                      (_,(x,y)) = root ct
-                                      h (a,(i,j)) = (a,fromInt2 (i-x,j-y),
-                                                     width a)
-       f (F "tria" [r])       = do r <- parseReal r; Just [Tria (st0 c) r]
-       f (F "$" [F "turn" [a],t])    
-                              = do a <- parseReal a; pict <- fs t
-                                   Just $ turnPict a pict
-       f (F "turt" [t])       = do acts <- parseActs t
-                                   Just [turtle0 c acts]
-       f (F x [n,d,a]) | z == "wave"
-                              = do mode <- search (== mode) pathmodes
-                                   n <- parsePnat n; d <- parseReal d
-                                   a <- parseReal a
-                                   jturtle $ wave mode n d a c
-                                where (z,mode) = splitAt 4 x
-       f (F x [t]) | just c   = widgetsC (get c) sizes spread t
-                                where c = parse color x
-       f _                    = Nothing
-       fgrow tr t u = do [w] <- fs t; pict <- fs' u
-                         jturtle $ grow tr (updCol c w) $ map getActs pict
+   f (F "oval" [rx,ry])              = do (rx,ry) <- parseReals rx ry
+                                          Just $ Oval (st0 c) rx ry
+   f (F x [t]) | z == "path"         = do mode <- search (== mode) pathmodes
+                                          ps <- parseList parseRealReal t
+                                          Just $ path0 c mode ps
+                                       where (z,mode) = splitAt 4 x
+   f (F x rs@(_:_)) | z == "peaks"   = do m:mode <- Just mode
+                                          mode <- search (== mode) polymodes
+                                          rs <- mapM parseReal rs
+                                          guard $ head rs /= 0
+                                          jturtle $ peaks (m == 'I') mode c rs
+                                       where (z,mode) = splitAt 5 x
+   f (F x (n:rs@(_:_))) | z == "pie" = do mode:hue <- Just mode
+                                          let m = case mode of 'A' -> Perimeter
+                                                               'C' -> Chord
+                                                               _ -> Pie
+                                          hue <- search (== hue) huemodes
+                                          n <- parsePnat n
+                                          rs <- mapM parseReal rs
+                                          jturtle $ pie m (nextColor hue) c
+                                                  $ concat $ replicate n rs
+                                       where (z,mode) = splitAt 3 x
+   f (F "pile" [h,i])                = do h <- parsePnat h; i <- parseNat i
+                                          guard $ i <= h; jturtle $ pile h i
+   f (F "pileR" [t])                 = do h:is <- parseList parseNat t
+                                          guard $ all (< h) is
+                                          jturtle $ pileR h is
+   f (F x [n,d,m]) | z == "plait"    = do mode <- search (== mode) pathmodes
+                                          n <- parsePnat n; d <- parseReal d
+                                          m <- parsePnat m
+                                          jturtle $ plait mode c n d m
+                                       where (z,mode) = splitAt 5 x
+   f (F x (n:rs@(_:_))) | z == "poly" = do mode <- search (== mode) polymodes
+                                           n <- parsePnat n
+                                           rs <- mapM parseReal rs
+                                           let k = n*length rs
+                                           guard $ k > 1
+                                           Just $ Poly (st0 c) mode
+                                                       (take k $ cycle rs) $
+                                                       360/fromInt k
+                                        where (z,mode) = splitAt 4 x
+   f (F "rect" [b,h])    = do (b,h) <- parseReals b h; Just $ Rect (st0 c) b h
+   f (F "rhomb" [])      = Just $ rhombV c
+   f (F "skip" [])       = Just Skip
+   f (F "slice" [r,a])   = do (r,a) <- parseReals r a
+                              Just $ Arc (st0 c) Pie r a
+   f (F "star" [n,r,r']) = do n <- parsePnat n; (r,r') <- parseReals r r'
+                              jturtle $ star n c r r'
+   f (F "stick" [])      = Just $ Path (p0,0,c,-16) 4
+                                             [p0,(-4,-8),(0,-150),(4,-8),p0]
+   f (F "taichi" s)      = jturtle $ taichi sizes s c
+   f (F "text" ts)       = do guard $ notnull strs
+                              Just $ Text_ (st0 c) n strs $ map width strs
+                           where strs = map (map h) $ words $ showTree False
+                                                    $ colHidden $ mkTup ts
+                                 h x = if x == '\'' then ' ' else x
+   f (F "tree" [t])      = Just $ Tree st0B n c $ mapT h ct
+                           where ct = coordTree width spread (20,20) $
+                                                             colHidden t
+                                 (_,(x,y)) = root ct
+                                 h (a,(i,j)) = (a,fromInt2 (i-x,j-y),width a)
+   f (F "tria" [r])      = do r <- parseReal r; Just $ Tria (st0 c) r
+   f (F x [n,d,a]) | z == "wave" = do mode <- search (== mode) pathmodes
+                                      n <- parsePnat n; (d,a) <- parseReals d a
+                                      jturtle $ wave mode n d a c
+                                   where (z,mode) = splitAt 4 x
+   f _ = Nothing
 
-
-       parseActs,g :: TermS -> Maybe TurtleActs
-       parseActs t       = do acts <- parseList' g t; Just $ concat acts
-       g (V x) | isPos x = g $ getSubterm t $ getPos x
-       g (F "A" [t])     = widgAct True t
-       g (F "B" [])      = Just [back]
-       g (F "C" [])      = Just [Close]
-       g (F "D" [])      = Just [Draw]
-       g (F "J" [d])     = do d <- parseReal d; Just [Jump d]
-       g (F "J" p@[x,y]) = do [x,y] <- mapM parseReal p; Just $ jumpTo (x,y) 
-       g (F "L" [])      = Just [up]
-       g (F "M" [d])     = do d <- parseReal d; Just [Move d]
-       g (F "M" p@[x,y]) = do [x,y] <- mapM parseReal p; Just $ moveTo (x,y) 
-       g (F "O" [])      = Just [Open c 0]
-       g (F "O" [c])     = do c <- parseColor c; Just [Open c 0]
-       g (F "OS" [])     = Just [Open c 1]
-       g (F "OS" [c])    = do c <- parseColor c; Just [Open c 1]
-       g (F "OF" [])     = Just [Open c 2]
-       g (F "OFS" [])    = Just [Open c 3]
-       g (F "OF" [c])    = do c <- parseColor c; Just [Open c 4]
-       g (F "OFS" [c])   = do c <- parseColor c; Just [Open c 5]
-       g (F "R" [])      = Just [down]
-       g (F "SC" [sc])   = do sc <- parseReal sc; Just [Scale sc]
-       g (F "T" [a])     = do a <- parseReal a; Just [Turn a]
-       g t               = widgAct False t
-
-       widgAct :: Bool -> TermS -> Maybe TurtleActs
-       widgAct b t = do [w] <- fs t ++ Just [text0 sizes $ showTerm0 t]
-                        Just [Widg b w]
-  
 huemodes   = "":words "1 2 3"
 pathmodes  = "":words "S W SW F SF"
 polymodes  = pathmodes++words "R R1 R2 R3 L L1 L2 L3 T T1 T2 T3 LT LT1 LT2 LT3"
@@ -2786,50 +2656,113 @@ fractals  = words "bush bush2 cant dragon fern gras grasL grasA grasC grasR" ++
 polygons  = words "cactus hexa penta pentaS pytree"
 trunks   = words "TR SQ PE PY CA HE LB RB LS RS PS"
 
-depth (F "$" [F "flower" _,t]) = depth t+1
-depth (F "$" [F "grow" _,t])   = depth t+1
-depth (F "$" [F "growT" _,t])  = depth t+1
-depth (F _ ts)                 = maximum $ 1:map depth ts
-depth _                        = 1
-
--- The following widget transformations may occur as arguments of growT (see 
--- widgets). They do not modify the outline of a widget and can thus be applied 
--- to based widgets. 
+depth :: TermS -> Int
+depth (F "$" [F x _,t]) | take 6 x == "flower" = depth t+1
+depth (F "$" [F "grow" _,t])                   = depth t+1
+depth (F x ts) = maximum $ 1:map depth ts
+depth _        = 1
 
 widgTrans :: TermS -> Maybe WidgTrans
-widgTrans t = f t where
-   f (F "." [t,u])           = do tr1 <- widgTrans t; tr2 <- widgTrans u
-                                  Just $ tr1 . tr2
-   f (F x [F mode []]) | z == "track"
-                             = do guard $ typ `elem` trackmodes
-                                  m <- search (== m) pathmodes 
-                                  hue <- search (== hue) huemodes
-                                  Just $ track typ m $ nextColor hue
-                               where (z,hue) = splitAt 5 x
-                                     (typ,m) = splitAt 3 mode
-   f (F x (n:s)) | z == "rainbowT"
-                             = do frainbow n s scaleWidgT z hue
-                               where (z,hue) = splitAt 8 x
-   f (F x (n:s)) | z == "rainbow" 
-                             = do frainbow n s scaleWidg z hue
-                               where (z,hue) = splitAt 7 x
-   f (F "shineT" (i:s))      = fshine i s scaleWidgT
-   f (F "shine" (i:s))       = fshine i s scaleWidg
-   f (F "inCenter" [tr])     = do tr <- widgTrans tr; Just $ inCenter tr
-   f _                       = Nothing
-   frainbow n s sc z hue = do n <- parsePnat n
-                              hue <- search (== hue) huemodes
-                              let next = nextColor hue n
-                              if null s then Just $ rainbow n 0 0 next sc
+widgTrans = f where
+   f (F "center" [])    = Just $ \w -> shiftWidg (center w) w
+   f (F "fadeB" [])     = Just $ turtle1 . fade False
+   f (F "fadeW" [])      = Just $ turtle1 . fade True
+   f (F "flash" [])     = Just $ turtle1 . flash
+   f (F "grav" [])       = Just $ \w -> shiftWidg (gravity w) w
+   f (F "inCenter" [tr]) = do tr <- f tr; Just $ inCenter tr
+   f (F "place" [x,y])   = do x <- parseReal x; y <- parseReal y
+                              Just $ turtle1 . \w -> jumpTo (x,y) ++ [widg w]
+   f (F "planar" [n])    = do maxmeet <- parsePnat n; Just $ planarWidg maxmeet
+   f (F x (n:s)) | z == "rainbow"  = frainbow n s scaleWidg z hue
+                                     where (z,hue) = splitAt 7 x
+   f (F x (n:s)) | z == "rainbowT" = frainbow n s scaleWidgT z hue
+                                     where (z,hue) = splitAt 8 x
+   f (F "shine" (i:s))   = fshine i s scaleWidg
+   f (F "shineT" (i:s))         = fshine i s scaleWidgT
+   f (F x [d,m,n,k]) | z == "snow" = do hue <- search (== hue) huemodes
+                                        d <- parseReal d; m <- parsePnat m
+                                        n <- parsePnat n; k <- parsePnat k
+                                        Just $ mkSnow True hue d m n k
+                                     where (z,hue) = splitAt 4 x
+   f (F x [F m []]) | z == "track" = do guard $ mode `elem` trackmodes
+                                        hue <- search (== hue) huemodes
+                                        pmode <- search (== pmode) pathmodes
+                                        Just $ track hue mode pmode
+                                     where (z,hue) = splitAt 5 x
+                                           (mode,pmode) = splitAt 3 m
+   f _ = Nothing
+   frainbow n s sc z hue = do n <- parsePnat n; hue <- search (== hue) huemodes
+                              if null s then Just $ rainbow n 0 0 hue sc
                                         else do
                                              [a,d] <- mapM parseReal s
-                                             Just $ rainbow n a d next sc
+                                             Just $ rainbow n a d hue sc
    fshine i s sc         = do i <- parseInt i; guard $ abs i `elem` [1..42]
                               if null s then Just $ shine i 0 0 sc
                                         else do
                                              [a,d] <- mapM parseReal s
                                              Just $ shine i a d sc
 
+pictTrans :: Color -> TermS -> Maybe PictTrans
+pictTrans c = f where
+     f (F "anim" [])            = Just $ single . turtle1 . concatMap onoff
+     f (F "dark" [])            = Just $ map $ shiftLight $ -16
+     f (F "dots" [n])           = do n <- parsePnat n; Just $ dots n
+     f (F "fast" [])            = Just $ map fast
+     f (F "flipH" [])           = Just $ flipPict True
+     f (F "flipV" [])           = Just $ flipPict False
+     f (F "fork" [])            = Just $ single . turtle1 . tail . concatMap h
+                                  where h (Turtle _ _ as) = widg New:as
+                                        h w               = [widg w]
+     f (F x [d]) | z == "frame" = do d <- parseReal d
+                                     mode <- search (== mode) pathmodes
+                                     Just $ map $ addFrame d c mode
+                                  where (z,mode) = splitAt 5 x
+     f (F x []) | z == "join" = do mode <- parse pnat mode
+                                   guard $ mode `elem` [6..14]
+                                   mkWidg $ joinPict mode
+                                where (z,mode) = splitAt 4 x
+     f (F "light" [])         = Just $ map $ shiftLight 21
+     f (F x [n])  | z == "morph" = do hue:mode <- Just mode
+                                      hue <- parse nat [hue]
+                                      guard $ hue `elem` [0..3]
+                                      mode <- search (== mode) pathmodes
+                                      n <- parsePnat n
+                                      mkWidg $ morphPict mode hue n
+                                   where (z,mode) = splitAt 5 x
+     f (F "outline" [])  = Just outline
+     f (F "pulse" [])    = Just $ single . turtle1 . pulse
+     f (F "repeat" [])   = Just $ single . Repeat . turtle0B . map widg
+     f (F "revpic" [])   = Just reverse
+     f (F "rotate" [a])  = do a <- parseReal a; guard $ a /= 0
+                              Just $ single . turtle1 . rotatePict a
+     f (F "scale" [sc])  = do sc <- parseReal sc; Just $ scalePict sc
+     f (F "scaleT" [sc]) = do sc <- parseReal sc; Just $ scalePictT sc
+     f (F x (n:s)) | x `elem` ["shelf","tower","shelfS","towerS"]
+                      = do n <- parsePnat n
+                           case s of
+                             d:s -> do
+                               d <- parseReal d                -- space
+                               case s of
+                                 a:s -> do
+                                   a <- parseChar a         -- align
+                                   case s of
+                                     b:s -> do
+                                       b <- parseChar b  -- center
+                                       Just $ tr n d a $ b == 'C'
+                                     _ -> Just $ tr n d a False
+                                 _ -> Just $ tr n d 'M' False
+                             _ -> Just $ tr n 0 'M' False
+                      where tr n d a b pict = fst $ shelf (pict,[]) k (d,d) a b
+                                                          False ['m',c]
+                             where k = if last x == 'S' then square pict else n
+                                   c = if take 5 x == "shelf" then '1' else '2'
+     f (F "smooth" [])   = Just smooth
+     f (F "spline" [])   = Just splinePict
+     f (F "table" [n,d]) = do n <- parsePnat n; d <- parseReal d
+                              Just $ single . table n d
+     f (F "turn" [a])    = do a <- parseReal a; Just $ turnPict a
+     f _ = Nothing
+     mkWidg tr = Just $ single . mkTurt p0 1 . tr
 
 -- | wTreeToBunches is used by 'arrangeGraph', 'concatGraphs' and 'newPaint'
 wTreeToBunches :: String -> Point -> Double -> TermW -> Picture
@@ -2855,7 +2788,7 @@ wTreeToBunches mode (hor,ver) grade t = w:ws2
         addControls t              = t
         bunches :: TermWP -> Term Int -> Picture
         bunches (F (w,p) cts) (F _ pts) = Bunch (moveWidg p w) (map root pts):
-                                          msum (zipWith bunches cts pts)
+                                          concat (zipWith bunches cts pts)
         bunches (V (Text_ _ _ [x] _,p)) _ | isPos x 
                                          = [Bunch (Dot red p) [root t]]
                                           where t = getSubterm pt $ getPos x
@@ -2866,9 +2799,9 @@ wTreeToBunches mode (hor,ver) grade t = w:ws2
         f = (widgFrame *** ycoord) . turtle0B . map (Widg True) . row
         row n = zipWith moveWidg ps ws
             where (ws,ps) = unzip [label ct p | p <- allPoss ct, length p == n]
-        [h,c] = mode; n = parse pnat [c]; m = fromJust n
+        [h,c] = mode; n = parse pnat [c]; m = get n
         p@(xp,_) = coords w
-        ws1 = if h == 'r' && isJust n && m `elem` [1..8] then map (rot m) ws 
+        ws1 = if h == 'r' && just n && m `elem` [1..8] then map (rot m) ws 
                                                          else ws
         ws2 = if grade == 0 then ws1 else map rotAll ws1
         rot 1 v = moveWidg (rotate p (grad1 z) (xp,y)) v where (z,y) = coords v
@@ -2984,8 +2917,8 @@ graphToTree graph = eqsToGraph [] eqs
 -- * __Morphing__, __scaling__ and __framing__
 
 morphPict :: Int -> Int -> Int -> PictTrans
-morphPict mode m n ws = msum $ zipWith f (init ws) $ tail ws
- where f v w = map g [0..n-1]
+morphPict mode m n ws = concat $ zipWith f (init ws) $ tail ws
+  where f v w = map g [0..n] -- or n-1
                where [ps,qs] = map (getFramePts False) [v,w]
                      diff = length ps-length qs
                      ps' = adaptLength (-diff) ps
@@ -3000,12 +2933,14 @@ scaleGraph :: Double -> Graph -> Graph
 scaleGraph sc (pict,arcs) = (scalePict sc pict,arcs)
 
 scalePict :: Double -> PictTrans
-scalePict 1  = id
-scalePict sc = map $ scaleWidg sc
+scalePict 1   = id
+scalePict sc  = map $ scaleWidg sc
+scalePictT 1  = id
+scalePictT sc = map $ scaleWidgT sc
 
 -- scaleWidg/T sc w scales w by multiplying its vertices/radia with sc.
 -- Dots, gifs and texts are not scaled. 
-scaleWidg,scaleWidgT :: Double -> Widget_ -> Widget_
+scaleWidg,scaleWidgT :: Double -> WidgTrans
 scaleWidg 1  w                    = w
 scaleWidg sc (Arc st t r a)       = Arc st t (r*sc) a
 scaleWidg sc (Oval st rx ry)      = Oval st (rx*sc) $ ry*sc
@@ -3019,7 +2954,6 @@ scaleWidg sc (Bunch w is)         = Bunch (scaleWidg sc w) is
 scaleWidg sc (Fast w)             = Fast $ scaleWidg sc w
 scaleWidg sc (Repeat w)           = Repeat $ scaleWidg sc w
 scaleWidg _ w                            = w
-
 scaleWidgT sc (Turtle st sc' acts) = Turtle st sc' $ map scale acts
                               where scale (Widg b w) = Widg b $ scaleWidgT sc w
                                     scale act        = act
@@ -3087,11 +3021,13 @@ moveTurn _ p a    = updState f where f (_,_,c,i) = (p,a,c,i)
 -- | moveTurnScale is used by mkPict and 'widgFrame'.
 moveTurnScale :: Bool -> Point -> Double -> Double -> Widget_ -> Widget_
 moveTurnScale b p a sc = scaleWidg sc . moveTurn b p a
-                              
-updCol :: Color -> WidgTrans
-updCol (RGB 0 0 0) = id
-updCol c             = updState f where f (p,a,_,i) = (p,a,c,i)
-                              
+
+updCol,updCol0 :: Color -> WidgTrans
+updCol (RGB 0 0 0)  = id
+updCol c            = updState $ \(p,a,_,i) -> (p,a,c,i)
+updCol0 c (Turtle (p,a,_,i) sc acts) = Turtle (p,a,c,i) sc acts
+updCol0 c w                          = updState (\(p,a,_,i) -> (p,a,c,i)) w
+
 hueCol :: Int -> PictTrans
 hueCol m pict = map f $ indices_ pict
                  where n = length pict
@@ -3105,8 +3041,8 @@ shiftCol n w | isRedDot w = w
              | otherwise  = updState (f $ 1530+n) w
                             where f n (p,a,c,i) = (p,a,iterate nextCol c!!n,i)
 
-chgColor :: (Color -> Color) -> WidgTrans
-chgColor f = updState g where g (p,a,c,i) = (p,a,f c,i)
+nextHue :: Int -> Int -> WidgTrans
+nextHue hue n = updState g where g (p,a,c,i) = (p,a,nextColor hue n c,i)
 
 shiftLight :: Int -> WidgTrans
 shiftLight j = updState f where f (p,a,c,i) = (p,a,c,i+j)
@@ -3183,24 +3119,25 @@ planarWidg maxmeet w = turtle0B $ head $ getMax acts $ pairs ws
 --       where u:v:_ = mkPict w; (_,inner,_,_,_) = strands [u,v]
                                                           
 planarAll :: Int -> Graph -> Maybe Widget_ -> [Int] -> Double -> (Graph,[Int])
-planarAll maxmeet (pict,arcs) (Just rect) rectIndices rscale = (graph',is)
+planarAll maxmeet (pict,arcs) (Just rect) rectIndices rscale
+                     = (onlyNodes pict2,is)
                        where Rect (p@(x,y),_,_,_) b h = rect
                              k:ks = rectIndices
-                             w = transXY p $ reduce $ mkTurt (x-b,y-h) rscale 
-                                           $ map (pict!!) rectIndices
+                             w = transXY p $ reduce $ mkTurt (x-b,y-h) rscale
+                                                    $ map (pict!!) rectIndices
                              reduce = scaleWidg (1/rscale) . planarWidg maxmeet
-                             graph = removeSub (updList pict k w,arcs) ks
-                             (graph',n) = unTurtG graph rscale (== k)
-                             m = length $ fst graph
+                             (pict1,_) = removeSub (updList pict k w,arcs) ks
+                             (pict2,n) = unTurt pict1 (== k)
+                             m = length pict1
                              is = k:[m..m+n-1]
-                             --(x1,y1,x2,y2) = pictFrame $ map (pict'!!) is
-                             --(b',h') = (abs (x2-x1)/2,abs (y2-y1)/2)
-                             --r = Rect ((x1+b',y1+h'),0,black,0) b' h'
-planarAll maxmeet (pict,_) _ _ scale = 
-                         (fst $ unTurtG graph scale $ const True,[])
-                        where graph = ([reduce $ mkTurt p0 scale pict],[[]])
+                             (x1,y1,x2,y2) = pictFrame $ map (pict2!!) is
+                             (b',h') = (abs (x2-x1)/2,abs (y2-y1)/2)
+                             r = Rect ((x1+b',y1+h'),0,black,0) b' h'
+planarAll maxmeet (pict,arcs) _ _ scale = (onlyNodes pict2,[])
+                        where pict1 = [reduce $ mkTurt p0 scale pict]
+                              (pict2,_) = unTurt pict1 $ const True
                               reduce = scaleWidg (1/scale) . planarWidg maxmeet
-                              
+
 smooth :: PictTrans                   -- uses Tcl's splining
 smooth = map f
         where f (Path st m ps)   | m `elem` [0,2,4] = Path st (m+1) ps
@@ -3227,15 +3164,16 @@ splinePict = map $ turtle0B . map f . hulls False
              where f (Path0 c i m ps) = widg $ Path (p0,0,c,i) m 
                                              $ if odd m then ps else spline ps
 
-mkHue :: Num b => (b -> Color -> Color) -> Color -> [TurtleAct] -> [TurtleAct]
-mkHue next c acts = fst $ foldl f ([],c) acts
-             where n = foldl g 0 acts where g n (Widg _ _) = n+1
-                                            g n (Open _ _) = n+1
-                                            g n Close      = n-1
-                                            g n _              = n
-                   f (acts,c) act = case act of 
-                             Widg b w -> (acts++[Widg b $ updCol c w],next n c)
-                             _ -> (acts++[act],c)
+mkHue :: Int -> Color -> TurtleActs -> TurtleActs
+mkHue hue c acts = fst $ foldl f ([],c) acts
+   where f (acts,c) act = case act of Widg b w -> (acts++[Widg b $ updCol c w],
+                                                   nextColor hue n c)
+                                      _ -> (acts++[act],c)
+         n = foldl g 0 acts
+         g n (Widg _ _) = n+1
+         g n (Open _ _) = n+1
+         g n Close      = n-1
+         g n _           = n
 
 -- | mkSnow b huemode d m n k w computes a Koch snowflake from widget w with 
 -- turn 
@@ -3245,11 +3183,10 @@ mkHue next c acts = fst $ foldl f ([],c) acts
 -- d affects the radia of the circles consisting of k copies of w.
 mkSnow :: Bool -> Int -> Double -> Int -> Int -> Int -> Widget_ -> Widget_
 mkSnow withCenter huemode d m n k w = 
-      if n <= 0 then Skip else mkTurt p0 1 $ color $ if withCenter 
-                                                           then w:g (n-1) r [p0]
-                                                     else g (n-1) r [p0]
-      where color = if huemode < 4 then id else hueCol $ huemode-3
-            ps = getFramePts False w
+      if n <= 0 then Skip
+                else mkTurt p0 1 $ if withCenter then w:g (n-1) r [p0]
+                                                 else g (n-1) r [p0]
+      where ps = getFramePts False w
             r = maximum $ map (distance $ gravity w) ps
             a = 360/fromInt k
             pict = if isTurtle w then mkPict w else [w]
@@ -3262,9 +3199,7 @@ mkSnow withCenter huemode d m n k w =
                     r' = r/3
                     circle p@(x,y) = if odd m then s else p:s
                            where s = take k $ iterate (rotate p a) (x,y-r+d*r')
-                    pict' = if huemode < 4 
-                            then zipWith updCol (map (f . getCol) pict) pict
-                            else pict
+                    pict' = zipWith updCol (map (f . getCol) pict) pict
                     f col = hue huemode col n $ n-i
                     h p a b = moveWidg p $ turnWidg a $ scaleWidg (b/3^(n-i)) 
                                                              $ mkWidg pict'
@@ -3281,45 +3216,39 @@ mkSnow withCenter huemode d m n k w =
                               _ -> ones
             blink = 1: -1:blink
             ones  = 1:ones
-                            
-rainbow :: Int -> Double -> Double -> (Color -> Color)
-                                 -> (Double -> Widget_ -> Widget_) -> WidgTrans
-rainbow n a d next sc w = turtle1 $ f w n
-                          where f _ 0 = []
-                                f w i = widg (sc (fromInt i/fromInt n) w):
-                                        Turn a:Jump d:f (chgColor next w) (i-1)
 
-shine :: Int -> Double -> Double -> (Double -> Widget_ -> Widget_) -> WidgTrans
-shine i a d sc w = turtle1 $ f w n
-                   where n = abs i
-                         next = shiftLight $ 42 `div` i
-                         f w 0 = []
-                         f w i = widg (sc (fromInt i/fromInt n) w):Turn a:
-                                 Jump d:f (next w) (i-1)
+iterScale :: Int -> Double -> Double -> WidgTrans -> (Double -> WidgTrans)
+                                                -> WidgTrans
+iterScale n a d next sc w = turtle1 $ f w n
+                            where f _ 0 = []
+                                  f w i = widg (sc (fromInt i/fromInt n) w):
+                                          Turn a:Jump d:f (next w) (i-1)
 
-track :: String -> Int -> (Int -> Color -> Color) -> WidgTrans
-track mode m next w = if null ps then Skip
-                      else turtle1 $ map widg $ pr1
-                                              $ fold2 g ([],p,getCol w) qs ks
-             where ps@(p:qs) = getAllPoints w
-                   ks = case mode of "asc" -> indices_ ps
-                                     "sym" -> sym
-                                     "ang" -> h angle
-                                     _   -> h slope
-                   n = maximum ks
-                   r = gravity w           -- coords w ?
-                   g (ws,p,c) q _ = (ws++[path0 c m [p,q,r,p]],q,next n c)
-                   lg1 = length ps-1
-                   lg2 = lg1`div`2
-                   half = [0..lg2-1]
-                   sym = half++if lg1`mod`2 == 0 then reverse half
-                                                 else lg2:reverse half
-                   h rel = map f rels
-                          where rels = fst $ foldl g ([],p) qs
-                                g (is,p) q = (is++[rel p q],q)
-                                set = qsort (<=) $ mkSet rels
-                                f rel = case search (== rel) set of Just i -> i
-                                                                    _ -> 0
+shine :: Int -> Double -> Double -> (Double -> WidgTrans) -> WidgTrans
+shine i a d = iterScale (abs i) a d $ shiftLight $ 42 `div` i
+
+rainbow :: Int -> Double -> Double -> Int -> (Double -> WidgTrans) -> WidgTrans
+rainbow n a d hue = iterScale n a d $ nextHue hue n
+
+track :: Int -> String -> Int -> WidgTrans
+track hue mode pmode w = if null ps then Skip
+                         else turtle1 $ map widg
+                                      $ pr1 $ fold2 f ([],p,getCol w) qs ks
+    where ps@(p:qs) = getAllPoints w
+          ks = case mode of "asc" -> indices_ ps; "sym" -> sym
+                            "ang" -> g angle;     _     -> g slope
+          n = 2*maximum ks -- or maximum ks
+          r = gravity w    -- or coords w
+          f (ws,p,c) q i = (ws++[path0 c pmode [p,q,r,p]],q,nextColor hue n c)
+          g rel = map f rels
+                  where f rel = case search (== rel) set of Just i -> i; _ -> 0
+                        rels = fst $ foldl h ([],p) qs
+                        set = qsort (<=) $ mkSet rels
+                        h (is,p) q = (is++[rel p q],q)
+          lg1 = length ps-1
+          lg2 = lg1`div`2
+          half = [0..lg2-1]
+          sym = half++if lg1`mod`2 == 0 then reverse half else lg2:reverse half
 
 wave :: Int -> Int -> Double -> Double -> Color -> [TurtleAct]
 wave mode n d a c = Open c mode:Jump (-fromInt n*x):down:Jump (-5):up:
@@ -3348,7 +3277,7 @@ fade b = take 168 . if b then f 42 else g 0
                        else wfast w:wait:g (i-1) (shiftLight (-1) w)
 
 flash :: Widget_ -> TurtleActs
-flash = take 100 . f where f w = wfast w:wait:f (chgColor (nextColor 0 50) w)
+flash = take 100 . f where f w = wfast w:wait:f (nextHue 0 50 w)
 
 peaks :: Bool -> Int -> Color -> [Double] -> TurtleActs
 peaks b mode c rs = if b then take 103 $ f 2 else take 102 $ g (w 36) 35
@@ -3384,11 +3313,11 @@ plait mode c n d m = oscillate acts $ m
 -- table pict d n displays pict as a matrix with n columns and a horizontal and
 -- vertical distance of d units between the ANCHORS of adjacent widgets. 
 -- table returns an action sequence.
-table :: [Widget_] -> Double -> Int -> Widget_
-table pict d n = turtle0B $ concatMap g $ f pict
-                 where f [] = []; f s  = take n s:f (drop n s)
-                       g pict = open:concatMap h pict++[Close,down,Jump d,up]
-                                where h w = [widg w,Jump d]
+table :: Int -> Double -> [Widget_] -> Widget_
+table n d = turtle0B . concatMap g . f
+            where f [] = []; f s  = take n s:f (drop n s)
+                  g pict = open:concatMap h pict++[Close,down,Jump d,up]
+                           where h w = [widg w,Jump d]
 
 -- | shelf graph cols (dh,dv) align scaled ... mode displays graph as a matrix 
 -- with cols columns and a horizontal/vertical spacing of dh/dv units between 
@@ -3435,7 +3364,7 @@ shelf graph@(pict,_) cols (dh,dv) align centered scaled mode =
                                                  else id) . (rowList pict!!) 
               pict1 b = concatMap (g b f) rowIndices 
                        where f x z y = moveWidg $ if b then (x+z,y) else (y,x+z)
-              acts = msum $ concatMap (g b f) rowIndices
+              acts = concat $ concatMap (g b f) rowIndices
                      where f x z y w = [open,Jump x',down,Jump y',up,
                                               widg w,Close]
                                  where (x',y') = if b then (x+z,y) else (y,x+z)
@@ -3489,7 +3418,7 @@ pictToWTree pict = case map f pict of [t] -> t
 concatGraphs :: Point -> Double -> String -> [Graph] -> Graph 
 concatGraphs _ _ _ []                 = nil2
 concatGraphs _ _ _ [graph]            = graph
-concatGraphs spread grade mode graphs = (msum pictures,foldl g [] edges)
+concatGraphs spread grade mode graphs = (concat pictures,foldl g [] edges)
  where (pictures,edges) = unzip $ map (bunchesToArcs . f) graphs
        f graph@(pict,_) = if any isWTree pict then onlyNodes ws else graph
                     where ws = wTreeToBunches m spread grade $ pictToWTree pict
@@ -3647,9 +3576,9 @@ hullCross line@(p1@(x1,y1),p2@(x2,y2)) w =
                Fast w        -> hullCross line w
                Repeat w      -> hullCross line w
                _             -> p2
-     where hull = f $ msum $ getFrameLns w
-           f ls = if null ps then [p2] else map fromJust ps
-                where ps = filter isJust $ map (crossing (line,p2)) $ addSuc ls
+     where hull = f $ concat $ getFrameLns w
+           f ls = if null ps then [p2] else map get ps
+                where ps = filter just $ map (crossing (line,p2)) $ addSuc ls
 
 -- | crossing line1 line2 returns the crossing point of line1 with line2.
 -- crossing is used by crossings, hullCross and interior.
@@ -3688,9 +3617,9 @@ type Crossing = (Point,(Line_,Line_))
 -- lines1, line2 in lines2 and crossing point p of line1 and line2.
 -- crossings is used by strands.
 crossings :: Lines -> Lines -> [Crossing]
-crossings lines1 lines2 = [(fromJust p,(fst line1,fst line2)) | 
+crossings lines1 lines2 = [(get p,(fst line1,fst line2)) | 
                             line1 <- addSuc lines1, line2 <- addSuc lines2,
-                           let p = crossing line1 line2, isJust p]
+                           let p = crossing line1 line2, just p]
 
 addSuc :: Lines -> [(Line_,Point)]
 addSuc [] = []
@@ -3742,7 +3671,7 @@ strands pict = (hcs,map pr3 inner,innerCols,outer,map col outer)
                         (qs,pss,_) = foldl next ([],[],Nothing) $ extend h sucs
                         next (ps,pss,r) p 
                                 | p `elem` concatMap (map fst . pr3) hcs
-                                       = if isJust r && g (mid (fromJust r) p)
+                                       = if just r && g (mid (get r) p)
                                          then ([p],ps:pss,Just p)
                                               else (p:ps,pss,Just p)
                                 | g p  = ([],add ps pss,Nothing)
@@ -3767,15 +3696,17 @@ strands pict = (hcs,map pr3 inner,innerCols,outer,map col outer)
 -- joinPict is used by widgets and scaleAndDraw.
 
 joinPict :: Int -> PictTrans
-joinPict m pict = case m of 6  -> pict++map center pict
-                            7  -> pict++concatMap (map dot . pr3) hcs
-                            8  -> pict++zipWith darkLine innerCols inner
-                            9  -> pict++map whiteFill inner
-                            10 -> pict++zipWith lightFill innerCols inner
-                            11 -> pict++zipWith fill innerCols inner
-                            12 -> pict++zipWith darkLine outerCols outer
-                            13 -> pict++fillHoles light
-                            _ -> zipWith lightFill outerCols rest++fillHoles id
+joinPict m pict = case m of
+                       6  -> pict++map center pict
+                       7  -> pict++concatMap (map dot . pr3) hcs
+                       8  -> pict++zipWith darkLine innerCols inner
+                       9  -> pict++map whiteFill inner
+                       10 -> pict++zipWith lightFill innerCols inner
+                       11 -> pict++zipWith fill innerCols inner
+                       12 -> pict++zipWith darkLine outerCols outer
+                       13 -> pict++fillHoles light
+                       14 -> zipWith lightFill outerCols rest++fillHoles id
+                       _  -> pict
                where center w = Dot (if any (inWidget p) $ minus1 pict w
                                      then grey else black) p where p = coords w 
                      dot = Dot (RGB 0 0 1) . fst
@@ -3786,7 +3717,7 @@ joinPict m pict = case m of 6  -> pict++map center pict
                      fill (RGB 0 0 0) = whiteFill
                      fill c           = path0 c 4
                      fillHoles f = zipWith g [0..] holes
-                                   where g i = path0 (f $ hue 1 yellow n i) 4
+                                   where g i = path0 (f $ hue 0 yellow n i) 4
                                          n = length holes
                      (holes,rest) = split hole outer
                      hole ps = any f $ minus1 outer ps
@@ -3854,16 +3785,10 @@ convexPath :: Path -> [Widget_] -> ([Widget_], Path)
 convexPath ps pict = if straight ps then (h ps,ps) else (h $ last qs:qs,qs)
   where qs = convexHull $ sort (<) ps
         f p q = Path0 blue 0 0 [g q p,g p q]
-        g p q = hullCross (p,q) $ pict!!fromJust (search ((== q) . coords) pict)
+        g p q = hullCross (p,q) $ pict!!get (search ((== q) . coords) pict)
         h ps = zipWith f ps $ tail ps
 
 -- * __Turtle actions__
-
-colText :: Color -> Sizes -> String -> TurtleAct
-colText c (n,width) str = widg $ Text_ (st0 c) n [str] [width str]
-
-blackText :: Sizes -> String -> TurtleAct
-blackText = colText black
 
 rectC :: Color -> Double -> Double -> TurtleAct
 rectC c b = widg . Rect (st0 c) b
@@ -3871,6 +3796,8 @@ rectC c b = widg . Rect (st0 c) b
 halfmax :: (a -> Int) -> [a] -> Double
 halfmax width = (/2) . fromInt . maximum . map width
 
+blackText :: Sizes -> String -> TurtleAct
+blackText sizes = widg . text0 black sizes
 -- * alignments
 
 drawAlignment :: Sizes -> Align_ String -> [TurtleAct]
@@ -3926,8 +3853,9 @@ star n c = f $ n+n
 taichi :: Sizes -> [TermS] -> Color -> [TurtleAct]
 taichi sizes s c = [open,circ c 120,down,widg $ Arc (st0 d) Pie 120 180,
                     Jump 60,back,circ d 60,circ c 12,open,jump1,down,jump2,
-                    colText c sizes yang,Close,Jump 120,back,circ c 60,
-                    circ d 12,open,jump1,down,jump2,colText d sizes yin,Close]
+                    widg $ text0 c sizes yang,Close,Jump 120,back,circ c 60,
+                    circ d 12,open,jump1,down,jump2,widg $ text0 d sizes yin,
+                    Close]
                    where d = complColor c; jump1 = Jump 32; jump2 = Jump 52
                          circ c r = widg $ Oval (st0 c) r r
                          (yin,yang) = case s of t:u:_ -> (root t,root u)
@@ -4039,9 +3967,9 @@ growA c n acts bs = f c n where
              f c i = Open c 4:acts++Close:h acts (map g bs)
                      where g True = f (nextColor 0 n c) $ i-1
                            g _    = []
-             h (turn:Move d:acts) (b:bs) = if null b then turn:Jump d:h acts bs
-                                           else turn:Scale (d/90):b++
-                                                Close:Jump d:h acts bs
+             h (turn:Move d:acts) (b:bs) =
+                     if null b then turn:Jump d:h acts bs
+                               else turn:Scale (d/90):b++Close:Jump d:h acts bs
              h _ _ = []
 
 mkBased :: Bool -> Color -> Widget_ -> Maybe Widget_
@@ -4050,23 +3978,22 @@ mkBased rev c w = do guard $ length ps > 2 && p == last ps && d /= 0
           where ps@(p:_) = getAllPoints w
                 (rs,d) = basedPts
                 basedPts = (map (apply2 (*(90/d)) . rotate p0 a . sub2 p) rs,d)
-                           where rs@(p:qs) = if rev then ps else reverse ps
+                           where rs@(p:qs) = if rev then reverse ps else ps
                                  q = last $ init qs
                                  d = distance p q
                                  a = -angle p q
 
-flower :: (Eq a, Num a) => Color -> a -> [Widget_] -> [TurtleAct]
-flower c mode (w1:w2:w3:w4:w5:_) = widg stick:up:
-           case mode of 0 -> jump 0.8 50 60 w1++jump 0.8 8 110 w2++
+flower :: Int -> Picture -> TurtleActs
+flower mode (w1:w2:w3:w4:w5:_) =
+           case mode of 0 -> up:jump 0.8 50 60 w1++jump 0.8 8 110 w2++
                              jump 0.8 80 120 w3++jump 0.6 12 70 w4++turn 0.8 w5
-                        1 -> jump 0.8 72 60 w1++jump 0.8 12 110 w2++
+                        1 -> up:jump 0.8 72 60 w1++jump 0.8 12 110 w2++
                              jump 0.6 12 70 w3++jump 0.8 54 70 w4++turn 0.6 w5
-                        _ -> jump 0.8 40 110 w1++jump 0.8 24 60 w2++
+                        _ -> up:jump 0.8 40 110 w1++jump 0.8 24 60 w2++
                              jump 0.6 43 110 w3++jump 0.6 43 70 w4++turn 0.6 w5
-           where stick = Path (p0,0,c,-16) 4 [p0,(-4,-8),(0,-150),(4,-8),p0]
-                 jump sc n a w = Jump n:open:Turn a:Scale sc:widg w:close2
+           where jump sc n a w = Jump n:open:Turn a:Scale sc:widg w:close2
                  turn sc w = open:Turn 100:Scale sc:widg w:close2
-flower _ _ _ = []
+flower _ _ = []
 
 -- fractals
 
@@ -4253,13 +4180,14 @@ pile h i = open:up:f h i++[Close]
                  f h i = Jump 20:quad:frame:f (h-1) (i-1)
                  frame = rectC black 10 10
                  quad = rectC (light blue) 10 10
+
 pileR :: Int -> [Int] -> TurtleActs
 pileR h is = actsToCenter $ open:up:f h (reverse is)++[Close]
              where f 0 _      = []
                    f n (i:is) = Jump 20:quad i:frame:f (n-1) is
                    f n _      = Jump 20:frame:f (n-1) []
                    frame = rectC black 10 10
-                   quad i = rectC (hue 1 green h i) 10 10
+                   quad i = rectC (hue 0 green h i) 10 10
 
 -- * matrices
 
@@ -4270,7 +4198,7 @@ rectMatrix sizes@(n,width) entry dom1 dom2 btf htf =
            actsToCenter $ down:open:up:rectC black bt ht:JumpA bt:  
                           rectRow lineHead ht btf dom2++Close:JumpA ht:
                           concatMap h dom3
-           where lineHead a = [colText blue sizes a]
+           where lineHead a = [widg $ text0 blue sizes a]
                  bt = halfmax width dom3+3
                  ht = fromInt n/2+3
                  h i = JumpA ht:open:up:rectC black bt ht:lineHead i++
@@ -4314,7 +4242,7 @@ matrixTerm sizes@(n,width) ts = rectMatrix sizes entry dom1 dom2 btf htf
                        g i j = case lookupL i j ts of Just t -> t; _ -> V ""
                        btf j = halfmax width (j:map (snd . flip f j) dom1)+3
                        htf _ = fromInt n/2+3
-                       colTerm t = (colText col sizes,delBrackets t) 
+                       colTerm t = (widg . text0 col sizes,delBrackets t)
                                    where col = case parse colPre $ root t of 
                                                     Just (c,_) -> c; _ -> black
 
@@ -4329,9 +4257,9 @@ matrixWidget sizes spread ts = rectMatrix sizes entry dom1 dom2
                             where (x1,_,x2,_) = pictFrame $ map (`f` j) dom1
                     htf i = (y2-y1)/2+3 
                             where (_,y1,_,y2) = pictFrame $ map (f i) dom2
-                    mkWidg t = case widgets sizes spread t of
-                                     Just [w] -> w
-                                     _ -> text0 sizes $ showTerm0 t
+                    mkWidg t = case widgConst black sizes spread t of
+                                    Just w -> w
+                                    _ -> text0 black sizes $ showTerm0 t
 
 delBrackets = f . showTerm0 where f ('(':a@(_:_)) | last a == ')' = init a
                                   f a                              = a
@@ -4371,61 +4299,61 @@ graphString = do symbol "("; pict <- list widgString; symbol ","
 
 -- widgString is used by loadWidget (see above).
 widgString :: Parser Widget_
-widgString   = msum [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
-                        r <- enclosed double; b <- enclosed double
-                        let [x',y',r',a',b'] = map fromDouble [x,y,r,a,b]
-                        return $ Arc ((x',y'),a',c,i) t r' b',
-                     do symbol "Bunch"; w <- enclosed widgString
-                        is <- list int; return $ Bunch w is,
-                     do symbol "Dot"; c <- token hexcolor; (x,y) <- pair
-                        let [x',y'] = map fromDouble [x,y]
-                        return $ Dot c (x',y'),
-                     do symbol "Fast"; w <- enclosed widgString
-                        return $ Fast w,
-                     do symbol "Gif"; file <- token quoted
-                        hull <- enclosed widgString; return $ Gif file hull,
-                     do symbol "New"; return New,
-                     do symbol "Oval"; ((x,y),a,c,i) <- state
-                        rx <- enclosed double; ry <- enclosed double
-                        let [x',y',a',rx',ry'] = map fromDouble [x,y,a,rx,ry]
-                        return $ Oval ((x',y'),a',c,i) rx' ry',
-                     do symbol "Path"; ((x,y),a,c,i) <- state
-                        n <- enclosed nat; ps <- list pair
-                        let [x',y',a'] = map fromDouble [x,y,a]
-                        return $ Path ((x',y'),a',c,i) n $ map fromDouble2 ps,
-                     do symbol "Poly"; ((x,y),a,c,i) <- state
-                        n <- enclosed nat; rs <- list (enclosed double)
-                        b <- enclosed double
-                        let [x',y',a',b'] = map fromDouble [x,y,a,b]
-                        return $ Poly ((x',y'),a',c,i) n 
-                                       (map fromDouble rs) b',
-                     do symbol "Rect"; ((x,y),a,c,i) <- state
-                        b <- enclosed double; h <- enclosed double
-                        let [x',y',a',b',h'] = map fromDouble [x,y,a,b,h]
-                        return $ Rect ((x',y'),a',c,i) b' h',
-                     do symbol "Repeat"; w <- enclosed widgString
-                        return $ Repeat w,
-                     do symbol "Skip"; return Skip,
-                     do symbol "Text_"; ((x,y),a,c,i) <- state 
-                        n <- enclosed nat; strs <- list (token quoted)
-                        lgs <- list int
-                        let [x',y',a'] = map fromDouble [x,y,a]
-                        return $ Text_ ((x',y'),a',c,i) n strs lgs,
-                     do symbol "Tree"; ((x,y),a,c,i) <- state
-                        n <- enclosed nat; c' <- token hexcolor; ct <- ctree
-                        let [x',y',a'] = map fromDouble [x,y,a]
-                        return $ Tree ((x',y'),a',c,i) n c' ct,
-                     do symbol "Tria"; ((x,y),a,c,i) <- state
-                        r <- enclosed double
-                        let [x',y',a',r'] = map fromDouble [x,y,a,r]
-                        return $ Tria ((x',y'),a',c,i) r',
-                     do symbol "Turtle"; ((x,y),a,c,i) <- state
-                        sc <- enclosed double; acts <- list turtleAct
-                        let [x',y',a',sc'] = map fromDouble [x,y,a,sc]
-                        return $ Turtle ((x',y'),a',c,i) sc' acts]
-             where arcType   = msum [do symbol "chord"; return Chord,
-                                     do symbol "arc"; return Perimeter,
-                                     do symbol "pieslice"; return Pie]
+widgString   = concat [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
+                          r <- enclosed double; b <- enclosed double
+                          let [x',y',r',a',b'] = map fromDouble [x,y,r,a,b]
+                          return $ Arc ((x',y'),a',c,i) t r' b',
+                       do symbol "Bunch"; w <- enclosed widgString
+                          is <- list int; return $ Bunch w is,
+                       do symbol "Dot"; c <- token hexcolor; (x,y) <- pair
+                          let [x',y'] = map fromDouble [x,y]
+                          return $ Dot c (x',y'),
+                       do symbol "Fast"; w <- enclosed widgString
+                          return $ Fast w,
+                       do symbol "Gif"; file <- token quoted
+                          hull <- enclosed widgString; return $ Gif file hull,
+                       do symbol "New"; return New,
+                       do symbol "Oval"; ((x,y),a,c,i) <- state
+                          rx <- enclosed double; ry <- enclosed double
+                          let [x',y',a',rx',ry'] = map fromDouble [x,y,a,rx,ry]
+                          return $ Oval ((x',y'),a',c,i) rx' ry',
+                       do symbol "Path"; ((x,y),a,c,i) <- state
+                          n <- enclosed nat; ps <- list pair
+                          let [x',y',a'] = map fromDouble [x,y,a]
+                          return $ Path ((x',y'),a',c,i) n $ map fromDouble2 ps,
+                       do symbol "Poly"; ((x,y),a,c,i) <- state
+                          n <- enclosed nat; rs <- list (enclosed double)
+                          b <- enclosed double
+                          let [x',y',a',b'] = map fromDouble [x,y,a,b]
+                          return $ Poly ((x',y'),a',c,i) n 
+                                         (map fromDouble rs) b',
+                       do symbol "Rect"; ((x,y),a,c,i) <- state
+                          b <- enclosed double; h <- enclosed double
+                          let [x',y',a',b',h'] = map fromDouble [x,y,a,b,h]
+                          return $ Rect ((x',y'),a',c,i) b' h',
+                       do symbol "Repeat"; w <- enclosed widgString
+                          return $ Repeat w,
+                       do symbol "Skip"; return Skip,
+                       do symbol "Text_"; ((x,y),a,c,i) <- state 
+                          n <- enclosed nat; strs <- list (token quoted)
+                          lgs <- list int
+                          let [x',y',a'] = map fromDouble [x,y,a]
+                          return $ Text_ ((x',y'),a',c,i) n strs lgs,
+                       do symbol "Tree"; ((x,y),a,c,i) <- state
+                          n <- enclosed nat; c' <- token hexcolor; ct <- ctree
+                          let [x',y',a'] = map fromDouble [x,y,a]
+                          return $ Tree ((x',y'),a',c,i) n c' ct,
+                       do symbol "Tria"; ((x,y),a,c,i) <- state
+                          r <- enclosed double
+                          let [x',y',a',r'] = map fromDouble [x,y,a,r]
+                          return $ Tria ((x',y'),a',c,i) r',
+                       do symbol "Turtle"; ((x,y),a,c,i) <- state
+                          sc <- enclosed double; acts <- list turtleAct
+                          let [x',y',a',sc'] = map fromDouble [x,y,a,sc]
+                          return $ Turtle ((x',y'),a',c,i) sc' acts]
+             where arcType   = concat [do symbol "chord"; return Chord,
+                                       do symbol "arc"; return Perimeter,
+                                       do symbol "pieslice"; return Pie]
                    pair = do symbol "("; x <- token double; symbol ","
                              y <- token double; symbol ")"; return (x,y)
                    {- unused
@@ -4443,32 +4371,32 @@ widgString   = msum [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
                    node = do symbol "("; b <- token quoted; symbol ","
                              (x,y) <- pair; symbol ","; lg <- enclosed int
                              symbol ")"; return (b,(x,y),lg)
-                   turtleAct =   msum [do symbol "Close"; return Close,
-                                       do symbol "Draw"; return Draw,
-                                       do symbol "Jump"; d <- enclosed double
-                                          return $ Jump (fromDouble d),
-                                       do symbol "JumpA"; d <- enclosed double
-                                          return $ JumpA (fromDouble d),
-                                       do symbol "Move"; d <- enclosed double
-                                          return $ Move (fromDouble d),
-                                       do symbol "MoveA"; d <- enclosed double
-                                          return $ MoveA (fromDouble d),
-                                       do symbol "Open"; c <- token hexcolor
-                                          m <- token nat; return $ Open c m,
-                                       do symbol "Turn"; a <- enclosed double
-                                          return $ Turn (fromDouble a),
-                                       do symbol "Scale"; a <- enclosed double
-                                          return $ Scale (fromDouble a),
-                                       do symbol "Widg"; b <- enclosed bool
-                                          w <- enclosed widgString
-                                          return $ Widg b w]
-                   ctree =   msum [do symbol "V"; (b,(x,y),lg) <- node
-                                      let [x',y'] = map fromDouble [x,y]
-                                      return $ V (b,(x',y'),lg),
-                                   do symbol "F"; (b,(x,y),lg) <- node
-                                      cts <- list ctree
-                                      let [x',y'] = map fromDouble [x,y]
-                                      return $ F (b,(x',y'),lg) cts]
+                   turtleAct =   concat [do symbol "Close"; return Close,
+                                         do symbol "Draw"; return Draw,
+                                         do symbol "Jump"; d <- enclosed double
+                                            return $ Jump (fromDouble d),
+                                         do symbol "JumpA"; d <- enclosed double
+                                            return $ JumpA (fromDouble d),
+                                         do symbol "Move"; d <- enclosed double
+                                            return $ Move (fromDouble d),
+                                         do symbol "MoveA"; d <- enclosed double
+                                            return $ MoveA (fromDouble d),
+                                         do symbol "Open"; c <- token hexcolor
+                                            m <- token nat; return $ Open c m,
+                                         do symbol "Turn"; a <- enclosed double
+                                            return $ Turn (fromDouble a),
+                                         do symbol "Scale"; a <- enclosed double
+                                            return $ Scale (fromDouble a),
+                                         do symbol "Widg"; b <- enclosed bool
+                                            w <- enclosed widgString
+                                            return $ Widg b w]
+                   ctree =   concat [do symbol "V"; (b,(x,y),lg) <- node
+                                        let [x',y'] = map fromDouble [x,y]
+                                        return $ V (b,(x',y'),lg),
+                                     do symbol "F"; (b,(x,y),lg) <- node
+                                        cts <- list ctree
+                                        let [x',y'] = map fromDouble [x,y]
+                                        return $ F (b,(x',y'),lg) cts]
 
 
 replaceCommandButton :: ButtonClass button => IORef (ConnectId button)

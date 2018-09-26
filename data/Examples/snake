@@ -1,6 +1,0 @@
--- snake
-(shelf(2)$pos 2 1) <+> (snake(2)$pos 2 1) <+> 
-(tower(2)$
- [turt[frame$text(nn bb c v gg y ww dd qq)],
-  turt[frame$text(ccccgggggggggggggggccc)],turt[frame$pytree(3)],
-  turt[frame$text(dd)]])

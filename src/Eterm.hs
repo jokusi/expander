@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, May 2018
-                  Jos Kusiek, May 2018
+Copyright   : (c) Peter Padawitz, September 2018
+                  Jos Kusiek, September 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -37,26 +37,11 @@ Eterm contains:
 -}
 module Eterm where
 
-import System.Expander
-import Gui.Base
+import Prelude ()
+import qualified Base.Haskell as Haskell
+import Base.System
 
-import Control.Applicative (Alternative((<|>), empty))
-import Control.Arrow (second)
-import Control.Monad hiding (join)
-import Control.Monad.Trans (lift)
-import Control.Monad.Trans.Maybe
-import qualified Control.Monad.State as State (get, put)
-import Control.Monad.State (StateT(..), state)
-import Data.Char (isLower, isDigit, ord)
-import Data.Array (Array, Ix, array, (!), range)
-import Data.Maybe (isJust, isNothing, fromJust, fromMaybe, catMaybes)
-import qualified Data.Function ((&))
-import Data.Foldable (asum)
-import Graphics.UI.Gtk (FontDescription, fontDescriptionGetSize)
-import System.FilePath ((</>))
-
-import Prelude hiding ((++),concat,(<*))
-
+import Data.Array
 
 infixl 0 `onlyif`
 infixl 6 `minus`, `minus1`
@@ -65,18 +50,10 @@ infixr 2 |||, `join`, `join1`
 infixr 3 &&&, `meet`
 infixr 4 ***, -+-
 
-infixr 5 ++
-
 infixl 9 &
 
 (&) :: a -> (a -> b) -> b 
-(&) = (Data.Function.&)
-
-(++) :: MonadPlus m => m a -> m a -> m a
-(++) = (<|>)
-
-concat :: MonadPlus m => [m a] -> m a
-concat = asum
+(&) = (Haskell.&)
 
 (***) :: (a -> b) -> (a -> c) -> a -> (b,c)
 (***) = liftM2 (,)
@@ -86,13 +63,13 @@ concat = asum
 (|||) = liftM2 (||)
 
 just :: Maybe a -> Bool
-just = isJust
+just = Haskell.isJust
 
 get :: Maybe a -> a
-get = fromJust
+get = Haskell.fromJust
 
 nothing :: Maybe a -> Bool
-nothing = isNothing
+nothing = Haskell.isNothing
 
 onlyif :: String -> Bool -> String
 str `onlyif` b = if b then str else ""
@@ -102,6 +79,12 @@ str `ifnot` b  = if b then ""  else str
 
 kfold :: (a -> state -> [state]) -> [state] -> [a] -> [state]
 kfold f = foldl $ \sts a -> concatMap (f a) sts               
+
+liftM :: Monad m => (a -> b) -> m a -> m b
+liftM = Haskell.liftM
+
+liftM2  :: Monad m => (a -> b -> c) -> m a -> m b -> m c
+liftM2 = Haskell.liftM2
 
 seed :: Int
 seed = 17489   
@@ -186,11 +169,19 @@ mkArray bounds f = array bounds [(i,f i) | i <- range bounds]
 -- The following monad transformer MaybeT is used in the widget interpreters of
 -- Epaint.hs.
 
+type MaybeT = Haskell.MaybeT
+
+maybeT :: Monad m => m (Maybe a) -> MaybeT m a
+maybeT = Haskell.MaybeT
+
 runT :: MaybeT m a -> m (Maybe a)
-runT = runMaybeT
+runT = Haskell.runMaybeT
+
+lift :: (Monad m, Haskell.MonadTrans t) => m a -> t m a
+lift = Haskell.lift
 
 lift' :: Monad m => Maybe a -> MaybeT m a
-lift' = MaybeT . return
+lift' = maybeT . return
 
 -- * Coloring
 
@@ -637,12 +628,12 @@ mkAcyclic
 mkAcyclic ps qs = case f [] qs of Just qs -> mkAcyclic ps qs; _ -> ps++qs
     where f qs rs = do p@(x,xs):rs <- Just rs 
                        let y = g x xs
-                       if isJust y then Just $ qs++(x,xs`minus1`fromJust y):rs
+                       if just y then Just $ qs++(x,xs`minus1`get y):rs
                                  else f (p:qs) rs
           g x xs = do y:xs <- Just xs
                       if back x [] y then Just y else g x xs
-          back x xs y = x == y || y `notElem` xs && isJust zs && 
-                                     any (back x $ y:xs) (fromJust zs)
+          back x xs y = x == y || y `notElem` xs && just zs && 
+                                     any (back x $ y:xs) (get zs)
                                   where zs = lookup y $ ps++qs
 
 -- | @mkAcyclicL ps qs@ removes all pairs resp. triples @p@ from @qs@ that close
@@ -655,7 +646,7 @@ mkAcyclicL
 mkAcyclicL ps qs = case f [] qs of Just qs -> mkAcyclicL ps qs; _ -> ps++qs
   where f qs rs = do p@(x,b,xs):rs <- Just rs
                      let y = g x xs
-                     if isJust y then Just $ qs++(x,b,xs`minus1`fromJust y):rs
+                     if just y then Just $ qs++(x,b,xs`minus1`get y):rs
                                else f (p:qs) rs
         g x xs = do y:xs <- Just xs
                     if back x [] y then Just y else g x xs
@@ -727,6 +718,12 @@ zipWith2 :: (t -> t1 -> t2 -> [a]) -> [t] -> [t1] -> [t2] -> [a]
 zipWith2 f (x:xs) (y:ys) (z:zs) = f x y z++zipWith2 f xs ys zs
 zipWith2 _ _ _ _                = []
 
+zipWithM :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
+zipWithM = Haskell.zipWithM
+
+zipWithM_ :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m ()
+zipWithM_ = Haskell.zipWithM_
+ 
 pascal :: Int -> [Int]
 pascal 0 = [1]
 pascal n = zipWith (+) (s++[0]) (0:s) where s = pascal $ n-1
@@ -813,7 +810,7 @@ searchTup [] _  = Nothing
 searchTup ts us = search (== (mkTup ts)) us
 
 getInd :: Eq a => a -> [a] -> Int
-getInd a = fromJust . search (== a)
+getInd a = get . search (== a)
 
 getIndices :: (TermS -> Bool) -> [TermS] -> [Int]
 getIndices f ts = [getInd t ts | t <- filter f ts]
@@ -852,7 +849,7 @@ searchAll f s = snd $ foldr g (length s-1,[]) s
                  where g a (i,is) = (i-1,if f a then i:is else is)
 
 searchGetM :: (a -> Maybe b) -> [a] -> Maybe b
-searchGetM f = g 0 where g i (a:s) = if isJust b then b else g (i+1) s
+searchGetM f = g 0 where g i (a:s) = if just b then b else g (i+1) s
                                       where b = f a
                          g _ _     = Nothing
 
@@ -1193,7 +1190,7 @@ eqGraph t = eqSet eq (graphToRel t) . graphToRel
 isObdd :: TermS -> Bool
 isObdd        (F "0" [])  = True
 isObdd        (F "1" [])  = True
-isObdd        (F x [t,u]) = isJust (parse (charNat 'x') x) && isObdd t
+isObdd        (F x [t,u]) = just (parse (charNat 'x') x) && isObdd t
                                                            && isObdd u
 isObdd (V x)       = isPos x
 isObdd _           = False
@@ -1238,11 +1235,11 @@ obddToFun t = (f t &&& g,dim)
 -- * Parser
 -- ** Parser monad
 
-newtype Parser a = P (StateT String Maybe a)
-   deriving (Functor, Applicative, Monad, Alternative, MonadPlus)
+newtype Parser a = P (Haskell.StateT String Maybe a)
+   deriving (Functor, Applicative, Monad, Haskell.Alternative, MonadPlus)
    
 applyPa :: Parser a -> String -> Maybe (a,String)
-applyPa (P f) = runStateT f
+applyPa (P f) = Haskell.runStateT f
 
 sat :: Parser a -> (a -> Bool) -> Parser a
 sat p f = do x <- p; guard $ f x; return x
@@ -1266,15 +1263,15 @@ parseE parser str = case applyPa parser str of Just (x,[]) -> Correct x
 
 haskell :: Read a => Parser a
 haskell = P $ do
-    str <- State.get
+    str <- Haskell.get
     let (t, str'):_ = reads str
-    State.put str'
+    Haskell.put str'
     return t
 
 item :: Parser Char
 item = P $ do
-    (c:cs) <- State.get
-    State.put cs
+    (c:cs) <- Haskell.get
+    Haskell.put cs
     return c
 
 char :: Char -> Parser Char
@@ -1381,7 +1378,7 @@ rgbcolor      = do symbol "RGB"; r <- token int; g <- token int; b <- token int
 
 hexcolor :: Parser Color
 hexcolor      = do char '#'
-                   [d1,d2,d3,d4,d5,d6] <- replicateM 6 hexdigit
+                   [d1,d2,d3,d4,d5,d6] <- Haskell.replicateM 6 hexdigit
                    return $ RGB (16*d1+d2) (16*d3+d4) $ 16*d5+d6
 
 color :: Parser Color
@@ -1402,7 +1399,7 @@ color         = concat [ do symbol "dark"; c <- color; return $ dark c
 
 colPre :: Parser (Color, String)
 colPre        = do col <- color; char '_'; x <- p; return (col,x)
-                 where p = P $ state $ \x -> (x,[])
+                 where p = P $ Haskell.state $ \x -> (x,[])
 
 delCol :: String -> String
 delCol x      = case parse colPre x of Just (_,x) -> x; _ -> x
@@ -1505,14 +1502,14 @@ singleAtom :: Sig -> Bool -> Parser TermS
 singleAtom sig b = concat
   [ do x <- infixRel sig; return $ F x []
   , prefixAtom sig
-  , if b then term sig else mzero
+  , if b then term sig else zero
   , do t <- enclosedAtom sig b; curryrestR sig t
   ]
 
 maybeInfixAtom :: Sig -> Bool -> TermS -> Parser TermS
 maybeInfixAtom sig b t = concat [ do x <- infixRel sig; u <- relTerm sig True
                                      application x t u
-                              , if b then return t else mzero
+                              , if b then return t else zero
                               ]
 
 maybeComp :: Sig -> TermS -> Parser TermS
@@ -1532,7 +1529,7 @@ enclosedAtom sig b = concat [ do tchar '('; concat [ enclosedSect sig True
                                                     return $ mkTup ts
                                                ]
                           , do t <- listTerm sig
-                               if b then return t else mzero
+                               if b then return t else zero
                           , do tchar '['; ts <- p; tchar ']'
                                return $ mkList ts
                           ]
@@ -2025,15 +2022,15 @@ bisim0 sig = [(i,j,f i j) | i <- is, j <- is, i < j,
 bisimStep :: Eq a => TriplesL a -> TriplesL a
 bisimStep trips = [trip | trip@(_,_,bs) <- trips, all r bs] where
         r (is,js) = forallThereis r' is js && forallThereis r' js is
-        r' i j = i == j || isJust (lookupL i j trips)
-                        || isJust (lookupL j i trips)
+        r' i j = i == j || just (lookupL i j trips)
+                        || just (lookupL j i trips)
                                                                             
 mkQuotient :: Sig -> ([TermS],[[Int]],[[[Int]]],[[Int]],[[[Int]]])
 mkQuotient sig = (states',tr,trL,va,vaL)
          where part = mkPartition (indices_ (sig&states)) $ bisim sig 
                states' = map (((sig&states)!!) . minimum) part
-               oldPos i = fromJust $ search (== (states'!!i)) (sig&states)
-               newPos i = fromJust $ search (elem i) part
+               oldPos i = get $ search (== (states'!!i)) (sig&states)
+               newPos i = get $ search (elem i) part
                h = mkSet . map newPos
                [is,js,ks] = map indices_ [states',(sig&labels),(sig&atoms)]
                tr  = if null (sig&trans) then []
@@ -2279,7 +2276,7 @@ bothHidden _ _                       = False
 -- stringInTree, drawTreeNode, drawWidg Text, halfmax (see Epaint), simplifyOne
 -- (see Esolve) and drawNode (see Ecom).
 delQuotes :: String -> String
-delQuotes a = if isJust $ parse (quoted ++ infixWord) b
+delQuotes a = if just $ parse (quoted ++ infixWord) b
               then init $ tail b else b
               where b = delCol a
 
@@ -2508,10 +2505,10 @@ isAll t x = f where f p = case getSubterm t p of
                           _ -> do guard $ notnull p; f $ init p
 
 isAnyOrFree :: TermS -> String -> [Int] -> Bool
-isAnyOrFree t x = isJust . isAny t x ||| isFree t x
+isAnyOrFree t x = just . isAny t x ||| isFree t x
 
 isAllOrFree :: TermS -> String -> [Int] -> Bool
-isAllOrFree t x = isJust . isAll t x ||| isFree t x
+isAllOrFree t x = just . isAll t x ||| isFree t x
 
 -- isFree t x p checks whether an occurrence of x at position p of t were free.
 isFree :: TermS -> String -> [Int] -> Bool
@@ -2599,7 +2596,7 @@ showVer x single ts n = f ts
   where (_,g) = symPair x
         f ts
           | length ts < 2 = showHor x single ts n
-          | isJust pair = fst $ fromJust pair
+          | just pair = fst $ get pair
           | otherwise = (sts . g . newBlanks n . sus, k')
           where pair = fits ts []
                 fits ts us
@@ -2610,7 +2607,7 @@ showVer x single ts n = f ts
                 (sus, k') = f us
                 h ts us
                   = if length ts < 2 then (showHor x single ts n, us) else
-                      fromMaybe (h (init ts) $ last ts : us) pair
+                      Haskell.fromMaybe (h (init ts) $ last ts : us) pair
                   where pair = fits ts us
 
 showHor :: String
@@ -2660,7 +2657,7 @@ showTerm0 t = fst (showTerm t 0) ""
 
 showTerm :: TermS -> Int -> (String -> String, Int)
 showTerm (V x) _                  = ((x++),length x)
-showTerm (F x []) _               = if isJust $ parse realNeg x
+showTerm (F x []) _               = if just $ parse realNeg x
                                      then ((' ':) . (x++),lg+1) else ((x++),lg)
                                     where lg = length x
 showTerm (F x [t]) n | x `elem` termBuilders || x == "~"
@@ -2769,11 +2766,17 @@ getTerms :: TermS -> [TermS]
 getTerms (F x ts) | collector x   = ts
 getTerms t                           = [t]
 
-parseList :: (TermS -> Maybe a) -> TermS -> Maybe [a]
-parseList parser t  = do F "[]" ts <- Just t; mapM parser ts
+type Termparser a = TermS -> Maybe a
 
-parseList' :: (TermS -> Maybe a) -> TermS -> Maybe [a]
-parseList' parser t = parseList parser t ++ do a <- parser t; Just [a]
+parseList,parseList' :: Termparser a -> Termparser [a]
+parseList f t  = do F "[]" ts <- Just t; mapM f ts
+parseList' f t = parseList f t ++ do a <- f t; Just [a]
+
+type TermparserT m a = TermS -> MaybeT m a
+
+parseListT,parseListT' :: Monad m =>  TermparserT m a ->  TermparserT m [a]
+parseListT f t  = case t of F "[]" ts -> mapM f ts; _ -> zero
+parseListT' f t = parseListT f t ++ do a <- f t; return [a]
 
 parseColl :: (TermS -> Maybe b) -> TermS -> Maybe [b]
 parseColl parser t  = do F x ts <- Just t; guard $ collector x; mapM parser ts
@@ -2793,17 +2796,14 @@ parseInt t                 = do a <- parseConst t; parse int a
 parseReal :: TermS -> Maybe Double
 parseReal t                = do a <- parseConst t; parse real a
 
+parseReals :: TermS -> TermS -> Maybe (Double,Double)
+parseReals t u             = do a <- parseReal t; b <- parseReal u; Just (a,b)
+
 parseDouble :: TermS -> Maybe Double
 parseDouble t              = do a <- parseConst t; parse double a
 
 parseNats :: TermS -> Maybe [Int]
 parseNats                  = parseList parseNat
-
-parseInts :: TermS -> Maybe [Int]
-parseInts                  = parseList' parseInt
-
-parseReals :: TermS -> Maybe [Double]
-parseReals                 = parseList' parseReal
 
 parseIntQuad :: TermS -> Maybe (Int, Int, Int, Int)
 parseIntQuad t      = do F "()" [i,j,b,h] <- Just t; i <- parseInt i
@@ -2842,11 +2842,11 @@ parseLinEq t = do F "=" [t,u] <- Just t; ps <- parseProds t; b <- parseReal u
                   Just (ps,b)
 
 parseLin :: TermS -> Maybe LinEq
-parseLin (F "lin" [F "+" [t,u]]) | isJust b = do ps <- parseProds t
-                                                 Just (ps,fromJust b)
+parseLin (F "lin" [F "+" [t,u]]) | just b = do ps <- parseProds t
+                                               Just (ps,get b)
                                             where b = parseReal u
-parseLin (F "lin" [F "-" [t,u]]) | isJust b = do ps <- parseProds t
-                                                 Just (ps,-fromJust b)
+parseLin (F "lin" [F "-" [t,u]]) | just b = do ps <- parseProds t
+                                               Just (ps,-get b)
                                             where b = parseReal u
 parseLin t = do F "lin" [t] <- Just t; ps <- parseProds t; Just (ps,0)
 
@@ -2953,7 +2953,7 @@ isSum (F "<+>" _)  = True
 isSum _            = False
 
 projection :: String -> Bool
-projection          = isJust . parse (strNat "get")
+projection          = just . parse (strNat "get")
 
 lambda :: String -> Bool
 lambda x            = x `elem` words "fun rel"
@@ -3755,7 +3755,7 @@ cycleTargets t = f [] t
 removeCyclePtrs :: TermS -> TermS
 removeCyclePtrs t = case f [] t of Just p -> removeCyclePtrs $ lshiftPos t [p]
                                    _ -> t
-         where f p (F _ ts) = do guard $ any isJust ps; head $ filter isJust ps
+         where f p (F _ ts) = do guard $ any just ps; head $ filter just ps
                               where ps = zipWithSucs f p ts
                f p (V x)    = do guard $ isPos x && connected t q p; Just p
                                  where q = getPos x
@@ -4454,7 +4454,7 @@ concept ts posExas negExas =
            r ps = and . zipWith (<<=) ps 
            g = concatMap $ mapM prefixes
            possOfTup = map (zipWith h ts) . reduceExas ts
-           h t = fromJust . possOf t
+           h t = get . possOf t
            prefixes p = [take n p | n <- [0..length p]]
            
 -- reduceExas ts exas combines subsets of exas covering a subconcept to single 
@@ -4709,7 +4709,7 @@ evalStates sig t flow = up [] flow
                            val2 = mkList $ filter (f c (subterms val1) . h) 
                                            (sig&states)
                            h st = map ((sig&states)!!) $ tr i
-                               where i = fromJust $ search (== st) (sig&states)
+                               where i = get $ search (== st) (sig&states)
                            tr i = if lab == leaf "" then (sig&trans)!!i
                                   else (sig&transL)!!i!!j
                                   where j = get $ search (== lab) (sig&labels)
@@ -4938,7 +4938,7 @@ parseSol f t = case t of F "True" [] -> Just []
 -- | @isSol@ is used by 'Ecom.makeTrees', 'Ecom.narrowLoop' and
 -- 'Ecom.splitTree'.
 isSol :: Sig -> TermS -> Bool
-isSol sig = isJust . parseSol (solAtom sig) ||| isFalse
+isSol sig = just . parseSol (solAtom sig) ||| isFalse
 
 -- | @solPoss@ is used by 'Ecom.makeTrees', 'Ecom.narrowLoop' and
 -- 'Ecom.showSolutions'.
@@ -5484,7 +5484,7 @@ instance Functor Result where
 
 instance Applicative Result where
    pure = Def
-   (<*>)  = ap
+   (<*>)  = Haskell.ap
 
 instance Monad Result where
    Def a >>= h       = h a
@@ -5599,7 +5599,7 @@ unifyFuns x ts y us t t' p q f sig xs
             g x y = unify' ts us t t' ps qs (f `andThen` for (F x []) y) sig xs
 
 unifyFuns x _ "suc" [u] t t' _p q f sig xs
-  | isJust n = unify (mkConst $ fromJust n-1) u t t' [] (q++[0]) f sig xs
+  | just n = unify (mkConst $ get n-1) u t t' [] (q++[0]) f sig xs
              where n = parse pnat x
 
 unifyFuns "[]" (u:us) ":" [v,v'] t t' p q f sig xs
@@ -5719,8 +5719,8 @@ unifySFuns sig xs x ts y us
                                          where b = length ts == length us
                                                f = F y [] `for` x
                                                h = map (>>>f)
-unifySFuns sig xs x _ "suc" [t] | isJust n = unifyS sig xs
-                                                (mkConst $ fromJust n-1) t
+unifySFuns sig xs x _ "suc" [t] | just n = unifyS sig xs
+                                                (mkConst $ get n-1) t
                                              where n = parse pnat x
 unifySFuns sig xs "[]" (t:ts) ":" [u,v]  = unifyS' sig xs [t,mkList ts] [u,v]
 unifySFuns _ _ _ _ _ _                   = Nothing
@@ -5785,9 +5785,9 @@ match sig xs = h []
           h p (F x [t]) (F y [u]) | binder x && binder y && opx == opy =
                                h (p++[0]) (renameFree (fold2 upd id xs ys) t) u
                                where opx:xs = words x; opy:ys = words y
-          h p t (F "suc" [u]) | isJust n = h (p++[0]) (mkConst $ fromJust n-1) u
+          h p t (F "suc" [u]) | just n = h (p++[0]) (mkConst $ get n-1) u
                                          where n = parsePnat t
-          h p (F "suc" [t]) u | isJust n = h (p++[0]) t $ mkConst $ fromJust n-1
+          h p (F "suc" [t]) u | just n = h (p++[0]) t $ mkConst $ get n-1
                                          where n = parsePnat u
           h p (F "[]" (t:ts)) (F ":" [u,v]) = match' (g p) [t,mkList ts] [u,v]
           h p (F ":" [u,v]) (F "[]" (t:ts)) = match' (g p) [u,v] [t,mkList ts]
@@ -5859,7 +5859,7 @@ mkSizes canv font xs = do
                    _ -> 1
         g x = if x `elem` xs then f x
                              else maximum $ 1:[f y | y <- xs, lg x == lg y]
-    size <- fromMaybe 0 <$> fontDescriptionGetSize font
+    size <- Haskell.fromMaybe 0 <$> fontDescriptionGetSize font
     return (h size, truncate . g)
                   where lg = length . delQuotes
                         h n | n < 7     = 6
@@ -6222,7 +6222,7 @@ mkPartitions c n = map (mapT show) . mkTrees c n . ht n
           where ht n (F "&" ts)             = minimum $ map (ht n) ts
                 ht n (F "|" ts)             = maximum $ map (ht n) ts
                 ht n (F "bal" [])           = floor $ logBase 2 $ fromInt n
-                ht _ (F "hei" [m]) | isJust n = fromJust n where n = parseNat m
+                ht _ (F "hei" [m]) | just n = get n where n = parseNat m
                 ht n _                                = n-1
 
 {- |

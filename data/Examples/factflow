@@ -25,17 +25,7 @@ fact(x-1)*(x*y) == fact(x)*y
 terms:
 flow$3 <+> flowP$3
 
-{- flow$3 -> assign(x,3,
-                   assign(y,1,
-                          ite(x > 0,
-                              assign(y,x*y,
-                                     assign(x,x-1),pos 0 0 1 1,
-                                            [[x=1,y=6],[x=2,y=6],[x=3,y=3]]),
-                                     [[x=1,y=6],[x=2,y=3],[x=3,y=1]]),
-                              [[x=0,y=6]],
-                              [[x=0,y=6],[x=1,y=6],[x=2,y=3],[x=3,y=1]]),
-                          [[x=3]]),
-                   [[]])
+{- flow$3 -> assign(x,3,                   assign(y,1,                          ite(x > 0,                              assign(y,x*y,                                     assign(x,x-1),pos 0 0 1 1,                                            [[x=1,y=6],[x=2,y=6],[x=3,y=3]]),                                     [[x=1,y=6],[x=2,y=3],[x=3,y=1]]),                              [[x=0,y=6]],                              [[x=0,y=6],[x=1,y=6],[x=2,y=3],[x=3,y=1]]),                          [[x=3]]),                   [[]])
 -}
 
 

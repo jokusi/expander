@@ -1,8 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 
-import Gui.Base
-import Gui.Canvas
+import Base.OHaskell
+import Base.Gui
 import Control.Arrow ((***))
 import Control.Monad.IO.Class (liftIO)
 import Graphics.UI.Gtk as Gtk hiding (Point, Action, rectangle, Color)

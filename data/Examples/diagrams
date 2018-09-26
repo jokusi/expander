@@ -1,0 +1,22 @@
+-- diagrams
+
+defuncts: draw 
+
+fovars: solve paint term tk wit wis mat
+
+axioms: 
+
+draw == wtree $ fun(edge(x),frameS(5)$text$x,x,frame(5)$text$x)
+
+conjects:
+
+x = string(Ecom.hs)(solve,string(edge$callPaint)$paint) &
+solve = string(Esolve.hs)(term,string(edge$hilbShelf reducePath)$paint) &paint = string(Epaint.hs)(term,(string$System.hs)$tk) &
+term = string(Eterm.hs)(string(edge$Array)$string(Array.hs),
+		        string(edge$Pos)$tk) &
+tk = string(Tk.hs) &
+
+x = stringNB((Ecom.hs)/getInterpreter)(wit,wis,mat,string$MORE) &
+wit = stringNB((Epaint.hs)/widgetTree) &
+wis = stringNB((Epaint.hs)/searchPic/widgets) &
+mat = stringNB((Epaint.hs)/matrix) 

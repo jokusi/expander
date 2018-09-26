@@ -17,6 +17,7 @@ main = do
     list4 <- filterM doesFileExist list3
     let list5 = map (drop $ length datapath + 1) list4
     forM_ list5 $ \item -> do
-        putStr "                   , "
-        putStrLn item
+        putStr "                   , \""
+        putStr item
+        putStrLn "\""
 
