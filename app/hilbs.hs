@@ -1,14 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 
-import Base.OHaskell
+import Prelude ()
+import qualified Base.Haskell as Haskell
 import Base.Gui
-import Control.Arrow ((***))
-import Control.Monad.IO.Class (liftIO)
-import Graphics.UI.Gtk as Gtk hiding (Point, Action, rectangle, Color)
-import qualified Graphics.UI.Gtk as Gtk (Color(..))
-import Data.IORef (newIORef, writeIORef, readIORef)
-import Control.Monad (void)
+import Eterm (lift)
+import qualified Graphics.UI.Gtk as Gtk (AttachOptions(Fill))
 
 main :: IO ()
 main = do
@@ -51,7 +48,7 @@ painter = do -- template
             -- win0 <- tk.window [Title "Painter"] / win := win0
             -- tk.window [Title "Painter"]
             icon <- iconPixbuf
-            win `set` [ windowTitle := "Painter"
+            win `gtkSet` [ windowTitle := "Painter"
                       -- win.setSize (1000,600)
                       , windowDefaultWidth := 1000
                       , windowDefaultHeight := 600
@@ -61,7 +58,7 @@ painter = do -- template
                       , windowIcon := Just icon
                       ]
             -- quit GUI if window is closed
-            win `on` deleteEvent $ liftIO mainQuit >> return False
+            win `on` deleteEvent $ lift mainQuit >> return False
             --lab <- win.label [ Font "Helvetica 12 italic", 
             --            Background $ RGB 200 200 255, Justify LeftAlign]
             -- I skip the label, since it's not really used.
@@ -105,7 +102,7 @@ painter = do -- template
             menuShellAppend menuFileContent closeMen
             
             menuFile <- menuItemNewWithLabel "File"
-            menuFile `set` [ menuItemSubmenu := menuFileContent ]
+            menuFile `gtkSet` [ menuItemSubmenu := menuFileContent ]
             
             menuBar <- menuBarNew
             menuShellAppend menuBar menuFile
@@ -113,24 +110,24 @@ painter = do -- template
             
             -- numLab <- win.label [Text "depth", font10, Anchor C]
             numLab <- labelNew $ Just "depth"
-            numLab `set` [ labelJustify := JustifyLeft ]
+            numLab `gtkSet` [ labelJustify := JustifyLeft ]
             -- numSlider <- win.slider [Orientation Hor, From 1, To 10,
             --                          CmdInt moveNum]
             -- numSlider.setValue 1
             -- numSlider.bind [ButtonRelease 1 $ const scaleAndDraw]
-            numSlider `set` [ scaleDigits := 0
+            numSlider `gtkSet` [ scaleDigits := 0
                             , rangeValue := 1
                             , scaleValuePos := PosRight
                             ]
             
             -- scaleLab <- win.label [Text "size", font10, Anchor C]
             scaleLab <- labelNew $ Just "size"
-            scaleLab `set` [ labelJustify := JustifyLeft ]
+            scaleLab `gtkSet` [ labelJustify := JustifyLeft ]
             -- scaleSlider <- win.slider [Orientation Hor, From 1, To 20, 
             --                           CmdInt moveScale]
             -- scaleSlider.setValue 5
             -- scaleSlider.bind [ButtonRelease 1 $ const scaleAndDraw]
-            scaleSlider `set` [ scaleDigits := 0
+            scaleSlider `gtkSet` [ scaleDigits := 0
                               , rangeValue := 5
                               , scaleValuePos := PosRight
                               ]
@@ -158,7 +155,7 @@ painter = do -- template
             boxPackStart layoutMain layoutSliders PackNatural 0
             boxPackStart layoutMain ent PackNatural 0
             
-            win `set` [ containerChild := layoutMain ]
+            win `gtkSet` [ containerChild := layoutMain ]
             
             
             
@@ -179,8 +176,8 @@ painter = do -- template
         changeCanvasBackground c@(RGB r g b) = do
             let f n = fromIntegral $ n * 256
                 (r', g' , b') = (f r, f g, f b)
-            canv `set` [ canvasBackground := c ]
-            widgetModifyBg scrollCanv StateNormal $ Gtk.Color r' g' b'
+            canv `gtkSet` [ canvasBackground := c ]
+            widgetModifyBg scrollCanv StateNormal $ gtkColor r' g' b'
 
         
         drawWidget (Path c 0 ps) = do
@@ -194,7 +191,7 @@ painter = do -- template
         
         -- moveNum n = action picture := [hilbert n]
         moveNum = do
-            n <- numSlider `get` rangeValue
+            n <- numSlider `gtkGet` rangeValue
             writeIORef pictureRef [hilbert n]
         
         -- saveGraph = ...
@@ -204,7 +201,7 @@ painter = do -- template
             file <- readIORef fileRef
             maybe
                 saveAsGraph
-                (void . canvasSave canv)
+                (Haskell.void . canvasSave canv)
                 file
         
         saveAsGraph :: Action
@@ -222,7 +219,7 @@ painter = do -- template
         scaleAndDraw = do
             --canv.clear
             picture <- readIORef pictureRef
-            scale    <- scaleSlider `get` rangeValue
+            scale    <- scaleSlider `gtkGet` rangeValue
             let (pict1,(x1,y1,x2,y2)) = f picture 0
                 f (w:pict) i = (w':pict',minmax4 (widgFrame w') bds)
                             where w' = scaleWidg scale w
@@ -232,20 +229,20 @@ painter = do -- template
                 widthX = max 100 (round $ x2-x1+10)
                 widthY = max 100 (round $ y2-y1+10)
             writeIORef pictureRef $ map (scaleWidg $ 1/scale) pict2
-            canv `set` [ canvasSize := (widthX, widthY) ]
+            canv `gtkSet` [ canvasSize := (widthX, widthY) ]
             mapM_ drawWidget pict2
         
         setSplit = do
             split <- not <$> readIORef splitRef
             writeIORef splitRef split
-            splitMen `set` [ menuItemLabel := 
+            splitMen `gtkSet` [ menuItemLabel := 
                             if split then "No split" else "Split" ]
             scaleAndDraw
 
     return Painter { buildPaint = buildPaint'}
 
 round2 :: (Double, Double) -> (Int, Int)
-round2 = round *** round
+round2 = round Haskell.*** round
 
 minmax4 :: (Num a, Num b, Num c, Num d, Ord a, Ord b, Ord c, Ord d) =>
     (a, b, c, d) -> (a, b, c, d) -> (a, b, c, d)
@@ -266,7 +263,7 @@ minmax s@((x,y):_) = foldl minmax1 (x,y,x,y) s
 minmax _             = (0,0,0,0)
 
 map2 :: (a -> b) -> [(a, a)] -> [(b, b)]
-map2 f = map (f *** f)
+map2 f = map (f Haskell.*** f)
 
 data Widget_ = Path Color Int [Point] | Path0 State Int [Point] 
                deriving (Show,Eq)

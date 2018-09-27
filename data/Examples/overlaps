@@ -1,7 +1,7 @@
 -- overlaps
 
 terms:
-    outline[rect(44,99),tria(88),J$33,tria$88]]
+    outline[rect(44,99),tria(88),J$33,tria$88]
 <+> outline[turt[tria(88),R,rect(99,44)],turt[T$45,tria(88),rect(99,22)]]
 <+> dots[turt[red$tria(88),R,yellow$rect(99,44)],turt[T$45,blue$tria(88),green$rect(99,22)]]
 <+> (dots$red$circ(88)<+>outline$turt[T$45,blue$tria(88),green$rect(99,22)])
@@ -118,3 +118,4 @@ meet(5,
 	   ( -15,0),(0,0)],green),
      turt[J( -22),L,J( -33),R,
 	 red$pathSF[(0,0),(40,0),(40,15),(25,15),(25,10),(35,10),(35,5),(0,5),(0,0)]]
+)
