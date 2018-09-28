@@ -5,6 +5,7 @@ module Base.Haskell
   , module Control.Monad.State
   , module Control.Monad.Trans
   , module Control.Monad.Trans.Maybe
+  , module Data.Array.MArray
   , module Data.Function
   , module Data.List
   , module Data.Maybe
@@ -17,6 +18,7 @@ import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
+import Data.Array.MArray
 import Data.Function
 import Data.List
 import Data.Maybe

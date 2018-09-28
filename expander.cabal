@@ -650,6 +650,7 @@ library
                      , array
                      , gtk3
                      , cairo
+                     , glib
                      , filepath
                      , directory
                      , text

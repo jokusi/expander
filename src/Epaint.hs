@@ -850,11 +850,11 @@ painter pheight solveRef solve2Ref = do
             return ()
         drawWidget (Fast w) = 
             if isPict w then mapM_ drawWidget $ mkPict w else drawWidget w
-        drawWidget (Gif file hull) = do
+        drawWidget (Gif pos alpha file hull) = do
             let (p,_,c,_) = getState hull
             if deleted c then drawWidget hull
             else do
-                pic <- loadPhoto file
+                pic <- loadPhoto pos alpha file
                 mapM_ (canvasImage canv (round2 p) imageOpt) pic
         drawWidget (Oval ((x,y),0,c,i) rx ry) = do
             bgcolor <- readIORef bgcolorRef
@@ -1644,8 +1644,8 @@ type State = (Point,Double,Color,Int) -- (center,orientation,hue,lightness)
 data Widget_ = Arc State ArcStyleType Double Double | Bunch Widget_ [Int] |
                -- Bunch w is denotes w together with outgoing arcs to the
                -- widgets at positions is.
-               Dot Color Point | Fast Widget_ | Gif String Widget_ | New |
-               Oval State Double Double | Path State Int Path | 
+               Dot Color Point | Fast Widget_ | Gif Int Bool String Widget_ |
+               New | Oval State Double Double | Path State Int Path | 
                Path0 Color Int Int Path | Poly State Int [Double] Double |
                Rect State Double Double | Repeat Widget_ | Skip |
                Text_ State Int [String] [Int] |
@@ -2068,7 +2068,7 @@ propNodes pict = [i | i <- indices_ pict, propNode $ pict!!i]
 getState :: Widget_ -> State
 getState (Arc st _ _ _)   = st
 getState (Dot c p)        = (p,0,c,0)
-getState (Gif _ hull)     = getState hull
+getState (Gif _ _ _ hull) = getState hull
 getState (Oval st _ _)    = st
 getState (Path st _ _)    = st
 getState (Poly st _ _ _)  = st
@@ -2102,7 +2102,8 @@ updState :: (State -> State) -> WidgTrans
 updState f (Arc st t r a)        = Arc (f st) t r a
 updState f (Dot c p)             = Dot c' p'
                                    where (p',_,c',_) = f (p,0,c,0)
-updState f (Gif file hull)       = Gif file $ updState f hull
+updState f (Gif pos alpha file hull)
+                                 = Gif pos alpha file $ updState f hull
 updState f (Oval st rx ry)       = Oval (f st) rx ry 
 updState f (Path st m ps)        = Path (f st) m ps
 updState f (Poly st m rs a)      = Poly (f st) m rs a
@@ -2262,7 +2263,7 @@ hulls edgy = f
                                    where qs@(q:_) = g $ 19*r'
                                          r' = r/20
                               g = circlePts p a (-b/36) . replicate 37
-       f (Gif _ hull)                  = f hull
+       f (Gif _ _ _ hull)              = f hull
        f (Oval st rx ry) | rx < 6      = f $ Rect st (2*rx) ry
        f (Oval st rx ry) | ry < 6      = f $ Rect st rx (2*ry)
        f (Oval (p,0,c,i) rx ry)        = [Path0 c i (filled c) $
@@ -2458,8 +2459,7 @@ widgets c sizes spread t = f c t where
    f c (F "gifs" [d,n,b,h])     = do d <- lift' $ parseConst d
                                      n <- lift' $ parsePnat n
                                      b <- liftR b; h <- liftR h
-                                     let str i = d </> (d++'_':show i)
-                                         gif i = Gif (str i) $ Rect (st0 c) b h
+                                     let gif i=Gif i False d $ Rect (st0 c) b h
                                      return $ map gif [1..n]
    f c (F "$" [F "grow" [t],u])    = fgrow c id t u
    f c (F "$" [F "grow" [tr,t],u]) = do tr <- lift' $ widgTrans tr
@@ -2554,7 +2554,15 @@ widgConst c sizes@(n,width) spread = f where
    f (F "fern2" [n,d,r])         = do n <- parsePnat n; (d,r) <- parseReals d r
                                       jturtle $ fern2 n c d r
    f (F "gif" [F file [],b,h])   = do (b,h) <- parseReals b h
-                                      Just $ Gif file $ Rect (st0 c) b h
+                                      Just $ Gif 1 True file $ Rect (st0 c) b h
+   f (F "gif" [F file [],p,b,h]) = do p <- parsePnat p
+                                      (b,h) <- parseReals b h                                      
+                                      Just $ Gif p True file $ Rect (st0 c) b h
+   f (F "gif" [F file [],p,b,h,a])
+                                 = do p <- parsePnat p
+                                      (b,h) <- parseReals b h                                      
+                                      a <- parseBool a
+                                      Just $ Gif p a file $ Rect (st0 c) b h
    f (F x [n]) | z == "hilbP"    = do mode <- search (== mode) pathmodes
                                       n <- parsePnat n
                                       Just $ turtle0 c $ hilbert n East
@@ -3563,7 +3571,7 @@ buildPaths (pict,arcs) = connect $ concatMap f $ indices_ pict
 hullCross :: Line_ -> Widget_ -> Point
 hullCross line@(p1@(x1,y1),p2@(x2,y2)) w = 
      case w of Arc{}         -> head hull
-               Gif _ w       -> hullCross line w
+               Gif _ _ _ w   -> hullCross line w
                Oval (_,0,_,_) rx ry  -> if p1 == p2 then p2 
                                         else (x2+rx*cos rad,y2+ry*sin rad) 
                                         where rad = atan2' (y1-y2) (x1-x2)
@@ -4310,8 +4318,9 @@ widgString   = concat [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
                           return $ Dot c (x',y'),
                        do symbol "Fast"; w <- enclosed widgString
                           return $ Fast w,
-                       do symbol "Gif"; file <- token quoted
-                          hull <- enclosed widgString; return $ Gif file hull,
+                       do symbol "Gif"; p <- enclosed nat; b <- enclosed bool
+                          file <- token quoted; hull <- enclosed widgString
+                          return $ Gif p b file hull,
                        do symbol "New"; return New,
                        do symbol "Oval"; ((x,y),a,c,i) <- state
                           rx <- enclosed double; ry <- enclosed double

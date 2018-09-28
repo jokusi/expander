@@ -2,6 +2,8 @@
 module Base.Gui
   ( module Base.OHaskell
   , module Graphics.UI.Gtk
+  , module Graphics.UI.Gtk.Gdk.PixbufAnimation
+  , module System.Glib.GDateTime
   , Text.unpack
   , iconPixbuf
   , ImageFileType(..)
@@ -91,11 +93,13 @@ import Graphics.UI.Gtk hiding
   (Color, Action, Font, ArrowType, Arrow, Fill
   , ArrowClass, Image, Star , Circle, Point, Dot, get, set)
 import qualified Graphics.UI.Gtk as Gtk (get,set,Color(..))
+import Graphics.UI.Gtk.Gdk.PixbufAnimation
 import Graphics.UI.Gtk.General.CssProvider
 import Graphics.UI.Gtk.General.Enums (PathPriorityType(PathPrioApplication))
 import Graphics.UI.Gtk.General.StyleContext
 import System.Directory
 import System.FilePath
+import System.Glib.GDateTime
 
 -- | Main window icon file.
 iconFile, cssFile :: FilePath
@@ -112,6 +116,29 @@ iconPixbuf :: IO Pixbuf
 iconPixbuf = do
     sty <- stylePath
     pixbufNewFromFile $ sty </> iconFile
+
+
+pixbufRemoveAlpha :: Color -> Pixbuf -> IO ()
+pixbufRemoveAlpha (RGB r g b) pixbuf = do
+    hasAlpha <- pixbufGetHasAlpha pixbuf
+    bitsPerSample <- pixbufGetBitsPerSample pixbuf
+    nChannels <- pixbufGetNChannels pixbuf
+    when (hasAlpha && bitsPerSample == 8 && nChannels == 4) $ do
+        pixels <- pixbufGetPixels pixbuf :: IO (PixbufData Int Haskell.Word8)
+        (start',end') <- Haskell.getBounds pixels
+        let start = start' + nChannels - 1
+            end = end' - 1
+        mapM_ (setByteMax pixels) [start,start+nChannels .. end]
+    return ()
+    where
+        setByteMax arr i = do
+          alpha <- Haskell.readArray arr i
+          when (alpha == 0) $ do
+            Haskell.writeArray arr (i-3) (fromIntegral r)
+            Haskell.writeArray arr (i-2) (fromIntegral g)
+            Haskell.writeArray arr (i-1) (fromIntegral b)
+            Haskell.writeArray arr i maxBound
+
 
 -- Canvas
 data ImageFileType = PNG | PDF | PS | SVG deriving (Read, Show, Enum, Eq)
@@ -365,7 +392,10 @@ canvas = do
             in (x', y')
         
         canvasImage' :: Pos -> ImageOpt -> Image -> Action
-        canvasImage' pos opt (Image image) = do
+        canvasImage' pos opt (Image alpha image) = do
+          when (not alpha) $ do
+            rgb <- readIORef backgroundRef
+            pixbufRemoveAlpha rgb image
           surface <- readIORef surfaceRef
           width <- fromIntegral <$> pixbufGetWidth image
           height <- fromIntegral <$> pixbufGetHeight image
@@ -607,7 +637,7 @@ data Arrow a      = Arrow a
 data Background   = Background String
 data CapStyle a   = CapStyle a
 data Fill         = Fill Color
-data Image        = Image Pixbuf
+data Image        = Image Bool Pixbuf
 data JoinStyle a  = JoinStyle a
 data Justify      = Justify Align
 data Outline      = Outline Color
@@ -686,7 +716,7 @@ imageOpt :: ImageOpt
 imageOpt = ImageOpt 0.0 1.0 C
 
 imageGetSize :: Image -> IO Pos
-imageGetSize (Image buf)
+imageGetSize (Image _ buf)
   = (,) <$> (pixbufGetWidth buf) <*> (pixbufGetHeight buf)
 
 -- data MenuOpt        > WindowOpt, Enabled

@@ -23,6 +23,7 @@ module Base.System
   ) where
 
 import Prelude ()
+import qualified Base.Haskell as Haskell
 import Base.Gui
 
 import System.CPUTime (getCPUTime)
@@ -84,19 +85,37 @@ mkFile dir i | i < 10  = enclose "00"
              | True    = enclose ""
                where enclose str = dir </> str ++ show i ++ ".png"
 
-loadPhoto :: FilePath -> IO (Maybe Image)
-loadPhoto file = do
+-- Customized for Expander3 to be able to load animation frames from gif.
+loadPhoto :: Int -> Bool -> FilePath -> IO (Maybe Image)
+loadPhoto pos alpha file = do
     path <- userLib file'
-    b <- doesFileExist path
-    if b then do
-        image <- pixbufNewFromFile path
-        return $ Just $ Image image
+    isFile <- doesFileExist path
+    if isFile then imageFromFile path -- file in user lib
     else do
+        path <- userLib file
+        isDir <- doesDirectoryExist path
+        if isDir then imageFromFile $ str path -- dir in user lib
+        else do
             path <- builtinLib file'
-            image <- pixbufNewFromFile $ path
-            return $ Just $ Image image
-        `catchIOError` \_ -> return Nothing
+            isFile <- doesFileExist path
+            if isFile then do imageFromFile path -- file in builtin lib
+            else do
+                path <- builtinLib file
+                isDir <- doesDirectoryExist path
+                if isDir then imageFromFile $ str path -- dir in builtin lib
+                else return Nothing -- does not exist
     where file' = if hasExtension file then file else file <.> "gif"
+          imageFromFile path = do
+            anim <- pixbufAnimationNewFromFile path
+            let start = GTimeVal 0 0
+            iter <- pixbufAnimationGetIter anim (Just start)
+            step <- pixbufAnimationIterGetDelayTime iter
+            let time = gTimeValAdd start $ fromIntegral ((pos-1) * step * 1000)
+            pixbufAnimationIterAdvance iter (Just time)
+            image <- pixbufAnimationIterGetPixbuf iter
+            return $ Just $ Image alpha image
+          str path  = path </> (file++'_':show pos) <.> "gif"
+
 
 savePic :: String -> Canvas -> String -> Cmd String
 savePic ext canv = canvasSave canv . (++ext)
