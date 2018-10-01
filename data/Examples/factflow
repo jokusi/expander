@@ -1,12 +1,11 @@
--- FACTFLOW
+-- factflow
 
-constructs: := 
 defuncts:   fact flow flowP
 fovars:     X Y n
 
 axioms:
 -- flow(n) == subsflow(X = assign(x,n,assign(y,1,Y)) & 
-flow(n) == subsflow(X = inflow(assign(y,1,Y),[[x`is`n]]) & 
+flow(n) == subsflow( -- X = inflow(assign(y,1,Y),[[x=n]]) & 
                     Y = ite(x>0,assign(y,x*y,assign(x,x-1,Y)),[])) &
 
 flowP(n) == postflow(X = IN(assign(x,n,assign(y,1,Y))) &

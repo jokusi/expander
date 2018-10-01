@@ -1628,7 +1628,11 @@ painter pheight solveRef solve2Ref = do
         , setCurrInPaint = setCurrInPaint'
         , setEval        = setEval'
         }
--- * the GRAPH type
+-- Painter types
+ 
+type Graph     = (Picture,Arcs)
+type Picture   = [Widget_]
+type Arcs      = [[Int]]
 
 type Point  = (Double, Double)
 type Point3 = (Double, Double, Double)   -- not used
@@ -1670,10 +1674,6 @@ data TurtleAct  = Close | Draw |
                   -- Widg False w ignores the orientation of w, Widg True w 
                   -- adds it to the orientation of the enclosing turtle.
                   deriving (Show,Eq)
-
-type Arcs      = [[Int]]
-type Picture   = [Widget_]
-type Graph     = (Picture,Arcs)
 
 type TermW     = Term Widget_
 type TermWP    = Term (Widget_,Point)
@@ -1770,13 +1770,6 @@ reduceActs _          = []
 
 turtle0 :: Color -> TurtleActs -> Widget_
 turtle0 c = Turtle (st0 c) 1 . reduceActs
-
-turtle0B,turtle1 :: TurtleActs -> Widget_
-turtle0B     = turtle0 black
-turtle1 acts = case acts of Open c _:_ -> turtle0 c acts
-                            Widg _ w:_ -> turtle0 (getCol w) acts
-                            _ -> turtle0B acts
-
 
 up, down, back :: TurtleAct
 up   = Turn $ -90
@@ -2313,6 +2306,12 @@ stringsInActs = concatMap f
 
 -- * GRAPHICAL INTERPRETERS
 
+turtle0B,turtle1 :: TurtleActs -> Widget_
+turtle0B     = turtle0 black
+turtle1 acts = case acts of Open c _:_ -> turtle0 c acts
+                            Widg _ w:_ -> turtle0 (getCol w) acts
+                            _ -> turtle0B acts
+
 type InterpreterT = Sizes -> Pos -> TermS -> MaybeT Cmd Picture
 
 jturtle :: TurtleActs -> Maybe Widget_
@@ -2382,41 +2381,40 @@ dissection _ _ t = lift' $ do quads <- parseList parseIntQuad t
 linearEqs sizes _ = f where
        f (F x [t]) | x `elem` words "bool gauss gaussI" = f t
        f t = lift' $ do eqs <- parseLinEqs t
-                        jturtleP $ matrixTerm sizes $ g eqs 1
+                        jturtleP $ termMatrix sizes $ g eqs 1
        g ((poly,b):eqs) n = map h poly++(str,"=",mkConst b):g eqs (n+1)
                             where h (a,x) = (str,x,mkConst a); str = show n
        g _ _              = []
 
 matrix sizes spread = f where
-        f :: TermS -> MaybeT Cmd Picture
-        f (Hidden (BoolMat dom1 dom2 pairs@(_:_))) 
-                            = rturtle $ matrixBool sizes dom1 dom2 pairs
-        f (Hidden (ListMat dom1 dom2@(_:_) trips))
-                            = rturtle $ matrixList sizes dom1 dom2 $ map g trips
-                              where g (a,b,cs) = (a,b,map leaf cs)
-        f (Hidden (ListMatL dom trips@(_:_)))
-                            = rturtle $ matrixList sizes dom dom $ map g trips
-                              where g (a,b,cs) = (a,b,map mkStrLPair cs)
-        f t | just u         = do bins@(bin:_) <- lift' u
-                                  let (arr,k,m) = karnaugh (length bin)
-                                      g = binsToBinMat bins arr
-                                      ts = [(show i,show j,F (g i j) [])
-                                                     | i <- [1..k], j <- [1..m]]
-                                  rturtle $ matrixTerm sizes ts
-                               where u = parseBins t
-        f (F _ [])           = zero
-        f (F "pict" ts)      = do ts <- mapM (lift' . parseConsts2Term) ts
-                                  rturtle $ matrixWidget sizes spread
-                                          $ deAssoc3 ts
-        f (F _ ts) | just us = rturtle $ matrixBool sizes dom1 dom2 ps
-                               where us = mapM parseConsts2 ts
-                                     ps = deAssoc2 $ get us
-                                     (dom1,dom2) = sortDoms ps
-        f (F _ ts) | just us = rturtle $ matrixList sizes dom1 dom2 trs
-                               where us = mapM parseConsts2Terms ts
-                                     trs = deAssoc3 $ get us
-                                     (dom1,dom2) = sortDoms2 trs
-        f _                  = zero
+       f :: TermS -> MaybeT Cmd Picture
+       f (Hidden (BoolMat dom1 dom2 pairs@(_:_))) 
+                           = rturtle $ boolMatrix sizes dom1 dom2 pairs
+       f (Hidden (ListMat dom1 dom2@(_:_) trips))
+                           = rturtle $ listMatrix sizes dom1 dom2 $ map g trips
+                             where g (a,b,cs) = (a,b,map leaf cs)
+       f (Hidden (ListMatL dom trips@(_:_)))
+                            = rturtle $ listMatrix sizes dom dom $ map g trips
+                             where g (a,b,cs) = (a,b,map mkStrLPair cs)
+       f t | just u         = do bins@(bin:_) <- lift' u
+                                 let (arr,k,m) = karnaugh (length bin)
+                                     g = binsToBinMat bins arr
+                                     ts = [(show i,show j,F (g i j) [])
+                                                    | i <- [1..k], j <- [1..m]]
+                                 rturtle $ termMatrix sizes ts
+                              where u = parseBins t
+       f (F _ [])           = zero
+       f (F "pict" ts)      = do ts <- mapM (lift' . parseConsts2Term) ts
+                                 rturtle $ widgMatrix sizes spread $ deAssoc3 ts
+       f (F _ ts) | just us = rturtle $ boolMatrix sizes dom1 dom2 ps
+                              where us = mapM parseConsts2 ts
+                                    ps = deAssoc2 $ get us
+                                    (dom1,dom2) = sortDoms ps
+       f (F _ ts) | just us = rturtle $ listMatrix sizes dom1 dom2 trs
+                              where us = mapM parseConsts2Terms ts
+                                    trs = deAssoc3 $ get us
+                                    (dom1,dom2) = sortDoms2 trs
+       f _                  = zero
 
 widgetTree sizes spread t = do t <- f [] t; return [WTree t] where
        f :: [Int] -> TermS -> MaybeT Cmd TermW
@@ -2430,16 +2428,16 @@ widgetTree sizes spread t = do t <- f [] t; return [WTree t] where
                                     return $ F (text0 black sizes x) ts
        f _ (V x)               = return $ V $ if isPos x then posWidg x
                                               else text0 black sizes x
-       f _ _                   = return $ F (text0 blue sizes "hidden") []
+       f _ _                   = return $ leaf $ text0 blue sizes "hidden"
 
 widgets :: Color -> Interpreter
 widgets c sizes spread t = f c t where
    next = nextColor 0 $ depth t
    fs c t = do picts <- parseListT' (f c) t; return $ concat picts
    f c (F x [t])     | just tr  = do [w] <- fs c t; return [get tr w]
-                                  where tr = widgTrans $ F x []
+                                  where tr = widgTrans $ leaf x
    f c (F x [t])     | just tr  = do pict <- fs c t; return $ (get tr) pict
-                                  where tr = pictTrans c $ F x []
+                                  where tr = pictTrans c $ leaf x
    f c (F "$" [t,u]) | just tr  = do [w] <- fs c u; return [get tr w]
                                   where tr = widgTrans t
    f c (F "$" [t,u]) | just tr  = do pict <- fs c u; return $ (get tr) pict
@@ -2471,6 +2469,7 @@ widgets c sizes spread t = f c t where
    f c (F "load" [t])              = do w <- lift $ loadWidget sizes
                                                   $ showTree False t
                                         return [updCol0 c w]
+   f _ (F "mat" [t])      = matrix sizes spread t
    f c (F "save" [t,u])   = do [w] <- f black t
                                lift $ saveWidget w $ showTree False u
                                return [updCol0 c w]
@@ -2513,7 +2512,7 @@ widgets c sizes spread t = f c t where
    widgAct b c t = do [w] <- fs c t ++ return [text0 black sizes $ showTerm0 t]
                       return [Widg b w]
 
-widgConst :: Color -> Sizes -> Pos -> TermS -> Maybe Widget_
+widgConst,widgConstC :: Color -> Sizes -> Pos -> TermS -> Maybe Widget_
 widgConst c sizes@(n,width) spread = f where
    f (F x [])     | x `elem` trunks   = Just $ mkTrunk c x
    f (F x [n])    | x `elem` fractals = do n <- parsePnat n
@@ -2636,8 +2635,7 @@ widgConst c sizes@(n,width) spread = f where
    f (F "stick" [])      = Just $ Path (p0,0,c,-16) 4
                                              [p0,(-4,-8),(0,-150),(4,-8),p0]
    f (F "taichi" s)      = jturtle $ taichi sizes s c
-   f (F "text" ts)       = do guard $ notnull strs
-                              Just $ Text_ (st0 c) n strs $ map width strs
+   f (F "text" ts)       = Just $ Text_ (st0 c) n strs $ map width strs
                            where strs = map (map h) $ words $ showTree False
                                                     $ colHidden $ mkTup ts
                                  h x = if x == '\'' then ' ' else x
@@ -2651,7 +2649,11 @@ widgConst c sizes@(n,width) spread = f where
                                       n <- parsePnat n; (d,a) <- parseReals d a
                                       jturtle $ wave mode n d a c
                                    where (z,mode) = splitAt 4 x
-   f _ = Nothing
+   f t = f (F "text" [t])
+                      
+widgConstC c sizes spread = f c where   
+   f _ (F x [t]) | just c = f (get c) t where c = parse color x
+   f c t                  = widgConst c sizes spread t
 
 huemodes   = "":words "1 2 3"
 pathmodes  = "":words "S W SW F SF"
@@ -3438,7 +3440,7 @@ bunchesToArcs (pict,arcs) removes the bunches of pict and adds their edges to
 arcs. bunchesToArcs is used by arrangeGraph, concatGraphs, scaleAndDraw and 
 showInSolver (see above).
 -}
-bunchesToArcs :: ([Widget_], Arcs) -> ([Widget_], [[Int]])
+bunchesToArcs :: Graph -> Graph
 bunchesToArcs graph@(pict,_) = (pict2,foldl removeCycles arcs1 cycles)
   where addArcs (pict,arcs) (m,Bunch w is) = (updList pict m w,
                                                updList arcs m $ arcs!!m`join`is)
@@ -4220,8 +4222,8 @@ rectRow entry ht btf = concatMap f
                      where f j = JumpA bt:rectC black bt ht:entry j++[JumpA bt]
                                  where bt = btf j
 
-matrixBool :: Sizes -> [String] -> [String] -> [(String,String)] -> TurtleActs
-matrixBool sizes@(n,width) dom1 dom2 ps =
+boolMatrix :: Sizes -> [String] -> [String] -> [(String,String)] -> TurtleActs
+boolMatrix sizes@(n,width) dom1 dom2 ps =
                       rectMatrix sizes entry dom1 dom2 btf $ const ht
                       where entry i j = if (i,j) `elem` ps 
                                         then [widg $ Oval (st0 red) m m] else [] 
@@ -4229,9 +4231,9 @@ matrixBool sizes@(n,width) dom1 dom2 ps =
                             btf j = halfmax width [j]+3
                             ht = fromInt n/2+3
 
-matrixList :: Sizes -> [String] -> [String] -> Triples String TermS
+listMatrix :: Sizes -> [String] -> [String] -> Triples String TermS
                     -> TurtleActs
-matrixList sizes@(n,width) dom1 dom2 ts = 
+listMatrix sizes@(n,width) dom1 dom2 ts = 
             rectMatrix sizes entry dom1 dom2 btf htf
             where entry i j = open:down:JumpA back:concatMap h (f i j)++[Close]
                               where back = -(lg i j-1)*ht
@@ -4242,32 +4244,26 @@ matrixList sizes@(n,width) dom1 dom2 ts =
                   htf i = maximum (map (lg i) dom2)*ht
                   ht = fromInt n/2+3
 
-matrixTerm :: Sizes -> [(String,String,TermS)] -> TurtleActs
-matrixTerm sizes@(n,width) ts = rectMatrix sizes entry dom1 dom2 btf htf
+termMatrix :: Sizes -> [(String,String,TermS)] -> TurtleActs
+termMatrix sizes@(n,width) ts = rectMatrix sizes entry dom1 dom2 btf htf
                  where (dom1,dom2) = sortDoms2 ts
                        entry i j = [act str] where (act,str) = f i j
-                       f i = colTerm . g i
-                       g i j = case lookupL i j ts of Just t -> t; _ -> V ""
+                       f i j = colTerm $ lookupT i j ts
                        btf j = halfmax width (j:map (snd . flip f j) dom1)+3
                        htf _ = fromInt n/2+3
                        colTerm t = (widg . text0 col sizes,delBrackets t)
                                    where col = case parse colPre $ root t of 
                                                     Just (c,_) -> c; _ -> black
 
-matrixWidget :: Sizes -> Pos -> [(String,String,TermS)] -> TurtleActs
-matrixWidget sizes spread ts = rectMatrix sizes entry dom1 dom2 
-                                                     btf htf
-              where (dom1,dom2) = sortDoms2 ts
-                    entry i j = [widg $ f i j]
-                    f i j = mkWidg $ case lookupL i j ts of Just t -> t
-                                                            _ -> V ""
-                    btf j = (x2-x1)/2+3 
-                            where (x1,_,x2,_) = pictFrame $ map (`f` j) dom1
-                    htf i = (y2-y1)/2+3 
-                            where (_,y1,_,y2) = pictFrame $ map (f i) dom2
-                    mkWidg t = case widgConst black sizes spread t of
-                                    Just w -> w
-                                    _ -> text0 black sizes $ showTerm0 t
+lookupT i j ts = case lookupL i j ts of Just t -> t; _ -> V ""
+
+widgMatrix :: Sizes -> Pos -> [(String,String,TermS)] -> TurtleActs
+widgMatrix sizes@(n,width) spread ts = rectMatrix sizes entry dom1 dom2 btf htf
+   where (dom1,dom2) = sortDoms2 ts
+         entry i j = [widg $ f i j]
+         f i j = get $ widgConstC black sizes spread $ lookupT i j ts
+         btf j = (x2-x1)/2+3 where (x1,_,x2,_) = pictFrame $ map (flip f j) dom1
+         htf i = (y2-y1)/2+3 where (_,y1,_,y2) = pictFrame $ map (f i) dom2
 
 delBrackets = f . showTerm0 where f ('(':a@(_:_)) | last a == ')' = init a
                                   f a                              = a

@@ -18,6 +18,6 @@ main = do
     let list5 = map (drop $ length datapath + 1) list4
     forM_ list5 $ \item -> do
         putStr "                   , \""
-        putStr item
+        putStr $ map (\c -> if c == '\\' then '/' else c) item
         putStrLn "\""
 

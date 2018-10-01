@@ -166,9 +166,6 @@ minmax4 (x1,y1,x2,y2) (x1',y1',x2',y2') = (min x1 x1',min y1 y1',
 mkArray :: Ix a => (a,a) -> (a -> b) -> Array a b
 mkArray bounds f = array bounds [(i,f i) | i <- range bounds]
 
--- The following monad transformer MaybeT is used in the widget interpreters of
--- Epaint.hs.
-
 type MaybeT = Haskell.MaybeT
 
 maybeT :: Monad m => m (Maybe a) -> MaybeT m a
@@ -182,6 +179,8 @@ lift = Haskell.lift
 
 lift' :: Monad m => Maybe a -> MaybeT m a
 lift' = maybeT . return
+
+-- MaybeT is used by the widget interpreters of Epaint.hs.
 
 -- * Coloring
 
@@ -3268,7 +3267,7 @@ turnIntoUndef sig t p redex =
 -- * Generators
 -- ** Generators of terms
 
-leaf :: String -> TermS
+leaf :: a -> Term a
 leaf a = F a []
 
 leaves :: [String] -> TermS

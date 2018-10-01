@@ -3,7 +3,7 @@
 constructs:     a b c
 defuncts: 	plus times take iterate iter
 preds:		P Q R
-fovars:		x' y' z'
+fovars:		x' y' z' i j
 hovars: 	H I
 
 axioms: 
@@ -15,6 +15,8 @@ axioms:
 
 & iter == mu I.fun(H,fun(x,x:I(H)$H$x))
 & iterate(H)$x == x:iterate(H)$H$x 
+
+& (i `mod` j = 0 ==> i^j -> j)
 
 conjects:
 
@@ -64,6 +66,8 @@ terms:
 <+> take(4)$iter(+3*2)$0 
 <+> take(4)$iter(f.g)$0
 <+> concat[[1..4],[1..4]]
+
+<+> 2^3^4^5^6^7^8^9^10^11^12^13^14^15		--rewrite-> 3^2^11^13^5^7
 
 <+> fun((x,x),x,x,111)$(8,9)
 
@@ -152,20 +156,27 @@ terms:
 <+> concat$replicate(5)[1,2,f(pos 0 1 2 1,g(x)),3,4]
 
 <+> fun(st,ite(List(st),pic(st),pic(get1(st))))(666,[1,5,7])
+
+<+> prodE(id,suc,fun(z,z+2),fun(z,z*(5+3)))(3)			--> (3,4,5,24)
+
+<+> (get1.prodE(suc,suc.suc))(9) - (get0.prodE(suc,suc.suc))(9)	--> 1
 	
 <+> red_uuu(light blue_hhhh,
 	     magenta_uuu(bbbbbbb(light blue_hhhh,
 				 light green_xxxx),
 			 yellow_xxxx,cyan_ppp,iiiii))
-<+>
-f(a,f(a),f(a,f(a,a)),f(f(f(a,a),f(a,a)),f(a,f(a,a,a),f(a)),f(a)),a,
-  f(f(f(a,b),b,f(a,b)),f(f(a,b),f(a,b)),f(a,f(a),a),f(a,f(a),f(a,b),f(a))),
-  f(f(a)))
-<+> f(f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a))
+<+> f(a,f(a),f(a,f(a,a)),f(f(f(a,a),f(a,a)),f(a,f(a,a,a),f(a)),f(a)),a,
+      f(f(f(a,b),b,f(a,b)),f(f(a,b),f(a,b)),f(a,f(a),a),f(a,f(a),f(a,b),f(a))),
+      f(f(a)))
+<+> f(f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),
+      f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a))
 <+> f(a,f(a,a,a,a,a,a,a),a,a,f(a,a,a,a,a,a,a),a,f(a,a,a,a,a,a,a))
 <+> f(g(h(pos 1 0 1,pos 1)),k(m(c(pos 1 0 1),d(pos 1 0 0,pos 0))))
 <+> (a*((a*pos )+(b*(b*pos ))))+
     (b*(((a*((a*pos 1 1)+(b*((a*pos )+(b*(b*pos ))))))+(b*pos ))+eps))
+<+> [(2,b,[1,3,3,3,3]),(3,b,[3]),(3,a,[4]),(2,a,[4,4]),		-- matrix
+     (2,c,[4,uuuuuuuuuuuuuuuuuuuuuuu,5]),(4,b,[3]),		-- interpreter
+     (2,d,[1,3,3,3,3,3,3,3,3,3,39,3,3,3,3,3,3])]
 
 {- <+> f(f(a,f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,a)))),a) 
 <+> aaaa(ddd,
