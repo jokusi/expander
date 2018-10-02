@@ -2206,7 +2206,7 @@ mkPict (Turtle (p,a,c,i) sc acts) =
 
 mkPict w = [w]
 
--- inFrame is used by crossing and strands (see below).
+-- inFrame is used by crossing, getWidget and strands (see below).
 
 inFrame :: Point -> Point -> Point -> Bool
 inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 `le` x && x `le` max x1 x2 &&
@@ -2214,16 +2214,18 @@ inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 `le` x && x `le` max x1 x2 &&
                                 where le a b = a < b || abs (a-b) < 0.5
 
 -- interior p lines returns True iff p is located within lines.
--- interior is used by inWidget, joinPict and strands.
+-- interior is used by inWidget, joinPict 13/14 and strands.
 
 interior :: Point -> Lines -> Bool
-interior p = odd . length . filter (just . crossing ((p,q),q)) . addSuc
-             where q = (2000,snd p)
+interior p@(_,y) = odd . length . filter (just . crossing ((p,q),q)) . addSuc
+                   where q = (2000,y)
 
 -- inWidget is used by getWidget and joinPict 6 (see below).
 
 inWidget :: Point -> Widget_ -> Bool
-inWidget p@(x,y) = (== p) . coords ||| any (interior p) . getFrameLns
+inWidget p w = inFrame (x1,y1) p (x2,y2) where (x1,y1,x2,y2) = widgFrame w
+
+-- inWidget p@(x,y) = (== p) . coords ||| any (interior p) . getFrameLns
 
 -- getWidget p scale pict returns a widget of pict close to p and scales it.
 -- getWidget is used by moveButton and pressButton (see below).
@@ -2238,7 +2240,7 @@ getWidget p sc = searchGetR (not . isSkip &&& inWidget p) .
 getFramePts :: Bool -> Widget_ -> Path
 getFramePts edgy = concatMap getPoints . hulls edgy
 
--- getFrameLns is used by hullCross and inWidget.
+-- getFrameLns is used by hullCross (see below).
 
 getFrameLns :: Widget_ -> [Lines]
 getFrameLns = map getLines . hulls False
@@ -2454,11 +2456,6 @@ widgets c sizes spread t = f c t where
                                      [w] <- f c t; pict <- fs (next c) u
                                      rturtle $ widg w:flower mode pict
                                      where (z,mode) = splitAt 6 x
-   f c (F "gifs" [d,n,b,h])     = do d <- lift' $ parseConst d
-                                     n <- lift' $ parsePnat n
-                                     b <- liftR b; h <- liftR h
-                                     let gif i=Gif i False d $ Rect (st0 c) b h
-                                     return $ map gif [1..n]
    f c (F "$" [F "grow" [t],u])    = fgrow c id t u
    f c (F "$" [F "grow" [tr,t],u]) = do tr <- lift' $ widgTrans tr
                                         fgrow c tr t u
@@ -2476,8 +2473,8 @@ widgets c sizes spread t = f c t where
    f c (F "turt" [acts])  = do acts <- parseActs c acts
                                return [turtle0 c acts]
    f _ (F x [t]) | just c = f (get c) t where c = parse color x
-   f c t                  = do w <- lift' $ widgConst c sizes spread t
-                               return [w]
+   f c t = concat [do w <- lift' $ widgConst c sizes spread t; return [w],
+                   do pict <- lift' $ widgConsts c sizes spread t; return pict]
    liftR = lift' . parseReal
    fgrow c tr t u = do [w] <- fs c t; pict <- fs (next c) u
                        rturtle $ grow tr (updCol c w) $ map getActs pict
@@ -2553,15 +2550,15 @@ widgConst c sizes@(n,width) spread = f where
    f (F "fern2" [n,d,r])         = do n <- parsePnat n; (d,r) <- parseReals d r
                                       jturtle $ fern2 n c d r
    f (F "gif" [F file [],b,h])   = do (b,h) <- parseReals b h
-                                      Just $ Gif 1 True file $ Rect (st0 c) b h
+                                      Just $ Gif 1 True file $ Rect st0B b h
    f (F "gif" [F file [],p,b,h]) = do p <- parsePnat p
                                       (b,h) <- parseReals b h                                      
-                                      Just $ Gif p True file $ Rect (st0 c) b h
+                                      Just $ Gif p True file $ Rect st0B b h
    f (F "gif" [F file [],p,b,h,a])
                                  = do p <- parsePnat p
                                       (b,h) <- parseReals b h                                      
                                       a <- parseBool a
-                                      Just $ Gif p a file $ Rect (st0 c) b h
+                                      Just $ Gif p a file $ Rect st0B b h
    f (F x [n]) | z == "hilbP"    = do mode <- search (== mode) pathmodes
                                       n <- parsePnat n
                                       Just $ turtle0 c $ hilbert n East
@@ -2649,11 +2646,20 @@ widgConst c sizes@(n,width) spread = f where
                                       n <- parsePnat n; (d,a) <- parseReals d a
                                       jturtle $ wave mode n d a c
                                    where (z,mode) = splitAt 4 x
-   f t = f (F "text" [t])
+   f _ = Nothing
                       
 widgConstC c sizes spread = f c where   
    f _ (F x [t]) | just c = f (get c) t where c = parse color x
    f c t                  = widgConst c sizes spread t
+
+widgConsts :: Color -> Sizes -> Pos -> TermS -> Maybe Picture
+widgConsts c sizes spread = f where
+   f (F "gifs" [d,n,b,h]) = do d <- parseConst d; n <- parsePnat n
+                               b <- parseReal b; h <- parseReal h
+                               let gif i = Gif i False d $ Rect (st0 c) b h
+                               Just $ map gif [1..n]
+                               -- Just $ map (turtle0B . onoff . gif) [1..n]
+   f _ = Nothing
 
 huemodes   = "":words "1 2 3"
 pathmodes  = "":words "S W SW F SF"
@@ -2683,12 +2689,12 @@ widgTrans = f where
    f (F "place" [x,y])   = do x <- parseReal x; y <- parseReal y
                               Just $ turtle1 . \w -> jumpTo (x,y) ++ [widg w]
    f (F "planar" [n])    = do maxmeet <- parsePnat n; Just $ planarWidg maxmeet
-   f (F x (n:s)) | z == "rainbow"  = frainbow n s scaleWidg z hue
-                                     where (z,hue) = splitAt 7 x
    f (F x (n:s)) | z == "rainbowT" = frainbow n s scaleWidgT z hue
                                      where (z,hue) = splitAt 8 x
+   f (F x (n:s)) | z == "rainbow"  = frainbow n s scaleWidg z hue
+                                     where (z,hue) = splitAt 7 x
+   f (F "shineT" (i:s))  = fshine i s scaleWidgT
    f (F "shine" (i:s))   = fshine i s scaleWidg
-   f (F "shineT" (i:s))         = fshine i s scaleWidgT
    f (F x [d,m,n,k]) | z == "snow" = do hue <- search (== hue) huemodes
                                         d <- parseReal d; m <- parsePnat m
                                         n <- parsePnat n; k <- parsePnat k
@@ -2714,15 +2720,12 @@ widgTrans = f where
 
 pictTrans :: Color -> TermS -> Maybe PictTrans
 pictTrans c = f where
-     f (F "anim" [])            = Just $ single . turtle1 . concatMap onoff
+     f (F "anim" [])             = Just $ map $ turtle0B . onoff
      f (F "dark" [])            = Just $ map $ shiftLight $ -16
      f (F "dots" [n])           = do n <- parsePnat n; Just $ dots n
      f (F "fast" [])            = Just $ map fast
      f (F "flipH" [])           = Just $ flipPict True
      f (F "flipV" [])           = Just $ flipPict False
-     f (F "fork" [])            = Just $ single . turtle1 . tail . concatMap h
-                                  where h (Turtle _ _ as) = widg New:as
-                                        h w               = [widg w]
      f (F x [d]) | z == "frame" = do d <- parseReal d
                                      mode <- search (== mode) pathmodes
                                      Just $ map $ addFrame d c mode
@@ -3717,8 +3720,10 @@ joinPict m pict = case m of
                        13 -> pict++fillHoles light
                        14 -> zipWith lightFill outerCols rest++fillHoles id
                        _  -> pict
-               where center w = Dot (if any (inWidget p) $ minus1 pict w
-                                     then grey else black) p where p = coords w 
+               where center w = Dot col p 
+                                where p = coords w
+                                      col = if any (inWidget p) $ minus1 pict w 
+                                            then grey else black
                      dot = Dot (RGB 0 0 1) . fst
                      (hcs,inner,innerCols,outer,outerCols) = strands pict
                      whiteFill        = path0 white 4
@@ -4261,7 +4266,8 @@ widgMatrix :: Sizes -> Pos -> [(String,String,TermS)] -> TurtleActs
 widgMatrix sizes@(n,width) spread ts = rectMatrix sizes entry dom1 dom2 btf htf
    where (dom1,dom2) = sortDoms2 ts
          entry i j = [widg $ f i j]
-         f i j = get $ widgConstC black sizes spread $ lookupT i j ts
+         f i j = case widgConstC black sizes spread $ lookupT i j ts of
+                      Just w -> w; _ -> Skip
          btf j = (x2-x1)/2+3 where (x1,_,x2,_) = pictFrame $ map (flip f j) dom1
          htf i = (y2-y1)/2+3 where (_,y1,_,y2) = pictFrame $ map (f i) dom2
 

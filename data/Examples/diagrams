@@ -2,7 +2,8 @@
 
 defuncts: draw 
 
-fovars: solve paint term tk wit wis mat les ali dis pal bm lm tm wm rm pas
+fovars: com solve paint term tk 
+        egi wit wis mat les ali dis pal bm lm tm wm rm pas wc
 
 axioms: 
 
@@ -14,7 +15,7 @@ conjects:
 
 -- Manual1.pdf, Figure 3
 
-x = string(Ecom.hs)(solve,string(edge$callPaint)$paint) &
+com = string(Ecom.hs)(solve,string(edge$callPaint)$paint) &
 solve = string(Esolve.hs)(term,string(edge$hilbShelf reducePath)$paint) &paint = string(Epaint.hs)(term,(string$System.hs)$tk) &
 term = string(Eterm.hs)(string(edge$Array)$string(Array.hs),
 		        string(edge$Pos)$tk) &
@@ -22,15 +23,18 @@ tk = string(Tk.hs) &
 
 -- Manual1.pdf, Figure 4
 
-y = string(Ecom/getInterpreter)(wit,wis,mat,les,
-			        string(red$alignment),
-			        string(red$dissection),
-			        string(red$palindrome)) &
+egi = string(Ecom/getInterpreter)(wit,string(edge$searchPic)$wis,
+				  string(edge$searchPic)$mat,les,
+			          string(edge$searchPic)$string(red$alignment),
+			          string(edge$searchPic)$string(red$dissection),
+			          string(edge$searchPic)$string(red$palindrome)) 
+&
 wit = string(red$widgetTree)(wis) &
-wis = string(red$widgets)(pas,widgConst,widgTrans,pictTrans) &
-mat = string(red$matrix)(bm,lm,wm) &
+wis = string(red$widgets)(pas,wc,widgTrans,pictTrans,mat) &
+mat = string(red$matrix)(bm,lm,wm,tm) &
 les = string(red$linearEqs)(tm) &
 bm = boolMatrix(rm) & lm = listMatrix(rm) & tm = termMatrix(rm) &
-wm = widgMatrix(rm,widgConstC) &
+wm = widgMatrix(rm,widgConstC$wc) &
 rm = rectMatrix &
-pas = parseActs(wis)
+pas = parseActs(wis) &
+wc = widgConst

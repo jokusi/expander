@@ -129,4 +129,9 @@ terms:
 <+> repeat(fork(rotate(10,poly(6,[33,11],red)):
      map(fun((x,y,z),rotate(x,turt(J(y),poly(6,[33,11],z)))))
         [(-10,66,green),(7.5,132,blue),(-7.5,198,magenta),(5,264,dark cyan)])) 
+<+> repeat[shuffle[flash(poly(6,[33,11],red)),			-- flashpoly
+		   flash(turt(J(66),polyR(6,[33,11],green))),
+               	   flash(turt(J(132),poly(6,[33,11],blue)))]]	
+<+> repeat(flash(polyR(8,[33,11],yellow)))			-- flashpolyR
+<+> repeat(flash(list(shineW(polyR(8,[32,12],yellow)))))	-- flashshine
 

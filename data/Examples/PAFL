@@ -1,10 +1,8 @@
 -- PAFL
 
 defuncts: flatten
-
-preds: part >>
-
-fovars: s s' p s1
+preds:    part >>
+fovars:   s s' p s1
 axioms:
 
   part([x],[[x]]) 

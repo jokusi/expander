@@ -46,8 +46,8 @@ data-dir:            data
 data-files:          Examples/*.gif
                    -- , Examples/*.png
                    , Examples/lars/*.gif
-                   , Examples/mutexAlt
                    , Examples/tweety/*.gif
+                   , Examples/turtSurfer/*.gif
                    , Pix/Painter.js
                    , style/style.css
                    , style/Solver.glade
@@ -107,7 +107,6 @@ data-files:          Examples/*.gif
                    , "Examples/PAFL1T"
                    , "Examples/PAFL2P"
                    , "Examples/PAFL2T"
-                   , "Examples/PAFLall"
                    , "Examples/PARTN2proof"
                    , "Examples/PARTN2term"
                    , "Examples/PARTNproof"
