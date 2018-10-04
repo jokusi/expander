@@ -1051,23 +1051,24 @@ painter pheight solveRef solve2Ref = do
                     draw55 $ map (shiftCol n) ws
         
         moveScale = do 
-            n <- truncate <$> scaleSlider `gtkGet` rangeValue
-            when (n /= 0) $ do
-                rect <- readIORef rectRef
-                rscale <- readIORef rscaleRef
-                scale <- readIORef scaleRef
-                changedWidgets <- readIORef changedWidgetsRef
-                colorScale <- readIORef colorScaleRef
-                let sc = if just rect then rscale else scale
-                    (_,us) = colorScale; (is,vs) = changedWidgets
-                    ws = scalePict (sc+fromInt n/10*sc) us 
-                writeIORef colorScaleRef (n,us)
-                when (pictSize ws < 20) $ do
-                    writeIORef changedWidgetsRef (is,ws)
-                    setFast True
-                    rect <- readIORef rectRef
-                    draw55 $ delPict vs++case rect of Just r -> r:ws; _ -> ws
-        
+          n <- truncate <$> scaleSlider `gtkGet` rangeValue
+          when (n /= 0) $ do
+             rect <- readIORef rectRef
+             rscale <- readIORef rscaleRef
+             scale <- readIORef scaleRef
+             changedWidgets <- readIORef changedWidgetsRef
+             colorScale <- readIORef colorScaleRef
+             let sc = if just rect then rscale else scale
+                 (_,us) = colorScale
+                 (is,vs) = changedWidgets
+                 ws = scalePict (sc+fromInt n/10*sc) us 
+             writeIORef colorScaleRef (n,us)
+             when (pictSize ws < 20) $ do
+                 writeIORef changedWidgetsRef (is,ws)
+                 setFast True
+                 rect <- readIORef rectRef
+                 draw55 $ delPict vs++case rect of Just r -> r:ws; _ -> ws
+
         newPaint = do
             open <- readIORef openRef
             if open then do
@@ -1194,101 +1195,102 @@ painter pheight solveRef solve2Ref = do
                 writeIORef colorScaleRef (0,pict)
 
         releaseButton n = do
-            pictures <- readIORef picturesRef
-            curr <- readIORef currRef
-            edges <- readIORef edgesRef
-            let graph@(pict,arcs) = (pictures!!curr,edges!!curr)
-            connect <- readIORef connectRef
-            if connect then do
-                source <- readIORef sourceRef
-                target <- readIORef targetRef
-                if nothing source || nothing target then nada
-                else do
-                    let (s,v) = get source
-                        (t,w) = get target
-                        ts = arcs!!s
-                        is = getSupport graph s t; redDots = just is
-                        connected = redDots || t `elem` ts
-                        (_,_,c,i) = getState v
-                        f (p,a,_,_) = (p,a,c,i)
-                        w' = updState f $ pict!!t
-                    case n of
-                        1 -> do
-                            arrangeMode <- readIORef arrangeModeRef
-                            if arrangeMode == "paste"
-                            then setDrawSwitch (updList pict t w',arcs)
-                                                "The target has been colored."
-                            else
-                                if connected then setDrawSwitch 
-                                    (if redDots then removeSub graph
-                                        $ get is
-                                    else (pict,updList arcs s $ ts `minus1` t)) 
-                                    "An arc has been removed."
-                                else if s == t then nada
-                                     else setDrawSwitch
-                                            (pict,updList arcs s $ t:ts)
-                                            "An arc has been drawn."
-                        2 -> do
-                            arrangeMode <- readIORef arrangeModeRef
-                            setDrawSwitch (if (isTree ||| isCenter) arrangeMode
-                                          then (exchgWidgets pict s t,arcs)
-                                          else exchgPositions graph s t)
-                                        "Source and target have been exchanged."
-                        _ -> if s == t && just is ||
-                             s /= t && connected && all (not . isRedDot) [v,w]
-                             then nada
-                             else setDrawSwitch
-                                            (addSmoothArc graph (s,t,v,w,ts))
-                                            "A smooth arc has been drawn."
-            else do
-                case n of
-                    2 -> do
-                        rect <- readIORef rectRef
-                        case rect of
-                            Just r -> do
-                                rscale <- readIORef rscaleRef
-                                writeIORef rectIndicesRef
-                                    $ getRectIndices pict rscale r
-                                rectIndices <- readIORef rectIndicesRef
-                                if null rectIndices then do
-                                    writeIORef rectRef Nothing
-                                    nada
-                                else scaleAndDraw
-                                        "A subgraph has been selected."
-                            _ -> scaleAndDraw "The selector has been removed."
-                    _ -> do
-                        rect <- readIORef rectRef
-                        scale <- readIORef scaleRef
-                        changedWidgets <- readIORef changedWidgetsRef
-                        rscale <- readIORef rscaleRef
-                        arrangeMode <- readIORef arrangeModeRef
-                        let f = if just rect then scaleWidg $ 1/rscale
-                               else transXY (-5,-5) . scaleWidg (1/scale)
-                            g = fold2 updList
-                            pair w i j = (g pict [i,j] [f w,pict!!i],
-                                    g arcs [i,j] $ map (map h . (arcs!!)) [j,i])
-                                    where h k
-                                              | k == i = j
-                                              | k == j = i
-                                              | otherwise = k
-                            graph = case changedWidgets of 
-                                ([k],[w]) | nothing rect ->
-                                    case arrangeMode of 
-                                        "back" -> pair w 0 k
-                                        "front" -> pair w (length pict-1) k
-                                        _ -> (updList pict k $ f w,arcs)
-                                (ks,ws) -> (g pict ks $ map f ws,arcs)
-                        setCurrGraph graph
-                        scaleAndDraw "The selection has been moved or rotated."
-                writeIORef penposRef Nothing
-                writeIORef sourceRef Nothing
-                writeIORef targetRef Nothing
-                writeIORef changedWidgetsRef nil2
-                canv `gtkSet` [canvasCursor := LeftPtr]
-            where nada = scaleAndDraw "Nothing can be done."
-                  setDrawSwitch graph str = do
-                                    setCurrGraph graph
-                                    scaleAndDraw str; switchConnect
+          pictures <- readIORef picturesRef
+          curr <- readIORef currRef
+          edges <- readIORef edgesRef
+          let graph@(pict,arcs) = (pictures!!curr,edges!!curr)
+          connect <- readIORef connectRef
+          if connect then do
+             source <- readIORef sourceRef
+             target <- readIORef targetRef
+             if nothing source || nothing target then nada
+             else do
+                  let (s,v) = get source
+                      (t,w) = get target
+                      ts = arcs!!s
+                      is = getSupport graph s t
+                      redDots = just is
+                      connected = redDots || t `elem` ts
+                      (_,_,c,i) = getState v
+                      f (p,a,_,_) = (p,a,c,i)
+                      w' = updState f $ pict!!t
+                  case n of
+                   1 -> do
+                       arrangeMode <- readIORef arrangeModeRef
+                       if arrangeMode == "paste"
+                       then setDrawSwitch (updList pict t w',arcs)
+                                           "The target has been colored."
+                       else
+                           if connected then setDrawSwitch 
+                               (if redDots then removeSub graph
+                                   $ get is
+                               else (pict,updList arcs s $ ts `minus1` t)) 
+                               "An arc has been removed."
+                           else if s == t then nada
+                                else setDrawSwitch
+                                       (pict,updList arcs s $ t:ts)
+                                       "An arc has been drawn."
+                   2 -> do
+                       arrangeMode <- readIORef arrangeModeRef
+                       setDrawSwitch (if (isTree ||| isCenter) arrangeMode
+                                     then (exchgWidgets pict s t,arcs)
+                                     else exchgPositions graph s t)
+                                   "Source and target have been exchanged."
+                   _ -> if s == t && just is ||
+                        s /= t && connected && all (not . isRedDot) [v,w]
+                        then nada
+                        else setDrawSwitch
+                                       (addSmoothArc graph (s,t,v,w,ts))
+                                       "A smooth arc has been drawn."
+          else do
+              case n of
+                  2 -> do
+                      rect <- readIORef rectRef
+                      case rect of
+                          Just r -> do
+                              rscale <- readIORef rscaleRef
+                              writeIORef rectIndicesRef
+                                  $ getRectIndices pict rscale r
+                              rectIndices <- readIORef rectIndicesRef
+                              if null rectIndices then do
+                                  writeIORef rectRef Nothing
+                                  nada
+                              else scaleAndDraw
+                                      "A subgraph has been selected."
+                          _ -> scaleAndDraw "The selector has been removed."
+                  _ -> do
+                      rect <- readIORef rectRef
+                      scale <- readIORef scaleRef
+                      changedWidgets <- readIORef changedWidgetsRef
+                      rscale <- readIORef rscaleRef
+                      arrangeMode <- readIORef arrangeModeRef
+                      let f = if just rect then scaleWidg $ 1/rscale
+                             else transXY (-5,-5) . scaleWidg (1/scale)
+                          g = fold2 updList
+                          pair w i j = (g pict [i,j] [f w,pict!!i],
+                                  g arcs [i,j] $ map (map h . (arcs!!)) [j,i])
+                                  where h k
+                                            | k == i = j
+                                            | k == j = i
+                                            | otherwise = k
+                          graph = case changedWidgets of 
+                              ([k],[w]) | nothing rect ->
+                                  case arrangeMode of 
+                                      "back" -> pair w 0 k
+                                      "front" -> pair w (length pict-1) k
+                                      _ -> (updList pict k $ f w,arcs)
+                              (ks,ws) -> (g pict ks $ map f ws,arcs)
+                      setCurrGraph graph
+                      scaleAndDraw "The selection has been moved or rotated."
+              writeIORef penposRef Nothing
+              writeIORef sourceRef Nothing
+              writeIORef targetRef Nothing
+              writeIORef changedWidgetsRef nil2
+              canv `gtkSet` [canvasCursor := LeftPtr]
+          where nada = scaleAndDraw "Nothing can be done."
+                setDrawSwitch graph str = do
+                                  setCurrGraph graph
+                                  scaleAndDraw str; switchConnect
         
         releaseColor = do
             (n,_) <- readIORef colorScaleRef
@@ -1629,10 +1631,6 @@ painter pheight solveRef solve2Ref = do
         , setEval        = setEval'
         }
 -- Painter types
- 
-type Graph     = (Picture,Arcs)
-type Picture   = [Widget_]
-type Arcs      = [[Int]]
 
 type Point  = (Double, Double)
 type Point3 = (Double, Double, Double)   -- not used
@@ -1641,6 +1639,10 @@ type Lines  = [Line_]
                
 type Path  = [Point]
 type State = (Point,Double,Color,Int) -- (center,orientation,hue,lightness)
+ 
+type Graph     = (Picture,Arcs)
+type Picture   = [Widget_]
+type Arcs      = [[Int]]
 
 -- ([w1,...,wn],[as1,...,asn]) :: Graph represents a graph with node set 
 -- {w1,...,wn} and edge set {(wi,wj) | j in asi, 1 <= i,j <= n}.
@@ -1675,11 +1677,11 @@ data TurtleAct  = Close | Draw |
                   -- adds it to the orientation of the enclosing turtle.
                   deriving (Show,Eq)
 
-type TermW     = Term Widget_
-type TermWP    = Term (Widget_,Point)
-
 type WidgTrans = Widget_ -> Widget_
 type PictTrans = Picture -> Picture
+
+type TermW     = Term Widget_
+type TermWP    = Term (Widget_,Point)
 
 isWidg :: Widget_ -> Bool
 isWidg Dot{}          = True
@@ -1691,9 +1693,9 @@ isWidg Tria{}         = True
 isWidg _              = False
 
 isPict :: Widget_ -> Bool
-isPict (Poly _ m _ _)     = m > 5    
+isPict (Poly _ m _ _)     = m > 5        -- polyR/L/T/LT
 isPict Turtle{}           = True
-isPict _                  = False    
+isPict _                  = False
 
 isWTree :: Widget_ -> Bool
 isWTree (WTree _) = True

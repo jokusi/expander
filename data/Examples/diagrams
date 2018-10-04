@@ -3,14 +3,13 @@
 defuncts: draw 
 
 fovars: com solve paint term tk 
-        egi wit wis mat les ali dis pal bm lm tm wm rm pas wc
+        egi wit wis mat les ali dis pal bm lm tm wm rm pas wc search
 
 axioms: 
 
 draw == wtree $ fun(edge(x),frameS(5)$text$x,
 	            red(x),light red$frameF(5)$black$text$x,
 		    x,frame(5)$text$x)
-
 conjects:
 
 -- Manual1.pdf, Figure 3
@@ -23,18 +22,16 @@ tk = string(Tk.hs) &
 
 -- Manual1.pdf, Figure 4
 
-egi = string(Ecom/getInterpreter)(wit,string(edge$searchPic)$wis,
-				  string(edge$searchPic)$mat,les,
-			          string(edge$searchPic)$string(red$alignment),
-			          string(edge$searchPic)$string(red$dissection),
-			          string(edge$searchPic)$string(red$palindrome)) 
-&
+egi = string(Ecom/getInterpreter)(wit,search,les) &
 wit = string(red$widgetTree)(wis) &
-wis = string(red$widgets)(pas,wc,widgTrans,pictTrans,mat) &
+wis = string(red$widgets)(pas,wc,widgConsts,widgTrans,pictTrans,mat) &
 mat = string(red$matrix)(bm,lm,wm,tm) &
 les = string(red$linearEqs)(tm) &
 bm = boolMatrix(rm) & lm = listMatrix(rm) & tm = termMatrix(rm) &
 wm = widgMatrix(rm,widgConstC$wc) &
 rm = rectMatrix &
-pas = parseActs(wis) &
-wc = widgConst
+pas = string(red$parseActs)(wis) &
+wc = widgConst & 
+search = string(edge$searchPic)(wis,mat,string(red$alignment),
+					string(red$dissection),
+					string(red$palindrome))

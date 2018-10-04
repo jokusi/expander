@@ -18,10 +18,10 @@ axioms:
 	        rect(5,11),tria(11),C] 
 & turt6 == turt[rect(22,11),yellow$circ(20),M(111),budP,M(111),T(40),                M(111),RGB 13 131 200$polySF(5,33,11)] 
 & turt7 == turt[OS(dark red),T(40),M(22),red$rect(11,16),M(45),
-	        magenta$red$snow(1,2,3,6,turt[tria(-22),tria$22]),M(45),
+	        magenta$snow(1,2,3,6)$turt[tria(-22),tria$22],M(45),
 		dark green$tria(-22),T(-40),
 		M(55),red$pieP(30,22),M(22),T(50),M(35),
-	        SC$0.2,pytree$8,C,M(35),
+	        SC$0.2,green$pytree$8,C,M(35),
 		tree$turt[M(55),rect(22,11)],M(25),light blue$slice(22,45),
 		T(-50),M(55),text$peter hans peter hans]
 & turt8 == turt[red(pathSF[(0,0),(40,0),(40,20),(0,20),(0,0)]),

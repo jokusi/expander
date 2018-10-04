@@ -98,9 +98,9 @@ terms:
 <+>     red$grow(inCenter$rainbow$6,HE)				   -- grow1
                 [inCenter(rainbow$11)$HE,
                  track(ascF)$HE,
-  		 grow(track$ascF,PE)[skip,skip,track(ascF)$base$poly(8,2)],
+  		 grow(track$ascF,PE)[skip,skip,track(ascF)$baseR$poly(8,2)],
              	 turt[J$45,scale(3)$wide$3],pytree$3,
-		 grow(baseR$tria$44)[hcirc,hcirc]]
+		 grow(base$tria$44)[hcirc,hcirc]]
 <+>     scale(0.5)$red$grow(HE)
 		  $replicateG(6)$grow(HE)[skip,grow(HE)[skip,HE]]
 <+>     scale(0.5)$red$grow(HE)[hexa,skip,hexa,skip,hexa]

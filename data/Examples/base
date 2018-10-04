@@ -1,14 +1,14 @@
 -- base
 
 defuncts: <=< kfold
-fovars:	x y z s s' n
-hovars: f g
+fovars: x y z s s' n
+hovars: F G
 
 axioms:
 
-g<=<f == concat.(map$g).f &            -- Kleisli composition for the list monad
+G<=<F == concat.(map$G).F &            -- Kleisli composition for the list monad
 
-kfold(f) == foldl$fun((s,x),concat$map(f$x)$s) &
+kfold(F) == foldl$fun((s,x),concat$map(F$x)$s) &
 				       -- Kleisli fold for the list monad
 []++s == s &
 [x]++s == x:s &
