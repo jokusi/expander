@@ -36,7 +36,6 @@ sansSerif = "Sans" -- original Helvetica is not supported by all OS
 monospace = "Monospace" -- original Currier is not supported by all OS
 defaultButton = "default_button"
 
-         
 -- | the SOLVER record
 data Solver = Solver
     { addSpec         :: Bool -> FilePath -> Action
@@ -1636,7 +1635,6 @@ type Point  = (Double, Double)
 type Point3 = (Double, Double, Double)   -- not used
 type Line_  = (Point,Point)
 type Lines  = [Line_]
-               
 type Path  = [Point]
 type State = (Point,Double,Color,Int) -- (center,orientation,hue,lightness)
  
@@ -2208,7 +2206,7 @@ mkPict (Turtle (p,a,c,i) sc acts) =
 
 mkPict w = [w]
 
--- inFrame is used by crossing, getWidget and strands (see below).
+-- inFrame is used by crossing, inWidget and strands (see below).
 
 inFrame :: Point -> Point -> Point -> Bool
 inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 `le` x && x `le` max x1 x2 &&

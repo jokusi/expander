@@ -1,5 +1,6 @@
 -- widgets
 
+defuncts: surfer
 fovars: c
 hovars: f
 
@@ -37,6 +38,7 @@ axioms:
 & turt13(f) == rainbow(30,0,0.5)$flipV$turt[cyan$f(11,100),J$30,cyan$f(100,11)]
 & turt14(f) == turt[red(f(11,100)),R,J(30),L,J(30),red(f(11,100)),R,J(-30),
 		    red(f(11,100)),J(30),L,J(-30),R,red(f(11,100))]
+& surfer(x) = stringNB$turtSurfer/turtSurfer_(x)
 
 terms:
 
@@ -47,6 +49,18 @@ terms:
 <+> blue$frame(5)$red$turt[green$circ$88,M$222,T$45,M$55,blue$tria$77]
 <+> place(111,222)$red$circ$33
 <+> place(rect(44,22),111,222,66)+place(rect(44,22),222,111,22)
+
+-- gif(pic,m,n) and gifs(pic,k,m,n) load a gif resp. k gifs 
+-- with size (2*m)x(2*n)
+
+<+> repeat$gifs(tweety,12,150,95)				-- gifs
+<+> repeat$gifs(lars,8,100,75)	
+<+> repeat$gifs(bird,6,50,55)	
+
+<+> repeat$gifs(turtSurfer,5,195,195)
+-- equivalently:
+<+> repeat$map(fun(x,gif(surfer(x),195,195)))[1..10]
+
 <+> repeat[flash(plaitS(5,69))]					-- flashplait
 
 <+> turt2$rect							-- 6rects
@@ -209,17 +223,6 @@ terms:
          place(10,10)$blue$circ$5,place(10,0)$yellow$circ$5]
 <+> turt$map(fun((x,y,H),place(x,y)$H$circ$5))[(0,0,red),(0,10,green), 
 	                                       (10,10,blue),(10,0,yellow)]
-
--- gif(pic,m,n) and gifs(pic,k,m,n) load a gif resp. k gifs 
--- with size (2*m)x(2*n)
-
-<+> repeat$gifs(tweety,12,150,95)				-- gifs
-<+> repeat$gifs(lars,8,100,75)	
-<+> repeat$gifs(bird,6,50,55)	
-<+> repeat$gifs(turtSurfer,5,195,195)
-<+> repeat$anim[gif(turtSurfer_1,195,195),gif(turtSurfer_2,195,195),
-		gif(turtSurfer_3,195,195),gif(turtSurfer_4,195,195),
-		gif(turtSurfer_5,195,195)]
 
 <+> repeat(pulse(oval(66,132,red)),turt(J(222),			-- pulse
 	   pulse(oval(66,132,green))),

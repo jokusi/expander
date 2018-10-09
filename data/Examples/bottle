@@ -9,8 +9,8 @@ axioms:
 
 states == [(0,0)] 
 
-& (x < 3 ==> (x,y) -> (3,y))             -- links f�llen
-& (y < 5 ==> (x,y) -> (x,5))             -- rechts f�llen
+& (x < 3 ==> (x,y) -> (3,y))             -- links füllen
+& (y < 5 ==> (x,y) -> (x,5))             -- rechts füllen
 & (x > 0 ==> (x,y) -> (0,y))             -- links leeren
 & (y > 0 ==> (x,y) -> (x,0))                     -- rechts leeren
 
@@ -19,9 +19,9 @@ states == [(0,0)]
 & (y > 0 & x+y = z & z <= 3 ==> (x,y) -> (z,0))  
 				-- von rechts nach links leeren
 & (x < 3 & x+y = z & z > 3 ==> (x,y) -> (3,z-3)) 
-				-- von rechts nach links füllen
+				-- von rechts nach links f�llen
 & (y < 5 & x+y = z & z > 5 ==> (x,y) -> (z-5,5)) 
-				-- von links nach rechts füllen
+				-- von links nach rechts f�llen
 
 & (four(x,y) <==> x+y = 4)
 

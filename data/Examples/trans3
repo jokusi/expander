@@ -1,50 +1,44 @@
--- trans3  (acceptor of words with an even number of a's  and an odd number of b's)
+-- trans3
 
-specs: 		modal
-constructs: 	a b final q qa qb qab qbb qabb 
-preds:   	unfold UNFOLD Sat
-copreds: 	#
-fovars: 	w 
-hovars: 	P
+-- Cleaveland, Steffen, A Linear-Time Model-Checking Algorithm
+-- for the Alternation-Free Modal Mu-Calculus, 1993, Example 3.5
+
+specs:		modal
+preds:		X Y one ONE Sat
+copreds:	two TWO
+constructs: 	a A
+defuncts:   	draw
+hovars:		X Y
 
 axioms:
 
-states == [q] & labels == [a,b] & atoms == [final] &
+states == [1] & labels == [a] & atoms == [A] &
 
-(q,a) -> qa     & (q,b) -> qb     & 
-(qa,a) -> q     & (qa,b) -> qab   &
-(qb,a) -> qab   & (qb,b) -> qbb   & 
-(qab,a) -> qb   & (qab,b) -> qabb &
-(qbb,a) -> qabb & (qbb,b) -> q    &
-(qabb,a) -> qbb & (qabb,b) -> qa  &
+(1,a) -> 1<+>2 & (2,a) -> 3 & (3,a) -> 2 &
 
-final -> q <+> qb &
+A -> 2 &
 
 (Sat(at)$st <==> at `in` out$st) &
 
-(unfold(st)[] <==> Sat(final)$st) &	
-(unfold(st)(x:w) <==> (x<>rel(st,unfold(st)(w)))$st) & 
+(one <==> MU X.(A\/((a#X)/\(a<>true)))) &			
+(two <==> NU Y.(one/\(a#Y))) &		
 
-UNFOLD(q)[] &
-UNFOLD(qb)[] &
-(UNFOLD(st)(x:w) <=== (st,x) -> st' & UNFOLD(st')(w))
+(ONE(st) <=== (Sat(A)\/((a#ONE)/\(a<>true)))(st)) &
+(TWO(st) ===> (ONE/\(a#TWO))(st)) &
+
+-- widget interpreter:
+
+draw == wtree $ fun(sat$x,green$text$x,
+		    x,ite(Int$x,red$text$x,text$x)) 
 
 conjects:
 
-unfold(q)[] &			--> True	-- simplify
-unfold(q)[b] &			--> True
-unfold(q)[b,b] &		--> False
-unfold(q)[a,b,a,b,a,b,a] &	--> True
-unfold(q)[a,b,a,b,b,a,b,a] &	--> False
-unfold(qb)[a,b,a,a,b,a] &	--> True
-unfold(qab)[a,b,a,b,a] &	--> True
+all(two)[2,3]
 
-UNFOLD(q)[] &			--> True	-- unify&narrow&
-UNFOLD(q)[b] &			--> True	-- derive&simplify&refute
-UNFOLD(q)[b,b] &		--> False
-UNFOLD(q)[a,b,a,b,a,b,a] &	--> True	
-UNFOLD(q)[a,b,a,b,b,a,b,a] &	--> False
-UNFOLD(qb)[a,b,a,a,b,a] &	--> True
-UNFOLD(qab)[a,b,a,b,a]		--> True
+terms: 
 
-terms: auto$b+star(a*a+b*b*b)
+eval$one <+> 					--> [2,3]
+stateflow$one <+>				--> [2,3]   
+eval$two <+>					--> [2,3]
+stateflow$two					--> [2,3]  
+

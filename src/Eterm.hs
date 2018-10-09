@@ -2152,8 +2152,6 @@ data Special = Dissect [(Int,Int,Int,Int)] |
                ERR deriving (Show,Eq,Ord)        
 
 type TermS = Term String
-               
-type Simplification = (TermS,[TermS],TermS)
 
 class Root a where undef :: a
 
@@ -2905,7 +2903,7 @@ data Sig = Sig { isPred
                , hovarRel    :: BoolFun String
                , safeEqs     :: Bool
                , simpls
-               , transitions :: [Simplification]
+               , transitions :: [(TermS,[TermS],TermS)]
                , states
                , atoms
                , labels      :: [TermS] -- types of Kripke model
@@ -4519,37 +4517,38 @@ data Flow a = In (Flow a) a | Assign String TermS (Flow a) a |
  
 parseFlow :: Bool -> Sig -> TermS -> (TermS -> Maybe a) -> Maybe (Flow a)
 parseFlow True sig t parseVal = f t where
-     f (F x [u]) | take 8 x == "inflow::" =
-                     do g <- f u; val <- dropVal 8 x; Just $ In g val
-     f (F x [V z,e,u]) | take 8 x == "assign::" =
-                     do g <- f u; val <- dropVal 8 x; Just $ Assign z e g val
-     f (F x [c,u1,u2]) | take 5 x == "ite::" =
-                     do g1 <- f u1; g2 <- f u2; val <- dropVal 5 x
+     f (F x [u])       | take 8 x == "inflow::"
+                   = do g <- f u; val <- dropVal 8 x; Just $ In g val
+     f (F x [V z,e,u]) | take 8 x == "assign::"
+                   = do g <- f u; val <- dropVal 8 x; Just $ Assign z e g val
+     f (F x [c,u1,u2]) | take 5 x == "ite::"
+                   = do g1 <- f u1; g2 <- f u2; val <- dropVal 5 x
                         Just $ Ite c g1 g2 val
-     f (F x ts) | take 6 x == "fork::" =
-                     do gs <- mapM f ts; val <- dropVal 6 x; Just $ Fork gs val
-     f (F x [u]) | take 5 x == "not::" =
-                     do g <- f u; val <- dropVal 5 x; Just $ Neg g val
-     f (F x ts) | take 4 x == "\\/::" =
-                     do gs <- mapM f ts; val <- dropVal 4 x
+     f (F x ts)        | take 6 x == "fork::"
+                   = do gs <- mapM f ts; val <- dropVal 6 x; Just $ Fork gs val
+     f (F x [u])       | take 5 x == "not::"
+                   = do g <- f u; val <- dropVal 5 x; Just $ Neg g val
+     f (F x ts)        | take 4 x == "\\/::"
+                   = do gs <- mapM f ts; val <- dropVal 4 x
                         Just $ Comb True gs val
-     f (F x ts) | take 4 x == "/\\::" =
-                     do gs <- mapM f ts; val <- dropVal 4 x
+     f (F x ts)        | take 4 x == "/\\::"
+                   = do gs <- mapM f ts; val <- dropVal 4 x
                         Just $ Comb False gs val
-     f (F x [lab,u]) | take 4 x == "<>::" =
-                     do g <- f u;  guard $ lab `elem` leaf "":(sig&labels)
+     f (F x [lab,u])   | take 4 x == "<>::"
+                   = do g <- f u;  guard $ lab `elem` leaf "":(sig&labels)
                         val <- dropVal 4 x; Just $ Mop True lab g val
-     f (F x [lab,u]) | take 3 x == "#::" =
-                     do g <- f u;  guard $ lab `elem` leaf "":(sig&labels)
+     f (F x [lab,u])   | take 3 x == "#::"
+                   = do g <- f u;  guard $ lab `elem` leaf "":(sig&labels)
                         val <- dropVal 3 x; Just $ Mop False lab g val
-     f (F x [u]) | take 4 x == "MU::" =
-                     do g <- f u; val <- dropVal 4 x; Just $ Fix True g val
-     f (F x [u]) | take 4 x == "NU::" =
-                     do g <- f u; val <- dropVal 4 x; Just $ Fix False g val
-     f (V x) | isPos x = do guard $ q `elem` positions t
-                            Just $ Pointer q where q = getPos x
-     f val             = do val <- parseVal val; Just $ Atom val
-     dropVal n x = do val <- parse (term sig) $ drop n x; parseVal val
+     f (F x [u])       | take 4 x == "MU::"
+                   = do g <- f u; val <- dropVal 4 x; Just $ Fix True g val
+     f (F x [u])       | take 4 x == "NU::"
+                   = do g <- f u; val <- dropVal 4 x; Just $ Fix False g val
+     f (V x)           | isPos x
+                   = do guard $ q `elem` positions t
+                        Just $ Pointer q where q = getPos x
+     f val         = do val <- parseVal val; Just $ Atom val
+     dropVal n x   = do val <- parse (term sig) $ drop n x; parseVal val
 parseFlow _ sig t parseVal = f t where
      f (F "inflow" [u,val])        = do g <- f u; val <- parseVal val
                                         Just $ In g val

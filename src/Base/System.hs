@@ -14,7 +14,6 @@ module Base.System
   , loadPhoto
   , savePic
   , lookupLibs
-  , pix
   , (&=)
   , html
   , mkHtml
@@ -130,14 +129,6 @@ lookupLibs file = do
         readFile path
     `catchIOError` \_ -> return ""
 
-
-
-pix :: FilePath -> [String] -> [FilePath]
-pix dir files = [dir ++ "/" ++ file | file <- files, isPic file]
-    where isPic file = lg > 4 && 
-                       drop (lg-4) file `elem` words ".eps .gif .jpg .png .svg"
-                       where lg = length file
-
 (&=) :: String -> String -> String
 x &= val = x ++ "=\"" ++ val ++ "\""
 
@@ -173,9 +164,15 @@ html dirPath dir files
         f file = ",\"" ++ file ++ "\""
 
 mkHtml :: Canvas -> String -> String -> Int -> Cmd ()
-mkHtml canv dir dirPath n = do file <- savePic ".png" canv $ mkFile dirPath n
-                               files <- getDirectoryContents dirPath
-                               html dirPath dir $ pix dir files
+mkHtml canv dir dirPath n = do
+       file <- savePic ".png" canv $ mkFile dirPath n
+       files <- getDirectoryContents dirPath
+       html dirPath dir [dir ++ "/" ++ file |
+                            file <- files, let lg = length file, lg > 4,
+                            drop (lg-4) file
+                                   `elem` words ".eps .gif .jpg .pdf .png .svg"]
+
+
 
 mkSecs :: Integral a => a -> a -> a
 mkSecs t1 t2 = (t2-t1)`div`1001500

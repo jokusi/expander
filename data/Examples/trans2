@@ -7,7 +7,7 @@ specs:		modal
 preds:		X Y three THREE six five' seven' Sat SatL
 copreds:	NOTthree NOTTHREE four five seven eight
 constructs: 	a A B
-defuncts:   	drawGR
+defuncts:   	draw
 hovars:		X Y
 
 axioms:
@@ -41,8 +41,8 @@ A -> branch[2,3,4] & (B,a) -> 3 &
 
 -- widget interpreter:
 
-drawGR == wtree $ fun(sat$x,green$text$x,
-		      x,ite(Int$x,red$text$x,text$x)) 
+draw == wtree $ fun(sat$x,green$text$x,
+		    x,ite(Int$x,red$text$x,text$x)) 
 
 conjects: 
 
@@ -55,7 +55,7 @@ map(evalG)[three,NOTthree,four,five,six,seven,eight] &
    	--> [[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]
 
 map(stateflow)[three,NOTthree,four,five,six,seven,eight] &
-   	--> [[2,4],[1,3],[4],[4],[2,3,4],[2,4],[1,2,3,4]]
+   	--> [[2,4],[1,3],[4],[4],[2,3,4],[2,4],[1,2,3,4]]	stateflow3
 
 --  stateflow$seven yields a wrong result because seven is alternating
 

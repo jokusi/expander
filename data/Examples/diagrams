@@ -1,18 +1,25 @@
 -- diagrams
 
-defuncts: draw 
+constructs: edge red c a phi psi dots
 
-fovars: com solve paint term tk 
+defuncts: draw drawctl dpic
+
+fovars: com solve paint term tk
         egi wit wis mat les ali dis pal bm lm tm wm rm pas wc search
 
 axioms: 
 
 draw == wtree $ fun(edge(x),frameS(5)$text$x,
 	            red(x),light red$frameF(5)$black$text$x,
-		    x,frame(5)$text$x)
+		    x,frame(5)$text$x) &
+
+drawctl == wtree $ fun(dots,dpic,c,circ$11,x,frameS(5)$text$x) &
+
+dpic == shelf(1,5,L,C)$(white$circ$2):replicate(3)$circ$2
+
 conjects:
 
--- Manual1.pdf, Figure 3
+-- Manual1.pdf, Figure 2
 
 com = string(Ecom.hs)(solve,string(edge$callPaint)$paint) &
 solve = string(Esolve.hs)(term,string(edge$hilbShelf reducePath)$paint) &paint = string(Epaint.hs)(term,(string$System.hs)$tk) &
@@ -35,3 +42,18 @@ wc = widgConst &
 search = string(edge$searchPic)(wis,mat,string(red$alignment),
 					string(red$dissection),
 					string(red$palindrome))
+
+terms:
+
+-- CTL.pdf, Figure 1
+
+EF'phi(c$c(c$dots,phi$c$dots),c(c$dots,c$dots,c$dots)) <+>
+AG'phi phi(phi$phi(phi$dots,phi$phi$dots),phi(phi$dots,phi$dots,phi$dots)) <+>
+EG'phi phi(c$c(c$dots,c$c$dots),phi(c$dots,phi$dots,c$dots)) <+>
+
+-- CTL.pdf, Figure 2
+
+AF'phi(c$c(phi$dots,phi$c$dots),c(phi$dots,phi$dots,phi$dots)) <+>
+phi'EU'psi phi(phi$phi(c$dots,psi$c$dots),c(c$dots,c$dots,c$dots)) <+>
+phi'AU'psi phi(phi$phi(psi$dots,phi$psi$dots),psi(c$dots,c$dots,c$dots)) 
+
