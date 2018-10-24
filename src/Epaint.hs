@@ -1813,7 +1813,7 @@ getAllPoints (Repeat w)       = getAllPoints w
 getAllPoints (Path0 _ _ _ ps) = ps
 getAllPoints w | isWidg w     = getAllPoints $ mkWidg w
 getAllPoints w | isPict w     = concatMap getAllPoints $ mkPict w
-getAllPoints _                       = error "getAllPoints"
+getAllPoints w                = concatMap getAllPoints $ hulls False w
 
 isTurtle :: Widget_ -> Bool
 isTurtle Turtle{}       = True
@@ -2459,9 +2459,13 @@ widgets c sizes spread t = f c t where
    f c (F "$" [F "grow" [t],u])    = fgrow c id t u
    f c (F "$" [F "grow" [tr,t],u]) = do tr <- lift' $ widgTrans tr
                                         fgrow c tr t u
+   f c (F x [acts]) | z == "hueT"  = do acts <- parseActs c acts
+                                        hue <- lift' $ search (== hue) huemodes
+                                        return [turtle0 c $ mkHueT hue 0 acts]
+                                     where (z,hue) = splitAt 4 x
    f c (F x [acts]) | z == "hue"   = do acts <- parseActs c acts
                                         hue <- lift' $ search (== hue) huemodes
-                                        return [turtle0 c $ mkHue hue c acts]
+                                        return [turtle0 c $ mkHue hue 0 acts]
                                      where (z,hue) = splitAt 3 x
    f c (F "load" [t])              = do w <- lift $ loadWidget sizes
                                                   $ showTree False t
@@ -2757,10 +2761,10 @@ pictTrans c = f where
                                d <- parseReal d                -- space
                                case s of
                                  a:s -> do
-                                   a <- parseChar a         -- align
-                                   case s of
-                                     b:s -> do
-                                       b <- parseChar b  -- center
+                                   a <- parseChar a            -- align
+                                   case s of                   -- L/R/M
+                                     b:s -> do                 -- center
+                                       b <- parseChar b
                                        Just $ tr n d a $ b == 'C'
                                      _ -> Just $ tr n d a False
                                  _ -> Just $ tr n d 'M' False
@@ -3177,16 +3181,25 @@ splinePict = map $ turtle0B . map f . hulls False
              where f (Path0 c i m ps) = widg $ Path (p0,0,c,i) m 
                                              $ if odd m then ps else spline ps
 
-mkHue :: Int -> Color -> TurtleActs -> TurtleActs
-mkHue hue c acts = fst $ foldl f ([],c) acts
-   where f (acts,c) act = case act of Widg b w -> (acts++[Widg b $ updCol c w],
-                                                   nextColor hue n c)
-                                      _ -> (acts++[act],c)
-         n = foldl g 0 acts
-         g n (Widg _ _) = n+1
-         g n (Open _ _) = n+1
-         g n Close      = n-1
-         g n _           = n
+mkHue :: Int -> Int -> TurtleActs -> TurtleActs
+mkHue mode i acts = fst $ foldl f ([],i) acts
+   where f (acts,i) act = case act of
+                          Widg b w -> (acts++[Widg b $ updCol c w],i+1)
+                                      where c = hue mode (getCol w) n i
+                          _ -> (acts++[act],i)
+         n = length [act | act@(Widg _ _) <- acts]
+
+mkHueT :: Int -> Int -> TurtleActs -> TurtleActs
+mkHueT mode i acts = fst $ foldl f ([],i) acts
+   where f (acts,i) act = case act of
+                          Widg b (Turtle st sc acts1)
+                                   -> (acts++[Widg b (Turtle st sc acts2)],i+1)
+                                      where acts2 = mkHueT mode i acts1
+                          Widg b w -> (acts++[Widg b $ updCol c w],i)
+                                      where c = hue mode (getCol w) n i
+                          _ -> (acts++[act],i)
+         n = length [act | act@(Widg _ _) <- acts]
+
 
 -- | mkSnow b huemode d m n k w computes a Koch snowflake from widget w with 
 -- turn 

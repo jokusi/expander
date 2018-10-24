@@ -327,7 +327,6 @@ data-files:          Examples/*.gif
                    , "Examples/iterloop"
                    , "Examples/iterloopT"
                    , "Examples/javaterm"
-                   , "Examples/joins"
                    , "Examples/karnaugh5G"
                    , "Examples/kino"
                    , "Examples/kinotest"

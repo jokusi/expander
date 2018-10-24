@@ -1,8 +1,9 @@
 -- grow
 
 defuncts:	wcirc rcirc btria draw draw1 draw2 pytree1 pytree2 pytree3
-		cactus1 cactus3 cactus3 pent shinePY shineHC rainPY 
-		rainHC raint hexa hexar hcirc hextree circs
+		cactus1 cactus3 cactus3 pent shinePY shineHC rainPY octo
+		tria1 tria2 sq
+		rainHC raint hexa hexar hcirc hextree circs abu abud frac sh
 fovars:		t u v
 
 axioms: 
@@ -12,7 +13,7 @@ axioms:
 
 &	wcirc == white$circ$55	
 &       rcirc == red$circ$55	
-&       pent == red.grow(PE).replicateG(5)
+&       pent == red.grow(PE).replicate(5)
 &    	hcirc == turt[R,chordL(45,45)]
 &	btria == base$tria$89
 &	rainPY == grow(inCenter$rainbow$21,PY)
@@ -57,30 +58,62 @@ axioms:
 &	hextree == f(f(g(h1(h(h2(b,h2(b,h(h2(h(b,h1(c,b)),h1(b,b)),b))),
 			 		         h1(b,b)),b),b),m),                   f(k,g(b,h2(b,h(h2(b,b),h1(h1(h(b,h1(h2(b,b),
 					        h(h2(b,d),b))),b),b)))))) 
-&	circs == replicateG(5)$turt[J$45,rainbow(4)$yellow$circ$22]
+&	circs == replicate(5)$turt[J$45,rainbow(4)$yellow$circ$22] 
+
+&	octo == base$poly(8,99)
+&	tria1 == base$poly(1,2.5,4,2.5)
+&	tria2 == base$poly(1,4,2.5,2.5)
+&	sq == baseR$SQ
+
+&       abu == center$grow(octo)$concRepl(4)[grow(tria1)[sq],tria2]
+&       abud == turt[T(-22.5),abu]
+&       frac$1 == fun(x,hueT$T(-22.5):x:concRepl(4)[SC(0.545),x])$abu
+&       frac$2 == fun(x,hueT$T(-22.5):x:concRepl(4)[T$45,SC(0.545),x])$abu
+&       sh == fun(x,shelf(1,-69)[x,shelf(3,-69)$replicate(3)$x,x])
 
 terms:	
 	red$pytree$6
+
+<+>     grow(baseR$poly(8,99))$replicate(8)$grow(base$tria$3)[]
+<+>     rainbow(96)$red$turt[T(-22.5),abu]     		   
+<+>     red$rainbow(12)$grav$smooth$shelf(2,-69)$replicate(4)$abu    -- abu
+	
+<+>     red$turt[T(-22.5),abu,scale(0.545)$abu]	    	    	     -- abus
+--      equivalently:
+<+>     red$turt[T(-22.5),pos 0 0 2 1,scale(0.545)$abu]
+<+>     red$turt[T(-22.5),abu,SC(0.545),abu]  
+
+<+>     red$hueT[T(-22.5),abu,T$45,scale(0.545)$abu]  	    	     -- abus5
+<+>     red$hueT[T(-22.5),abu,T$45,abu]  		    	     -- abus6
+<+>     red$hueT[T(-22.5),abu,T$45,SC(0.545),abu,T$45,SC(0.545),abu] -- abus7
+<+>     red$frac$2		   				     -- abus8
+<+>     sh$abud   						     -- abud
+<+>     red$sh$frac$2 						     -- abus9
+<+>     red$smooth$sh$frac$2				     	     -- abus9S
+<+>     red$rainbow(6)$center$sh$frac$2				     -- abus9R
+<+>     red$rainbow(6)$center$smooth$sh$frac$2			     -- abus9RS
+<+>     red$sh$frac$1 						     -- abus10
+   			
 <+>     blue$grow(rainbow(51),PY)
 		 [skip,grow(rainbow(51),PY)[skip,PY,rainbow(51)$PY],PY]
 <+>	red$grow(TR)[TR,TR,TR]
-<+>	red$grow(PY)$replicateG(4)$wide$3 
-<+>     center$red$grow(base$poly(16,111))$concat$replicate(8)     -- wheel1
-	   $[skip,grow(CA)$replicateG(5)$turt[J$45,circ$22]]
-<+>     red$grow(baseR$poly(16,111))$concat$replicate(8)     	   -- wheel2
+<+>	red$grow(PY)$replicate(4)$wide$3 
+<+>     center$red$grow(base$poly(16,111))$concRepl(8)     	    -- wheel1
+	   [skip,grow(CA)$replicate(5)$turt[J$45,circ$22]]
+<+>     red$grow(baseR$poly(16,111))$concRepl(8)     	  	    -- wheel2
 	   [skip,grow(inCenter$rainbow3$6,CA)$circs]
-<+>     red$grow(polyF(16,111))$concat$replicate(8)   		   -- wheel2
+<+>     red$grow(polyF(16,111))$concRepl(8) 	  		    -- wheel2
 	   [skip,grow(inCenter$rainbow3$6,flipH$CA)$circs]
-<+>     red$grow(base$poly(16,111))$concat$replicate(8)            -- wheel3
+<+>     red$grow(base$poly(16,111))$concRepl(8)            	    -- wheel3
 	   [skip,grow(inCenter$rainbow3$6,CA)$circs]
-<+>     red$grow(polyF(16,111))$concat$replicate(8)   		   -- wheel3
+<+>     red$grow(polyF(16,111))$concRepl(8)   		            -- wheel3
 	   [skip,grow(inCenter$rainbow3$6,CA)$circs]
-<+>     red$grow(shine(42)$polyF(16,111))$concat$replicate(8)      -- wheel3sh
+<+>     red$grow(shine(42)$polyF(16,111))$concRepl(8)               -- wheel3sh
 	   [skip,grow(inCenter$rainbow3$6,CA)$circs]
-<+>     grow(rainbow(12)$grav$green$PE)$			   -- penta1
-	    replicateG(5)$rainbowT(12)$green$hcirc
-<+>     red$grow(base$polyF(5,44))$				   -- grow2
-                replicateG(5)$turt[J$45,scale(5)$wide$3]
+<+>     grow(rainbow(12)$grav$green$PE)$			    -- penta1
+	    replicate(5)$rainbowT(12)$green$hcirc
+<+>     red$grow(base$polyF(5,44))$				    -- grow2
+                replicate(5)$turt[J$45,scale(5)$wide$3]
 <+> 	green$grow(PY)[skip,hcirc,hcirc]
 <+>	grow(btria)[grow(PY)[skip,btria,btria]] 
 <+>	red$grow(base$scale(0.5)
@@ -93,24 +126,24 @@ terms:
 <+>	draw2(blue$f(b,g(b,b)))  		
 <+>	red$rainbow(11,0,8.2)$PY
 <+>	red$rainbow(11,9,8.2)$PY
-<+>	red$(fun(x,grow(PY)[skip,x,x])**5)$PY        		   -- pytree$6
+<+>	red$(fun(x,grow(PY)[skip,x,x])**5)$PY        		    -- pytree$6
 <+>     red$(fun(x,grow(PY)[skip,x,x])**3)$hcirc     
-<+>     red$grow(inCenter$rainbow$6,HE)				   -- grow1
+<+>     red$grow(inCenter$rainbow$6,HE)				    -- grow1
                 [inCenter(rainbow$11)$HE,
                  track(ascF)$HE,
   		 grow(track$ascF,PE)[skip,skip,track(ascF)$baseR$poly(8,2)],
              	 turt[J$45,scale(3)$wide$3],pytree$3,
 		 grow(base$tria$44)[hcirc,hcirc]]
 <+>     scale(0.5)$red$grow(HE)
-		  $replicateG(6)$grow(HE)[skip,grow(HE)[skip,HE]]
+		  $replicate(6)$grow(HE)[skip,grow(HE)[skip,HE]]
 <+>     scale(0.5)$red$grow(HE)[hexa,skip,hexa,skip,hexa]
 <+>     scale(0.5)$red$raint[hexar,skip,hexar,skip,hexar]
-<+>     scale(0.5)$red$raint$replicateG(6)
+<+>     scale(0.5)$red$raint$replicate(6)
 		            $raint[skip,raint[skip,raint[]]]
-<+>     turn(90)(red$(fun(x,grow(SQ)[skip,x])**11)$SQ)        -- colors in line
-<+>     red$grow(PE)$replicateG(5)$grow(PE)[skip,PE,PE]
-<+>     scale(0.5)$red$grow(PE)$replicateG(5)$grow(PE)
-                      $skip:replicateG(2)$grow(PE)[skip,PE,PE]
+<+>     turn(90)(red$(fun(x,grow(SQ)[skip,x])**11)$SQ)         -- colors in line
+<+>     red$grow(PE)$replicate(5)$grow(PE)[skip,PE,PE]
+<+>     scale(0.5)$red$grow(PE)$replicate(5)$grow(PE)
+                      $skip:replicate(2)$grow(PE)[skip,PE,PE]
 <+>	red$growHE[TR,SQ,PE,PY,CA,HE]
 <+>     blue$grow(PY)
           [PY,grow(PY)[red$text$PP,skip,grow(PY)[TR,skip,PY],                       grow(PY)[skip,skip,grow(PY)[skip,TR,PY],PY]],           skip,grow(CA)[skip,skip,
@@ -119,13 +152,13 @@ terms:
 <+>	red$smooth$pytree$9
 <+>     red$(fun(x,shinePY[skip,x,x])**3)$shineHC[]
 <+> 	red$(fun(x,rainPY[skip,x,x])**3)$rainHC[]
-<+> 	red$grow(shine(21),PY)				    	-- pytree10
+<+> 	red$grow(shine(21),PY)				    	 -- pytree10
       	        [skip,pos 0 1 2,
       		 grow(shine(21),PY)
  		     [skip,pos 0 1 2 1 2,
 		      grow(shine(21),PY)
 			  [skip,pos 0 1 2 1 2 1 2,shine(21)$hcirc]]] 
-<+> 	red$grow(inCenter$shine(21),PY)				-- pytree11
+<+> 	red$grow(inCenter$shine(21),PY)				 -- pytree11
       	        [skip,pos 0 1 2,
       		 grow(inCenter$shine(21),PY)
  		     [skip,pos 0 1 2 1 2,
@@ -133,7 +166,7 @@ terms:
 			  [skip,pos 0 1 2 1 2 1 2,shineT(21)$hcirc]]] 
 
 <+> 	fun(x,red$grow(PY)[x,x,x,x,x])$turt[J$45,L,J$45,circ(45)]
-<+> 	scale(3)$red$smooth$grow(PY)$replicateG(4)$leafC(15,3)
+<+> 	scale(3)$red$smooth$grow(PY)$replicate(4)$leafC(15,3)
 <+>     repeat$fadeW$red$scale(4)$smooth$PY	
 <+>	repeat$flash$red$pytree1 	
 <+>	repeat$flash$red$pytree$5	
@@ -152,9 +185,9 @@ terms:
 		    fadeB$rcirc,wcirc,R,J$110,
 		    flash$rcirc,wcirc,R,J$110,
     		    shine(21)$rcirc,wcirc,R,J$110] 
-<+> repeat(rotate(turt(J( -15),					-- rotgrow
+<+> repeat(rotate(turt(J( -15),					 -- rotgrow
     grow(trunk,grow(trunk,grow(trunk,grow(trunk,grow(trunk,trunk))))))))
-<+> flash(grow(grow(trunk,grow(grow(trunk,trunk),		-- flashgrow
+<+> flash(grow(grow(trunk,grow(grow(trunk,trunk),		 -- flashgrow
           grow(trunk,grow(grow(trunk,trunk),trunk)))),
 	  grow(grow(trunk,grow(grow(trunk,trunk),
 	  grow(trunk,grow(grow(trunk,trunk),trunk)))),trunk)))

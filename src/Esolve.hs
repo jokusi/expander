@@ -460,7 +460,7 @@ applyDrawFun _ "text" ""  = id
 applyDrawFun _ "text" str = map $ add . addToPoss [0]
      where add t = mkSum [t,F "widg" [F "red" [F "frame" [F "black" [F "text"
                                                          [leaf str]]]]]]
-applyDrawFun sig draw _ = map $ wtree . fst . simplifyLoop sig True 1 . F draw
+applyDrawFun sig draw _ = map $ wtree . fst . simplifyLoop sig True 11 . F draw
                                             . single . addToPoss [0]
      where wtree (F "$" [F "wtree" [f],t]) = g t
              where g (F x ts) | just u  = F "widg" $ vs++[sapply sig f $ get u]
@@ -523,17 +523,21 @@ simplifyLoop sig depthfirst = loop 0 where
 simplifyOne :: Sig -> TermS -> [Int] -> Maybe TermS
 simplifyOne sig t p = do guard $ isF redex1
                          if reduct /= redex1 
-                         then Just $ replace1' t p $ mapT g reduct
+                         then Just $ replace1 t p $ mapT g reduct
+                                  -- replace1'
                          else concat   [do reduct <- simplifyGraph redex1
-                                           Just $ replace1' t p $ mapT g reduct,
+                                           Just $ replace1 t p $ mapT g reduct,
+                                               -- replace1'
                                         do reduct <- simplifyUser sig redex1
-                                           Just $ replace1' t p $ mapT g reduct,
+                                           Just $ replace1 t p $ mapT g reduct,
+                                               -- replace1'
                                         do guard $ polarity True t p 
                                            reduct <- simplCoInd sig redex2
                                            Just $ replace1 t p $ mapT g reduct,
                                         do reduct <- simplifyF sig redex2
                                            Just $ replace1 t p $ mapT g reduct]
-                  where redex1 = mapT block $ dropFromPoss' p $ getSubterm1 t p
+                  where redex1 = mapT block $ getSubterm1 t p
+                                           -- dropFromPoss' $ getSubterm1 t p
                         reduct = evaluate sig redex1
                         redex2 = mapT block $ dropFromPoss p $ expand 0 t p
                         block x = if blocked sig x then "BLOCK"++x else x
@@ -557,15 +561,29 @@ simplifyGraph :: TermS -> Maybe TermS
 simplifyGraph (F "$" [F "mapG" [f@(F _ ts)],F x us]) | collector x =
                                Just $ F x $ if null ts then map (apply f) us
                                                        else map g $ indices_ us
-                               where g 0 = apply first $ head vs
+                               where g 0 = apply f $ vs!!0
                                      g i = apply (mkPos [0,0]) $ vs!!i
-                                     first = changePoss [0] [0,0] f
                                      vs = changeLPoss p q us
                                      p i = [1,i]; q i = [i,1]
 
-simplifyGraph (F "$" [F "replicateG" [t],u]) | just n =
+simplifyGraph (F "$" [F "replicate" [t],u]) | just n =
             jList $ changePoss [1] [0] u:replicate (get n-1) (mkPos [0])
                    where n = parsePnat t
+simplifyGraph (F "concat" [F "[]" ts]) | all isList ts =
+                          jList $ concatMap (subterms . f) ts
+                              where subs i = subterms $ ts!!i
+                                    f t = foldl g t $ indices_ ts
+                                    g t i = foldl (h i) t $ indices_ $ subs i
+                                    h i t k = changePoss [0,i,k] [lg (i-1)+k] t
+                                    lg (-1) = 0
+                                    lg i    = lg (i-1) + length (subs i)
+
+simplifyGraph (F "$" [F "concRepl" [t],u@(F "[]" us)]) | just n =
+                   simplifyGraph $ F "concat" [addToPoss [0] $ mkList vs]
+                   where n = parsePnat t
+                         vs = changePoss [1] [0] u:replicate (get n-1)
+                                                 (mkList $ map f $ indices_ us)
+                         f i = mkPos [0,i]
 
 simplifyGraph (F "$" [F "**" [f@(F _ ts),t],u]) | just n = 
                  Just $ if null ts then iterate (apply f) v!!m
@@ -574,18 +592,10 @@ simplifyGraph (F "$" [F "**" [f@(F _ ts),t],u]) | just n =
                        m = get n
                        first = changePoss [0,0] [0] f
                        v = changePoss [1] (replicate m 1) u
-           
-simplifyGraph (t@(F "concat" [F x ts])) | collector x && allColls x t ts = 
-                  Just $ F x $ concatMap g $ indices_ ts
-                  where g i = changeLPoss p q $ subterms $ us!!i
-                              where p k = [0,i,k]; q k = [lg ts i+k]
-                        lg _ 0  = 0
-                        lg ts i = length $ subterms $ ts!!(i-1)
-                        us = zipWith expandL ts $ indices_ ts
-                        expandL (V x) i | isPos x = movePoss t (getPos x) [0,i]
-                        expandL t _                   = t
-                                                             
-simplifyGraph (F ":" [t,F "[]" ts]) = jList $ changeLPoss p q $ t:ts
+
+simplifyGraph (F "++" ts@[_,_]) = simplifyGraph $ F "concat" [mkList ts]
+
+simplifyGraph (F ":" [t,F "[]" ts]) = jList $ t:changeLPoss p q ts
                                       where p i = [1,i]; q i = [i+1]
 
 simplifyGraph _ = Nothing
@@ -1026,21 +1036,21 @@ simplifyS sig t | functional sig x && just n = Just $ mkSum $ map g $ mkTerms
 
 simplifyS sig (F "`meet`" [F x ts,F y us])
   | collectors x y = do guard $ all f ts && all f us
-                        Just $ mkList $ meetTerm ts us
+                        jList $ meetTerm ts us
                      where f = isValue sig
 
 simplifyS sig (F "`join`" [F x ts,F y us])
   | collectors x y = do guard $ all f ts && all f us
-                        Just $ mkList $ joinTerms ts us
+                        jList $ joinTerms ts us
                      where f = isValue sig
 
 simplifyS sig (F "-" [F x ts,F y us])
   | collectors x y = do guard $ all f ts && all f us
-                        Just $ mkList $ removeTerms ts us
+                        jList $ removeTerms ts us
                      where f = isValue sig
                                              
 simplifyS sig (F "-" [F x ts,u])
-  | collector x = do guard $ all f ts && f u; Just $ mkList $ removeTerm ts u
+  | collector x = do guard $ all f ts && f u; jList $ removeTerm ts u
                   where f = isValue sig
 
 simplifyS _ (F "$" [F "filter" _,F "[]" []]) = Just mkNil
@@ -1049,21 +1059,6 @@ simplifyS sig (F "$" [F "filter" [p],F x ts])
  | collector x && just us = Just $ F x $ fst $ get us
                             where us = split2 (isTrue . f) (isFalse . f) ts
                                   f = sapply sig p
-
-simplifyS sig (t@(F "$" [f@(F "filter" [g]),F x (u:us)]))
- | separated h t && (isTrue v || c) =
-             if x == ":" && length us == 1
-             then Just $ if c then rest
-                         else F x [dropFromPoss [1] u,addToPoss [1] rest]
-             else do guard $ collector x 
-                     Just $ if c then rest'
-                            else F ":" [dropFromPoss [1] u,addToPoss [1] rest']
-             where h p = [1,0] <<= p
-                   v = sapply sig g u
-                   c = isFalse v
-                   rest = apply f $ dropFromPoss [1] $ head us
-                   rest' = apply f $ F x $ changeLPoss p q us
-                   p i = [1,i+1]; q i = [1,i]
 
 simplifyS sig (F "$" [F "$" [F "sfold" [f],a],F x []]) | collector x = Just a
 
@@ -1132,7 +1127,7 @@ simplifyS sig (F "preds" state)   = do i <- searchTup state (sig&states)
 simplifyS sig (F "$" [F "traces" state1,state2])
                          = do i <- searchTup state1 (sig&states)
                               j <- search (== state2) (sig&states)
-                              Just $ mkList $ map (mkStates sig) $ traces f i j
+                              jList $ map (mkStates sig) $ traces f i j
                            where ks = indices_ (sig&labels)
                                  f i = (sig&trans)!!i `join`
                                        joinMap (((sig&transL)!!i)!!) ks
@@ -1140,7 +1135,7 @@ simplifyS sig (F "$" [F "traces" state1,state2])
 simplifyS sig (F "$" [F "tracesL" state1,state2])
                          = do i <- searchTup state1 (sig&states)
                               j <- search (== state2) (sig&states)
-                              Just $ mkList $ map (mkLabels sig) 
+                              jList $ map (mkLabels sig)
                                             $ tracesL ks f i j
                            where ks = indices_ (sig&labels)
                                  f i k = ((sig&transL)!!i)!!k
@@ -1372,9 +1367,6 @@ simplifyT (F "$" [F "map" [f],F ":" [t,ts]]) = Just $ F ":" [apply f t,
 
 simplifyT (F "$" [F "map" _,F "[]" _]) = Just mkNil
 
-simplifyT (F "$" [F "mapS" [f@(F _ ts)],F x us]) | collector x 
-                                              = Just $ mkSum $ map (apply f) us
-
 simplifyT (F "$" [F "$" [F "upd" [F x ts],n],u]) 
         | just i && collector x && k < length ts = Just $ F x $ updList ts k u 
                                           where i = parseNat n; k = get i
@@ -1395,39 +1387,6 @@ simplifyT (F "$" [F "$" [F "insertL" [t],F "[]" ts],F "[]" all])
 
 simplifyT (F "prodL" [F x ts]) | all collector (x:map root ts) = 
                                 jList $ map mkTup $ mapM subterms ts
-{-
-simplifyT (F "head" [F "[]" (t:_)]) = Just $ dropFromPoss [0,0] t
-
-simplifyT (t@(F "tail" [F "[]" (_:ts)])) | separated f t = 
-                                            jList $ changeLPoss p single ts
-                                           where f p = [0,0] <<= p        
-                                                 p i = [0,i+1]
-
-simplifyT (F "init" [F "[]" ts@(_:_)]) = jList $ changeLPoss p single $ init ts
-                                         where p i = [0,i]
-
-simplifyT (F "last" [F "[]" ts@(_:_)]) = Just $ dropFromPoss [0,length ts-1] 
-                                               $ last ts
-
-simplifyT (F "$" [F "take" [t],F "[]" ts]) | just n = 
-                      jList $ changeLPoss p single $ take k ts
-                      where n = parseNat t; k = get n
-                            p i = [1,i]
-                               
-simplifyT t@(F "$" [F "drop" [u],F "[]" ts]) | just n && separated f t = 
-                                   jList $ changeLPoss p single $ drop k ts
-                                   where n = parseNat u; k = get n
-                                         f p = any h [0..k-1]
-                                               where h i = [1,i] <<= p
-                                         p i = [1,i+k]
--}
-simplifyT t@(F "++" ts) | allColls "[]" t ts = f $ mkList ts
-                          | allColls "{}" t ts = f $ F "{}" ts
-                        | allColls "^" t ts  = f $ F "^" ts
-                          where f t = Just $ addToPoss [0] $ F "concat" [t]
-
-simplifyT (F "$" [F "replicate" [t],u]) | just n =  
-                              jList $ replicate (get n) u where n = parsePnat t
 
 simplifyT t | f == "curry" && notnull tss && length us == 1 =
                               Just $ applyL (head us) $ concat uss
@@ -1451,7 +1410,7 @@ simplifyT (F "$" [F "foldr1" [f],F x ts]) | collector x =
                               Just $ foldr1 g ts where g t u = applyL f [t,u]
                                       
 simplifyT (F "$" [F "zip" [F x ts],F y us]) | collectors x y = 
-            Just $ mkList $ map g $ zip ts us where g (t,u) = mkPair t u
+            jList $ map g $ zip ts us where g (t,u) = mkPair t u
 
 simplifyT (F "$" [F "$" [F "zipWith" _,F "[]" _],F ":" _]) = Just mkNil
 
@@ -1461,7 +1420,7 @@ simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
             Just $ F ":" [applyL f [t,u],apply (apply (F "zipWith" [f]) ts) us]
 
 simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y =
-            Just $ mkList $ zipWith g ts us where g t u = applyL f [t,u]
+            jList $ zipWith g ts us where g t u = applyL f [t,u]
 
 simplifyT (F "index" [t,F x ts])
                          | collector x = do i <- search (eqTerm t) ts; jConst i
@@ -1497,7 +1456,7 @@ simplifyT (F "subperms" [F "[]" ts]) = jList $ map mkList $ subperms ts
 
 simplifyT (F "$" [F x [n],F "[]" ts])
            | x `elem` words "cantor hilbert mirror snake transpose" && just k
-                         = Just $ mkList $ f (get k) $ changeLPoss p single ts
+                         = jList $ f (get k) $ changeLPoss p single ts
                            where k = parsePnat n
                                  f = case head x of 'c' -> cantorshelf
                                                     'h' -> hilbshelf

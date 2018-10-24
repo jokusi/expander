@@ -56,7 +56,6 @@ terms:
 <+> repeat$gifs(tweety,12,150,95)				-- gifs
 <+> repeat$gifs(lars,8,100,75)	
 <+> repeat$gifs(bird,6,50,55)	
-
 <+> repeat$gifs(turtSurfer,5,195,195)
 -- equivalently:
 <+> repeat$map(fun(x,gif(surfer(x),195,195)))[1..10]
@@ -87,8 +86,8 @@ terms:
 <+> rainbow(24)(turt[red$oval(111,44),red$oval(44,111)])+	
     turt$map(rainbow$24)[red$oval(111,44),red$oval(44,111)]
 
-<+> turt$concat$replicateG(8)[T(45),oval(111,55),J(111),circ(44)]
-<+> turt$concat$replicateG(8)[new,T(45),oval(111,55),J(111),circ(44)]
+<+> turt$concat$replicate(8)[T(45),oval(111,55),J(111),circ(44)]
+<+> turt$concat$replicate(8)[new,T(45),oval(111,55),J(111),circ(44)]
 
 <+> turt[turt3,R,J(77),L,dark$turt3]
 
@@ -130,8 +129,6 @@ terms:
 <+> red$chord2(222,111)
 <+> red$chord2(120,60)
 
-<+> red$hue[pos 0 0 4,M(88),pos 0 0 4,M(44),circ(33)]
-
 <+> (mat[(1,5),(2,3),(3,1),(4,6),(5,4),(6,2)],			-- matrices
      mat[(1,4),(2,1),(3,5),(4,2),(5,6),(6,3)],
      mat[(1,3),(2,6),(3,2),(4,5),(5,1),(6,4)],
@@ -169,8 +166,8 @@ terms:
 
 <+> planar(111)$turt[rect(111,55),J$166,rect(55,111)]
 
-<+> turt$T(-120):M(90):concat(replicateG(5)[T$60,M$90])   	-- hexagon
-<+> turt$T(-108):M(90):concat(replicateG(4)[T$72,M$90])   	-- pentagon
+<+> turt$T(-120):M(90):concat(replicate(5)[T$60,M$90])   	-- hexagon
+<+> turt$T(-108):M(90):concat(replicate(4)[T$72,M$90])   	-- pentagon
 <+> turt[T(-108),M$90,T$108,M$90,T$72,M$90,T$108,M$90]   	-- thickRhombL
 <+> turt[T(-72),M$90,T$72,M$90,T$108,M$90,T$72,M$90]     	-- thickRhombR
 <+> turt[T(-144),M$90,T$144,M$90,T$36,M$90,T$144,M$90]   	-- thinRhombL
@@ -347,9 +344,11 @@ terms:
 <+> repeat$shuffle[blue$osciW(5,33),yellow$osciW(3,66),red$osciW(1,-99)] 
 
 <+> turt[SC$0.3,red$taichi$Sheng,C,T$45,J$222,blue$taichi(Peter,Paul)]
-<+> blue$turt$concat$replicateG(8)[shine(42)$scale(7)$rhomb,T$45]
-<+> blue$hue$concat$replicateG(8)[shine(42)$scale(7)$rhomb,T$45]
-<+> blue$hue$concat$replicateG(15)[circ(33),J$33]
+<+> blue$turt$concat$replicate(8)[shine(42)$scale(7)$rhomb,T$45]
+<+> blue$hue$concat$replicate(8)[shine(42)$scale(7)$rhomb,T$45]	-- hue2
+<+> blue$hue$concat$replicate(15)[circ(33),M$33]			-- hue3
+<+> red$hue[pos 0 0 4,M(88),pos 0 0 4,M(44),circ(33)]			-- hue1	
+
 <+> dark red$turt[gras$3,M$111,grasA$3,M$111,grasC$3,M$111,grasR$3]
 <+> fern2(12,1,1.5)
 <+> red$leafD(44,22)

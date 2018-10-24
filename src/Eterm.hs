@@ -3758,16 +3758,6 @@ removeCyclePtrs t = case f [] t of Just p -> removeCyclePtrs $ lshiftPos t [p]
                                  where q = getPos x
                f _ _        = Nothing
 
--- separated f t is True iff for each pointer p of t, p satisfies f or the
--- target position of p does not satisfy f. 
--- separated is used by simplifyS/T (see Esolve).
-separated :: ([Int] -> Bool) -> TermS -> Bool
-separated f t = all (f ||| not . f . getPos . label t) $ pointers t
-
-allColls :: String -> TermS -> [TermS] -> Bool
-allColls x t = all (f . root) 
-               where f z = z == x || isPos z && label t (getPos z) == x
-
 positions :: TermS -> [[Int]]
 positions = filterPositions $ not . isPos
 
@@ -4075,14 +4065,6 @@ dropFromPoss p = if null p then id else mapT f
                               then mkPos0 $ drop (length p) q else x
                              where q = getPos x
 
-dropFromPoss' :: [Int] -> TermS -> TermS
-dropFromPoss' p = if null p then id else mapT f 
-                   where f x = if isPos x
-                               then if p <<= q then mkPos0 $ drop (length p) q 
-                                   else "pos' "++unwords (map show q)
-                              else x 
-                              where q = getPos x
-
 drop0FromPoss :: TermS -> TermS
 drop0FromPoss = dropFromPoss [0]
 
@@ -4092,14 +4074,6 @@ addToPoss :: [Int] -> TermS -> TermS
 addToPoss p t = if null p then t else mapT f t
                  where f x = if isPos x && q `elem` positions t
                             then mkPos0 $ p++q else x where q = getPos x
-
-addToPoss' :: [Int] -> TermS -> TermS
-addToPoss' p t = if null p then t else mapT f t
-                  where f x
-                          | leader x "pos'" = mkPos0 q
-                          | isPos x = mkPos0 $ p ++ q
-                          | otherwise = x
-                          where q = getPos x
 
 addNatsToPoss :: [TermS] -> [TermS]
 addNatsToPoss = zipWith (addToPoss . single) [0..]
@@ -4114,8 +4088,10 @@ changePoss p q = mapT f where f x = if isPos x && p <<= r
 
 -- changeLPoss p q ts applies changePoss p(i) q(i) to ts for all 0<=i<=|ts|-1.
 changeLPoss :: (Int -> [Int]) -> (Int -> [Int]) -> [TermS] -> [TermS]
-changeLPoss p q ts = map f ts where f t = foldl g t $ indices_ ts where
-                                        g t i = changePoss (p i) (q i) t
+changeLPoss p q ts = map f ts where f t = foldl g t $ indices_ ts
+                                    g t i = changePoss (p i) (q i) t
+                  -- map f $ indices_ ts
+                  -- where f i = changePoss (p i) (q i) $ ts!!i
 
 -- * Subterm replacements
 
@@ -4182,9 +4158,6 @@ replace t p0 u = f [] t
 replace1 :: TermS -> [Int] -> TermS -> TermS
 replace1 t p  = replace t p . addToPoss p
 
-replace1' :: TermS -> [Int] -> TermS -> TermS
-replace1' t p = replace t p . addToPoss' p
-
 -- replace2 t p u q copies the subterm at position p of t to position q of u and
 -- replaces each pointer p++r in the modified term by q++r. 
 
@@ -4218,7 +4191,7 @@ moreTree t = case f [] t of
                                      Just (p,q)
 
 -- removeNonRoot t p removes the node at position p of t. removeNonRoot is used 
--- by simplify "concat" (see Esolve) and removeNode (see Ecom).
+-- by removeNode (see Ecom).
 removeNonRoot :: TermS -> [Int] -> TermS
 removeNonRoot t p = removeX $ chgPoss $ replace0 t q 
                              $ if isV u then u 
@@ -5229,14 +5202,14 @@ collapseVars sig = collapseNodes (isVar sig) . f
                           f (F x ts) = F x $ map f ts
                           f t        = t
 
-{-|
-@expand n t p@ expands 'getSubterm' @t p@. Each circle of @u@ is unfolded @n@ 
-times expand dereferences all pointers to the same subterm except
-pointers located below their target.
+-- expand/One n t p expands getSubterm t p. Each circle of u is unfolded n 
+-- times. expand/One dereferences all/one pointer(s) to the same subterm.
 
-@expand@ is used by 'closedSub' and the commands "expand" (see "Ecom"), 
-'Ecom.showSubtreePicts', 'Ecom.showTreePict' and 'Ecom.simplifySubtree'.
--}
+-- expand is used by closedSub (see above) and the commands "expand", 
+-- showSubtreePicts, showTreePict and simplifySubtree (see Ecom).
+
+-- expandOne is used by eqsToGraph (see above), simplifyS "stateflow" (see 
+-- Esolve) and the command "expand one" (see Ecom). 
 expand
     :: (Eq a, Num a)
     => a -- ^ n
@@ -5252,14 +5225,6 @@ expand n t p = f n t p $ getSubterm t p
                                           g n = f n (replace0 t p v) p v
         f _ _ _ u                    = u
 
-{-|
-    @expandOne n t p@ expands 'getSubterm' @t p@. Each circle of @u@ is unfolded
-    @n@ times @expandOne@ dereferences one pointer to the same subterm except
-    pointers located below their target.
-    
-    expandOne is used by 'eqsToGraph', 'Esolve.simplifyS' @"stateflow"@ and the
-    command @"expand one"@ (see "Ecom"). 
--}
 expandOne
     :: (Eq a, Num a)
     => a -- ^ n

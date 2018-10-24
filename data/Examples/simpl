@@ -51,7 +51,6 @@ conjects:
 
 & f[1,x,3,4,5] == 111
 & disjoint[[1,2,3],[4,1,6]]
-& filter(=/=)$prodL[[1,2,3],[1,2,3]]
 
 & any((=5))[6,7,5,4]
 
@@ -65,7 +64,9 @@ terms:
 <+> take(4)$iterate(+1)$0 
 <+> take(4)$iter(+3*2)$0 
 <+> take(4)$iter(f.g)$0
-<+> concat[[1..4],[1..4]]
+<+> concRepl(2)[1..4]
+<+> f$(hh(uuu)**5)$888	
+		--> f(hh(uuu)$(pos 0 0$(pos 0 0$(pos 0 0$(pos 0 0$888)))))
 
 <+> 2^3^4^5^6^7^8^9^10^11^12^13^14^15		--rewrite-> 3^2^11^13^5^7
 
@@ -109,9 +110,8 @@ terms:
 <+> map(fun(x,insert(x,[1..5]++[8..10])))[6,7]
 
 <+> f$replicate(5)$6
-<+> concat$replicate(5)[1..5]
-<+> replicate(3)$map(fun(x,x$frame$black$text$ff hhhhh ff$88))  
-                    [red,green,blue]
+<+> concRepl(5)[1..5]
+<+> mapG(fun(F,F$frame(5)$black$text$ff hhhhh ff))[red,green,blue]
 
 <+> fun(f(x),g(h(x)),r(x),h(g(x))) $ f(5)
 <+> fun(f(x),g(h(x)),r(x),h(g(x))) $ r(5)
@@ -137,23 +137,18 @@ terms:
       x+2*y+z-2*z'  = 10 &
       x-y-z+3*z'    = 2)
 
+<+> filter(=/=)$prodL[[1,2,3],[1,2,3]]
 <+> filter(<4)[1..5]
+<+> filter(1`in`)[[1,2,3],[2,3,2],[12,0,-6]]
 <+> filter(`NOTin`[2,5])[1,2,3,4,5]
 <+> filter(rel(x,sum$x=6))[[1,2,3],[2,3,2],[12,0,-6]]
-<+> filterL(=/=)[[1,2,3],[a,1,c]]
-<+> filterL(=/=)[[1,2,3],[1,2,3]]
-<+> filterL(`NOTin`)[[3,5,7],[[2,3,4],[4,5,6],[6,7,8]]]
-<+> filter(rel([x,y,z],x=/=y&y=/=z&z=/=x))$replicate(3)[1,2,3]
-<+> filterL(rel((x,y,z),x=/=y&y=/=z&z=/=x))$replicate(3)[1,2,3]
-<+> filter(rel(x,sum$x=6))$[3,2,1]:[2,1,2]:replicate(2)[1,2,3]++[[1,1,1]]
+<+> filter(rel([x,y,z],x=/=y&y=/=z&z=/=x))[[1,2,3],[2,3,2],[12,0,-6]]
 
 <+> 1(2(3(4(a,a),4(a,a)),3(4(a,a),4(a,a))),2(3(4(a,a),4(a,a)),3(4(a,a),4(a,a))))  
 <+> fun(x,f(f(x,x,x),f(x,x,x)))(f(ggg,nnn,bbb))
 
 <+> map(+3)[3,6,4] 
 <+> [(0,[1]),(1,[2]),(2,[3]),(3,[4]),(4,[5]),(5,[0])]
-
-<+> concat$replicate(5)[1,2,f(pos 0 1 2 1,g(x)),3,4]
 
 <+> fun(st,ite(List(st),pic(st),pic(get1(st))))(666,[1,5,7])
 

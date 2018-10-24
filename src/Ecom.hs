@@ -177,7 +177,7 @@ linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (September 22, 2018)"
+start = "Welcome to Expander3 (October 22, 2018)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -6230,7 +6230,7 @@ solver this solveRef enum paint = do
             treeposs <- readIORef treepossRef
             collSimpls <- readIORef collSimplsRef
             let p = emptyOrLast treeposs
-                (u,n) = simplifyLoop sig depthfirst limit $ expand 0 t p
+                (u,n) = simplifyLoop sig depthfirst limit $ getSubterm t p
                 v = if collSimpls then collapse True u else u
             if n == 0 then labColorToPaint magback
                 "The tree selected at last is simplified."
