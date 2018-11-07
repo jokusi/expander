@@ -182,6 +182,8 @@ data-files:          Examples/*.gif
                    , "Examples/[w,g]"
                    , "Examples/[w]"
                    , "Examples/abp"
+                   , "Examples/abuT"
+                   , "Examples/abuW"
                    , "Examples/account"
                    , "Examples/align"
                    , "Examples/aniP"

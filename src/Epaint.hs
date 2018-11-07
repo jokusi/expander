@@ -60,6 +60,7 @@ data Solver = Solver
     , getFont         :: Request FontDescription
     , getPicNo        :: Request Int
     , getSignatureR   :: Request Sig
+    , getSpread       :: Request Pos
     , getTree         :: Request (Maybe TermS)
     , iconify         :: Action -- ^ Minimize solver window.
     , isSolPos        :: Int -> Request Bool
@@ -926,15 +927,14 @@ painter pheight solveRef solve2Ref = do
         labSolver' = writeIORef solverMsgRef
         
         loadGraph file = do
-            str <- lookupLibs file         
-            if null str then do
-                solve <- readIORef solveRef
-                labRed solve $ file ++ " is not a file name."
-                return nil2
-            else
-                case parse graphString $ removeComment 0 $ str `minus1` '\n' of
-                    Just graph -> return graph
-                    _ -> return nil2
+          str <- lookupLibs file         
+          if null str then do
+              solve <- readIORef solveRef
+              labRed solve $ file ++ " is not a file name."
+              return nil2
+          else case parse graphString str of Just graph -> return graph
+                                             _ -> return nil2
+
         
         mkPlanar = do
             n <- saveEnt `gtkGet` entryText  
@@ -1649,10 +1649,11 @@ data Widget_ = Arc State ArcStyleType Double Double | Bunch Widget_ [Int] |
                -- Bunch w is denotes w together with outgoing arcs to the
                -- widgets at positions is.
                Dot Color Point | Fast Widget_ | Gif Int Bool String Widget_ |
-               New | Oval State Double Double | Path State Int Path | 
-               Path0 Color Int Int Path | Poly State Int [Double] Double |
-               Rect State Double Double | Repeat Widget_ | Skip |
-               Text_ State Int [String] [Int] |
+               New | Oval State Double Double |
+               Path State Int Path | Path0 Color Int Int Path |
+               Poly State Int [Double] Double | Rect State Double Double |
+               Repeat Widget_ | Skip | Text_ State Int [String] [Int] |
+
                Tree State Int Color (Term (String,Point,Int)) |
                -- The center of Tree .. ct agrees with the root of ct.
                Tria State Double | Turtle State Double TurtleActs |
@@ -1721,8 +1722,9 @@ widg = Widg False
 wait :: TurtleAct
 wait = widg Skip
 
-getJust :: [Maybe Picture] -> [Maybe Picture]
-getJust = map f where f pict = if just pict then pict else Just [Skip]
+getJust :: Maybe Picture -> Picture
+getJust (Just pict) = pict
+getJust _           = [Skip]
 
 noRepeat :: Widget_ -> Bool
 noRepeat (Repeat _) = False
@@ -2325,18 +2327,29 @@ jturtleP = Just . single . turtle1
 rturtle :: TurtleActs -> MaybeT Cmd Picture
 rturtle = lift' . jturtleP
 
-loadWidget :: Sizes -> String -> Cmd Widget_
-loadWidget sizes file =
-  do str <- lookupLibs file
-     if null str then return $ text0 red sizes file
-     else return $ case parse widgString $ removeComment 0 $ str`minus1`'\n' of
-                        Just w -> w
-                        _ -> text0 red sizes file
+loadWidget :: Color -> Sizes -> String -> Cmd Widget_
+loadWidget c sizes file =
+          do str <- lookupLibs file
+             if null str then return $ text0 c sizes file
+             else return $ case parse widgString str of Just w -> w
+                                                        _ -> text0 c sizes file
+
+loadTerm :: Sig -> Color -> Sizes -> String -> Cmd TermS
+loadTerm sig c sizes file = 
+     do str <- lookupLibs file       
+        if null str then return $ leaf $ show c++'_':file
+        else return $ case parse (term sig) str of Just t -> t
+                                                   _ -> leaf $ show c++'_':file
 
 saveWidget :: Widget_ -> String -> Cmd ()
 saveWidget w file = do
   path <- userLib file
   writeFile path $ show w
+
+saveTerm :: TermS -> String -> Cmd ()
+saveTerm t file = do
+  usr <- userLib file
+  writeFile usr $ showTerm0 t
 
 concatJust :: Monad m => [MaybeT m [a]] -> MaybeT m [a]
 concatJust s = maybeT $ do s <- mapM runT s
@@ -2349,7 +2362,8 @@ type Interpreter = Sizes -> Pos -> TermS -> MaybeT Cmd Picture
 -- interpretable by eval and combines the resulting pictures into a single one.
 
 searchPic :: Interpreter -> Interpreter
-searchPic eval sizes spread t = g [] $ expand 0 t [] where
+searchPic eval sizes spread t = g [] t where
+ g p (V x) | isPos x = g p $ getSubterm t $ getPos x
  g p t = maybeT $ do pict <- runT (eval sizes spread t)
                      if just pict then return pict
                      else case t of
@@ -2371,7 +2385,7 @@ partition :: Int -> Interpreter
 partition mode sizes _ t = do guard $ not $ isSum t
                               rturtle $ drawPartition sizes mode t
 
-alignment,dissection,linearEqs,matrix,widgetTree :: Interpreter
+alignment,dissection,linearEqs,matrix :: Interpreter
 
 alignment sizes _ t = lift' $ do ali <- parseAlignment t
                                  jturtleP $ drawAlignment sizes ali
@@ -2418,12 +2432,13 @@ matrix sizes spread = f where
                                     (dom1,dom2) = sortDoms2 trs
        f _                  = zero
 
-widgetTree sizes spread t = do t <- f [] t; return [WTree t] where
+widgetTree :: Sig -> Interpreter       
+widgetTree sig sizes spread t = do t <- f [] t; return [WTree t] where
        f :: [Int] -> TermS -> MaybeT Cmd TermW
        f p (F "<+>" ts)        = do ts <- zipWithSucsM f p ts
                                     return $ F Skip ts
        f p (F "widg" ts@(_:_)) = do let u = expand 0 t $ p++[length ts-1]
-                                    [w] <- widgets black sizes spread u
+                                    [w] <- widgets sig black sizes spread u
                                     ts <- zipWithSucsM f p $ init ts
                                     return $ F w ts
        f p (F x ts)            = do ts <- zipWithSucsM f p ts
@@ -2432,9 +2447,10 @@ widgetTree sizes spread t = do t <- f [] t; return [WTree t] where
                                               else text0 black sizes x
        f _ _                   = return $ leaf $ text0 blue sizes "hidden"
 
-widgets :: Color -> Interpreter
-widgets c sizes spread t = f c t where
-   next = nextColor 0 $ depth t
+widgets :: Sig -> Color -> Interpreter
+widgets sig c sizes spread t = f c t' where
+   t' = expand 0 t [] 
+   next = nextColor 0 $ depth t'
    fs c t = do picts <- parseListT' (f c) t; return $ concat picts
    f c (F x [t])     | just tr  = do [w] <- fs c t; return [get tr w]
                                   where tr = widgTrans $ leaf x
@@ -2444,10 +2460,10 @@ widgets c sizes spread t = f c t where
                                   where tr = widgTrans t
    f c (F "$" [t,u]) | just tr  = do pict <- fs c u; return $ (get tr) pict
                                   where tr = pictTrans c t
-   f c (F "base" [t])  = do [w] <- fs c t; w <- lift' $ mkBased False c w
-                            return [w]
-   f c (F "baseR" [t]) = do [w] <- fs c t; w <- lift' $ mkBased True c w
-                            return [w]
+   f c (F "base" [t])           = do [w] <- fs c t
+                                     w <- lift' $ mkBased False c w; return [w]
+   f c (F "baseR" [t])          = do [w] <- fs c t
+                                     w <- lift' $ mkBased True c w; return [w]
                         -- Based widgets are polygons with a horizontal line
                         -- of 90 pixels starting in (90,0) and ending in (0,0).
                         -- mkBased and mkTrunk generate based widgets.
@@ -2467,13 +2483,15 @@ widgets c sizes spread t = f c t where
                                         hue <- lift' $ search (== hue) huemodes
                                         return [turtle0 c $ mkHue hue 0 acts]
                                      where (z,hue) = splitAt 3 x
-   f c (F "load" [t])              = do w <- lift $ loadWidget sizes
-                                                  $ showTree False t
-                                        return [updCol0 c w]
+   f c (F "load" [t])     = do w <- lift $ loadWidget c sizes $ root t
+                               return [updCol c w]
+   f c (F "loadT" [t])    = do t <- lift $ loadTerm sig c sizes $ root t
+                               f c t
    f _ (F "mat" [t])      = matrix sizes spread t
-   f c (F "save" [t,u])   = do [w] <- f black t
-                               lift $ saveWidget w $ showTree False u
-                               return [updCol0 c w]
+   f _ (F "save" [t,u])   = do pict@[w] <- f black t
+                               lift $ saveWidget w $ root u; return pict
+   f _ (F "saveT" [t,u])  = do pict@[w] <- f black t
+                               lift $ saveTerm t $ root u; return pict
    f c (F "turt" [acts])  = do acts <- parseActs c acts
                                return [turtle0 c acts]
    f _ (F x [t]) | just c = f (get c) t where c = parse color x
@@ -2485,7 +2503,6 @@ widgets c sizes spread t = f c t where
 
    parseActs,g :: Color -> TermS -> MaybeT Cmd TurtleActs
    parseActs c t = do acts <- parseListT' (g c) t; return $ concat acts
-   g c (V x) | isPos x = g c $ getSubterm t $ getPos x
    g c (F "A" [t])     = widgAct True c t
    g _ (F "B" [])      = return [back]
    g _ (F "C" [])      = return [Close]
@@ -2684,18 +2701,19 @@ depth _        = 1
 
 widgTrans :: TermS -> Maybe WidgTrans
 widgTrans = f where
-   f (F "center" [])    = Just $ \w -> shiftWidg (center w) w
-   f (F "fadeB" [])     = Just $ turtle1 . fade False
+   f (F "center" [])     = Just $ \w -> shiftWidg (center w) w
+   f (F "fadeB" [])      = Just $ turtle1 . fade False
    f (F "fadeW" [])      = Just $ turtle1 . fade True
-   f (F "flash" [])     = Just $ turtle1 . flash
+   f (F "flash" [])      = Just $ turtle1 . flash
    f (F "grav" [])       = Just $ \w -> shiftWidg (gravity w) w
+   f (F "id" [])         = Just id
    f (F "inCenter" [tr]) = do tr <- f tr; Just $ inCenter tr
    f (F "place" [x,y])   = do x <- parseReal x; y <- parseReal y
                               Just $ turtle1 . \w -> jumpTo (x,y) ++ [widg w]
    f (F "planar" [n])    = do maxmeet <- parsePnat n; Just $ planarWidg maxmeet
-   f (F x (n:s)) | z == "rainbowT" = frainbow n s scaleWidgT z hue
+   f (F x (n:s)) | z == "rainbowT" = frainbow n s scaleWidgT hue
                                      where (z,hue) = splitAt 8 x
-   f (F x (n:s)) | z == "rainbow"  = frainbow n s scaleWidg z hue
+   f (F x (n:s)) | z == "rainbow"  = frainbow n s scaleWidg hue
                                      where (z,hue) = splitAt 7 x
    f (F "shineT" (i:s))  = fshine i s scaleWidgT
    f (F "shine" (i:s))   = fshine i s scaleWidg
@@ -2711,16 +2729,36 @@ widgTrans = f where
                                      where (z,hue) = splitAt 5 x
                                            (mode,pmode) = splitAt 3 m
    f _ = Nothing
-   frainbow n s sc z hue = do n <- parsePnat n; hue <- search (== hue) huemodes
-                              if null s then Just $ rainbow n 0 0 hue sc
-                                        else do
-                                             [a,d] <- mapM parseReal s
-                                             Just $ rainbow n a d hue sc
-   fshine i s sc         = do i <- parseInt i; guard $ abs i `elem` [1..42]
-                              if null s then Just $ shine i 0 0 sc
-                                        else do
-                                             [a,d] <- mapM parseReal s
-                                             Just $ shine i a d sc
+   frainbow n s scf hue
+       = do n <- parsePnat n
+            hue <- search (== hue) huemodes
+            let f i = fromInt i/fromInt n
+                g sc i = sc^^n/sc^^i
+            case s of a:s -> do
+                             a <- parseReal a                 -- rotation
+                             case s of
+                              d:s -> do
+                                   d <- parseReal d          -- deflection
+                                   case s of                 -- scaling factor
+                                    sc:s -> do
+                                           sc <- parseReal sc
+                                           Just $ rainbow n (g sc) a d hue scf
+                                    _ -> Just $ rainbow n f a d hue scf
+                              _ -> Just $ rainbow n f a 0 hue scf
+                      _ -> Just $ rainbow n f 0 0 hue scf
+   fshine i s scf = do i <- parseInt i
+                       guard $ abs i `elem` [1..42]
+                       let f k = fromInt k/fromInt i
+                       case s of
+                            a:s -> do
+                                   a <- parseReal a           -- rotation
+                                   case s of
+                                    d:s -> do
+                                           d <- parseReal d    -- deflection
+                                           Just $ shine i f a d scf
+                                    _ -> Just $ shine i f a 0 scf
+                            _ -> Just $ shine i f 0 0 scf
+
 
 pictTrans :: Color -> TermS -> Maybe PictTrans
 pictTrans c = f where
@@ -2778,7 +2816,8 @@ pictTrans c = f where
      f (F "table" [n,d]) = do n <- parsePnat n; d <- parseReal d
                               Just $ single . table n d
      f (F "turn" [a])    = do a <- parseReal a; Just $ turnPict a
-     f _ = Nothing
+     f (F "unturt" [])   = Just $ fst . flip unTurt (const True)
+     f _                 = Nothing
      mkWidg tr = Just $ single . mkTurt p0 1 . tr
 
 -- | wTreeToBunches is used by 'arrangeGraph', 'concatGraphs' and 'newPaint'
@@ -2949,15 +2988,18 @@ morphPict mode m n ws = concat $ zipWith f (init ws) $ tail ws
 scaleGraph :: Double -> Graph -> Graph
 scaleGraph sc (pict,arcs) = (scalePict sc pict,arcs)
 
-scalePict :: Double -> PictTrans
+scalePict,scalePictT :: Double -> PictTrans
+
 scalePict 1   = id
 scalePict sc  = map $ scaleWidg sc
+
 scalePictT 1  = id
 scalePictT sc = map $ scaleWidgT sc
 
 -- scaleWidg/T sc w scales w by multiplying its vertices/radia with sc.
 -- Dots, gifs and texts are not scaled. 
 scaleWidg,scaleWidgT :: Double -> WidgTrans
+
 scaleWidg 1  w                    = w
 scaleWidg sc (Arc st t r a)       = Arc st t (r*sc) a
 scaleWidg sc (Oval st rx ry)      = Oval st (rx*sc) $ ry*sc
@@ -2971,6 +3013,7 @@ scaleWidg sc (Bunch w is)         = Bunch (scaleWidg sc w) is
 scaleWidg sc (Fast w)             = Fast $ scaleWidg sc w
 scaleWidg sc (Repeat w)           = Repeat $ scaleWidg sc w
 scaleWidg _ w                            = w
+
 scaleWidgT sc (Turtle st sc' acts) = Turtle st sc' $ map scale acts
                               where scale (Widg b w) = Widg b $ scaleWidgT sc w
                                     scale act        = act
@@ -3243,18 +3286,28 @@ mkSnow withCenter huemode d m n k w =
             blink = 1: -1:blink
             ones  = 1:ones
 
-iterScale :: Int -> Double -> Double -> WidgTrans -> (Double -> WidgTrans)
+{- iterScale :: Int -> Double -> Double -> WidgTrans -> (Double -> WidgTrans)
                                                 -> WidgTrans
 iterScale n a d next sc w = turtle1 $ f w n
                             where f _ 0 = []
                                   f w i = widg (sc (fromInt i/fromInt n) w):
-                                          Turn a:Jump d:f (next w) (i-1)
+                                          Turn a:Jump d:f (next w) (i-1) -}
 
-shine :: Int -> Double -> Double -> (Double -> WidgTrans) -> WidgTrans
-shine i a d = iterScale (abs i) a d $ shiftLight $ 42 `div` i
+iterScale :: Int -> (Int -> Double) -> Double -> Double -> WidgTrans
+                                   -> (Double -> WidgTrans) -> WidgTrans
+iterScale n f a d next scf = turtle1 . h n
+                             where h 0 _ = []
+                                   h i w = widg (scf (f i) w):Turn a:Jump d:
+                                           h (i-1) (next w)
 
-rainbow :: Int -> Double -> Double -> Int -> (Double -> WidgTrans) -> WidgTrans
-rainbow n a d hue = iterScale n a d $ nextHue hue n
+rainbow :: Int -> (Int -> Double) -> Double -> Double -> Int
+               -> (Double -> WidgTrans) -> WidgTrans
+rainbow n f a d hue = iterScale n f a d $ nextHue hue n
+
+shine :: Int -> (Int -> Double) -> Double -> Double
+             -> (Double -> WidgTrans) -> WidgTrans
+shine i f a d = iterScale (abs i) f a d $ shiftLight $ 42 `div` i
+
 
 track :: Int -> String -> Int -> WidgTrans
 track hue mode pmode w = if null ps then Skip

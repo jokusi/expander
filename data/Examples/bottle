@@ -19,9 +19,9 @@ states == [(0,0)]
 & (y > 0 & x+y = z & z <= 3 ==> (x,y) -> (z,0))  
 				-- von rechts nach links leeren
 & (x < 3 & x+y = z & z > 3 ==> (x,y) -> (3,z-3)) 
-				-- von rechts nach links f�llen
+				-- von rechts nach links füllen
 & (y < 5 & x+y = z & z > 5 ==> (x,y) -> (z-5,5)) 
-				-- von links nach rechts f�llen
+				-- von links nach rechts füllen
 
 & (four(x,y) <==> x+y = 4)
 

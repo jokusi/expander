@@ -117,7 +117,7 @@ loadPhoto pos alpha file = do
 
 
 savePic :: String -> Canvas -> String -> Cmd String
-savePic ext canv = canvasSave canv . (++ext)
+savePic ext canv = canvasSave canv
 
 
 lookupLibs :: FilePath -> IO String

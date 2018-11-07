@@ -1,0 +1,15 @@
+red(rainbow(2,0,0,0.545)$
+    turt[T( -22.5),
+         center(grow(inCenter(shine(21))$base(poly(8,111)))$
+                [grow(inCenter(shine(21)),base(poly(1,2.5,4,2.5)))$
+                 [inCenter(shine(21))$baseR(SQ)],
+                 inCenter(shine(21))$base(poly(1,4,2.5,2.5)),
+                 grow(inCenter(shine(21)),base(poly(1,2.5,4,2.5)))$
+                 [inCenter(shine(21))$baseR(SQ)],
+                 inCenter(shine(21))$base(poly(1,4,2.5,2.5)),
+                 grow(inCenter(shine(21)),base(poly(1,2.5,4,2.5)))$
+                 [inCenter(shine(21))$baseR(SQ)],
+                 inCenter(shine(21))$base(poly(1,4,2.5,2.5)),
+                 grow(inCenter(shine(21)),base(poly(1,2.5,4,2.5)))$
+                 [inCenter(shine(21))$baseR(SQ)],
+                 inCenter(shine(21))$base(poly(1,4,2.5,2.5))])])

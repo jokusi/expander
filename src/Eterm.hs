@@ -2736,7 +2736,10 @@ parseConsts          = parseList' parseConst
 
 parseConstTerms :: TermS -> Maybe (String, [String])
 parseConstTerms t    = do F "()" [c,ts] <- Just t
-                          c <- parseConst c; Just (c,parseTerms ts)
+                          c <- parseConst c; Just (c,show ts)
+                       where show (F x ts) | collector x = map showTerm0 ts
+                             show t                      = [showTerm0 t]
+
 
 parseConsts2 :: TermS -> Maybe ([String], [String])
 parseConsts2 t       = do F "()" [cs,ds] <- Just t; cs <- parseConsts cs
@@ -2753,15 +2756,10 @@ parseConsts2Term t   = do F "()" [cs,ds,t] <- Just t; cs <- parseConsts cs
 
 parseConsts2Terms :: TermS -> Maybe ([String], [String], [TermS])
 parseConsts2Terms t  = do F "()" [cs,ds,ts] <- Just t; cs <- parseConsts cs
-                          ds <- parseConsts ds; Just (cs,ds,getTerms ts)
+                          ds <- parseConsts ds; Just (cs,ds,get ts)
+                       where get (F x ts) | collector x = ts
+                             get t                      = [t]
 
-parseTerms :: TermS -> [String]
-parseTerms (F x ts) | collector x = map showTerm0 ts
-parseTerms t                      = [showTerm0 t]
-
-getTerms :: TermS -> [TermS]
-getTerms (F x ts) | collector x   = ts
-getTerms t                           = [t]
 
 type Termparser a = TermS -> Maybe a
 

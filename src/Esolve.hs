@@ -680,7 +680,7 @@ simplifyF sig (F "tree" [F x []]) = parse (term sig) x
 simplifyF sig (F "subst" [t,u,v]) | isVar sig x = Just $ v>>>for t x
                                                    where x = root u
                            
-simplifyF sig (F "collVars" [t]) = Just $ collapseVars sig t
+simplifyF sig (F "mergeV" [t]) = Just $ collapseVars sig t
 
 -- remove equivalences
 

@@ -42,7 +42,17 @@ axioms:
 
 terms:
 
-    red$save(circ$88,test)
+    red$polyR(6,111,55)
+<+> unturt$red$rainbow(6)$grav$HE
+<+> red$rainbow(4,0,0,0.545)$grav$HE
+<+> red$hue$concRepl(6)[SQ,J$90]
+
+<+> red$hue$concRepl(6)[shine(21)$grav$SQ,J$90]		      -- colors in lines
+<+> shelf(3)$unturt$red$hue$replicate(6)$SQ
+<+> shelf(3)$unturt$red$hue$replicate(6)$shine(21)$grav$SQ
+<+> shelfS(1)$unturt$red$hue$replicate(25)$SQ
+
+<+> red$save(circ$88,test)
 <+> red$save(turt[green$circ$88,M$222,T$45,M$55,blue$tria$77],test)
 <+> green$load$test
 <+> red$turt[green$circ$88,M$222,T$45,M$55,blue$tria$77]
@@ -63,11 +73,11 @@ terms:
 <+> repeat[flash(plaitS(5,69))]					-- flashplait
 
 <+> turt2$rect							-- 6rects
-<+> turt2$oval				-- ab combi 8 oft fehlerhaft
+<+> turt2$oval				     
 <+> scale(2)$rainbowT(30)$turt2$oval				-- 6ovals
-					-- Expander2 crashes with rainbowT(31)
+					                 -- rainbowT(31) crashes
 <+> scale(2)$shineT(30)$turt2$oval				-- 6ovalsSH
-				 	-- Expander2 crashes with shineT(31)
+				 	                 -- shineT(31) crashes 
 <+> rainbowT(30,0,2)$turt2$oval					-- 6ovals2
 <+> light blue(rect(120,120))+rainbowT(30,0,1)$turt2$oval	-- 6ovalsT
 <+> light blue(rect(120,120))+rainbowT(102,0,0.3)$turt2$oval	-- 6ovalsT-102
@@ -151,6 +161,7 @@ terms:
 <+> scale(2)$red$rainbow(55)$grav$track(ascF)$PE
 <+> scale(4)$red$track(ascF)$tria$22
 <+> save(scale(4)$red$track(ascF)$tria$22,test)
+<+> scale(2)$load$test
 <+> scale(4)$red$track(ascF)$poly(33,28,55,22)
 <+> scale(4)$red$track(symF)$poly(33,28,55,22)
 <+> scale(4)$red$track(angF)$poly(33,28,55,22)

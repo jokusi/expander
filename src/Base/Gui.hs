@@ -446,7 +446,7 @@ canvas = do
                     "pdf" -> withPDFSurface
                     "ps"  -> withPSSurface
                     "svg" -> withSVGSurface
-                    _ -> error $ "Gui.Canvas.canvasSave: Voxel format "
+                    _ -> error $ "Gui.Canvas.canvasSave: Vector format "
                             ++ format ++ " should never happen."
               withSurface file (fromIntegral width) (fromIntegral height)
                 $ \image -> renderWith image $ do

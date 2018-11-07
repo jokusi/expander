@@ -177,7 +177,7 @@ linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (October 22, 2018)"
+start = "Welcome to Expander3 (November 5, 2018)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -3153,9 +3153,7 @@ solver this solveRef enum paint = do
           sig <- getSignature
           picEval <- readIORef picEvalRef
           return $ case picEval of 
-                        "tree"               -> widgetTree
-                        "widgets"            -> searchPic (widgets black)
-                        "overlay"            -> searchPic (widgets black)
+                        "tree"               -> widgetTree sig
                         "matrices"           -> searchPic matrix
                         "matrix solution"    -> solPic sig matrix
                         "linear equations"   -> linearEqs
@@ -3165,7 +3163,8 @@ solver this solveRef enum paint = do
                         "hill partition"     -> searchPic (partition 3)
                         "alignment"          -> searchPic alignment
                         "palindrome"         -> searchPic alignment
-                        _                    -> searchPic dissection
+                        "dissection"         -> searchPic dissection
+                        _                    -> searchPic (widgets sig black)
         
         -- | Get value of 'treeSize' scale. Used by 'drawThis'.
         getMaxHeap :: Request Int
@@ -3231,6 +3230,8 @@ solver this solveRef enum paint = do
         getSolver' :: Request String
         getSolver' = return this
         
+        getSpread' :: Request Pos
+        getSpread' = readIORef spreadRef
         
         -- | Returns content of text area. Used by 'addClauses',
         -- 'addSigMapT', 'addSpec'', 'addSubst', 'applyClause', 'checkProofT',
@@ -5979,15 +5980,14 @@ solver this solveRef enum paint = do
             picts <- mapM runT picts
             font <- readIORef fontRef
             sizes <- mkSizes canv font
-                $ concatMap (stringsInPict . get) $ getJust picts
+                      $ concatMap (stringsInPict . getJust) picts
             fast <- readIORef fastRef
             setTime
             back <- ent `gtkGet` entryText
             spread <- readIORef spreadRef
             let picts = map (eval sizes spread) ts
             picts <- mapM runT picts
-            (paint&callPaint) [concatMap get $ getJust picts] [] True True
-                curr back
+            (paint&callPaint) [concatMap getJust picts] [] True True curr back
         
         -- | Called by menu item /successors/ from menu /nodes/.
         showSucs :: Action
@@ -6081,13 +6081,13 @@ solver this solveRef enum paint = do
                            drawFun <- readIORef drawFunRef
                            let u = head $ applyDrawFun sig drawFun str [t]
                            spread <- readIORef spreadRef
-                           pict <- (widgetTree sizes0 spread u)&runT
+                           pict <-  (widgetTree sig sizes0 spread u)&runT
                            if nothing pict then labMag "The tree is empty."
                            else do
                                 font <- readIORef fontRef
                                 sizes <- mkSizes canv font $ stringsInPict $ get pict
                                 (paint&setEval) "tree" spread
-                                pict <- (widgetTree sizes spread u)&runT
+                                pict <- (widgetTree sig sizes spread u)&runT
                                 curr <- readIORef currRef
                                 (paint&callPaint) [get pict] [curr] False True
                                                              curr "white"
@@ -6123,7 +6123,7 @@ solver this solveRef enum paint = do
             picts <- mapM runT picts           -- return ()
             font <- readIORef fontRef
             sizes <- mkSizes canv font
-              $ concatMap (stringsInPict . get) $ getJust picts
+                      $ concatMap (stringsInPict . getJust) picts
             fast <- readIORef fastRef
             setTime
             back <- ent `gtkGet` entryText
@@ -6132,10 +6132,8 @@ solver this solveRef enum paint = do
             curr <- readIORef currRef
             let picts = map (eval sizes spread) ts
             picts <- mapM runT picts           -- return ()
-            let picts' = map get $ getJust picts
-            -- writeFile (userLib "testPic") $ show picts'
-            (paint&callPaint) picts' (indices_ ts) False 
-                (checkingP || not checking) curr back
+            (paint&callPaint) (map getJust picts) (indices_ ts) False 
+                              (checkingP || not checking) curr back
         
         -- | Called by menu item /values/ from menu /nodes/.
         showVals :: Action
@@ -6616,6 +6614,7 @@ solver this solveRef enum paint = do
         , enterTree       = enterTree'
         , getEntry        = getEntry'
         , getSolver       = getSolver'
+        , getSpread       = getSpread'
         , getText         = getTextHere
         , getFont         = getFont'
         , getPicNo        = getPicNo'
