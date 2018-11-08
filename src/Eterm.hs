@@ -145,7 +145,7 @@ fromInt2 :: (Int, Int) -> (Double, Double)
 fromInt2 (x,y) = (fromInt x,fromInt y)
 
 fromDouble :: Fractional a => Double -> a
-fromDouble = fromRational . toRational
+fromDouble = realToFrac
 
 fromDouble2 :: (Fractional t, Fractional t1) => (Double, Double) -> (t, t1)
 fromDouble2 (x,y) = (fromDouble x,fromDouble y)
@@ -1365,8 +1365,9 @@ doublePos     = do n <- nat; char '.'; ds <- some digit
                                     ]
 
 real :: Parser Double
-real          = (do r <- double; return $ fromDouble r) ++
+real          = (do r <- double; return (realToFrac (fromDouble r::Float))) ++
                 (do i <- int; return $ fromInt i)
+-- Cast to Float and back to fix a precission problem.
 
 realNeg :: Parser Double
 realNeg       = sat real (< 0)
