@@ -93,7 +93,7 @@ data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             EvaluateTrees | ExpandTree Bool Int | FlattenImpl |
             Generalize [TermS] | Induction Bool Int | Mark [[Int]] |
             Match Int | Minimize | ModifyEqs Int | Narrow Int Bool |
-            NegateAxioms [String] [String] |
+            NegateAxioms [String] [String] | PermuteSubtrees |
             RandomLabels | RandomTree | ReduceRE Int | ReleaseNode |
             ReleaseSubtree | ReleaseTree | RemoveCopies | RemoveEdges Bool |
             RemoveNode | RemoveOthers | RemovePath | RemoveSubtrees |

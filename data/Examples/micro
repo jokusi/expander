@@ -13,7 +13,7 @@ axioms:
 & 4 -> branch[1,3,4] & 5 -> branch[2,3] & 6 -> 7 & 7 -> 4
 
 & start -> branch[2,5,6,7]
-& close -> branch[3,4,5,6,7]
+& close -> branch[3..7]
 & heat -> branch[4,7]
 & error -> branch[2,5]
 
@@ -21,11 +21,11 @@ axioms:
 
 conjects: 
 
-  EF(Sat$heat)$5			--> True 	
-& EG(Sat$heat)$7			--> True	
-& AF(Sat$heat)$6			--> True	
-& all(EF$Sat$heat)$states		--> True
-& all(AF$Sat$heat)[4,6,7]		--> True
+  EF(Sat$heat)$5		--> True (93 simplifications, 2 permutations)	
+& EG(Sat$heat)$7		--> True	
+& AF(Sat$heat)$6		--> True	
+& all(EF$Sat$heat)$states	--> True
+& all(AF$Sat$heat)[4,6,7]	--> True
 
 terms:
 

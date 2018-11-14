@@ -537,7 +537,6 @@ simplifyOne sig t p = do guard $ isF redex1
                                         do reduct <- simplifyF sig redex2
                                            Just $ replace1 t p $ mapT g reduct]
                   where redex1 = mapT block $ getSubterm1 t p
-                                           -- dropFromPoss' $ getSubterm1 t p
                         reduct = evaluate sig redex1
                         redex2 = mapT block $ dropFromPoss p $ expand 0 t p
                         block x = if blocked sig x then "BLOCK"++x else x
@@ -597,6 +596,35 @@ simplifyGraph (F "++" ts@[_,_]) = simplifyGraph $ F "concat" [mkList ts]
 
 simplifyGraph (F ":" [t,F "[]" ts]) = jList $ t:changeLPoss p q ts
                                       where p i = [1,i]; q i = [i+1]
+
+simplifyGraph (F "$" [F x [n],F "[]" ts])
+           | x `elem` words "cantor hilbert mirror snake transpose" && just k
+                         = jList $ f (get k) $ changeLPoss p single ts
+                           where k = parsePnat n
+                                 f = case head x of 'c' -> cantorshelf
+                                                    'h' -> hilbshelf
+                                                    'm' -> mirror
+                                                    's' -> snake
+                                                    _ -> transpose
+                                 p i = [1,i]
+
+simplifyGraph (F x [F "bool" [t],F "bool" [u]]) | isEq x
+                         = Just $ if x == "=/=" then F "Not" [v] else v
+                           where v = F "<==>" [changePoss [0,0] [0] t,
+                                               changePoss [1,0] [1] u]
+
+simplifyGraph (F "permute" (t:ts)) | isObdd t =
+                if n == 0 then Just t
+                else if null ts
+                     then perm [t,changePoss [0] [1] t,mkConsts [0..n-1]]
+                     else do [u,ns] <- Just ts; ns <- parseNats ns
+                             let permute s = map (s!!) ns
+                                 v = addToPoss [1] $ binsToObddP (n-1) ns
+                                                   $ map permute $ funToBins fn
+                             perm [t,if size v < size u then v else u,
+                                   mkConsts $ nextPerm ns]
+                where fn@(_,n) = obddToFun $ drop0FromPoss t
+                      perm = Just . F "permute"
 
 simplifyGraph _ = Nothing
 
@@ -1454,22 +1482,6 @@ simplifyT (F "sort" [F "[]" ts])
 -- begin functions with pattern match checker problems
 simplifyT (F "subperms" [F "[]" ts]) = jList $ map mkList $ subperms ts
 
-simplifyT (F "$" [F x [n],F "[]" ts])
-           | x `elem` words "cantor hilbert mirror snake transpose" && just k
-                         = jList $ f (get k) $ changeLPoss p single ts
-                           where k = parsePnat n
-                                 f = case head x of 'c' -> cantorshelf
-                                                    'h' -> hilbshelf
-                                                    'm' -> mirror
-                                                    's' -> snake
-                                                    _ -> transpose
-                                 p i = [1,i]
-
-simplifyT (F x [F "bool" [t],F "bool" [u]]) | isEq x
-                         = Just $ if x == "=/=" then F "Not" [v] else v
-                           where v = F "<==>" [changePoss [0,0] [0] t,
-                                               changePoss [1,0] [1] u]
-
 simplifyT (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) = 
                   case search (eqTerm t) us of
                        Just n -> Just $ mkEq (mkBag ts') $ mkBag $ context n us
@@ -1564,20 +1576,7 @@ simplifyT (F "permute" (t:ts)) | just bins =
                                             mkConsts $ nextPerm ns]
                      where bins = parseBins t; s = get bins
                            first = indices_ $ head s; perm = Just . F "permute"
-               
-simplifyT (F "permute" (t:ts)) | isObdd t =
-                    if n == 0 then Just t
-                else if null ts 
-                     then perm [t,changePoss [0] [1] t,mkConsts [0..n-1]]
-                     else do [u,ns] <- Just ts; ns <- parseNats ns
-                             let permute s = map (s!!) ns
-                                 v = addToPoss [1] $ binsToObddP (n-1) ns 
-                                                   $ map permute $ funToBins fn
-                             perm [t,if size v < size u then v else u,
-                                   mkConsts $ nextPerm ns]
-                where fn@(_,n) = obddToFun $ drop0FromPoss t
-                      perm = Just . F "permute"
-                                                             
+
 simplifyT (F "light" [i,n,c]) = do i <- parseNat i; n <- parseNat n
                                    c <- parseColor c
                                    jConst $ nextLight n (-n`div`3+i) c

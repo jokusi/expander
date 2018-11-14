@@ -124,6 +124,7 @@ command = concat [do symbol "AddAxioms"; axs <- list linearTerm
                      return $ Narrow limit sub,
                   do symbol "NegateAxioms"; ps <- list quoted
                      cps <- list quoted; return $ NegateAxioms ps cps,
+                  do symbol "PermuteSubtrees"; return PermuteSubtrees,
                   do symbol "RandomLabels"; return RandomLabels,
                   do symbol "RandomTree"; return RandomTree,
                   do symbol "ReduceRE"; m <- token int; return $ ReduceRE m,
@@ -459,6 +460,9 @@ orderMsg str = "The nodes of the selected tree have been labelled with " ++
 partialUnifier :: String
 partialUnifier = "The selected trees are only partially unifiable."
 
+permuted :: String
+permuted = "The list of maximal proper subtrees has been permuted."
+
 pointersComposed :: String
 pointersComposed = "The pointers in the selected trees have been composed."
 
@@ -487,7 +491,7 @@ replaceIn :: String -> String
 replaceIn solve = "The subtree has been replaced by the tree of "++solve++"."
 
 reversed :: String
-reversed = "The list of selected trees has been reversed."
+reversed = "The list of selected (sub)trees has been reversed."
 
 see :: String -> String
 see str = "See the " ++ str ++ " in the text field."
@@ -742,7 +746,6 @@ solver this solveRef enum paint = do
     timesRef <- newIORef (0,300)
     speedRef <- newIORef 500
     varCounterRef <- newIORef $ const 0
-    chgPermRef <- newIORef False
     permsRef <- newIORef $ \n -> [0..n-1]
     kripkeRef <- newIORef ([],[],[],[],[],[],[])
 
@@ -1024,7 +1027,7 @@ solver this solveRef enum paint = do
           mkBut treeMenu "load text from file" $ getFileAnd $ loadText True
           mkBut treeMenu (".. in text field of "++ other) $ getFileAnd 
                                                           $ loadText False
-          mkBut treeMenu "permute factors/summands" permuteGoal
+          mkBut treeMenu "permute subtrees" permuteSubtrees
           
           nodesMenu <- getMenu "nodesMenu"
           mkBut nodesMenu "greatest lower bound" showGlb
@@ -2267,6 +2270,7 @@ solver this solveRef enum paint = do
                     ModifyEqs m -> modifyEqs m
                     Narrow limit sub -> narrow'' limit sub
                     NegateAxioms ps cps -> negateAxioms' ps cps
+                    PermuteSubtrees -> permuteSubtrees
                     RandomLabels -> randomLabels
                     RandomTree -> randomTree
                     ReduceRE m -> reduceRegExp m
@@ -3342,7 +3346,6 @@ solver this solveRef enum paint = do
             $ iniVC $ ps'++cps'++cs++ds++fs++map fst hs++vars
           setSubst' (V,[])
           writeIORef partRef (id,[])
-          writeIORef chgPermRef False
           writeIORef permsRef $ \n -> [0..n-1]
           varCounter <- readIORef varCounterRef
           perms <- readIORef permsRef
@@ -4199,7 +4202,28 @@ solver this solveRef enum paint = do
                                     labGreen' $ init treeParsed ++ "s."
                                 else labMag "Select either formulas or terms!"
         
-        permuteGoal = writeIORef chgPermRef True
+        permuteSubtrees = do
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               curr <- readIORef currRef
+               treeposs <- readIORef treepossRef
+               let t = trees!!curr
+                   p = emptyOrLast treeposs
+               case getSubterm1 t p of
+                    F x ts@(_:_:_) -> do
+                         let n = length ts
+                         modifyIORef permsRef
+                           $ \perms -> upd perms n $ nextPerm $ perms n
+                         perms <- readIORef permsRef
+                         modifyIORef treesRef
+                           $ \trees -> updList trees curr $ replace1 t p $ F x
+                                                     $ map (ts!!) $ perms n
+                         setProofTerm PermuteSubtrees
+                         setProof (permutative x) False
+                                  "PERMUTING LIST OF SUBTREES" [p] permuted
+                         drawCurr'
+                    _ -> done
 
         -- | Used by 'checkForward'. Called by menu item /random labels/ from
         -- /transform selection/ menu or by pressing shift + L on active left
@@ -4451,22 +4475,22 @@ solver this solveRef enum paint = do
         -- from menu /graph/.
         removeCopies :: Action
         removeCopies = do
-            trees <- readIORef treesRef
-            if null trees then labBlue' start
-            else do
-                curr <- readIORef currRef
-                treeposs <- readIORef treepossRef
-                let t = trees!!curr
-                    p = emptyOrLast treeposs
-                if isHidden t || null p
-                then labMag selectSub
-                else do
-                    writeIORef treesRef
-                        $ updList trees curr $ removeAllCopies t p
-                    setProofTerm RemoveCopies
-                    setProof True False "REMOVING COPIES of the subtree" [p]
-                                      copiesRemoved
-                    clearTreeposs; drawCurr'
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+              curr <- readIORef currRef
+              treeposs <- readIORef treepossRef
+              let t = trees!!curr
+                  p = emptyOrLast treeposs
+              if isHidden t || null p
+              then labMag selectSub
+              else do
+                  writeIORef treesRef
+                      $ updList trees curr $ removeAllCopies t p
+                  setProofTerm RemoveCopies
+                  setProof True False "REMOVING COPIES OF THE SUBTREE" [p]
+                           copiesRemoved
+                  clearTreeposs; drawCurr'
         
         -- | Used by 'checkForward'. Called by menu items /split cycles/ and
         -- /more tree arcs/ from menu /graph/.
@@ -4840,35 +4864,35 @@ solver this solveRef enum paint = do
         -- /transform selection/.
         reverseSubtrees :: Action
         reverseSubtrees = do
-            trees <- readIORef treesRef
-            if null trees then labBlue' start
-            else do
-                treeposs <- readIORef treepossRef
-                if forsomeThereis (<<) treeposs treeposs
-                then labMag "Select non-enclosing subtrees!"
-                else do
-                    curr <- readIORef currRef
-                    let t = trees!!curr
-                        ps = emptyOrAll treeposs
-                        x = label t $ init $ head ps
-                        b = allEqual (map init ps) && permutative x
-                    case ps of
-                        [p] -> do
-                            let u = getSubterm t p
-                                ps = succsInd p $ subterms u
-                            finish t ps $ permutative $ root u
-                        _ -> if any null ps
-                             then labRed' $ noApp "Subtree reversal"
-                             else finish t ps b
-            where finish t ps b = do
-                    curr <- readIORef currRef
-                    modifyIORef treesRef $ \trees ->
-                        updList trees curr $ fold2 exchange t (f ps) $ f
-                            $ reverse ps
-                    setProofTerm ReverseSubtrees
-                    setProof b False "REVERSING THE SUBTREES" ps reversed
-                    clearTreeposs; drawCurr'
-                    where f = take $ length ps`div`2
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+              treeposs <- readIORef treepossRef
+              if forsomeThereis (<<) treeposs treeposs
+              then labMag "Select non-enclosing subtrees!"
+              else do
+                  curr <- readIORef currRef
+                  let t = trees!!curr
+                      ps = emptyOrAll treeposs
+                      x = label t $ init $ head ps
+                      b = allEqual (map init ps) && permutative x
+                  case ps of
+                      [p] -> do
+                          let u = getSubterm t p
+                              ps = succsInd p $ subterms u
+                          finish t ps $ permutative $ root u
+                      _ -> if any null ps
+                           then labRed' $ noApp "Subtree reversal"
+                           else finish t ps b
+          where finish t ps b = do
+                 curr <- readIORef currRef
+                 modifyIORef treesRef $ \trees ->
+                     updList trees curr $ fold2 exchange t (f ps)
+                                          $ f $ reverse ps
+                 setProofTerm ReverseSubtrees
+                 setProof b False "REVERSING THE LIST OF (SUB)TREES" ps reversed
+                 clearTreeposs; drawCurr'
+                 where f = take $ length ps`div`2
         
         -- | Used by 'narrowOrRewritePar'.
         rewritePar :: TermS
@@ -5376,18 +5400,6 @@ solver this solveRef enum paint = do
                       }
              modifyIORef proofRef
                $ \proof -> take proofPtr proof++[next]
-             chgPerm <- readIORef chgPermRef
-             case u of F x ts@(_:_:_) | chgPerm && just cycle
-                                                && x `elem` words "| &"
-                         -> do
-                            let n = length ts
-                            modifyIORef permsRef
-                              $ \perms -> upd perms n $ nextPerm $ perms n
-                            writeIORef treesRef [F x [ts!!i | i <- perms n]]
-                                  -- [F x $ tail ts++[head ts]]
-                                  -- [F x $ reverse ts]
-                            writeIORef currRef 0
-                       _ -> return ()
        -- else picNo := picNo-1
           writeIORef newTreesRef False
           writeIORef ruleStringRef ""
@@ -6270,33 +6282,32 @@ solver this solveRef enum paint = do
         -- ('splitBut').
         splitTree :: Action
         splitTree = do
-            trees <- readIORef treesRef
-            when (notnull trees) $ do
-                joined <- readIORef joinedRef
+          trees <- readIORef treesRef
+          when (notnull trees) $ do
+              joined <- readIORef joinedRef
 
-                sig <- getSignature
-                setProofTerm SplitTree
-                if joined then do
-                    writeIORef joinedRef False
-                    splitBut `gtkSet` [ buttonLabel := "join" ]
-                    makeTrees sig
-                    setTreesFrame []
-                    setProof True False "SPLIT" []
-                             "The tree has been split into "
-                else do
-                    treeMode <- readIORef treeModeRef
-                    formula <- readIORef formulaRef
+              sig <- getSignature
+              setProofTerm SplitTree
+              if joined then do
+                  writeIORef joinedRef False
+                  splitBut `gtkSet` [ buttonLabel := "join" ]
+                  makeTrees sig
+                  setTreesFrame []
+                  setProof True False "SPLIT" [] "The tree has been split."
+              else do
+                  treeMode <- readIORef treeModeRef
+                  formula <- readIORef formulaRef
 
-                    writeIORef joinedRef True
-                    splitBut `gtkSet` [ buttonLabel := "split" ]
-                    let t = joinTrees treeMode trees
-                    writeIORef treeModeRef "tree"
-                    writeIORef treesRef [t]
-                    modifyIORef counterRef $ \counter -> upd counter 't' 1
-                    writeIORef currRef 0
-                    writeIORef solPositionsRef [0 | formula && isSol sig t]
-                    setTreesFrame []
-                    setProof True False "JOIN" [] "The trees have been joined."
+                  writeIORef joinedRef True
+                  splitBut `gtkSet` [ buttonLabel := "split" ]
+                  let t = joinTrees treeMode trees
+                  writeIORef treeModeRef "tree"
+                  writeIORef treesRef [t]
+                  modifyIORef counterRef $ \counter -> upd counter 't' 1
+                  writeIORef currRef 0
+                  writeIORef solPositionsRef [0 | formula && isSol sig t]
+                  setTreesFrame []
+                  setProof True False "JOIN" [] "The trees have been joined."
         
         -- | Called by menu items /coinduction/ and /induction/ from menu
         -- /transform selection/.
