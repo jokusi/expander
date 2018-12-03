@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, September 2018
-                  Jos Kusiek, September 2018
+Copyright   : (c) Peter Padawitz, November 2018
+                  Jos Kusiek, November 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -1355,8 +1355,8 @@ double        = doublePos ++ do char '-'; r <- doublePos; return $ -r
 doublePos :: Parser Double
 doublePos     = do n <- nat; char '.'; ds <- some digit
                    let m = foldl1 f ds
-                       r = fromInt n+fromInt m*0.1**fromInt (length ds)
-                   i <- expo; return $ r*10**fromInt i
+                       r = fromInt n+fromInt m*0.1^length ds
+                   i <- expo; return $ r*10^i
                 where f n d = 10*n+d
                       expo = concat [ do string "e+"; nat
                                     , do string "e-"; n <- nat; return $ -n
@@ -2881,7 +2881,7 @@ iniPreds = words "_ () [] : ++ $ . == -> -/-> <= >= < > >> true false" ++
 
 
 iniDefuncts :: [String]
-iniDefuncts = words "_ $ . <=< ; + ++ - * ** / !! atoms auto bag branch" ++
+iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch" ++
               words "color concat count curry dnf drop eval filter flip" ++
               words "foldl foldr head height id init insert `join`" ++
               words "labels lsec last length list map max `meet` min" ++
@@ -3803,10 +3803,6 @@ succs p = map $ \i -> p++[i]
 succsInd :: [Int] -> [a] -> [[Int]]
 succsInd p = succs p . indices_
 
--- zipSucs p s zips the list of direct successor positions of p with s.
-zipSucs :: [Int] -> [a] -> [([Int],a)]
-zipSucs p = zip $ succs p [0..]
-
 -- zipWithSucs f p s applies a binary function after zipping the list of
 -- direct successor positions of p with s.
 zipWithSucs :: ([Int] -> a -> b) -> [Int] -> [a] -> [b]
@@ -4130,6 +4126,14 @@ replace0 t p u = f t p where f _ []         = u
 -- applySubstTo', createInvariant, expandTree', generalizeEnd, narrowPar,
 -- narrowSubtree, releaseNode, releaseTree, renameVar', replaceVar, rewriteVar,
 -- stretch and subsumeSubtrees (see Ecom).
+
+-- replace1 is used by changeTerm (see below), simplifyOne, shiftSubformulas and
+-- simplifyOne (see Esolve), applyTransitivity, collapseStep, composePointers, 
+-- decomposeAtom, evaluateTrees, releaseTree, replaceOther, replaceSubtrees', 
+-- shiftPattern, shiftQuants, showEqsOrGraph, showNumbers, showRelation, 
+-- showTransOrKripke, simplifySubtree, storeGraph, subsumeSubtrees and 
+-- unifySubtrees (see Ecom).
+
 replace :: TermS -> [Int] -> TermS -> TermS
 replace t p0 u = f [] t 
                  where f p _     | p == p0 = u
@@ -4146,14 +4150,6 @@ replace t p0 u = f [] t
                                             = [(q,p)] where q = getPos x
                        g _ _ = []
 
--- replace1 t p u applies replace t p to u after all pointers of u into the 
--- subterm of t at position p have been expanded. 
-
--- replace1 is used by changeTerm (see below), simplifyOne, shiftSubformulas and
--- simplifyOne (see Esolve), applyTransitivity, collapseStep, composePointers, 
--- decomposeAtom, evaluateTrees, releaseTree, replaceOther, replaceSubtrees', 
--- shiftPattern, shiftQuants, showEqsOrGraph, showNumbers, showRelation, 
--- simplifySubtree, storeGraph, subsumeSubtrees and unifySubtrees (see Ecom).
 replace1 :: TermS -> [Int] -> TermS -> TermS
 replace1 t p  = replace t p . addToPoss p
 
@@ -5204,17 +5200,12 @@ collapseVars sig = collapseNodes (isVar sig) . f
 -- expand/One n t p expands getSubterm t p. Each circle of u is unfolded n 
 -- times. expand/One dereferences all/one pointer(s) to the same subterm.
 
--- expand is used by closedSub (see above) and the commands "expand", 
--- showSubtreePicts, showTreePict and simplifySubtree (see Ecom).
+-- expand is used by closedSub (see above) and the command "expand" (see Ecom).
 
--- expandOne is used by eqsToGraph (see above), simplifyS "stateflow" (see 
--- Esolve) and the command "expand one" (see Ecom). 
-expand
-    :: (Eq a, Num a)
-    => a -- ^ n
-    -> TermS -- ^ t
-    -> [Int] -- ^ p
-    -> TermS
+-- expandOne is used by separateTerms (see above) and the command "expand one" 
+-- (see Ecom). 
+
+expand,expandOne :: Int -> TermS -> [Int] -> TermS
 expand n t p = f n t p $ getSubterm t p
   where f n t p (F x ts)          = F x $ zipWithSucs (f n t) p ts
         f n t p u@(V x) | isPos x = if connected t q p 
@@ -5224,12 +5215,6 @@ expand n t p = f n t p $ getSubterm t p
                                           g n = f n (replace0 t p v) p v
         f _ _ _ u                    = u
 
-expandOne
-    :: (Eq a, Num a)
-    => a -- ^ n
-    -> TermS -- ^ t
-    -> [Int] -- ^ p
-    -> TermS
 expandOne n t p = pr1 $ f n [] t p $ getSubterm t p
  where f n ps t p (F x ts) = (F x us,m,qs)
                             where (us,_,m,qs)= foldr g ([],length ts-1,n,ps) ts
@@ -5244,6 +5229,9 @@ expandOne n t p = pr1 $ f n [] t p $ getSubterm t p
                                         Just (_,(_,r)) -> (mkPos r,n,ps)
                                         _ -> f n ((q,p):ps) (replace t p v) p v
        f n ps _ _ u = (u,n,ps)
+
+expand0 :: TermS -> [Int] -> TermS
+expand0 t p = dropFromPoss p $ expand 0 t p
 
 -- * Substitutions and unifiers
 
@@ -5957,8 +5945,9 @@ getSubtrees
     -> Int
     -> Maybe ([Int], TermSP)
 getSubtrees pcts@((_,ct):_) x y = if abs (y-y') < 10 then getSubtreeX pcts x
-                                    else let f (p,ct) = zipSucs p (subterms ct)
-                                         in getSubtrees (concatMap f pcts) x y
+                                  else let f (p,ct) = zipWithSucs (,) p $
+                                                                    subterms ct
+                                       in getSubtrees (concatMap f pcts) x y
                                   where (_,(_,y')) = root ct
 getSubtrees _ _ _               = Nothing
 

@@ -1,8 +1,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, September 2018
-                  Jos Kusiek, September 2018
+Copyright   : (c) Peter Padawitz, November 2018
+                  Jos Kusiek, November 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -439,7 +439,7 @@ subsumes sig = h
 -- * __Simplification__
 
 simplifyIter :: Sig -> TermS -> TermS
-simplifyIter sig = fst . simplifyLoop sig True 100
+simplifyIter sig = pr1 . simplifyLoop sig BFP 100
 
 sapply :: Sig -> TermS -> TermS -> TermS
 sapply sig t  = simplifyIter sig . apply t
@@ -458,10 +458,10 @@ applyDrawFun :: Sig -> String -> String -> [TermS] -> [TermS]
 applyDrawFun _ "" _       = id
 applyDrawFun _ "text" ""  = id
 applyDrawFun _ "text" str = map $ add . addToPoss [0]
-     where add t = mkSum [t,F "widg" [F "red" [F "frame" [F "black" [F "text"
-                                                         [leaf str]]]]]]
-applyDrawFun sig draw _ = map $ wtree . fst . simplifyLoop sig True 11 . F draw
-                                            . single . addToPoss [0]
+                            where add t = mkSum [t,F "widg" [F "red" [F "frame"
+                                           [F "black" [F "text" [leaf str]]]]]]
+applyDrawFun sig draw _   = map $ wtree . pr1 . simplifyLoop sig BFP 11
+                                        . F draw . single . addToPoss [0]
      where wtree (F "$" [F "wtree" [f],t]) = g t
              where g (F x ts) | just u  = F "widg" $ vs++[sapply sig f $ get u]
                               | True    = F x vs where vs = map g ts
@@ -495,69 +495,78 @@ applyDrawFun sig draw _ = map $ wtree . fst . simplifyLoop sig True 11 . F draw
 -- If the interpreter widgetTree is applied to the resulting term, node x is 
 -- replaced by the widget f(x) resp. f(x,k,n).
 
+data Strategy = DF | BF | BFP deriving Show
+
 -- simplifyLoop sig depthfirst m t applies simplification rules at most m times
 -- to the maximal subtrees of t and returns the simplified tree together with 
 -- the number of actually applied steps. 
 -- simplifyLoop is used by applyDrawFun, simplifyIter, simplifyA lambda 
 -- (see here), simplify' and simplifySubtree (see Ecom).
-simplifyLoop :: Sig -> Bool -> Int -> TermS -> (TermS,Int)
-simplifyLoop sig depthfirst = loop 0 where
- loop k 0 t = (t,k)
- loop k m t = case f (simplifyOne sig) t of
-                   Just t -> loop (k+1) (m-1) t
-                   _ -> case f (expandFix sig) t of
-                             Just t -> loop (k+1) (m-1) t
-                             _ -> (t,k)
- f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
- f g t = if depthfirst then modifyDF [] t else modifyBF [([],t)]
-        where modifyDF p u = concat $ g t p:zipWithSucs modifyDF p (subterms u)
-              modifyBF pus = do guard $ notnull pus
-                                concat (map (g t) ps) ++
-                                       modifyBF (concat $ zipWith zipSucs ps
-                                                        $ map subterms us)
-                             where (ps,us) = unzip pus
+simplifyLoop :: Sig -> Strategy -> Int -> TermS -> (TermS,Int,Bool)
+simplifyLoop sig strat m t = loop 0 m [t] where
+  loop k m ts = if m == 0 then (t,k,False)
+                else case f (simplifyOne sig) t of
+                          Just t -> loop' t
+                          _ -> case f (expandFix sig) t of Just t -> loop' t
+                                                           _ -> (t,k,False)
+                where t = head ts
+                      loop' t = if just $ search (eqTerm t) ts then (t,k,True)
+                                else loop (k+1) (m-1) $ t:ts
 
--- | simplifyOne sig t p applies the first applicable simplification rule to the
+  f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
+  f g t = case strat of DF -> modifyDF [] t                     -- depthfirst
+                        BF -> modifyBF [[]] [t]                 -- breadthfirst
+                        _  -> do let u = modifyBFP t [] t       -- parallel
+                                 guard $ t /= u; Just u
+         where modifyDF p u = concat $ g t p:zipWithSucs modifyDF p (subterms u)
+               modifyBF [] _  = Nothing
+               modifyBF ps us = concat (map (g t) ps) ++ modifyBF qs vs
+                   where (qs,vs) = unzip $ concat $ zipWith (zipWithSucs (,)) ps
+                                                  $ map subterms us
+               modifyBFP t p u = case g t p of
+                                      Just t -> t
+                                      _ -> fold2 modifyBFP t (succsInd p ts) ts
+                                           where ts = subterms u
+
+-- simplifyOne sig t p applies the first applicable simplification rule to the
 -- subterm of t at position p.
--- simplifyOne is used by simplifyLoop (see above) and simplifyPar (see Ecom)
-simplifyOne :: Sig -> TermS -> [Int] -> Maybe TermS
+-- expandFix sig t p expands a fixpoint abstraction at position p of t if there
+-- is any.
+-- simplifyOne and expandFix are used by simplifyLoop (see above).
+-- simplifyOne is also used by simplifyPar (see Ecom).
+
+simplifyOne,expandFix :: Sig -> TermS -> [Int] -> Maybe TermS
 simplifyOne sig t p = do guard $ isF redex1
                          if reduct /= redex1 
                          then Just $ replace1 t p $ mapT g reduct
-                                  -- replace1'
-                         else concat   [do reduct <- simplifyGraph redex1
-                                           Just $ replace1 t p $ mapT g reduct,
-                                               -- replace1'
-                                        do reduct <- simplifyUser sig redex1
-                                           Just $ replace1 t p $ mapT g reduct,
-                                               -- replace1'
-                                        do guard $ polarity True t p 
-                                           reduct <- simplCoInd sig redex2
-                                           Just $ replace1 t p $ mapT g reduct,
-                                        do reduct <- simplifyF sig redex2
-                                           Just $ replace1 t p $ mapT g reduct]
-                  where redex1 = mapT block $ getSubterm1 t p
-                        reduct = evaluate sig redex1
-                        redex2 = mapT block $ dropFromPoss p $ expand 0 t p
-                        block x = if blocked sig x then "BLOCK"++x else x
-                        g ('B':'L':'O':'C':'K':x) = x
-                        g x                            = x
+                         else concat [do reduct <- simplifyGraph sig redex1
+                                         Just $ replace1 t p $ mapT g reduct,
+                                      do reduct <- simplifyUser sig redex1
+                                         Just $ replace1 t p $ mapT g reduct,
+                                      do guard $ polarity True t p 
+                                         reduct <- simplCoInd sig redex2
+                                         Just $ replace1 t p $ mapT g reduct,
+                                      do reduct <- simplifyF sig redex2
+                                         Just $ replace1 t p $ mapT g reduct]
+                      where redex1 = mapT block $ getSubterm1 t p
+                            reduct = evaluate sig redex1
+                            redex2 = mapT block $ expand0 t p
+                            block x = if blocked sig x then "BLOCK"++x else x
+                            g ('B':'L':'O':'C':'K':x) = x
+                            g x                            = x
 
--- expandFix sig t p expands a fixpoint abstraction at position p of t if there
--- is any.
-expandFix :: Sig -> TermS -> [Int] -> Maybe TermS
 expandFix sig t p = do guard $ not $ (sig&blocked) "fixes"
                        F x [u] <- Just redex; guard $ isFix x
                        let _:xs = words x
                            f i = F ("get"++show i) [redex]
-                           subst = case xs of [x] -> redex `for` x
-                                              _ -> map f (indices_ xs)`forL` xs
-                       Just $ replace1 t p $ u>>>subst
-                    where redex = dropFromPoss p $ expand 0 t p
+                           sub = case xs of [x] -> redex `for` x
+                                            _ -> map f (indices_ xs)`forL` xs
+                       Just $ replace1 t p $ u>>>sub
+                    where redex = expand0 t p
 
-simplifyGraph :: TermS -> Maybe TermS
+simplifyGraph,simplifyUser :: Sig -> TermS -> Maybe TermS
 
-simplifyGraph (F "$" [F "mapG" [f@(F _ ts)],F x us]) | collector x =
+simplifyGraph _ (F "$" [F "mapG" [f@(F _ ts)],F x us]) | collector x =
                                Just $ F x $ if null ts then map (apply f) us
                                                        else map g $ indices_ us
                                where g 0 = apply f $ vs!!0
@@ -565,10 +574,11 @@ simplifyGraph (F "$" [F "mapG" [f@(F _ ts)],F x us]) | collector x =
                                      vs = changeLPoss p q us
                                      p i = [1,i]; q i = [i,1]
 
-simplifyGraph (F "$" [F "replicate" [t],u]) | just n =
+simplifyGraph _ (F "$" [F "replicate" [t],u]) | just n =
             jList $ changePoss [1] [0] u:replicate (get n-1) (mkPos [0])
                    where n = parsePnat t
-simplifyGraph (F "concat" [F "[]" ts]) | all isList ts =
+
+simplifyGraph _ (F "concat" [F "[]" ts]) | all isList ts =
                           jList $ concatMap (subterms . f) ts
                               where subs i = subterms $ ts!!i
                                     f t = foldl g t $ indices_ ts
@@ -577,14 +587,14 @@ simplifyGraph (F "concat" [F "[]" ts]) | all isList ts =
                                     lg (-1) = 0
                                     lg i    = lg (i-1) + length (subs i)
 
-simplifyGraph (F "$" [F "concRepl" [t],u@(F "[]" us)]) | just n =
-                   simplifyGraph $ F "concat" [addToPoss [0] $ mkList vs]
+simplifyGraph sig (F "$" [F "concRepl" [t],u@(F "[]" us)]) | just n =
+                   simplifyGraph sig $ F "concat" [addToPoss [0] $ mkList vs]
                    where n = parsePnat t
                          vs = changePoss [1] [0] u:replicate (get n-1)
                                                  (mkList $ map f $ indices_ us)
                          f i = mkPos [0,i]
 
-simplifyGraph (F "$" [F "**" [f@(F _ ts),t],u]) | just n = 
+simplifyGraph _ (F "$" [F "**" [f@(F _ ts),t],u]) | just n =
                  Just $ if null ts then iterate (apply f) v!!m
                         else apply first $ iterate (apply $ mkPos [0]) v!!(m-1)
                  where n = parsePnat t
@@ -592,12 +602,12 @@ simplifyGraph (F "$" [F "**" [f@(F _ ts),t],u]) | just n =
                        first = changePoss [0,0] [0] f
                        v = changePoss [1] (replicate m 1) u
 
-simplifyGraph (F "++" ts@[_,_]) = simplifyGraph $ F "concat" [mkList ts]
+simplifyGraph sig (F "++" ts) = simplifyGraph sig $ F "concat" [mkList ts]
 
-simplifyGraph (F ":" [t,F "[]" ts]) = jList $ t:changeLPoss p q ts
-                                      where p i = [1,i]; q i = [i+1]
+simplifyGraph _ (F ":" [t,F "[]" ts]) = jList $ t:changeLPoss p q ts
+                                        where p i = [1,i]; q i = [i+1]
 
-simplifyGraph (F "$" [F x [n],F "[]" ts])
+simplifyGraph _ (F "$" [F x [n],F "[]" ts])
            | x `elem` words "cantor hilbert mirror snake transpose" && just k
                          = jList $ f (get k) $ changeLPoss p single ts
                            where k = parsePnat n
@@ -608,12 +618,12 @@ simplifyGraph (F "$" [F x [n],F "[]" ts])
                                                     _ -> transpose
                                  p i = [1,i]
 
-simplifyGraph (F x [F "bool" [t],F "bool" [u]]) | isEq x
+simplifyGraph _ (F x [F "bool" [t],F "bool" [u]]) | isEq x
                          = Just $ if x == "=/=" then F "Not" [v] else v
                            where v = F "<==>" [changePoss [0,0] [0] t,
                                                changePoss [1,0] [1] u]
 
-simplifyGraph (F "permute" (t:ts)) | isObdd t =
+simplifyGraph _ (F "permute" (t:ts)) | isObdd t =
                 if n == 0 then Just t
                 else if null ts
                      then perm [t,changePoss [0] [1] t,mkConsts [0..n-1]]
@@ -626,10 +636,9 @@ simplifyGraph (F "permute" (t:ts)) | isObdd t =
                 where fn@(_,n) = obddToFun $ drop0FromPoss t
                       perm = Just . F "permute"
 
-simplifyGraph _ = Nothing
+simplifyGraph _ _ = Nothing
 
 -- | apply user-defined simplification rules
-simplifyUser :: Sig -> TermS -> Maybe TermS
 simplifyUser sig t | notnull ts = Just $ mkSum ts
                                   where ts = simplReducts sig False t
 
@@ -710,7 +719,7 @@ simplifyF sig (F "subst" [t,u,v]) | isVar sig x = Just $ v>>>for t x
                            
 simplifyF sig (F "mergeV" [t]) = Just $ collapseVars sig t
 
--- remove equivalences
+-- reduce equivalences
 
 simplifyF sig (F "<==>" [t,u]) | isTrue t         = Just u
                                | isTrue u         = Just t
@@ -904,8 +913,8 @@ removeEq sig unsafe t =
                     g rest (t:ts) = g (rest++[t]) ts
                     g _ _         = Nothing
 
--- | replaceTerms sig rel ts vs replaces term l in vs by term r if ts contains
--- the atom t rel r or r rel t.
+-- replaceTerms sig rel ts vs replaces l in vs by r if ts contains the
+-- atom (l rel r) or (r rel l). At first, atoms (t rel t) are removed.
 replaceTerms :: Sig -> String -> [TermS] -> [TermS] -> Maybe ([TermS],[TermS])
 replaceTerms sig rel ts vs = f [] ts
    where f us ts = do t:ts <- Just ts
@@ -952,22 +961,22 @@ subsumeConj _ _ _           = Nothing
 
 -- LAMBDA APPLICATIONS
 -- see: https://fldit-www.cs.uni-dortmund.de/~peter/CTL.pdf, page 102 ff.
-simplifyA sig (F "$" [F x [F "~" [p],t],u])
-  | lambda x = Just $ renameAll f t>>>sub'
-              where ys = sigVars sig u
-                    f = getSubAwayFrom (frees sig u) ys t
-                    zs = frees sig p
-                    sub = match sig zs u p
-                    g z = apply (F x [p,mkVar sig z]) u
-                    sub' = if just sub then get sub else forL (map g zs) zs
-
 
 simplifyA sig (F "$" [F x [p,t],u])
   | lambda x && just sub = Just $ renameAll f t>>>get sub
-                           where ys = sigVars sig u
-                                 f = getSubAwayFrom (frees sig u) ys t
-                                 zs = frees sig p
-                                 sub = match sig zs u p
+                           where ys = frees sig p
+                                 sub = match sig ys u p
+                                 zs = sigVars sig u
+                                 f = getSubAwayFrom (frees sig u) zs t
+
+simplifyA sig (F "$" [F x [F "~" [p],t],u])
+  | lambda x = Just $ renameAll f t>>>sub'
+               where ys = frees sig p
+                     sub = match sig ys u p
+                     zs = sigVars sig u
+                     f = getSubAwayFrom (frees sig u) zs t
+                     g y = apply (F x [p,mkVar sig y]) u
+                     sub' = if just sub then get sub else forL (map g ys) ys
 
 simplifyA sig (F "$" [F x ts,u])
   | lambda x && lg > 2 && even lg = Just $ F "CASE" cases where
@@ -1046,13 +1055,6 @@ mkLabels sig = mkList . map ((sig&labels)!!)
 
 mkAtoms :: Sig -> [Int] -> TermS
 mkAtoms sig = mkList . map ((sig&atoms)!!)
-
-{-  
-simplifyS sig (F "$" [F "<=<" [g,f],t])
-            | all collector (x:map root ts) = Just $ F x $ concatMap subterms ts
-                                      where u = sapply sig f t; x = root u
-                                            ts = map (sapply sig g) $ subterms u
--}
 
 -- distribute a function over a sum
 

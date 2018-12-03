@@ -4,8 +4,8 @@ specs:      bool
 
 constructs: leaf #
 defuncts:   is_even mergesort1 split1 merge1 mergesort2 split2 merge2
-	    mergesort3 split3 merge3 repBy1 repBy2 rep0 rep1 rep2 rep3 pal1 pal2 	    	    pal3 reveq0 reveq1 reveq2 reveq3 sort1 sort2 represttips1 ||   
-            represttips2 f g foo goo nats nats' fibs tfibs fibs' client server   
+	    mergesort3 split3 merge3 repBy1 repBy2 rep0 rep1 rep2 rep3 pal1 pal2 	    pal3 reveq0 reveq1 reveq2 reveq3 sort1 sort2 represttips1 ||   
+            represttips2 f g foo goo nats nats' fibs fibs' client server   
 	    Server Client1 Requests1 Client2 Requests2 CSR
 preds:      even odd 
 fovars:     x y z s s' t u t1 t2 u1 u2 r s1 s2 ls ls1 ls2 ls3 ls4 n a b requests
@@ -84,7 +84,7 @@ rep3(f) == fun((leaf(x),y),(x,leaf(y)),
 
 -- PALINDROMES
 
-(pal1(s) = b <=== reveq1(s)(r) = (r,b)) &      -- reveq1(s1)(s2) = (reverse s1,s1=s2)
+(pal1(s) = b <=== reveq1(s)(r) = (r,b)) & -- reveq1(s1)(s2) = (reverse s1,s1=s2)
 
 reveq1[][]          = ([],true) &
 (reveq1(x:s1)(y:s2) = (r++[x],eq(x,y)`and`b) <=== reveq1(s1)(s2) = (r,b)) &
@@ -117,12 +117,11 @@ nats == 0:map(+1)$nats &
 
 nats' == mu s.(0:map(+1)$s) &
 	     
-natsf == mu f.fun(n,n:f$n+1) &				-- nats = natsf$0
+natsf == mu f.fun(n,n:f$n+1) &		   -- nats = natsf$0
 
-fibs  == 0:tfibs &
-tfibs == 1:zipWith(+)(fibs)$tfibs &
+fibs  == 1:1:zipWith(+)(fibs)$tail$fibs &  -- simplify breadthfirst/parallel
 
-fibs' == get0(mu s s'.(0:s',1:zipWith(+)(s)$s')) & 	-- terminating?
+fibs' == mu s.(1:1:zipWith(+)(s)$tail$s) & -- simplify breadthfirst/parallel
 
 Server(a:s) == mkResponse(a):Server(s) &
 					

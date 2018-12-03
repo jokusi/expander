@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, September 2018
-                  Jos Kusiek, September 2018
+Copyright   : (c) Peter Padawitz, November 2018
+                  Jos Kusiek, November 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -160,9 +160,8 @@ command = concat [do symbol "AddAxioms"; axs <- list linearTerm
                   do symbol "ShiftQuants"; return ShiftQuants,
                   do symbol "ShiftSubs"; ps <- list $ list int
                      return $ ShiftSubs ps,
-                  do symbol "Simplify"; depthfirst <- token bool
-                     limit <- token int; sub <- token bool
-                     return $ Simplify depthfirst limit sub,
+                  do symbol "Simplify"; limit <- token int; sub <- token bool
+                     return $ Simplify limit sub,
                   do symbol "SplitTree"; return SplitTree,
                   do symbol "SubsumeSubtrees"; return SubsumeSubtrees,
                   do symbol "Theorem"; b <- token bool
@@ -178,7 +177,7 @@ linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (November 5, 2018)"
+start = "Welcome to Expander3 (November 30, 2018)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -652,9 +651,9 @@ solver this solveRef enum paint = do
     matchBut <- getButton "matchBut"
     narrowBut <- getButton "narrowBut"
     safeButRef <- newIORef undefined
-    simplButD <- getButton "simplButD"
-    simplButB <- getButton "simplButB"
+    simplBut <- getButton "simplBut"
     splitBut <- getButton "splitBut"
+    stratBut <- getButton "stratBut"
     tedit <- getObject castToTextView "tedit"
     termBut <- getObject castToLabel "termBut"
     lab2 <- getObject castToLabel "lab2"
@@ -705,6 +704,7 @@ solver this solveRef enum paint = do
     proofTPtrRef <- newIORef 0
     picNoRef <- newIORef 0
     stateIndexRef <- newIORef 0
+    simplStratRef <- newIORef BFP
 
     axiomsRef <- newIORef []
     checkersRef <- newIORef []
@@ -842,6 +842,7 @@ solver this solveRef enum paint = do
                   "i" -> replaceText
                   "l" -> replaceNodes
                   "L" -> randomLabels
+                  "m" -> permuteSubtrees
                   "n" -> negateAxioms
                   "o" -> removeNode
                   "p" -> removePath
@@ -923,8 +924,8 @@ solver this solveRef enum paint = do
           saveDBut `on` buttonActivated $ saveGraphD
           dirBut <- getButton "dirBut"
           dirBut `on` buttonActivated $ setPicDir False
-          simplButD `on` buttonActivated $ simplify' True
-          simplButB `on` buttonActivated $ simplify' False
+          stratBut `on` buttonActivated $ changeStrat
+          simplBut `on` buttonActivated $ simplify'
           fastBut `on` buttonActivated $ switchFast
           splitBut `on` buttonActivated $ splitTree
 
@@ -1027,7 +1028,6 @@ solver this solveRef enum paint = do
           mkBut treeMenu "load text from file" $ getFileAnd $ loadText True
           mkBut treeMenu (".. in text field of "++ other) $ getFileAnd 
                                                           $ loadText False
-          mkBut treeMenu "permute subtrees" permuteSubtrees
           
           nodesMenu <- getMenu "nodesMenu"
           mkBut nodesMenu "greatest lower bound" showGlb
@@ -1102,6 +1102,7 @@ solver this solveRef enum paint = do
           mkBut streeMenu "copy (c)" copySubtrees
           mkBut streeMenu "remove (r)" removeSubtrees
           mkBut streeMenu "remove node (o)" removeNode
+          mkBut streeMenu "permute subtrees (m)" permuteSubtrees
           mkBut streeMenu "reverse (v)" reverseSubtrees
           mkBut streeMenu "insert/replace by text (i)" replaceText
           mkBut streeMenu "random labels (L)" randomLabels
@@ -2010,9 +2011,6 @@ solver this solveRef enum paint = do
             writeIORef matchingRef 0
             matchBut `gtkSet` [ buttonLabel := "match" ]
             splitBut `gtkSet` [ buttonLabel := "join" ]
-            setBackground matchBut blueback
-            mapM_ (`setBackground` blueback)
-                [deriveBut,narrowBut,simplButD,simplButB]
             clearTreeposs
             setInterpreter' obj
             sig <- getSignature
@@ -2165,7 +2163,12 @@ solver this solveRef enum paint = do
             labGreen' (peMsgL proofElem)
             safeBut `gtkSet` [ menuItemLabel := eqsButMsg $ not safe ]
             splitBut `gtkSet` [ buttonLabel := if joined then "split" else "join" ]
-        
+
+        changeStrat = do
+          modifyIORef simplStratRef $ \simplStrat ->
+            case simplStrat of DF -> BF; BF -> BFP; BFP -> DF
+          setStrat
+
         -- | Used by 'backProof'.
         checkBackward :: Action
         checkBackward = do
@@ -2293,8 +2296,7 @@ solver this solveRef enum paint = do
                     SafeEqs -> switchSafe
                     SetAdmitted block xs -> setAdmitted' block xs
                     SetCurr msg n -> setCurr msg n
-                    Simplify depthfirst limit sub
-                                  -> simplify'' depthfirst limit sub
+                    Simplify limit sub -> simplify'' limit sub
                     ShiftPattern -> shiftPattern
                     ShiftQuants -> shiftQuants
                     ShiftSubs ps -> shiftSubs' ps
@@ -4939,8 +4941,6 @@ solver this solveRef enum paint = do
               sp <- ent `gtkGet` entryText
               let newSpeed = parse pnat sp
               when (just newSpeed) $ writeIORef speedRef $ get newSpeed
-            skipOpts backBut backButSignalRef
-            skipOpts forwBut forwButSignalRef
             runOpts deriveBut deriveButSignalRef
             runProof <- runner checkForward
             speed <- readIORef speedRef
@@ -4948,15 +4948,11 @@ solver this solveRef enum paint = do
             let act = do checkForward
                          showTreePicts
             showTreePicts
-            setButtons paint skipOpts skipOpts runOpts
+            (paint&setButton3) runOpts
             runProofP <- runner act
             startRun runProofP speed
             writeIORef checkersRef [runProof,runProofP]
-            where skipOpts btn cmd = do
-                    btn `gtkSet` [ buttonLabel := "" ]
-                    setBackground btn redback
-                    replaceCommandButton cmd btn $ return ()
-                  runOpts btn cmd = do
+            where runOpts btn cmd = do
                     btn `gtkSet` [ buttonLabel := "stop run" ]
                     setBackground btn redback
                     replaceCommandButton cmd btn stopRun'
@@ -5107,10 +5103,7 @@ solver this solveRef enum paint = do
         setCollapse = do
             modifyIORef collSimplsRef not
             collSimpls <- readIORef collSimplsRef
-            simplButD `gtkSet`[ buttonLabel := if collSimpls then "simplifyDC"
-                                            else "simplifyD"]
-            simplButB `gtkSet` [ buttonLabel :=  if collSimpls then "simplifyBC"
-                                              else "simplifyB"]
+            setStrat
         
         -- | Used by 'buildSolve'', 'checkForward', 'incrCurr',
         -- 'setCurrInSolve'' and 'simplify'''.
@@ -5149,10 +5142,6 @@ solver this solveRef enum paint = do
                 mapM_ stopRun0 checkers
                 writeIORef checkingRef False
                 writeIORef speedRef 500
-                backBut `gtkSet` [ buttonLabel := "<---" ]
-                replaceCommandButton backButSignalRef backBut backProof
-                forwBut `gtkSet` [ buttonLabel := "--->" ]
-                replaceCommandButton forwButSignalRef forwBut forwProof'
                 case (simplifying,refuting) of (True,True)  -> dsr
                                                (True,_)     -> ds
                                                (False,True) -> dr
@@ -5160,9 +5149,8 @@ solver this solveRef enum paint = do
                 quit `gtkSet` [ buttonLabel := "quit" ]
                 replaceCommandButton quitSignalRef quit mainQuit
                 setNarrow False False
-                setButtons paint (f "narrow/rewrite" narrow')
-                                 (f "simplifyD" $ simplify' True)
-                                 (f "simplifyB" $ simplify' False)
+                (paint&setButton1) (f "narrow/rewrite" narrow')
+                (paint&setButton2) ( f "simplify" simplify')
                 modifyIORef proofTermRef
                     $ \proofTerm -> take proofTPtr proofTerm
                 proofTerm <- readIORef proofTermRef
@@ -5370,14 +5358,15 @@ solver this solveRef enum paint = do
               msg1 = msgL ++ if newTrees || msgAE || msgSP || msgMV ||
                                 notnull msgL && head msgL == ' ' ||
                                 trees /= (oldProofElem&peTrees)
-                     then "" else "\nCAUTION: The "++ formString formula
-                                            ++" has not been modified."
+                             then "" else "\nThe "++ formString formula ++
+                                          " has not been modified."
               u = joinTrees treeMode trees
               us = map (joinTrees treeMode . peTrees) proof
-              cycle = search (eqTerm u) us
-              cmsg = "\nThe entire goal coincides with no. " ++ show (get cycle)
-              (msg2,msg3) = if just cycle then (msgP++cmsg,msg1++cmsg)
-                                          else (msgP,msg1)
+              pred =  search (eqTerm u) us
+              cmsg = "\nThe " ++ formString formula ++ " coincides with no. " ++
+                     show (get pred)
+              (msg2,msg3) = if just pred then (msgP++cmsg,msg1++cmsg)
+                                         else (msgP,msg1)
           when (null ruleString || n > 0) $ do
              modifyIORef proofPtrRef succ
              proofPtr <- readIORef proofPtrRef
@@ -5466,7 +5455,16 @@ solver this solveRef enum paint = do
                                         " have been selected."
                     _ -> labMag "Enter tree positions in heap order!"
         -}
-        
+
+        setStrat = do
+          collSimpls <- readIORef collSimplsRef
+          let f str = if collSimpls then str++"C" else str
+          simplStrat <- readIORef simplStratRef
+          stratBut `gtkSet`
+              [ buttonLabel := case simplStrat of DF -> f "depthfirst"
+                                                  BF -> f "breadthfirst"
+                                                  _  -> f "parallel" ]
+
         -- | Used by 'showSubtreePicts', 'showTreePicts', 'simplify''',
         -- 'enterTree'' and 'narrow'''.
         setTime :: Action
@@ -6161,61 +6159,63 @@ solver this solveRef enum paint = do
         -- | Called by 'Epaint.Solver' and 'Epaint.Painter' buttons /simplifyDF/
         -- ('simplButD') and /simplifyBF/ ('simplButB'). Exported by public
         -- 'Epaint.Solver' method 'Epaint.simplify'.
-        simplify' :: Bool -> Action
-        simplify' depthfirst = do
+        simplify' :: Action
+        simplify' = do
             trees <- readIORef treesRef
-
             if null trees then labBlue' start
             else do
                 str <- ent `gtkGet` entryText
-                let act = simplify'' depthfirst
+                let act = simplify''
                 case parse pnat str of Just limit -> act limit True
                                        _ -> act 100 False
         
         -- | Used by 'checkForward' and 'simplify''.
-        simplify'' :: Bool -> Int -> Bool -> Action
-        simplify'' depthfirst limit sub = do
-            trees <- readIORef treesRef
-            curr <- readIORef currRef
-            treeposs <- readIORef treepossRef
+        simplify'' :: Int -> Bool -> Action
+        simplify'' limit sub = do
+          trees <- readIORef treesRef
+          curr <- readIORef currRef
+          treeposs <- readIORef treepossRef
 
-            writeIORef ruleStringRef "SIMPLIFYING"
-            writeIORef proofStepRef $ Simplify depthfirst limit sub
-            sig <- getSignature
-            let t = trees!!curr
-            if null treeposs then do
-                treeMode <- readIORef treeModeRef
-                formula <- readIORef formulaRef
-                collSimpls <- readIORef collSimplsRef
+          writeIORef ruleStringRef "SIMPLIFYING"
+          writeIORef proofStepRef $ Simplify limit sub
+          sig <- getSignature
+          let t = trees!!curr
+          if null treeposs then do
+              treeMode <- readIORef treeModeRef
+              formula <- readIORef formulaRef
+              collSimpls <- readIORef collSimplsRef
+              simplStrat <- readIORef simplStratRef
+              solPositions <- readIORef solPositionsRef
 
-                setTime
-                let (u,n) = simplifyLoop sig depthfirst limit t
-                    v = if collSimpls then collapse True u else u
-                    msg = "The "
-                        ++ (if treeMode == "tree" then formString formula
-                            else "previous " ++ treeMode) ++ " is simplified."
-                if n == 0 then do
-                    modifyIORef counterRef $ \counter -> decr counter 't'
-                    counter <- readIORef counterRef
-                    if counter 't' > 0
-                    then setCurr msg $ (curr+1) `mod` length trees
-                    else do
-                        labMag treesSimplified
-                        labSolver paint treesSimplified
-                else do
-                    proofStep <- readIORef proofStepRef
-                    ruleString <- readIORef ruleStringRef
-                    solPositions <- readIORef solPositionsRef
+              setTime
+              let (u,n,cyclic) = simplifyLoop sig simplStrat limit t
+                  v = if collSimpls then collapse True u else u
+                  msg0 = "The " ++ (if treeMode == "tree" then formString formula
+                                    else "previous " ++ treeMode)
+                                ++ " is simplified."
+                  msg = finishedSimpl n ++ solved solPositions ++
+                        ("\nThe simplification became cyclical." `onlyif` cyclic)
+              if n == 0 then do
+                  modifyIORef counterRef $ \counter -> decr counter 't'
+                  counter <- readIORef counterRef
+                  if counter 't' > 0
+                  then setCurr msg0 $ (curr+1) `mod` length trees
+                  else do
+                      labMag treesSimplified
+                      labSolver paint treesSimplified
+              else do
+                  proofStep <- readIORef proofStepRef
+                  ruleString <- readIORef ruleStringRef
+                  solPositions <- readIORef solPositionsRef
 
-                    modifyIORef treesRef $ \trees -> updList trees curr v
-                    makeTrees sig
-                    setProofTerm proofStep
-                    modifyIORef counterRef $ \counter -> upd counter 'd' n
-                    setProof True False ruleString []
-                        $ finishedSimpl n++solved solPositions
-                    setTreesFrame []
-            else if sub then simplifySubtree t sig depthfirst limit
-                        else simplifyPar t sig treeposs []
+                  modifyIORef treesRef $ \trees -> updList trees curr v
+                  makeTrees sig
+                  setProofTerm proofStep
+                  modifyIORef counterRef $ \counter -> upd counter 'd' n
+                  setProof True False ruleString [] msg
+                  setTreesFrame []
+          else if sub then simplifySubtree t sig limit
+                      else simplifyPar t sig treeposs []
         
         -- | Used by 'simplify'''.
         simplifyPar :: TermS -> Sig -> [[Int]] -> [[Int]] -> Action
@@ -6235,26 +6235,28 @@ solver this solveRef enum paint = do
             clearTreeposs; drawCurr'
         
         -- | Used by 'simplify'''.
-        simplifySubtree :: TermS -> Sig -> Bool -> Int -> Action
-        simplifySubtree t sig depthfirst limit = do
-            treeposs <- readIORef treepossRef
-            collSimpls <- readIORef collSimplsRef
-            let p = emptyOrLast treeposs
-                (u,n) = simplifyLoop sig depthfirst limit $ getSubterm t p
-                v = if collSimpls then collapse True u else u
-            if n == 0 then labColorToPaint magback
-                "The tree selected at last is simplified."
-            else do
-                curr <- readIORef currRef
-                proofStep <- readIORef proofStepRef
-                ruleString <- readIORef ruleStringRef
-                modifyIORef treesRef
-                    $ \trees -> updList trees curr $ replace1 t p v
-                setProofTerm proofStep
-                modifyIORef counterRef $ \counter -> upd counter 'd' n
-                setProof True False ruleString [p] $
-                                         appliedToSub "simplification" n
-                clearTreeposs; drawCurr'
+        simplifySubtree :: TermS -> Sig -> Int -> Action
+        simplifySubtree t sig limit = do
+          treeposs <- readIORef treepossRef
+          collSimpls <- readIORef collSimplsRef
+          simplStrat <- readIORef simplStratRef
+          let p = emptyOrLast treeposs
+              (u,n,cyclic) = simplifyLoop sig simplStrat limit $ getSubterm t p
+              v = if collSimpls then collapse True u else u
+              msg = appliedToSub "simplification" n ++
+                    ("\nThe simplification became cyclical." `onlyif` cyclic)
+          if n == 0 then labColorToPaint magback
+              "The tree selected at last is simplified."
+          else do
+              curr <- readIORef currRef
+              proofStep <- readIORef proofStepRef
+              ruleString <- readIORef ruleStringRef
+              modifyIORef treesRef
+                  $ \trees -> updList trees curr $ replace1 t p v
+              setProofTerm proofStep
+              modifyIORef counterRef $ \counter -> upd counter 'd' n
+              setProof True False ruleString [p] msg
+              clearTreeposs; drawCurr'
         
         -- | Called by menu item /specialize/ from menu /transform selection/.
         specialize :: Action
@@ -6341,12 +6343,10 @@ solver this solveRef enum paint = do
             checkers <- readIORef checkersRef
             when checking $ do
                 mapM_ stopRun0 checkers
-                backBut `gtkSet` [ buttonLabel := "<---" ]
-                replaceCommandButton backButSignalRef backBut backProof
-                forwBut `gtkSet` [ buttonLabel := "--->" ]
-                replaceCommandButton forwButSignalRef forwBut forwProof'
                 runOpts deriveBut deriveButSignalRef
-                setButtons paint backOpts forwOpts runOpts
+                (paint&setButton1) backOpts
+                (paint&setButton2) forwOpts
+                (paint&setButton3) runOpts
             where backOpts btn cmd = do
                     btn `gtkSet` [ buttonLabel := "<---" ]
                     replaceCommandButton cmd btn $ actInPaint backProof

@@ -207,7 +207,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="narrowBut">
+                  <object class="GtkButton" id="button1">
                     <property name="label" translatable="yes">narrow/rewrite</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -234,8 +234,8 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="simplifyD">
-                    <property name="label" translatable="yes">simplifyDF</property>
+                  <object class="GtkButton" id="button2">
+                    <property name="label" translatable="yes">simplify</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -261,8 +261,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="simplifyB">
-                    <property name="label" translatable="yes">simplifyBF</property>
+                  <object class="GtkButton" id="button3">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>

@@ -82,7 +82,7 @@ data Solver = Solver
     , setInterpreter  :: String -> Action
     , setNewTrees     :: [TermS] -> String -> Action
     , setSubst        :: (String -> TermS,[String]) -> Action
-    , simplify        :: Bool -> Action
+    , simplify        :: Action
     }
   
   
@@ -102,7 +102,7 @@ data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             ReplaceVar String TermS [Int] | ReverseSubtrees | SafeEqs | 
             SetAdmitted Bool [String] | SetCurr String Int | SetDeriveMode | 
             SetMatch | ShiftPattern | ShiftQuants | ShiftSubs [[Int]] | 
-            Simplify Bool Int Bool | SplitTree | StretchConclusion | 
+            Simplify Int Bool | SplitTree | StretchConclusion | 
             StretchPremise | SubsumeSubtrees | Theorem Bool TermS | 
             Transform Int | UnifySubtrees | POINTER Step
             deriving Show
@@ -302,13 +302,12 @@ type ButtonOpts = Button -> IORef (ConnectId Button) -> Action
 type MenuOpts   = MenuItem -> IORef (ConnectId MenuItem) -> Action
 
 data Painter = Painter
-    { callPaint      :: [Picture] -> [Int] -> Bool -> Bool -> Int -> String 
-                                 -> Action
-    , labSolver      :: String -> Action
-    , remote         :: Action
-    , setButtons     :: ButtonOpts -> ButtonOpts -> ButtonOpts -> Action
-    , setCurrInPaint :: Int -> Action
-    , setEval        :: String -> Pos -> Action
+    { callPaint :: [Picture] -> [Int] -> Bool -> Bool -> Int -> String -> Action
+    , labSolver                        :: String -> Action
+    , remote                           :: Action
+    , setButton1,setButton2,setButton3 :: ButtonOpts -> Action
+    , setCurrInPaint                   :: Int -> Action
+    , setEval                          :: String -> Pos -> Action
     }
 
 painter :: Int -> IORef Solver
@@ -321,6 +320,9 @@ painter pheight solveRef solve2Ref = do
         getLabel  = getObject castToLabel
         getScale  = getObject castToScale
         
+    button1 <- getButton "button1"
+    button2 <- getButton "button2"
+    button3 <- getButton "button3"
     canv <- canvas
     scrollCanv <- getObject castToScrolledWindow "scrollCanv"
     combiBut <- getButton "combiBut"
@@ -328,13 +330,10 @@ painter pheight solveRef solve2Ref = do
     edgeBut <- getButton "edgeBut"
     lab <- getLabel "lab"
     modeEnt <- getObject castToEntry "modeEnt"
-    narrowBut <- getButton "narrowBut"
     pictSlider <- getScale "pictSlider"
     saveEnt <- getObject castToEntry "saveEnt"
     saveDBut <- getButton "saveDBut"
     -- colorScaleSlider <- newIORef undefined
-    simplifyD <- getButton "simplifyD"
-    simplifyB <- getButton "simplifyB"
     spaceEnt <- getObject castToEntry "spaceEnt"
     stopBut <- getButton "stopBut"
     win <- getObject castToWindow "win"
@@ -342,9 +341,9 @@ painter pheight solveRef solve2Ref = do
     scaleSlider <- getScale "scaleSlider"
     delaySlider <- getScale "delaySlider"
     
-    narrowButSignalRef <- newIORef $ error "narrowButSignal not set"
-    simplifyDSignalRef <- newIORef $ error "simplifyDSignal not set"
-    simplifyBSignalRef <- newIORef $ error "simplifyBSignal not set"
+    button1SignalRef <- newIORef $ error "narrowButSignal not set"
+    button2SignalRef <- newIORef $ error "simplifyDSignal not set"
+    button3SignalRef <- newIORef $ error "simplifyBSignal not set"
 
     fontRef <- newIORef undefined
     
@@ -587,9 +586,11 @@ painter pheight solveRef solve2Ref = do
                         act
                         showPicts solve
                         )
-            f (narrow solve) narrowBut narrowButSignalRef
-            f (simplify solve True) simplifyD simplifyDSignalRef
-            f (simplify solve False) simplifyB simplifyBSignalRef
+            f (narrow solve) button1 button1SignalRef
+            f (simplify solve) button2 button2SignalRef
+            -- f (simplify solve False) simplifyB button3SignalRef
+            addContextClass button3 defaultButton
+            setBackground button3 blueback
             buildPaint1
             
         buildPaint1  = do
@@ -1079,10 +1080,6 @@ painter pheight solveRef solve2Ref = do
             bgcolor <- readIORef bgcolorRef
             changeCanvasBackground bgcolor
             subtrees <- readIORef subtreesRef
-            let back = if subtrees then redback else blueback
-            setBackground narrowBut back
-            setBackground simplifyD back
-            setBackground simplifyB back
             stopBut `gtkSet` [buttonLabel := "runnableStop"]
             replaceCommandButton stopButSignalRef stopBut $ interrupt True
             noOfGraphs <- readIORef noOfGraphsRef
@@ -1505,12 +1502,10 @@ painter pheight solveRef solve2Ref = do
             solverMsg <- readIORef solverMsgRef
             labGreen $ str1 ++ add solverMsg ++ add msg
 
-        
-        setButtons' opts1 opts2 opts3 = do
-            opts1 narrowBut narrowButSignalRef
-            opts2 simplifyD simplifyDSignalRef
-            opts3 simplifyB simplifyBSignalRef            
-        
+        setButton1' opts = opts button1 button1SignalRef
+        setButton2' opts = opts button2 button2SignalRef
+        setButton3' opts = opts button3 button3SignalRef
+
         setCurrGraph (pict,arcs) = do
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
@@ -1625,7 +1620,9 @@ painter pheight solveRef solve2Ref = do
         { callPaint      = callPaint'
         , labSolver      = labSolver'
         , remote         = remote'
-        , setButtons     = setButtons'
+        , setButton1     = setButton1'
+        , setButton2     = setButton2'
+        , setButton3     = setButton3'
         , setCurrInPaint = setCurrInPaint'
         , setEval        = setEval'
         }

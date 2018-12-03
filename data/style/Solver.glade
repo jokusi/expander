@@ -566,8 +566,8 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="simplButB">
-                    <property name="label" translatable="yes">simplifyB</property>
+                  <object class="GtkButton" id="simplBut">
+                    <property name="label" translatable="yes">simplify</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -597,8 +597,8 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="simplButD">
-                    <property name="label" translatable="yes">simplifyD</property>
+                  <object class="GtkButton" id="stratBut">
+                    <property name="label" translatable="yes">parallel</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
