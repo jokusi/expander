@@ -591,6 +591,8 @@ painter pheight solveRef solve2Ref = do
             -- f (simplify solve False) simplifyB button3SignalRef
             addContextClass button3 defaultButton
             setBackground button3 blueback
+            signal <- button3 `on` buttonActivated $ return ()
+            writeIORef button3SignalRef signal
             buildPaint1
             
         buildPaint1  = do
