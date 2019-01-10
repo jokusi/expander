@@ -45,7 +45,7 @@ stack exec -- pacman -S pkg-config mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolch
 Install expander with:
 ```
 git clone https://github.com/jokusi/expander.git
-cd expander-3.0.0.0
+cd expander
 stack build
 ```
 
