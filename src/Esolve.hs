@@ -404,10 +404,363 @@ evaluate sig = eval
                                       else mkTrue
          evalNeq t u = mkNeq (eval t) $ eval u
 
+-- FLOWGRAPH ANALYSIS
+
+data Flow a = In (Flow a) a | Assign String TermS (Flow a) a |
+              Ite TermS (Flow a) (Flow a) a |
+              Fork [Flow a] a | Atom a | Neg (Flow a) a |
+              Comb Bool [Flow a] a | Mop Bool TermS (Flow a) a |
+              Fix Bool (Flow a) a | Pointer [Int]
+
+parseFlow :: Bool -> Sig -> TermS -> (TermS -> Maybe a) -> Maybe (Flow a)
+
+parseFlow True sig t parseVal = f t where
+     f (F x [u]) | take 8 x == "inflow::"
+                   = do g <- f u; val <- dropVal 8 x; Just $ In g val
+     f (F x [V z,e,u]) | take 8 x == "assign::"
+                   = do g <- f u; val <- dropVal 8 x; Just $ Assign z e g val
+     f (F x [c,u1,u2]) | take 5 x == "ite::"
+                   = do g1 <- f u1; g2 <- f u2; val <- dropVal 5 x
+                        Just $ Ite c g1 g2 val
+     f (F x ts)  | take 6 x == "fork::"
+                   = do gs <- mapM f ts; val <- dropVal 6 x; Just $ Fork gs val
+     f (F x [u]) | take 5 x == "not::"
+                   = do g <- f u; val <- dropVal 5 x; Just $ Neg g val
+     f (F x ts)  | take 4 x == "\\/::"
+                   = do gs <- mapM f ts; val <- dropVal 4 x
+                        Just $ Comb True gs val
+     f (F x ts)  | take 4 x == "/\\::"
+                   = do gs <- mapM f ts; val <- dropVal 4 x
+                        Just $ Comb False gs val
+     f (F x [u]) | take 4 x == "EX::"
+                   = do g <- f u; val <- dropVal 4 x
+                        Just $ Mop True (leaf "") g val
+     f (F x [u]) | take 4 x == "AX::"
+                   = do g <- f u; val <- dropVal 4 x
+                        Just $ Mop False (leaf "") g val
+     f (F x [lab,u]) | take 4 x == "<>::"
+                   = do g <- f u;  guard $ lab `elem` (sig&labels)
+                        val <- dropVal 4 x; Just $ Mop True lab g val
+     f (F x [lab,u]) | take 3 x == "#::"
+                   = do g <- f u;  guard $ lab `elem` (sig&labels)
+                        val <- dropVal 3 x; Just $ Mop False lab g val
+     f (F x [u])       | take 4 x == "MU::"
+                   = do g <- f u; val <- dropVal 4 x; Just $ Fix True g val
+     f (F x [u])       | take 4 x == "NU::"
+                   = do g <- f u; val <- dropVal 4 x; Just $ Fix False g val
+     f (V x)           | isPos x
+                   = do guard $ q `elem` positions t
+                        Just $ Pointer q where q = getPos x
+     f val         = do val <- parseVal val; Just $ Atom val
+     dropVal n x   = do val <- parse (term sig) $ drop n x; parseVal val
+
+parseFlow _ sig t parseVal = f t where
+     f (F "inflow" [u,val])        = do g <- f u; val <- parseVal val
+                                        Just $ In g val
+     f (F "assign" [V x,e,u,val])  = do g <- f u; val <- parseVal val
+                                        Just $ Assign x e g val
+     f (F "ite" [c,u1,u2,val])     = do g1 <- f u1; g2 <- f u2
+                                        val <- parseVal val
+                                        Just $ Ite c g1 g2 val
+     f (F "fork" ts@(_:_))         = do gs <- mapM f $ init ts
+                                        val <- parseVal $ last ts
+                                        Just $ Fork gs val
+     f (F "not" [u,val])           = do g <- f u; val <- parseVal val
+                                        Just $ Neg g val
+     f (F "\\/" ts@(_:_))          = do gs <- mapM f $ init ts
+                                        val <- parseVal $ last ts
+                                        Just $ Comb True gs val
+     f (F "/\\" ts@(_:_))          = do gs <- mapM f $ init ts
+                                        val <- parseVal $ last ts
+                                        Just $ Comb False gs val
+     f (F "EX" [lab,u,val])        = do g <- f u; val <- parseVal val
+                                        Just $ Mop True (leaf "") g val
+     f (F "AX" [lab,u,val])        = do g <- f u; val <- parseVal val
+                                        Just $ Mop False (leaf "") g val
+     f (F "<>" [lab,u,val])        = do g <- f u; guard $ lab `elem` (sig&labels)
+                                        val <- parseVal val
+                                        Just $ Mop True lab g val
+     f (F "#" [lab,u,val])         = do g <- f u; guard $ lab `elem` (sig&labels)
+                                        val <- parseVal val
+                                        Just $ Mop False lab g val
+     f (F "MU" [u,val])            = do g <- f u; val <- parseVal val
+                                        Just $ Fix True g val
+     f (F "NU" [u,val])            = do g <- f u; val <- parseVal val
+                                        Just $ Fix False g val
+     f (V x) | isPos x             = do guard $ q `elem` positions t
+                                        Just $ Pointer q where q = getPos x
+     f val                         = do val <- parseVal val; Just $ Atom val
+
+parseVal sig (t@(F "()" [])) = Just t
+parseVal sig t = do F "[]" ts <- Just t; guard $ ts `subset` (sig&states); Just t
+
+-- mkFlow computes the term representation of a flow graph
+
+mkFlow :: Bool -> Sig -> Flow a -> (a -> TermS) -> TermS
+mkFlow b sig flow mkVal = f flow
+       where f (In g val)                 = h "inflow" val [f g]
+             f (Assign x e g val)         = h "assign" val [V x,e,f g]
+             f (Ite c g1 g2 val)          = h "ite" val [c,f g1,f g2]
+             f (Fork gs val)              = h "fork" val $ map f gs
+             f (Atom val)                 = mkVal val
+             f (Neg g val)                = h "not" val [f g]
+             f (Comb True gs val)         = h "\\/" val $ map f gs
+             f (Comb _ gs val)            = h "/\\" val $ map f gs
+             f (Mop True (F "" []) g val) = h "EX" val [f g]
+             f (Mop _ (F "" []) g val)    = h "AX" val [f g]
+             f (Mop True lab g val)       = h "<>" val [lab,f g]
+             f (Mop _ lab g val)          = h "#" val [lab,f g]
+             f (Fix True g val)           = h "MU" val [f g]
+             f (Fix _ g val)              = h "NU" val [f g]
+             f (Pointer p)                = mkPos p
+             h op val ts = if b then F (op ++ "::" ++ showTerm0 (mkVal val)) ts
+                                else F op $ ts ++ [mkVal val]
+
+-- getVal g p returns the value at the first non-pointer position of g that is
+-- reachable from p.
+
+getVal :: Flow a -> [Int] -> (a,[Int])
+getVal f p = h f p p where h (In g _) (0:p) q         = h g p q
+                           h (In _ val) _ q           = (val,q)
+                           h (Atom val) _ q           = (val,q)
+                           h (Assign _ _ g _) (2:p) q = h g p q
+                           h (Assign _ _ _ val) _ q   = (val,q)
+                           h (Ite _ g _ _) (1:p) q    = h g p q
+                           h (Ite _ _ g _) (2:p) q    = h g p q
+                           h (Ite _ _ _ val) _ q      = (val,q)
+                           h (Fork gs _) p@(_:_) q    = h' gs p q
+                           h (Fork _ val) _ q         = (val,q)
+                           h (Neg g _) (0:p) q        = h g p q
+                           h (Neg _ val) _ q          = (val,q)
+                           h (Comb _ gs _) p@(_:_) q  = h' gs p q
+                           h (Comb _ _ val) _ q       = (val,q)
+                           h (Mop _ _ g _) (1:p) q    = h g p q
+                           h (Mop _ _ _ val) _ q      = (val,q)
+                           h (Fix _ g _) (0:p) q      = h g p q
+                           h (Fix _ _ val) _ q        = (val,q)
+                           h (Pointer p) _ _          = h f p p
+                           h' (g:_)  (0:p) = h g p
+                           h' (_:gs) (n:p) = h' gs ((n-1):p)
+
+-- global model checking of state formulas (backward analysis)
+
+initStates :: Bool -> Sig -> TermS -> Maybe TermS
+
+initStates True sig = f
+     where sts = mkList (sig&states)
+           f (t@(V x))          = do guard $ isPos x; Just t
+           f (F "true" [])      = Just sts
+           f (F "false" [])     = Just mkNil
+           f (F "`then`" [t,u]) = f (F "\\/" [F "not" [t],u])
+           f (F "MU" [t])       = do t <- f t; jOP "MU" "[]" [t]
+           f (F "NU" [t])       = do t <- f t; jOP "NU" (showTerm0 sts) [t]
+           f (F "EX" [t])       = do t <- f t; jOP "EX" "()" [t]
+           f (F "AX" [t])       = do t <- f t; jOP "AX" "()" [t]
+           f (F "<>" [lab,t])   = do p lab; t <- f t; jOP "<>" "()" [lab,t]
+           f (F "#" [lab,t])    = do p lab; t <- f t; jOP "#" "()" [lab,t]
+           f (F "not" [t])      = do t <- f t; jOP "not" "()" $ [t]
+           f (F "\\/" ts)       = do ts <- mapM f ts; jOP "\\/" "()" ts
+           f (F "/\\" ts)       = do ts <- mapM f ts; jOP "/\\" "()" ts
+           f at                 = do i <- search (== at) (sig&atoms)
+                                     Just $ mkList $ map ((sig&states)!!)
+                                                   $ (sig&value)!!i
+           p lab = guard $ just $ search (== lab) (sig&labels)
+           jOP op val = Just . F (op++"::"++val)
+
+initStates _ sig = f
+     where sts = mkList (sig&states)
+           f (t@(V x))          = do guard $ isPos x; Just t
+           f (F "true" [])      = Just sts
+           f (F "false" [])     = Just mkNil
+           f (F "`then`" [t,u]) = f (F "\\/" [F "not" [t],u])
+           f (F "MU" [t])       = do t <- f t; jOP "MU" [t,mkNil]
+           f (F "NU" [t])       = do t <- f t; jOP "NU" [t,sts]
+           f (F "EX" [t])       = do t <- f t; jOP "EX" [t,unit]
+           f (F "AX" [t])       = do t <- f t; jOP "AX" [t,unit]
+           f (F "<>" [lab,t])   = do p lab; t <- f t; jOP "<>" [lab,t,unit]
+           f (F "#" [lab,t])    = do p lab; t <- f t; jOP "#" [lab,t,unit]
+           f (F "not" [t])      = do t <- f t; jOP "not" $ [t,unit]
+           f (F "\\/" ts)       = do ts <- mapM f ts; jOP "\\/" $ ts++[unit]
+           f (F "/\\" ts)       = do ts <- mapM f ts; jOP "/\\" $ ts++[unit]
+           f at                 = do i <- search (== at) (sig&atoms)
+                                     Just $ mkList $ map ((sig&states)!!)
+                                                   $ (sig&value)!!i
+           p lab = guard $ just $ search (== lab) (sig&labels)
+           jOP op = Just . F op
+
+evalStates :: Sig -> TermS -> Flow TermS -> (Flow TermS,Bool)
+evalStates sig t flow = up [] flow
+ where ps = maxis (<<=) $ fixPositions t
+       up p (Neg g val)
+            | val1 == unit || any (p<<) ps = (Neg g1 val, b)
+            | True = if null ps then (Atom val2, True)
+                                else (Neg g1 val2, b || val /= val2)
+                         where q = p++[0]; (g1,b) = up q g
+                               val1 = fst $ getVal flow q
+                               val2 = mkList $ minus (sig&states) $ subterms val1
+       up p (Comb c gs val)
+            | any (== unit) vals || any (p<<) ps = (Comb c gs1 val, or bs)
+            | True = if null ps then (Atom val1, True)
+                                else (Comb c gs1 val1, or bs || val /= val1)
+                     where qs = succsInd p gs
+                           (gs1,bs) = unzip $ zipWith up qs gs
+                           vals = map (fst . getVal flow) qs
+                           val1 = mkList $ foldl1 (if c then join else meet)
+                                         $ map subterms vals
+       up p (Mop c lab g val)
+            | val1 == unit || any (p<<) ps = (Mop c lab g1 val, b)
+            | True = if null ps then (Atom val2, True)
+                                else (Mop c lab g1 val2, b || val /= val2)
+                     where q = p++[1]; (g1,b) = up q g
+                           val1 = fst $ getVal flow q
+                           f True = shares; f _ = flip subset
+                           val2 = mkList $ filter (f c (subterms val1) . h)
+                                           (sig&states)
+                           h st = map ((sig&states)!!) $ tr i
+                                  where i = get $ search (== st) (sig&states)
+                           tr i = if lab == leaf "" then (sig&trans)!!i
+                                  else (sig&transL)!!i!!j
+                                  where j = get $ search (== lab) (sig&labels)
+       up p (Fix c g val)
+            | val1 == unit || any (p<<) ps = (Fix c g1 val, b)
+            | True = if f c subset valL val1L
+                     then if not b && p `elem` ps then (Atom val, True)
+                                                  else (Fix c g1 val, b)
+                          else (Fix c g1 $ mkList $ h c valL val1L, True)
+                     where f True = flip; f _ = id
+                           h True = join; h _ = meet
+                           q = p++[0]; (g1,b) = up q g
+                           val1 = fst $ getVal flow q
+                           valL = subterms val; val1L = subterms val1
+       up _ g = (g,False)
+
+-- mkCycles replaces the bounded variables of fixpoint subformulas by back
+-- pointers to their bodies. Alternating fixpoints may lead to wrong results.
+-- mkCycles is used by simplifyS "stateflow" (see below).
+
+mkCycles :: [Int] -> TermS -> TermS
+mkCycles p t@(F x _) | isFixF x = addToPoss p $ eqsToGraph [0] eqs
+                                  where (_,eqs,_) = fixToEqs t 0
+mkCycles p (F x ts)             = F x $ zipWithSucs mkCycles p ts
+
+fixToEqs :: TermS -> Int -> (TermS,[IterEq],Int)
+fixToEqs (F x [t]) n | isFixF x = (F z [],Equal z (F mu [u]):eqs,k)
+                           where mu:y:_ = words x
+                                 b = y `elem` foldT f t
+                                 f x xss = if isFixF x then joinM xss `join1` y
+                                                       else joinM xss
+                                           where _:y:_ = words x
+                                 z = if b then y++show n else y
+                                 (u,eqs,k) = if b then fixToEqs (t>>>g) $ n+1
+                                                  else fixToEqs t n
+                                 g = F z [] `for` y
+fixToEqs (F x ts) n = (F x us,eqs,k)
+                      where (us,eqs,k) = f ts n
+                            f (t:ts) n = (u:us,eqs++eqs',k')
+                                         where (u,eqs,k) = fixToEqs t n
+                                               (us,eqs',k') = f ts k
+                            f _ n      = ([],[],n)
+fixToEqs t n        = (t,[],n)
+
+-- verification of postconditions (backward-all analysis)
+
+initPost :: TermS -> TermS
+initPost (F op ts) | op `elem` words "assign fork ite"
+           = F (op++"::bool(True)") $ map initPost ts
+initPost t = t
+
+initPost' :: TermS -> TermS
+initPost' (F x ts) | x `elem` words "assign fork ite"
+            = F x $ map initPost ts++[F "bool" [mkTrue]]
+initPost' t = t
+
+evalPost :: (TermS -> TermS) -> Flow TermS -> (Flow TermS,Bool)
+evalPost simplify flow = up [] flow where
+        up p (Assign x e g val) = (Assign x e g1 val2, b1 || b2)
+                            where q = p++[2]
+                                  (g1,b1) = up q g
+                                  val1 = f q
+                                  (val2,b2) = mkMeet val $ val1>>>(e`for`x)
+        up p (Ite c g1 g2 val) = (Ite c g3 g4 val3, b1 || b2 || b3)
+                            where q1 = p++[1]; q2 = p++[2]
+                                  (g3,b1) = up q1 g1; (g4,b2) = up q2 g2
+                                  val1 = f q1; val2 = f q2
+                                  c1 = mkDisjunct [c,val1]
+                                  c2 = mkDisjunct [F "Not" [c],val2]
+                                  (val3,b3) = mkMeet val $ mkConjunct [c1,c2]
+        up p (Fork gs val) = (Fork gs1 val1, or bs || b)
+                            where qs = succsInd p gs
+                                  (gs1,bs) = unzip $ zipWith up qs gs
+                                  (val1,b) = mkMeet val $ mkConjunct $ map f qs
+        up _ g = (g,False)
+        f = fst . getVal flow
+        mkMeet val val' = if isTrue $ simplify $ mkImpl val val'
+                          then (val,False)
+                          else (simplify $ mkConjunct [val,val'],True)
+
+-- computation of program states (forward-any analysis)
+
+initSubs :: TermS -> TermS
+initSubs = f
+     where f (F "inflow" [c,val]) = h "inflow" (showTerm0 val) [initSubs c]
+           f (F "assign" [x,e,c]) = h "assign" "[[]]" [x,e,initSubs c]
+           f (F "ite" [b,c,c'])   = h "ite" "[]" [b,initSubs c,initSubs c']
+           f (F "fork" ts)        = h "fork" "[]" $ map initSubs ts
+           f t = t
+           h op val = F $ op++"::"++val
+
+initSubs' :: TermS -> TermS
+initSubs' = f
+    where f (F "inflow" [c,val]) = h "inflow" val [initSubs c]
+          f (F "assign" [x,e,c]) = h "assign" (mkList [mkNil]) [x,e,initSubs c]
+          f (F "ite" [b,c,c'])   = h "ite" mkNil [b,initSubs c,initSubs c']
+          f (F "fork" ts)        = h "fork" mkNil $ map initSubs ts
+          f t = t
+          h op val ts = F op $ ts++[val]
+
+evalSubs :: (TermS -> TermS) -> Flow [SubstS] -> [String]
+                                              -> (Flow [SubstS],Bool)
+evalSubs simplify flow xs = down flow False [] flow
+  where down flow b p (In g val)         = down flow1 (b || b1) q g
+                             where q = p++[0]
+                                   (flow1,b1) = change flow q val
+        down flow b p (Assign x e g val) = down flow1 (b || b1) q g
+                             where q = p++[2]
+                                   (flow1,b1) = change flow q $ map f val
+                                   f state = upd state x $ simplify $ e>>>state
+        down flow b p (Ite c g1 g2 val) = down flow3 b3 q2 g2
+                  where q1 = p++[1]; q2 = p++[2]
+                        (flow1,b1) = change flow q1 $ filter (isTrue . f) val
+                        (flow2,b2) = change flow1 q2 $ filter (isFalse . f) val
+                        f = simplify . (c>>>)
+                        (flow3,b3) = down flow2 (b || b1 || b2) q1 g1
+        down flow b p (Fork gs val) = fold2 h (foldl f (flow,b) qs) qs gs
+                          where qs = succsInd p gs
+                                f (flow,b) q = (flow1, b || b1) where
+                                               (flow1,b1) = change flow q val
+                                h (flow,b) q g = down flow b q g
+        down flow b _ _ = (flow,b)
+        change g p val = if subSubs xs val oldVal then (g,False)
+                                                  else (rep g q,True)
+                  where (oldVal,q) = getVal g p
+                        newVal = joinSubs xs val oldVal
+                        rep (In g val) (0:p)         = In (rep g p) val
+                        rep (Atom _) _               = Atom newVal
+                        rep (Assign x e g val) (2:p) = Assign x e (rep g p) val
+                        rep (Assign x e g _) _       = Assign x e g newVal
+                        rep (Ite c g1 g2 val) (1:p)  = Ite c (rep g1 p) g2 val
+                        rep (Ite c g1 g2 val) (2:p)  = Ite c g1 (rep g2 p) val
+                        rep (Ite c g1 g2 _) _        = Ite c g1 g2 newVal
+                        rep (Fork gs val) p@(_:_)    = Fork (rep' gs p) val
+                        rep (Fork gs _) _            = Fork gs newVal
+                        rep' (g:gs) (0:p)            = rep g p:gs
+                        rep' (g:gs) (n:p)            = g:rep' gs ((n-1):p)
+
+
 -- * __Subsumption__
 
--- | subsumes is used by simplifyF, implToConc (see below) and subsumeSubtrees
--- (see Ecom).
+-- subsumes is used by simplifyF, implToConc (see below) and 
+-- Ecom > subsumeSubtrees.
 subsumes :: Sig -> TermS -> TermS -> Bool
 subsumes sig = h
   where h t u             | eqTerm t u        = True
@@ -447,6 +800,10 @@ sapply sig t  = simplifyIter sig . apply t
 sapplyL :: Sig -> TermS -> [TermS] -> TermS
 sapplyL sig t = simplifyIter sig . applyL t
 
+simplify2List :: Sig -> String -> [TermS]
+simplify2List sig x = case simplifyIter sig $ leaf x of F "[]" ts -> ts
+                                                        _ -> []
+
 reduceString :: Sig -> String -> Maybe String
 reduceString sig t = do t <- parse (term sig) t
                         Just $ showTerm0 $ simplifyIter sig t
@@ -460,7 +817,7 @@ applyDrawFun _ "text" ""  = id
 applyDrawFun _ "text" str = map $ add . addToPoss [0]
                             where add t = mkSum [t,F "widg" [F "red" [F "frame"
                                            [F "black" [F "text" [leaf str]]]]]]
-applyDrawFun sig draw _   = map $ wtree . pr1 . simplifyLoop sig BFP 11
+applyDrawFun sig draw _   = map $ wtree . simplifyIter sig
                                         . F draw . single . addToPoss [0]
      where wtree (F "$" [F "wtree" [f],t]) = g t
              where g (F x ts) | just u  = F "widg" $ vs++[sapply sig f $ get u]
@@ -501,7 +858,7 @@ data Strategy = DF | BF | BFP deriving Show
 -- to the maximal subtrees of t and returns the simplified tree together with 
 -- the number of actually applied steps. 
 -- simplifyLoop is used by applyDrawFun, simplifyIter, simplifyA lambda 
--- (see here), simplify' and simplifySubtree (see Ecom).
+-- (see here), simplify' and Ecom > simplifySubtree.
 simplifyLoop :: Sig -> Strategy -> Int -> TermS -> (TermS,Int,Bool)
 simplifyLoop sig strat m t = loop 0 m [t] where
   loop k m ts = if m == 0 then (t,k,False)
@@ -533,7 +890,7 @@ simplifyLoop sig strat m t = loop 0 m [t] where
 -- expandFix sig t p expands a fixpoint abstraction at position p of t if there
 -- is any.
 -- simplifyOne and expandFix are used by simplifyLoop (see above).
--- simplifyOne is also used by simplifyPar (see Ecom).
+-- simplifyOne is also used by Ecom > simplifyPar.
 
 simplifyOne,expandFix :: Sig -> TermS -> [Int] -> Maybe TermS
 simplifyOne sig t p = do guard $ isF redex1
@@ -960,7 +1317,7 @@ subsumeConj sig (t:ts) rest = if subsumes sig u t then Just u
 subsumeConj _ _ _           = Nothing
 
 -- LAMBDA APPLICATIONS
--- see: https://fldit-www.cs.uni-dortmund.de/~peter/CTL.pdf, page 102 ff.
+-- see: https://fldit-www.cs.uni-dortmund.de/~peter/CTL.pdf, page 119 ff.
 
 simplifyA sig (F "$" [F x [p,t],u])
   | lambda x && just sub = Just $ renameAll f t>>>get sub
@@ -1004,11 +1361,17 @@ simplifyA _ (F "`IN`" [t,F x ts])    | collector x = jConst $ inTerm t ts
 simplifyA _ (F "`NOTIN`" [t,F x ts]) | collector x = jConst $ notInTerm t ts
 
 simplifyA sig (F "`in`" [t,F x ts])
-   | collector x = do guard $ f t && all f ts; jConst $ inTerm t ts
+   | collector x = do guard $ all f ts
+                      if f t then jConst $ inTerm t ts
+                             else do guard $ orT (isVar sig) t
+                                     Just $ mkDisjunct $ map (mkEq t) ts
                    where f = isValue sig
 
 simplifyA sig (F "`NOTin`" [t,F x ts])
-   | collector x = do guard $ f t && all f ts; jConst $ notInTerm t ts
+   | collector x = do guard $ all f ts
+                      if f t then jConst $ notInTerm t ts
+                             else do guard $ orT (isVar sig) t
+                                     Just $ mkConjunct $ map (mkNeq t) ts
                    where f = isValue sig
 
 simplifyA sig (F "`shares`" [F x ts,F y us])
@@ -1035,11 +1398,11 @@ simplifyA sig (F "`NOTsubset`" [F x ts,F y us])
                          jConst $ not $ subsetTerm ts us
                       where f = isValue sig
 
--- simplifyA _ (F "Nat" [t]) | just $ parseNat t = jConst True
+simplifyA sig (F "Int" [t]) | andT (not . isVar sig) t
+                              = jConst $ just $ parseInt t
 
-simplifyA _ (F "Int" [t])     = jConst $ just $ parseInt t
-
-simplifyA _ (F "Real" [t])    = jConst $ just $ parseDouble t
+simplifyA sig (F "Real" [t]) | andT (not . isVar sig) t
+                              = jConst $ just $ parseDouble t
 
 simplifyA _ (F "List" [t])    = jConst $ isList t
 
@@ -1216,21 +1579,14 @@ simplifyS sig (F "evalG" [phi]) = do sts <- foldModal sig phi
          
 -- flow graph initialization
 
-simplifyS sig (F "stateflow" [t]) | just eqs =
-                                 initStates True sig $ eqsToGraph [0] $ get eqs
-                                 where eqs = parseEqs t
+simplifyS sig (F "stateflow" [t]) | just u = u where u = initStates True sig t
 
-simplifyS sig (F "stateflowT" [t]) | just eqs =
-                                initStates False sig $ eqsToGraph [0] $ get eqs
-                                where eqs = parseEqs t
+simplifyS sig (F "stateflow" [t]) = initStates True sig $ mkCycles [] t
 
-simplifyS sig (F "stateflow" [t]) | isFixF $ root t =
-                                    initStates True sig $ eqsToGraph [0] eqs
-                                    where (_,eqs,_) = fixToEqs t 0
+simplifyS sig (F "stateflowT" [t]) | just u = u
+                                              where u = initStates False sig t
 
-simplifyS sig (F "stateflowT" [t]) | isFixF $ root t =
-                                     initStates False sig $ eqsToGraph [0] eqs
-                                     where (_,eqs,_) = fixToEqs t 0
+simplifyS sig (F "stateflowT" [t]) = initStates False sig $ mkCycles [] t
 
 simplifyS _ (F "postflow" [t]) = do eqs <- parseEqs t
                                     Just $ initPost $ eqsToGraph [0] eqs
@@ -1609,10 +1965,10 @@ mergeActs ts                         = ts
 
 -- * __Aciom-base simplification__
 
--- simplReducts sig True t returns the reducts of all axioms of sig.transitions
+-- simplReducts sig True t returns the reducts of all axioms of (sig&transitions)
 -- that are applicable to t and is used by rewriteSig/States (see below).
 
--- simplReducts sig False t returns the reduct of the first axiom of sig.simpls 
+-- simplReducts sig False t returns the reduct of the first axiom of (sig&simpls) 
 -- that is applicable to t and is used by simplifyUser (see above).
 simplReducts :: Sig -> Bool -> TermS -> [TermS]
 simplReducts sig isTrans t = if isTrans then concatMap f (sig&transitions)
@@ -1641,19 +1997,18 @@ simplReducts sig isTrans t = if isTrans then concatMap f (sig&transitions)
        g sub [] _ = Just sub
        g _ _ _    = Nothing
 
--- | rewriteSig sig ts constructs the (labelled) relations generated by ts and
--- the
+-- rewriteSig sig ts constructs the (labelled) relations generated by ts and the
 -- simplification and transition axioms of sig.
--- rewriteSig is used by 'Ecom.buildKripke'.
+-- rewriteSig is used by Ecom > buildKripke.
 rewriteSig :: Sig -> [TermS] -> (Pairs TermS,Triples TermS TermS)
 rewriteSig sig ts = (zip ts $ reduce ts,
                      zipL pairs $ reduce [mkPair t lab | (t,lab) <- pairs])
                   where reduce = map $ simplReducts sig True
                         pairs = prod2 ts (sig&labels)
 
--- | rewriteStates sig mode constructs the transition system generated by
--- sig.states and the simplification and transition axioms of sig.
--- rewriteStates is used by 'Ecom.buildKripke'.
+-- rewriteStates sig mode constructs the transition system generated by  
+-- (sig&states) and the simplification and transition axioms of sig.
+-- rewriteStates is used by Ecom > buildKripke.
 rewriteStates :: Sig -> Int -> ([TermS],Pairs TermS,Triples TermS TermS)
 rewriteStates sig mode = h (sig&states) (sig&states) [] [] where
                     h sts ts ps psL = if null new then (sts,rs,rsL) 
@@ -1712,7 +2067,7 @@ solveGuard sig cond axs vc = do guard $ notnull sols; Just sols
 -- match = 3       --> unify t against the first applicable axiom of axs
 -- simplify = True --> simplifyIter
 -- refute = True   --> turnIntoUndef
--- applyLoop is used by solveGuard (see above) and narrowStep (see Ecom).
+-- applyLoop is used by solveGuard (see above) and Ecom > narrowStep.
 applyLoop :: TermS -> Int -> (String -> Int) -> [TermS] -> [TermS] -> Sig 
                     -> Bool -> Int -> Bool -> Bool -> (TermS,Int,String -> Int)
 applyLoop t m vc axs preAxs sig nar match simplify refute =
@@ -1758,7 +2113,7 @@ applyLoop t m vc axs preAxs sig nar match simplify refute =
                             = do Sum reds vc <- Just $ fst $ f redex sig vc
                                  Just (replace t p $ mkSum reds,vc)
                        
--- | applyLoopRandom is used by 'Ecom.narrowStep'.
+-- applyLoopRandom is used by Ecom > narrowStep.
 applyLoopRandom :: Int -> TermS -> Int -> (String -> Int) -> [TermS] -> [TermS]
                         -> Sig -> Bool -> Int -> Bool 
                        -> (TermS,Int,String -> Int,Int)
@@ -1812,8 +2167,8 @@ applyLoopRandom rand t m vc axs preAxs sig nar match simplify = f t 0 m vc rand
 -- non-extended and non-renamed version of axs. 
 -- uni = True  --> The redex is unified against axs.
 -- uni = False --> The redex is matched against axs.
--- applyAxs is used by applyLoop (see above), applyPar (see below) and narrowPar
--- (see Ecom). 
+-- applyAxs is used by applyLoop (see above), applyPar (see below) and 
+-- Ecom > narrowPar. 
 applyAxs :: [a]
             -> [TermS]
             -> [TermS]
@@ -1844,7 +2199,7 @@ applyAxs _ _ _ _ _ _ _ _ _ = (Stop,[])
 -- reducts of the redex at position p of t that result from unifying/matching 
 -- redex against a random element of axs. The guards of axs are narrowed by 
 -- preAxs. 
--- applyAxsR is used by applyLoopRandom (see above) and narrowPar (see Ecom).
+-- applyAxsR is used by applyLoopRandom (see above) and Ecom > narrowPar.
 applyAxsR :: [TermS]
              -> [TermS]
              -> [TermS]
@@ -1856,7 +2211,7 @@ applyAxsR :: [TermS]
              -> (String -> Int)
              -> Bool
              -> (Reducts, [TermS], Int)
-applyAxsR _ [] _ rand _ _ _ _ _ _                  = (Stop,[],rand)
+applyAxsR cls [] _ rand redex _ _ _ _ _             = (Stop,[],rand)
 applyAxsR cls axs preAxs rand redex at p sig vc uni =
   case applyAx ax preAxs redex at p sig vc uni of
        Stop -> applyAxsR cls' axs' preAxs (nextRand rand) redex at p sig vc uni
@@ -1866,7 +2221,7 @@ applyAxsR cls axs preAxs rand redex at p sig vc uni =
         ax = axs!!n; axs' = removeTerm axs ax
 
 -- | applyAxsToTerm is used by 'applyLoop', 'getRel', 'getRel2', 'getFun'
--- and 'Ecom.rewritePar'.
+-- below) and Ecom > rewritePar.
 applyAxsToTerm :: [a]
                   -> [TermS]
                   -> [TermS]
@@ -1882,8 +2237,7 @@ applyAxsToTerm (cl:cls) (ax:axs) preAxs redex sig vc =
   _ -> applyAxsToTerm cls axs preAxs redex sig vc
 applyAxsToTerm _ _ _ _ _ _ = (Stop,[])
 
--- | applyAxsToTermR is used by applyLoopRandom (see above) and rewritePar (see 
--- Ecom).
+-- applyAxsToTermR is used by applyLoopRandom (see above) and Ecom > rewritePar.
 applyAxsToTermR :: [TermS]
                    -> [TermS]
                    -> [TermS]
@@ -2203,10 +2557,11 @@ applyAxToTerm _ _ _ _ _ = Stop
 
 -- * __Application of theorems__
 
--- | applySingle and applyMany work similarly to applyAxs, but apply only single
+-- applySingle and applyMany work similarly to applyAxs, but apply only single
 -- non-guarded clauses. In the case of applyMany, the redex splits into several
--- factors or summands of a conjunction resp. disjunction. applySingle and 
--- applyMany are used by applyTheorem and finishDisCon, respectively (see Ecom).
+-- factors or summands of a conjunction resp. disjunction. 
+-- applySingle is used by Ecom > applyTheorem.
+-- applyMany is used by Ecom > finishDisCon.
 applySingle :: TermS
                -> TermS
                -> TermS
@@ -2291,7 +2646,7 @@ applyMany forward different left right redices t ps pred qs sig vc =
          Just (replace t pred reduct3,vc)
       where xs = freesL sig redices
 
--- | applyToHeadOrBody is used by 'Ecom.applyInd'.
+-- applyToHeadOrBody is used by Ecom > applyInd.
 applyToHeadOrBody :: Sig
                      -> (TermS -> [Int] -> Bool)
                      -> Bool
@@ -2342,8 +2697,8 @@ applyToHeadOrBody sig g head axs = f
                applyPar _ _ t vc = (t,vc)
        f _ vc = ([],vc)
 
--- | mkComplAxiom sig ax transforms an axiom ax for p into an axiom for NOTp and
--- is used by negateAxioms (see Ecom).
+-- mkComplAxiom sig ax transforms an axiom ax for p into an axiom for NOTp. 
+-- mkComplAxiom is used by Ecom > negateAxioms.
 mkComplAxiom :: Sig -> TermS -> TermS
 mkComplAxiom sig t =
         case t of F "==>" [guard,t]        -> mkImpl guard $ mkComplAxiom sig t
@@ -2559,10 +2914,9 @@ addLoop t             = t
 mkEqsWithArgs :: t -> [TermS] -> [Int] -> TermS -> [TermS]
 mkEqsWithArgs _ zs is = zipWith mkEq zs . contextM is . getArgs
 
--- | mkHornLoop sig x transforms the co-Horn axioms for x into an equivalent set
--- of three Horn axioms and is used by kleeneAxioms (see Ecom).
-mkHornLoop :: Sig
-              -> t -> [TermS] -> TermS -> Int -> ([TermS], Int)
+-- mkHornLoop sig x transforms the co-Horn axioms for x into an equivalent set
+-- of three Horn axioms and is used by Ecom > kleeneAxioms.
+mkHornLoop :: Sig -> t -> [TermS] -> TermS -> Int -> ([TermS], Int)
 mkHornLoop sig _ axs i k = f axs
   where f axs = ([mkHorn (updArgs t zs) $ mkAll [root i] $ updArgsA t i zs,
                   updArgsA t mkZero zs,
@@ -2586,7 +2940,7 @@ mkHornLoop sig _ axs i k = f axs
         g t                     = t
 
 -- | mkCoHornLoop sig x transforms the Horn axioms for x into an equivalent set
--- of three co-Horn axioms and is used by kleeneAxioms (see Ecom).
+-- of three co-Horn axioms and is used by Ecom > kleeneAxioms.
 mkCoHornLoop :: Sig
                 -> t -> [TermS] -> TermS -> Int -> ([TermS], Int)
 mkCoHornLoop sig _ axs i k = f axs
@@ -2614,7 +2968,7 @@ mkCoHornLoop sig _ axs i k = f axs
         
 -- | compressAll sig k axs transforms the axioms of axs into a single axiom
 -- (if b = True) and inverts it (if b = False). 
--- compressAll is used by compressAxioms (see Ecom).
+-- compressAll is used by Ecom > compressAxioms.
 compressAll :: (Enum t, Num t, Show t) =>
                Bool -> Sig -> t -> [TermS] -> (TermS, t)
 compressAll b sig i axs = compressOne b sig i [] axs $ h $ head axs
@@ -2706,7 +3060,7 @@ compressCoHorn sig eqs = mkConjunct . map mkConc
 
 -- | moveUp sig vc x us is moves the quantifiers from positions 
 -- q++[is!!0],...,q++[is!!length is-1] of t to position q. F x us is the
--- original term at position q. moveUp is used by shiftQuants (see Ecom).
+-- original term at position q. moveUp is used by Ecom > shiftQuants.
 moveUp :: Sig
           -> VarCounter
           -> String
@@ -2832,7 +3186,7 @@ shiftSubformulas sig t ps =
 -- premises/conclusions
 -- of t such that one side of eq agrees with some u in ts. If so, u is replaced
 -- by the other side of q. p and ps are the positions of t and ts, respectively.
--- getOtherSides is used by replaceSubtrees (see Ecom).
+-- getOtherSides is used by Ecom > replaceSubtrees.
 getOtherSides :: TermS -> [Int] -> [TermS] -> [[Int]] -> Maybe [TermS]
 getOtherSides t p ts ps =
     case t of F "==>" [F "&" prems,

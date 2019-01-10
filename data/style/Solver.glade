@@ -316,6 +316,9 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">font size</property>
+                        <style>
+                          <class name="font12i"/>
+                        </style>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -760,33 +763,73 @@
                 <property name="column_spacing">5</property>
                 <property name="row_homogeneous">True</property>
                 <child>
-                  <object class="GtkButton" id="saveBut">
-                    <property name="label" translatable="yes">save pic</property>
+                  <object class="GtkMenuButton" id="axsMenuBut">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <style>
-                      <class name="default_button"/>
-                    </style>
+                    <property name="popup">axsMenu</property>
+                    <child>
+                      <object class="GtkLabel" id="axs">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">axioms</property>
+                        <style>
+                          <class name="font12b"/>
+                        </style>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">1</property>
+                    <property name="top_attach">0</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="saveDBut">
-                    <property name="label" translatable="yes">save pic to dir</property>
+                  <object class="GtkMenuButton" id="applyBut">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="popup">domMenu</property>
+                    <child>
+                      <object class="GtkLabel" id="applyLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">apply to</property>
+                        <style>
+                          <class name="font12"/>
+                        </style>
+                      </object>
+                    </child>
                     <style>
-                      <class name="default_button"/>
+                      <class name="font12"/>
+                      <class name="test_blue"/>
                     </style>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
-                    <property name="top_attach">1</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkMenuButton" id="thsMenuBut">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="popup">thsMenu</property>
+                    <child>
+                      <object class="GtkLabel" id="ths">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">theorems</property>
+                        <style>
+                          <class name="font12b"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
                   </packing>
                 </child>
                 <child>
@@ -800,6 +843,28 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">graph</property>
+                        <style>
+                          <class name="font12"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkMenuButton" id="nodesBut">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="popup">nodesMenu</property>
+                    <child>
+                      <object class="GtkLabel" id="nodesLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">nodes</property>
                         <style>
                           <class name="font12"/>
                         </style>
@@ -829,100 +894,38 @@
                     </child>
                   </object>
                   <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="saveDBut">
+                    <property name="label" translatable="yes">save pic to dir</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <style>
+                      <class name="default_button"/>
+                    </style>
+                  </object>
+                  <packing>
                     <property name="left_attach">1</property>
                     <property name="top_attach">2</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkMenuButton" id="nodesBut">
+                  <object class="GtkButton" id="saveBut">
+                    <property name="label" translatable="yes">save pic</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="popup">nodesMenu</property>
-                    <child>
-                      <object class="GtkLabel" id="nodesLabel">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">nodes</property>
-                        <style>
-                          <class name="font12"/>
-                        </style>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">3</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkMenuButton" id="subToBut">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="popup">domMenu</property>
-                    <child>
-                      <object class="GtkLabel" id="subToLabel">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">apply to</property>
-                        <style>
-                          <class name="font12"/>
-                        </style>
-                      </object>
-                    </child>
                     <style>
-                      <class name="font12"/>
-                      <class name="blueback"/>
+                      <class name="default_button"/>
                     </style>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
-                    <property name="top_attach">3</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkMenuButton" id="axsMenuBut">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="popup">axsMenu</property>
-                    <child>
-                      <object class="GtkLabel" id="axs">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">axioms</property>
-                        <style>
-                          <class name="font12b"/>
-                        </style>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkMenuButton" id="thsMenuBut">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="popup">thsMenu</property>
-                    <child>
-                      <object class="GtkLabel" id="ths">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">theorems</property>
-                        <style>
-                          <class name="font12b"/>
-                        </style>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">0</property>
+                    <property name="top_attach">1</property>
                   </packing>
                 </child>
               </object>

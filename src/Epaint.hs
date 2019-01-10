@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, September 2018
-                  Jos Kusiek, September 2018
+Copyright   : (c) Peter Padawitz, December 2018
+                  Jos Kusiek, December 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -87,7 +87,7 @@ data Solver = Solver
   
   
 data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
-            ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep |
+            ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep Bool |
             ComposePointers | CopySubtrees | CreateIndHyp |
             CreateInvariant Bool | DecomposeAtom | DeriveMode Bool Bool |
             EvaluateTrees | ExpandTree Bool Int | FlattenImpl |

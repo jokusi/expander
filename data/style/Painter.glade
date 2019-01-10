@@ -49,6 +49,7 @@
             <style>
               <class name="bg_blue"/>
               <class name="label"/>
+              <class name="font14i"/>
             </style>
           </object>
           <packing>
@@ -140,7 +141,7 @@
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">scale</property>
                     <style>
-                      <class name="font10"/>
+                      <class name="font12i"/>
                     </style>
                   </object>
                   <packing>
@@ -154,7 +155,7 @@
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">color</property>
                     <style>
-                      <class name="font10"/>
+                      <class name="font12i"/>
                     </style>
                   </object>
                   <packing>
@@ -168,7 +169,7 @@
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">delay</property>
                     <style>
-                      <class name="font10"/>
+                      <class name="font12i"/>
                     </style>
                   </object>
                   <packing>
@@ -295,7 +296,7 @@
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">mode</property>
                         <style>
-                          <class name="font10"/>
+                          <class name="font12i"/>
                         </style>
                       </object>
                       <packing>
@@ -323,7 +324,7 @@
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">space/combi</property>
                         <style>
-                          <class name="font10"/>
+                          <class name="font12i"/>
                         </style>
                       </object>
                       <packing>
@@ -376,7 +377,7 @@
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">add from/save to</property>
                         <style>
-                          <class name="font10"/>
+                          <class name="font12i"/>
                         </style>
                       </object>
                       <packing>
@@ -404,7 +405,6 @@
                         <property name="receives_default">True</property>
                         <style>
                           <class name="font12"/>
-                          <class name="bg_green"/>
                         </style>
                       </object>
                       <packing>

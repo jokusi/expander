@@ -20,19 +20,12 @@ states == [2] & labels == [a,b] &
 
 conjects: 
 
-all(one)[1,2] &	    	--> False  	simplify
-all(two)[2,3,4] &	--> True	simplify
-all(ONE)[3,4]   	--> True 	match&narrow + coinduction 
+all(one)[1,2] &	    	--> False  simplify depthfirst
+all(two)[2,3,4] &	--> True   simplify depthfirst
+all(ONE)[3,4]   	--> True   coinduction + narrow match	
 
 terms: 
 
-eval$one <+>					--> [3,4]
-stateflow$one <+>				--> [3,4]   trans1one/stateflow2
-stateflowT$one <+>				--> [3,4]   trans1oneT
-stateflow(X = NU(Y/\(b#X)) & Y = MU((a<>true)\/(b<>Y))) <+> 	
-						--> [3,4]   stateflow
-eval$two <+>					--> [2,3,4]	
-stateflow$two <+>				--> [2,3,4] trans1two	
-stateflowT$two <+>				--> [2,3,4] trans1twoT	
-stateflow(Y = MU((a<>true)\/(b<>Y)))		--> [2,3,4]	
+eval$one <+>	--> [3,4]   	stateflow_one/stateflowT_one
+eval$two	--> [2,3,4]	
 

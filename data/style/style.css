@@ -27,20 +27,30 @@
 .label {
     color: black
 }
-.font10 {
-    font: 10px Sans-serif italic;
-}
 .font12 {
-    font: 12px Sans-serif;
+    font-size: 12px;
+    font-family: sans-serif;
 }
 .font12b {
-    font: 12px Sans-serif;
+    font-size: 12px;
+    font-family: sans-serif;
     font-weight: bold;
 }
-.default_button{
-    font: 12px Sans-serif;
+.font12i {
+    font-size: 12px;
+    font-family: sans-serif;
+    font-style: italic;
 }
-#subToBut {
+.font14i {
+    font-size: 14px;
+    font-family: sans-serif;
+    font-style: italic;
+}
+.default_button{
+    font-size: 12px;
+    font-family: sans-serif;
+}
+#applyBut {
     border-style: groove;
     font: 9px Sans-serif;
 }

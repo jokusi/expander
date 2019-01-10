@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, November 2018
-                  Jos Kusiek, November 2018
+Copyright   : (c) Peter Padawitz, December 2018
+                  Jos Kusiek, December 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -99,7 +99,8 @@ command = concat [do symbol "AddAxioms"; axs <- list linearTerm
                   do symbol "BuildKripke"; m <- token int
                      return $ BuildKripke m,
                   do symbol "BuildRE"; return BuildRE,
-                  do symbol "CollapseStep"; return CollapseStep,
+                  do symbol "CollapseStep"; b <- token bool
+                     return $ CollapseStep b,
                   do symbol "ComposePointers"; return ComposePointers,
                   do symbol "CopySubtrees"; return CopySubtrees,
                   do symbol "CreateIndHyp"; return CreateIndHyp,
@@ -177,7 +178,7 @@ linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (November 30, 2018)"
+start = "Welcome to Expander3 (December 16, 2018)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -375,8 +376,8 @@ leavesExpanded = "The selected trees have been expanded at their leaves."
 
 levelMsg :: (Eq a, Num a, Show a) => a -> String
 levelMsg i = "The current tree has been collapsed at " ++
-              (if i == 0 then "leaf level." else " the " ++ show (i+1) ++
-              " lowest levels.")
+             (if i == 0 then "leaf level." else "the " ++ show (i+1) ++
+             " lowest levels.")
 
 loaded :: String -> String
 loaded file = file ++ " has been loaded into the text field."
@@ -634,6 +635,7 @@ solver this solveRef enum paint = do
         getMenu   = getObject castToMenu
     
     win <- getObject castToWindow "win"
+    applyBut <- getButton "applyBut"
     backBut <- getButton "backBut"
     canv <- canvas
     scrollCanv <- getObject castToScrolledWindow "scrollCanv"
@@ -643,13 +645,14 @@ solver this solveRef enum paint = do
     ent <- getObject castToEntry "ent"
     fontSize <- getObject castToScale "fontSize"
     fastBut <- getButton "fastBut"
-    randomBut <- getButton "randomBut"
     forwBut <- getButton "forwBut"
     hideBut <- getButton "hideBut"
     interpreterLabel <- getObject castToLabel "interpreterLabel"
     lab <- getObject castToLabel "lab"
     matchBut <- getButton "matchBut"
     narrowBut <- getButton "narrowBut"
+    quit <- getButton "quit"
+    randomBut <- getButton "randomBut"
     safeButRef <- newIORef undefined
     simplBut <- getButton "simplBut"
     splitBut <- getButton "splitBut"
@@ -658,8 +661,6 @@ solver this solveRef enum paint = do
     termBut <- getObject castToLabel "termBut"
     lab2 <- getObject castToLabel "lab2"
     treeSize <- getObject castToScale "treeSize"
-    subToBut <- getButton "subToBut"
-    quit <- getButton "quit"
 
     fontRef <- newIORef $ error "fontRef undefined"
 
@@ -696,7 +697,6 @@ solver this solveRef enum paint = do
 
     canvSizeRef <- newIORef (0,0)
     cornerRef <- newIORef (30,20)
-    counterRef <- newIORef $ const 0
     currRef <- newIORef 0
     -- curr1Ref <- newIORef 0
     matchingRef <- newIORef 0
@@ -745,6 +745,7 @@ solver this solveRef enum paint = do
     spreadRef <- newIORef (10,30)
     timesRef <- newIORef (0,300)
     speedRef <- newIORef 500
+    counterRef <- newIORef $ const 0
     varCounterRef <- newIORef $ const 0
     permsRef <- newIORef $ \n -> [0..n-1]
     kripkeRef <- newIORef ([],[],[],[],[],[],[])
@@ -820,7 +821,7 @@ solver this solveRef enum paint = do
               name <- unpack <$> eventKeyName
               lift $ case name of
                   "Up" -> getFileAnd $ loadText True
-                  "Down" -> getFileAnd saveTree
+                  "Down" -> getFileAnd saveGraph
                   "Right" -> applyClause False False False
                   "Left" -> applyClause False True False
                   "Return" -> getFileAnd addSpecWithBase
@@ -970,8 +971,10 @@ solver this solveRef enum paint = do
           mkBut graphMenu "compose pointers" composePointers
           mkBut graphMenu "collapse after simplify" setCollapse
           mkBut graphMenu "collapse -->" $ transformGraph 0
-          mkBut graphMenu "collapse level" collapseStep
+          mkBut graphMenu "collapse level --> " $ collapseStep True
+          mkBut graphMenu "reset level" resetLevel
           mkBut graphMenu "collapse <--" $ transformGraph 1
+          mkBut graphMenu "collapse level <-- " $ collapseStep False
           mkBut graphMenu "remove copies" removeCopies
           mkBut graphMenu "show graph" $ transformGraph 2
           let mkMenu m n1 n2 n3 n4 = do
@@ -980,18 +983,18 @@ solver this solveRef enum paint = do
                  mkBut m "in painter" (do initCanvas; cmd n3)
                  mkBut m ("in "++ other) $ cmd n4
                  where cmd = showTransOrKripke
-          subMenu <- mkSub graphMenu "of transitions"
+          subMenu <- mkSub graphMenu "  of transitions"
           mkMenu subMenu 0 1 2 3
-          subMenu <- mkSub graphMenu "of labelled transitions"
+          subMenu <- mkSub graphMenu "  of labelled transitions"
           mkMenu subMenu 4 5 6 7
           let mkMenu m n1 n2 n3 = do
                  mkBut m "here" $ cmd n1
                  mkBut m "in painter" (do initCanvas; cmd n2)
                  mkBut m ("in "++ other) $ cmd n3
                  where cmd = showTransOrKripke
-          subMenu <- mkSub graphMenu "of Kripke model"
+          subMenu <- mkSub graphMenu "  of Kripke model"
           mkMenu subMenu 8 9 10
-          subMenu <- mkSub graphMenu "of labelled Kripke model"
+          subMenu <- mkSub graphMenu "  of labelled Kripke model"
           mkMenu subMenu 11 12 13
           mkBut graphMenu "build iterative equations" $ transformGraph 3
           mkBut graphMenu "connect equations" $ modifyEqs 0
@@ -1024,7 +1027,6 @@ solver this solveRef enum paint = do
           mkBut treeMenu ".. from text field" $ checkProofT False
           mkBut treeMenu ".. in painter" $ checkProofT True
           mkBut treeMenu "create induction hypotheses" createIndHyp
-          mkBut treeMenu "save tree to file" $ getFileAnd saveTree
           mkBut treeMenu "load text from file" $ getFileAnd $ loadText True
           mkBut treeMenu (".. in text field of "++ other) $ getFileAnd 
                                                           $ loadText False
@@ -1930,24 +1932,25 @@ solver this solveRef enum paint = do
 
         buildKripke1 mode noProcs = do
           sig <- getSignature
-          let simplify x = case simplifyIter sig $ leaf x of F "[]" ts -> ts
-                                                             _ -> []
-              [states,atoms',labels] = map simplify
-                $ words "states atoms labels"
-          writeIORef kripkeRef (states,atoms',labels,[],[],[],[])
+          let states = simplify2List sig "states"
+              labels = simplify2List sig "labels" 
+          writeIORef kripkeRef (states,[],labels,[],[],[],[])
           changeSimpl "states" $ mkList states
-          changeSimpl "atoms"  $ mkList atoms'
           changeSimpl "labels" $ mkList labels
           
           sig <- getSignature
           let (states,rs,rsL) = rewriteStates sig mode
               tr  = pairsToInts states rs states
               trL = tripsToInts states labels rsL states
-          writeIORef kripkeRef (states,atoms',labels,tr,trL,[],[])
+          writeIORef kripkeRef (states,[],labels,tr,trL,[],[])
           changeSimpl "states" $ mkList states
-          delay $ buildKripke2 mode noProcs states atoms' labels tr trL
+          delay $ buildKripke2 mode noProcs states labels tr trL
         
-        buildKripke2 mode noProcs states atoms' labels tr trL = do
+        buildKripke2 mode noProcs states labels tr trL = do
+          sig <- getSignature
+          let atoms' = simplify2List sig "atoms"
+          writeIORef kripkeRef (states,atoms',labels,tr,trL,[],[])
+          changeSimpl "atoms" $ mkList atoms'
           sig <- getSignature
           let (rs,rsL) = rewriteSig sig (sig&atoms)
               va  = pairsToInts states rs atoms'
@@ -2245,7 +2248,7 @@ solver this solveRef enum paint = do
                     ApplyTransitivity -> applyTransitivity
                     BuildKripke m -> buildKripke m
                     BuildRE -> buildRegExp
-                    CollapseStep -> collapseStep
+                    CollapseStep b -> collapseStep b
                     ComposePointers -> composePointers
                     CopySubtrees -> copySubtrees
                     CreateIndHyp -> createIndHyp
@@ -2387,8 +2390,8 @@ solver this solveRef enum paint = do
         
         -- | Used by 'checkForward'. Called by menu item /collapse level/
         -- from /graph/ menu.
-        collapseStep :: Action
-        collapseStep = do
+        collapseStep :: Bool -> Action
+        collapseStep b = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else do
@@ -2400,13 +2403,13 @@ solver this solveRef enum paint = do
                     p = emptyOrLast treeposs
                     u = getSubterm1 t p
                     n = counter 'c'
-                    (v,part') = collapseLoop True (u,part) n
+                    (v,part') = collapseLoop b (u,part) n
                     setPr = setProof True False "COLLAPSING THE SUBTREE" [p]
-                setProofTerm CollapseStep
+                setProofTerm $ CollapseStep b
                 if u == v then do
                     setPr collapsed
                     clearTreeposs
-                    modifyIORef counterRef $ \counter -> upd counter 'c' 0
+                    resetLevel
                     writeIORef partRef (id,[])
                 else do
                     curr <- readIORef currRef
@@ -4862,6 +4865,9 @@ solver this solveRef enum paint = do
             writeIORef firstMoveRef True
             canv `gtkSet` [ canvasCursor := LeftPtr ]
         
+        resetLevel :: Action
+        resetLevel = modifyIORef counterRef $ \counter -> upd counter 'c' 0
+
         -- | Used by 'checkForward'. Called by menu item /reverse/ from menu
         -- /transform selection/.
         reverseSubtrees :: Action
@@ -4971,40 +4977,45 @@ solver this solveRef enum paint = do
             writeFile path $ "-- " ++ file ++'\n':str
         
         -- | Called by button "save pic" ('saveBut').
-        saveGraph :: FilePath -> Action
         saveGraph dir = do
           dirPath <- pixpath dir
-          let f n = do writeIORef currRef n
-                       treeSlider `gtkSet` [rangeValue := fromIntegral n]
-                       clearTreeposs
-                       drawCurr'
-                       delay $ saveGraphDH True canv dir dirPath n
+          let lg = length dir
+              (prefix,suffix) = splitAt (lg-4) dir
           trees <- readIORef treesRef
-          case trees of []  -> labBlue' start
-                        [_] -> if length dir < 5 then
-                                  labMag "Enter a file name!"
-                               else do
-                                 let suffix = drop (length dir-4) dir
-                                 dirPath <- pixpath dir -- ohaskell where
-                                 file <- savePic suffix canv dirPath
-                                 lab2 `gtkSet` [labelText := saved "tree" file]
-                        _   -> do
-                               renewDir dirPath
-                               saver <- runner2 f $ length trees-1
-                               (saver&startRun) 500
-                               labGreen' $ saved "trees" dirPath
+          if null trees then labBlue' start
+          else if lg < 5 || suffix `notElem` words ".eps .png .gif" then do
+                  trees <- readIORef treesRef
+                  treeMode <- readIORef treeModeRef
+                  fast <- readIORef fastRef
+                  saveFile dir $ showTree fast $ joinTrees treeMode trees
+                  labGreen' $ saved "trees" dir
+               else do
+                    let f n = do
+                            writeIORef currRef n
+                            treeSlider `gtkSet` [rangeValue := fromIntegral n]
+                            clearTreeposs
+                            drawCurr'
+                            delay $ saveGraphDH True canv dir dirPath n
+                    trees <- readIORef treesRef
+                    case trees of
+                      []  -> labBlue' start
+                      [_] -> do
+                        file <- savePic suffix canv dirPath
+                        lab2 `gtkSet` [labelText := saved "tree" file]
+                      _   -> do
+                        renewDir dirPath
+                        saver <- runner2 f $ length trees-1
+                        (saver&startRun) 500
+                        labGreen' $ saved "trees" dirPath
+
             
         -- | Called by button "save pic to dir" ('saveDBut').
         saveGraphD :: Action
         saveGraphD = do
           trees <- readIORef treesRef
-          if null trees then labBlue' start
-          else do
-               str <- ent `gtkGet` entryText
-               case parse nat str of Just n -> writeIORef picNoRef n
-                                     _ -> return ()
-               picNo <- readIORef picNoRef
-               saveGraphDP' True canv picNo
+          if null trees then labBlue' start else do
+            picNo <- readIORef picNoRef
+            saveGraphDP' True canv picNo
         
         saveGraphDP' b screen n = do
           picDir <- readIORef picDirRef
@@ -5062,18 +5073,7 @@ solver this solveRef enum paint = do
                                       f "\nterms:\n" showSum terms
             labGreen' $ saved "specification" file
             where f str g cls = if null cls then "" else str ++ g cls
-        
-        -- | Called  by pressing key @Down@ while entry field ('ent') is active.
-        saveTree :: FilePath -> Action
-        saveTree file = do
-            trees <- readIORef treesRef
-            if null trees then labBlue' start
-            else do
-                treeMode <- readIORef treeModeRef
-                fast <- readIORef fastRef
-                saveFile file $ showTree fast $ joinTrees treeMode trees
-                labGreen' $ saved "trees" file
-        
+                
         -- | Called by all /[admit all simplifications and axioms] ../ menu
         -- items from menu /signature/.
         setAdmitted :: Bool -> Action
@@ -5415,7 +5415,7 @@ solver this solveRef enum paint = do
         -- method 'Epaint.setSubst'.
         setSubst' :: (String -> TermS,[String]) -> Action
         setSubst' subst@(_,dom) = do
-            setBackground subToBut $ if null dom then blueback else redback
+            setBackground applyBut $ if null dom then blueback else redback
             domMenu <- getMenu "domMenu" -- Note [DomMenu]
             containerForeach domMenu (containerRemove domMenu) -- Note [DomMenu]
             mapM_ (mkButF domMenu applySubstTo) dom
@@ -6305,8 +6305,8 @@ solver this solveRef enum paint = do
                   let t = joinTrees treeMode trees
                   writeIORef treeModeRef "tree"
                   writeIORef treesRef [t]
-                  modifyIORef counterRef $ \counter -> upd counter 't' 1
                   writeIORef currRef 0
+                  modifyIORef counterRef $ \counter -> upd counter 't' 1
                   writeIORef solPositionsRef [0 | formula && isSol sig t]
                   setTreesFrame []
                   setProof True False "JOIN" [] "The trees have been joined."
@@ -6321,12 +6321,10 @@ solver this solveRef enum paint = do
                str <- ent `gtkGet` entryText
                let pars = words str
                case pars of
-                    ["ext",limit] | just k
-                      -> do
-                         let n = get k
-                         if ind then applyInduction n else applyCoinduction n
-                         where k = parse pnat limit
-                    _ -> if ind then applyInduction 0 else applyCoinduction 0
+                  ["ext",limit] | just k -> f $ get k where k = parse pnat limit
+                  _ -> f 0
+          where f n = if ind then applyInduction n else applyCoinduction n
+
         
         stateEquiv :: Action
         stateEquiv = do

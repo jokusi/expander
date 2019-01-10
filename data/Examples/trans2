@@ -4,10 +4,10 @@
 -- Beispiele 1.48, 1.50, 1.51
 
 specs:		modal
-preds:		X Y three THREE six five' seven' Sat SatL
-copreds:	NOTthree NOTTHREE four five seven eight
+preds:		X Y three THREE six seven' Sat SatL
+copreds:        NOTTHREE four five seven eight
 constructs: 	a A B
-defuncts:   	draw
+defuncts:   	drawS
 hovars:		X Y
 
 axioms:
@@ -22,7 +22,6 @@ A -> branch[2,3,4] & (B,a) -> 3 &
 (SatL(at,lab)$st <==> at `in` outL(st)$lab) &
 
 (three    <==> MU X.(a#(A\/X))) &		
-(NOTthree <==> NU X.(a<>(not(A)/\X))) &		
 (four     <==> NU X.(a#(A/\X))) &
 (five     <==> NU X.((a#X)/\six)) &
 (six      <==> MU X.(A\/(a#X))) &
@@ -36,34 +35,31 @@ A -> branch[2,3,4] & (B,a) -> 3 &
 (six(st)      <=== (Sat(A)\/(a#six))(st)) &
 (eight(st)    ===> (a#eight)(st)) &
 
-(seven(st)  ===> seven'(st)) &			-- alternating fixpoints
+(seven(st)  ===> seven'(st)) &			       -- alternating fixpoints
 (seven'(st) <=== (a#((Sat(A)/\seven)\/seven'))(st)) &
 
 -- widget interpreter:
 
-draw == wtree $ fun(sat$x,green$text$x,
-		    x,ite(Int$x,red$text$x,text$x)) 
+drawS == wtree $ fun(sat$x,green$text$x,x,ite(Int$x,red$text$x,text$x)) 
 
 conjects: 
 
 Sat(A)(3) & Sat(B)(3) & SatL(B,a)(3) & SatL(B,a)(4) &
 
-map(eval)[three,NOTthree,four,five,six,seven,eight] &
-   	--> [[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]
+map(eval)[three,not$three,four,five,six,seven,eight] &		
+   		--> [[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]			
+	
+-- stateflow$seven returns [2,4] instead of [4] because seven is alternating
 
-map(evalG)[three,NOTthree,four,five,six,seven,eight] &
-   	--> [[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]		stateflow3sats
-
-map(stateflow)[three,NOTthree,four,five,six,seven,eight] &
-   	--> [[2,4],[1,3],[4],[4],[2,3,4],[2,4],[1,2,3,4]]	stateflow3
-
---  stateflow$seven yields a wrong result because seven is alternating
-
-all(THREE)[2,4] & 		--> True   	match&narrow
-all(NOTTHREE)[1,3] &		--> True   	match&narrow + coinduction
+all(THREE)[2,4] & 		--> True   	match&narrow    
+all(NOTTHREE)[1,3] &		--> True   	match&narrow + coinduction  
 (THREE(st) & st `in` states ==> st = 2 | st = 4) &   
-				--> True   	match&narrow + induction
+				--> True   	match&narrow + induction    
 (NOTTHREE(st) & st `in` states ==> st = 1 | st = 3)  
 				--> True   	match&narrow
+
+terms:
+
+eval$not(three)/\six 	        --> [3]					
 
 

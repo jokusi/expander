@@ -1,34 +1,28 @@
 -- trans0
 
 specs:		modal
-constructs:	a b c is -- less
-defuncts:       drawI drawS elem less
-fovars:     	st k n sts
+constructs:	is less
+defuncts:       drawI drawS
+fovars:     	st
 
 axioms:     
 
   states == [0,22] 
-& atoms == map(is)[0..44]
-
--- & atoms == map($)$prodL[[is,less],[1,2,4,14]]
+& atoms == map($)$prodL[[is,less],states]
 		 
 & (st < 6 ==> st -> st+1<+>ite(st`mod`2 = 0,st,()))
 & 6 -> branch$[1..5]++[7..10]	  
 & 7 -> 14 
 & 22 -> 33<+>44
 
-& (st `in` states ==> is$st -> st)
-
--- & less$st -> branch$filter(<st)$states
-
-& elem == foldl1(\/).map(is)
-& less$st == elem$filter(<st)$states
+& is$st -> st
+& less$st -> branch$filter(<st)$states
 
 -- widget interpreters:
  
 & drawI == wtree $ fun(st,ite(st`in`states,
 			      color(index(st,states),length$states)$circ$11,
-			      frame$blue$text$st))
+			      frame(3)$blue$text$st))
 
 & drawS == wtree $ fun(sat$st,red$frame(5)$dark$green$text$st,st,text$st)
 
