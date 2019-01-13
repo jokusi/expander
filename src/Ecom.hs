@@ -5141,6 +5141,7 @@ solver this solveRef enum paint = do
 
                 mapM_ stopRun0 checkers
                 writeIORef checkingRef False
+                writeIORef checkingRef False
                 writeIORef speedRef 500
                 case (simplifying,refuting) of (True,True)  -> dsr
                                                (True,_)     -> ds
@@ -5484,7 +5485,7 @@ solver this solveRef enum paint = do
                                     Add ps -> treeposs++ps
                                     Remove p -> treeposs`minus1`p
                                     Replace ps -> ps
-
+            treeposs <- readIORef treepossRef
             setProofTerm $ Mark treeposs
             setNarrow False False
         
