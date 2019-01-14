@@ -5133,16 +5133,13 @@ solver this solveRef enum paint = do
             checking <- readIORef checkingRef
 
             if checking then do
-                proofTPtr <- readIORef proofTPtrRef
-                proofPtr <- readIORef proofPtrRef
-                simplifying <- readIORef simplifyingRef
-                refuting <- readIORef refutingRef
                 checkers <- readIORef checkersRef
-
                 mapM_ stopRun0 checkers
                 writeIORef checkingRef False
                 writeIORef checkingRef False
                 writeIORef speedRef 500
+                simplifying <- readIORef simplifyingRef
+                refuting <- readIORef refutingRef
                 case (simplifying,refuting) of (True,True)  -> dsr
                                                (True,_)     -> ds
                                                (False,True) -> dr
@@ -5152,10 +5149,12 @@ solver this solveRef enum paint = do
                 setNarrow False False
                 (paint&setButton1) (f "narrow/rewrite" narrow')
                 (paint&setButton2) ( f "simplify" simplify')
+                proofTPtr <- readIORef proofTPtrRef
                 modifyIORef proofTermRef
                     $ \proofTerm -> take proofTPtr proofTerm
                 proofTerm <- readIORef proofTermRef
                 enterPT' proofTPtr proofTerm
+                proofPtr <- readIORef proofPtrRef
                 modifyIORef proofRef $ \proof -> take (proofPtr+1) proof
             else do
                 simplifying <- readIORef simplifyingRef
@@ -5398,13 +5397,13 @@ solver this solveRef enum paint = do
         setProofTerm :: Step -> Action
         setProofTerm step = do
             checking <- readIORef checkingRef
-            proofTPtr <- readIORef proofTPtrRef
-            proofTerm <- readIORef proofTermRef
-
             when (not checking) $ do
+                proofTPtr <- readIORef proofTPtrRef
+                proofTerm <- readIORef proofTermRef
                 let pt = if proofTPtr+1 < length proofTerm
                                then take proofTPtr proofTerm else proofTerm
                 writeIORef proofTermRef $ addStep pt step
+                proofTerm <- readIORef proofTermRef
                 writeIORef proofTPtrRef $ length proofTerm
         
         setQuit' :: (Button -> IORef (ConnectId Button) -> Action) -> Action
