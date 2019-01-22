@@ -1,2 +1,2 @@
 -- /Users/Padawitz/ExpanderLib/evenoddT
-[DeriveMode False False, Match 2, Mark [], Match 0, Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Simplify True 100 False, Mark []]
+[DeriveMode False False, Match 0, Mark [], DeriveMode True True, Induction True 0, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark [], Narrow 1 True, Mark []]

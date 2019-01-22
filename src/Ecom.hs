@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, December 2018
-                  Jos Kusiek, December 2018
+Copyright   : (c) Peter Padawitz, January 2018
+                  Jos Kusiek, January 2018
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -178,7 +178,7 @@ linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (December 16, 2018)"
+start = "Welcome to Expander3 (January 22, 2019)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -614,15 +614,6 @@ specfiles3 =
   words "shelves simpl stack STACKimpl STACKimpl2 stream trans0 trans1" ++
   words "trans2 turtles widgets zip"
 
-{-
-pictsOf "bottle" sig                = (solPic sig widgets,False)
-pictsOf "robot" sig                = (solPic sig widgets,False)
-pictsOf "ROBOTacts" sig            = (solPic sig widgets,False)
-pictsOf "queens" sig               = (solPic sig matrix,False)
-pictsOf "knight" sig               = (solPic sig matrix,False)
-pictsOf ('g':'a':'u':'s':'s':_) _ = (searchPic linearEqs,False)
-pictsOf _ _                              = (searchPic widgets,False)
--}
 -- * the __Solver__ template
 
 solver :: String -> IORef Solver -> Enumerator -> Painter -> Template Solver
@@ -639,7 +630,7 @@ solver this solveRef enum paint = do
     backBut <- getButton "backBut"
     canv <- canvas
     scrollCanv <- getObject castToScrolledWindow "scrollCanv"
-    --close <- newIORef $ error "ref close"
+    checkerRef <- newIORef $ error "checkerRef undefined"
     deriveBut <- getButton "deriveBut"
     treeSlider <- getObject castToScale "treeSlider"
     ent <- getObject castToEntry "ent"
@@ -707,7 +698,6 @@ solver this solveRef enum paint = do
     simplStratRef <- newIORef BFP
 
     axiomsRef <- newIORef []
-    checkersRef <- newIORef []
     conjectsRef <- newIORef []
     indClausesRef <- newIORef []
     matchTermRef <- newIORef []
@@ -878,7 +868,7 @@ solver this solveRef enum paint = do
           narrowBut `gtkSet` [ buttonLabel := "" ]
           narrowBut `on` buttonActivated $ narrow'
 
-          backButSignal <- backBut `on` buttonActivated $ backProof
+          backButSignal <- backBut `on` buttonActivated $ backProof'
           writeIORef backButSignalRef backButSignal
 
           writeIORef forwButSignalRef
@@ -1796,8 +1786,8 @@ solver this solveRef enum paint = do
 
         -- | Called by button "<---" ('backBut') or keypress "Up" while left
         -- label ('lab') is active.
-        backProof :: Action
-        backProof = do
+        backProof' :: Action
+        backProof' = do
             restore <- readIORef restoreRef
             if restore then do
                 oldTreeposs <- readIORef oldTreepossRef
@@ -2311,6 +2301,8 @@ solver this solveRef enum paint = do
                     Transform m -> transformGraph m
                     UnifySubtrees -> unifySubtrees
                 modifyIORef proofTPtrRef succ
+                proofTPtr <- readIORef proofTPtrRef
+                proofTerm <- readIORef proofTermRef
                 enterPT' proofTPtr proofTerm
         
         -- | Exported by public 'Epaint.Solver' method 'Epaint.checkInSolver'.
@@ -2318,15 +2310,17 @@ solver this solveRef enum paint = do
         checkInSolver' = writeIORef checkingPRef False
         
         -- | Used by 'checkProofF' and 'checkProofT'.
-        checkProof :: String -> FilePath -> Action
-        checkProof pterm file = do
+        checkProof :: String -> Bool -> String -> Action
+        checkProof pterm inPainter file = do
             trees <- readIORef treesRef
             if null trees then labBlue' start
             else case parse (list command) $ removeComment 0 pterm of
               Just pt@(DeriveMode s r:Match m:_) -> do
-                curr <- readIORef currRef
-                fast <- readIORef fastRef
-                checkingP <- readIORef checkingPRef
+                writeIORef checkingRef True
+                when inPainter $ do
+                  writeIORef checkingPRef True
+                  (paint&buildPaint) True
+                  showTreePicts
                 writeIORef proofTermRef pt
                 writeIORef proofTPtrRef 2
                 enterPT' 2 pt
@@ -2337,45 +2331,42 @@ solver this solveRef enum paint = do
                 writeIORef matchingRef m
                 writeIORef matchTermRef [m]
                 writeIORef treepossRef [[]]
+                trees <- readIORef treesRef
+                curr <- readIORef currRef
+                fast <- readIORef fastRef
                 initialize [] $ showTree fast $ trees!!curr
                 quit `gtkSet` [ buttonLabel := "stop check" ]
-                setBackground quit redback
                 replaceCommandButton quitSignalRef quit setDeriveMode
                 labGreen' $ proofLoaded file
-                when (not checkingP) $ setInterpreter' "tree"
+                checkingP <- readIORef checkingPRef
                 runChecker False
               _ -> labRed' $ "There is no proof term in " ++ file ++ "."
         
         -- | Called by check proof options in tree menu.
         checkProofF :: Bool -> Action
         checkProofF inPainter = do
-            str <- ent `gtkGet` entryText
-            case words str of
-                [file,sp] -> do
-                    pterm <- lookupLibs file
-                    writeIORef checkingRef True
-                    writeIORef checkingPRef inPainter
-                    let newSpeed = parse pnat sp
-                    when (just newSpeed)
-                       $ writeIORef speedRef $ get newSpeed
-                    checkProof pterm file
-                [file] -> do
-                    pterm <- lookupLibs file
-                    writeIORef checkingRef True
-                    writeIORef checkingPRef inPainter
-                    checkProof pterm file
-                _ -> labMag "Enter a file name!"
+          str <- ent `gtkGet` entryText
+          case words str of
+               [file,sp] -> do
+                            let newSpeed = parse pnat sp
+                            when (just newSpeed) $ writeIORef speedRef
+                                                 $ get newSpeed
+                            pterm <- lookupLibs file
+                            checkProof pterm inPainter file
+               [file]    -> do
+                            pterm <- lookupLibs file
+                            checkProof pterm inPainter file
+               _         -> labMag "Enter a file name!"
+
         
         -- | Called by check proof options in tree menu.
         checkProofT :: Bool -> Action
         checkProofT inPainter = do
-            pterm <- getTextHere
-            writeIORef checkingRef True
-            writeIORef checkingPRef inPainter
             sp <- ent `gtkGet` entryText
             let newSpeed = parse pnat sp
             when (just newSpeed) $ writeIORef speedRef $ get newSpeed
-            checkProof pterm "the text field"
+            pterm <- getTextHere
+            checkProof pterm inPainter "the text field"
         
         -- | Used by many 'Epaint.Solver' methods.
         clearTreeposs :: Action
@@ -3864,14 +3855,9 @@ solver this solveRef enum paint = do
                     searchRedex $ ks `minus` solPositions
                     where lg = length ts; is = indices_ ts
 
-        -- | Used by 'applyTheorem' and 'narrow''.
-        narrowOrRewritePar :: TermS
-                           -> Sig
-                           -> Maybe Int
-                           -> [TermS]
-                           -> Bool
-                           -> [[Int]]
-                           -> Action
+        -- used by applyTheorem and narrow' 
+        narrowOrRewritePar :: TermS -> Sig -> Maybe Int -> [TermS] -> Bool
+                           -> [[Int]] -> Action
         narrowOrRewritePar t sig k cls saveRedex ps = do
             varCounter <- readIORef varCounterRef
             formula <- readIORef formulaRef
@@ -4943,25 +4929,22 @@ solver this solveRef enum paint = do
         -- | Used by 'checkProof' and 'stopRun''.
         runChecker :: Bool -> Action
         runChecker b = do
-            when b $ do
-              sp <- ent `gtkGet` entryText
-              let newSpeed = parse pnat sp
-              when (just newSpeed) $ writeIORef speedRef $ get newSpeed
-            runOpts deriveBut deriveButSignalRef
-            runProof <- runner checkForward
-            speed <- readIORef speedRef
-            startRun runProof speed
-            let act = do checkForward
-                         showTreePicts
-            showTreePicts
-            (paint&setButton3) runOpts
-            runProofP <- runner act
-            startRun runProofP speed
-            writeIORef checkersRef [runProof,runProofP]
-            where runOpts btn cmd = do
-                    btn `gtkSet` [ buttonLabel := "stop run" ]
-                    setBackground btn redback
-                    replaceCommandButton cmd btn stopRun'
+          when b $ do
+            sp <- ent `gtkGet` entryText
+            let newSpeed = parse pnat sp
+            when (just newSpeed) $ writeIORef speedRef $ get newSpeed
+            checkingP <- readIORef checkingPRef
+            when checkingP $ (paint&setButton3) runOpts
+          runOpts (deriveBut, deriveButSignalRef)
+          runProof <- runner $ do checkForward
+                                  checkingP <- readIORef checkingPRef
+                                  when checkingP showPicts'
+          writeIORef checkerRef runProof
+          speed <- readIORef speedRef
+          (runProof&startRun) speed
+          where runOpts (btn, cmd) = do
+                  btn `gtkSet` [ buttonLabel := "stop run" ]
+                  replaceCommandButton cmd btn stopRun'
         
         {- |
             Stores @str@ in a file. The file is stored in the programs user
@@ -5130,57 +5113,56 @@ solver this solveRef enum paint = do
         -- | Used by 'buildSolve''.
         setDeriveMode :: Action
         setDeriveMode = do
-            checking <- readIORef checkingRef
-
-            if checking then do
-                checkers <- readIORef checkersRef
-                mapM_ stopRun0 checkers
-                writeIORef checkingRef False
-                writeIORef checkingRef False
-                writeIORef speedRef 500
-                simplifying <- readIORef simplifyingRef
-                refuting <- readIORef refutingRef
-                case (simplifying,refuting) of (True,True)  -> dsr
-                                               (True,_)     -> ds
-                                               (False,True) -> dr
-                                               _ -> set' "derive"
-                quit `gtkSet` [ buttonLabel := "quit" ]
-                replaceCommandButton quitSignalRef quit mainQuit
-                setNarrow False False
-                (paint&setButton1) (f "narrow/rewrite" narrow')
-                (paint&setButton2) ( f "simplify" simplify')
-                proofTPtr <- readIORef proofTPtrRef
-                modifyIORef proofTermRef
+          checking <- readIORef checkingRef
+          if checking
+             then do
+                  checker <- readIORef checkerRef
+                  (checker&stopRun0)
+                  writeIORef checkingRef False
+                  writeIORef checkingPRef False
+                  writeIORef speedRef 500
+                  (paint&setNew)
+                  simplifying <- readIORef simplifyingRef
+                  refuting <- readIORef refutingRef
+                  case (simplifying,refuting) of (True,True)  -> dsr
+                                                 (True,_)     -> ds
+                                                 (False,True) -> dr
+                                                 _            -> set "derive"
+                  quit `gtkSet` [ buttonLabel := "quit" ]
+                  replaceCommandButton quitSignalRef quit mainQuit
+                  setNarrow False False
+                  proofTPtr <- readIORef proofTPtrRef
+                  modifyIORef proofTermRef
                     $ \proofTerm -> take proofTPtr proofTerm
-                proofTerm <- readIORef proofTermRef
-                enterPT' proofTPtr proofTerm
-                proofPtr <- readIORef proofPtrRef
-                modifyIORef proofRef $ \proof -> take (proofPtr+1) proof
-            else do
-                simplifying <- readIORef simplifyingRef
-                refuting <- readIORef refutingRef
-
-                case (simplifying,refuting) of
-                    (False,False) -> do writeIORef simplifyingRef True; ds
-                    (True,False) -> do writeIORef refutingRef True; dsr
-                    (True,_) -> do writeIORef simplifyingRef False; dr
-                    _ -> do writeIORef refutingRef False; set' "derive"
-                simplifying <- readIORef simplifyingRef
-                refuting <- readIORef refutingRef
-                setProofTerm $ DeriveMode simplifying refuting
-         where f str act btn cmd = do
+                  proofTerm <- readIORef proofTermRef
+                  enterPT' proofTPtr proofTerm
+                  proofPtr <- readIORef proofPtrRef
+                  modifyIORef proofRef $ \proof -> take (proofPtr+1) proof
+             else do
+                  simplifying <- readIORef simplifyingRef
+                  refuting <- readIORef refutingRef
+                  case (simplifying,refuting) of
+                       (False,False) -> do writeIORef simplifyingRef True; ds
+                       (True,False)  -> do writeIORef refutingRef True; dsr
+                       (True,_)      -> do writeIORef simplifyingRef False; dr
+                       _             -> do writeIORef refutingRef False
+                                           set "derive"
+                  simplifying <- readIORef simplifyingRef
+                  refuting <- readIORef refutingRef
+                  setProofTerm $ DeriveMode simplifying refuting
+          where f str act btn cmd = do
                     btn `gtkSet` [ buttonLabel := str ]
                     replaceCommandButton cmd btn $ do
-                        remote paint
+                        paint&remote
                         act
                         showTreePicts
-               set' str = do
-                    deriveBut `gtkSet` [ buttonLabel := str ]
-                    replaceCommandButton deriveButSignalRef
-                        deriveBut setDeriveMode
-               ds = set' "derive & simplify"
-               dr = set' "derive & refute"
-               dsr = set' "derive & simplify & refute"
+                set str = do
+                     deriveBut `gtkSet` [ buttonLabel := str ]
+                     replaceCommandButton deriveButSignalRef
+                         deriveBut setDeriveMode
+                ds = set "derive & simplify"
+                dr = set "derive & refute"
+                dsr = set "derive & simplify & refute"
         
         {- |
             Set font of text area ('tedit'), entry field ('ent'), left label
@@ -5219,8 +5201,8 @@ solver this solveRef enum paint = do
         -- | The @opts@ function sets the behavior of the forward button
         -- ('forwBut').
         -- Exported by public 'Epaint.Solver' method 'Epaint.setForw'.
-        setForw' :: (Button -> IORef (ConnectId Button) -> Action) -> Action
-        setForw' opts = opts forwBut forwButSignalRef -- Note [setForw]
+        setForw' :: ButtonOpts -> Action
+        setForw' opts = opts (forwBut, forwButSignalRef) -- Note [setForw]
         
         {- Note [setForw]
         ~~~~~~~~~~~~~~~~~
@@ -5406,8 +5388,8 @@ solver this solveRef enum paint = do
                 proofTerm <- readIORef proofTermRef
                 writeIORef proofTPtrRef $ length proofTerm
         
-        setQuit' :: (Button -> IORef (ConnectId Button) -> Action) -> Action
-        setQuit' opts = opts quit quitSignalRef
+        setQuit' :: ButtonOpts -> Action
+        setQuit' opts = opts (quit, quitSignalRef)
 
         
         -- | Used by 'addSubst', 'changeState', 'initialize', 'releaseTree',
@@ -5758,10 +5740,10 @@ solver this solveRef enum paint = do
                   sizes <- mkSizes canv font $ stringsInPict $ get pict
                   fast <- readIORef fastRef
                   spread <- readIORef spreadRef
-                  setEval paint "" spread
-                  Just pict <- runT $ matrix sizes spread u
+                  (paint&setEval) "" spread
+                  pict <- (matrix sizes spread u)&runT
                   curr <- readIORef currRef
-                  callPaint paint [pict] [curr] False True curr "white"
+                  (paint&callPaint) [get pict] [curr] False curr "white"
           where labs' trips = mkSet [x | (_,x,_:_) <- trips]
                 mat 6 t = Hidden $ BoolMat dom1 dom2 ps
                           where ps = deAssoc0 $ graphToRel t
@@ -5797,17 +5779,25 @@ solver this solveRef enum paint = do
         -- 'Epaint.Solver' method 'Epaint.showPicts'.
         showPicts' :: Action
         showPicts' = do
-            trees <- readIORef treesRef
-            if null trees then labBlue' start
-            else do
-                checking <- readIORef checkingRef
-                if checking then do
-                    writeIORef checkingPRef True
-                    showTreePicts
-                else do
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               checking <- readIORef checkingRef
+               if checking then do
+                  writeIORef checkingPRef True
+                  isNew <- paint&getNew
+                  if isNew then do
+                                (paint&buildPaint) True
+                                (paint&setButton3) runOpts
+                                showTreePicts
+                           else showTreePicts
+               else do
                     treeposs <- readIORef treepossRef
-                    if null treeposs then showTreePicts
-                    else showSubtreePicts
+                    if null treeposs then showTreePicts else showSubtreePicts
+          where runOpts (btn, cmd) = do
+                    btn `gtkSet` [ buttonLabel := "run proof" ]
+                    replaceCommandButton cmd btn $ runChecker True
+
         
         -- | Called by menu item /polarities/ from menu /nodes/.
         showPolarities :: Action
@@ -5997,7 +5987,7 @@ solver this solveRef enum paint = do
             spread <- readIORef spreadRef
             let picts = map (eval sizes spread) ts
             picts <- mapM runT picts
-            (paint&callPaint) [concatMap getJust picts] [] True True curr back
+            (paint&callPaint) [concatMap getJust picts] [] True curr back
         
         -- | Called by menu item /successors/ from menu /nodes/.
         showSucs :: Action
@@ -6099,8 +6089,8 @@ solver this solveRef enum paint = do
                                 (paint&setEval) "tree" spread
                                 pict <- (widgetTree sig sizes spread u)&runT
                                 curr <- readIORef currRef
-                                (paint&callPaint) [get pict] [curr] False True
-                                                             curr "white"
+                                (paint&callPaint) [get pict] [curr] False curr 
+                                                                         "white"
 
           setZcounter zn'
           solve <- readIORef solveRef
@@ -6142,8 +6132,7 @@ solver this solveRef enum paint = do
             curr <- readIORef currRef
             let picts = map (eval sizes spread) ts
             picts <- mapM runT picts           -- return ()
-            (paint&callPaint) (map getJust picts) (indices_ ts) False 
-                              (checkingP || not checking) curr back
+            (paint&callPaint) (map getJust picts) (indices_ ts) False curr back
         
         -- | Called by menu item /values/ from menu /nodes/.
         showVals :: Action
@@ -6337,25 +6326,17 @@ solver this solveRef enum paint = do
         -- 'Epaint.Solver' method 'Epaint.stopRun'.
         stopRun' :: Action
         stopRun' = do
-            checking <- readIORef checkingRef
-            checkers <- readIORef checkersRef
-            when checking $ do
-                mapM_ stopRun0 checkers
-                runOpts deriveBut deriveButSignalRef
-                (paint&setButton1) backOpts
-                (paint&setButton2) forwOpts
-                (paint&setButton3) runOpts
-            where backOpts btn cmd = do
-                    btn `gtkSet` [ buttonLabel := "<---" ]
-                    replaceCommandButton cmd btn $ actInPaint backProof
-                  forwOpts btn cmd = do
-                    btn `gtkSet` [ buttonLabel := "--->" ]
-                    replaceCommandButton cmd btn $ actInPaint forwProof'
-                  runOpts btn cmd = do
-                    btn `gtkSet` [ buttonLabel := "run proof" ]
-                    setBackground btn redback
-                    replaceCommandButton cmd btn $ runChecker True
-                  actInPaint act = do act; showTreePicts
+          checking <- readIORef checkingRef
+          when checking $ do
+            checker <- readIORef checkerRef
+            checker&stopRun0
+            runOpts (deriveBut, deriveButSignalRef)
+          checkingP <- readIORef checkingPRef
+          when checkingP $ (paint&setButton3) runOpts
+          where runOpts (btn,cmd) = do
+                   btn `gtkSet` [ buttonLabel := "run proof" ]
+                   replaceCommandButton cmd btn $ runChecker True
+
         
         -- | Used by 'checkForward'. Called by all /stretch/ menu items from
         -- /transform selection/ menu.
@@ -6609,6 +6590,7 @@ solver this solveRef enum paint = do
         
     return Solver
         { addSpec         = addSpec'
+        , backProof       = backProof'
         , backWin         = backWin'
         , bigWin          = bigWin'
         , checkInSolver   = checkInSolver'
@@ -6690,11 +6672,11 @@ enumerator solveRef = do
                 writeIORef complRef f
                 solve <- readIORef solveRef
                 labBlue solve $ startEnum obj
-                setForw solve $ \btn cmd -> do
+                setForw solve $ \(btn, cmd) -> do
                     btn `gtkSet` [ buttonLabel := "go" ]
                     setBackground btn redback
                     replaceCommandButton cmd btn $ getInput obj
-                solve&setQuit $ \quit signal -> do
+                solve&setQuit $ \(quit, signal) -> do
                   quit `gtkSet` [ buttonLabel := "quit " ++ obj]
                   replaceCommandButton signal quit finish
                   
@@ -6702,12 +6684,12 @@ enumerator solveRef = do
             finish = do
                 solve <- readIORef solveRef
                 labBlue solve start
-                setForw solve $ \btn cmd -> do
+                setForw solve $ \(btn, cmd) -> do
                     btn `gtkSet` [ buttonLabel := "--->" ]
                     setBackground btn greenback
                     solve <- readIORef solveRef
                     replaceCommandButton cmd btn (forwProof solve)
-                solve&setQuit $ \quit signal -> do
+                solve&setQuit $ \(quit, signal) -> do
                   quit `gtkSet` [ buttonLabel := "quit" ]
                   replaceCommandButton signal quit mainQuit
                 solve&setInterpreter $ "tree"

@@ -18,36 +18,43 @@ to the axioms and applying FIXPOINT INDUCTION wrt
 
 at positions
 []
-of the preceding formulas leads to 
+of the preceding trees leads to 
 
-All x:(even(0) | odd(0)) & All x:(even(suc(x)) | odd(suc(x)) <=== Nat0(x))
+even(0) & All x:(Nat0(x) ==> even(suc(x)) | odd(suc(x))) | 
+odd(0) & All x:(Nat0(x) ==> even(suc(x)) | odd(suc(x)))
 
-2. NARROWING the preceding formulas (one step) leads to 
+The reducts have been simplified.
 
-All x:(True | odd(0)) & All x:(even(suc(x)) | odd(suc(x)) <=== Nat0(x))
+2. NARROWING the preceding trees (one step) leads to 
 
-The axioms have been MATCHED against their redices.
-THIS GOAL COINCIDES WITH GOAL NO. 2
-
-3. NARROWING the preceding formulas (one step) leads to 
-
-All x:(True | odd(0)) & All x:(odd(x) | odd(suc(x)) <=== Nat0(x))
+All x0:(Nat0(x0) ==> even(suc(x0)) | odd(suc(x0)))
 
 The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+Failure atoms have been removed.
 
-4. NARROWING the preceding formulas (one step) leads to 
+3. NARROWING the preceding trees (one step) leads to 
 
-All x:(True | odd(0)) & All x:(odd(x) | even(x) <=== Nat0(x))
-
-The axioms have been MATCHED against their redices.
-
-5. NARROWING the preceding formulas (one step) leads to 
-
-All x:(True | odd(0)) & All x:(odd(x) | even(x) <=== even(x) | odd(x))
+All x0:(even(x0) ==> even(suc(x0)) | odd(suc(x0))) & 
+All x0:(odd(x0) ==> even(suc(x0)) | odd(suc(x0)))
 
 The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+Failure atoms have been removed.
 
-6. SIMPLIFYING the preceding formulas (one step) leads to 
+4. NARROWING the preceding trees (one step) leads to 
+
+All x0:(odd(x0) ==> even(suc(x0)) | odd(suc(x0)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+Failure atoms have been removed.
+
+5. NARROWING the preceding trees (one step) leads to 
 
 True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified.
+Failure atoms have been removed.
 

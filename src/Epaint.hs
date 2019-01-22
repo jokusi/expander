@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, December 2018
-                  Jos Kusiek, December 2018
+Copyright   : (c) Peter Padawitz, January 2018
+                  Jos Kusiek, January 2018
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -40,6 +40,7 @@ defaultButton = "default_button"
 data Solver = Solver
     { addSpec         :: Bool -> FilePath -> Action
     -- ^ Adds a specification from file.
+    , backProof       :: Action
     , backWin         :: Action -- ^ Minimize solver window.
     , bigWin          :: Action -- ^ Bring solver window to front, even if minimized.
     , checkInSolver   :: Action
@@ -107,6 +108,8 @@ data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             Transform Int | UnifySubtrees | POINTER Step
             deriving Show
 
+-- Small templates
+
 data Runner = Runner
     { startRun :: Int -> Action
     , stopRun0 :: Action
@@ -147,9 +150,6 @@ runner2 act bound = do
         , stopRun0 = stopRun0'
         }
 
-        
--- * the SWITCHER template (not used)
-
 switcher :: Action -> Action -> Template Runner
 switcher actUp actDown = do
     runRef <- newIORef undefined
@@ -167,13 +167,11 @@ switcher actUp actDown = do
         { startRun = startRun'
         , stopRun0 = stopRun0'
         }
-          
--- * the OSCILLATOR template (used by 'Epaint.labRed' and by 'Ecom.labRed')
 
 oscillator :: (Int -> Action) -> (Int -> Action) -> Int -> Int -> Int
               -> Template Runner
-oscillator actUp actDown lwb width upb = do
-    runRef <- newIORef undefined
+oscillator actUp actDown lwb width upb = do -- used by labRed and
+    runRef <- newIORef undefined            -- Ecom > labRed
     valRef <- newIORef (lwb - 1)
     upRef  <- newIORef True
     
@@ -192,8 +190,7 @@ oscillator actUp actDown lwb width upb = do
         { startRun = startRun'
         , stopRun0 = stopRun0'
         }
-              
--- * the SCANNER template (used by painter)
+
 data Scanner = Scanner
     { startScan0 :: Int -> Picture -> Action
     , startScan  :: Int -> Action
@@ -204,7 +201,7 @@ data Scanner = Scanner
     }
 
 scanner :: (Widget_ -> Action) -> Template Scanner
-scanner act = do
+scanner act = do                  -- used by drawPict and scaleAndDraw
     runRef     <- newIORef undefined
     runningRef <- newIORef False
     asRef      <- newIORef []
@@ -246,15 +243,12 @@ scanner act = do
             , isRunning  = readIORef runningRef
             }
 
-
--- * the WIDGSTORE template (not used)
-
 data WidgStore = WidgStore
     { saveWidg :: String -> Widget_ -> Action
     , loadWidg :: String -> Request Widget_
     }
 
-widgStore :: Template WidgStore
+widgStore :: Template WidgStore                  -- not used
 widgStore = do
     storeRef <- newIORef $ const Skip
     return WidgStore
@@ -298,17 +292,20 @@ savedCode object file = "The Haskell code of the " ++ object ++
                         " has been saved to " ++ file ++ "."
 
 -- * the PAINTER template
-type ButtonOpts = Button -> IORef (ConnectId Button) -> Action
+type ButtonOpts = (Button, IORef (ConnectId Button)) -> Action
 type MenuOpts   = MenuItem -> IORef (ConnectId MenuItem) -> Action
 
 data Painter = Painter
-    { callPaint :: [Picture] -> [Int] -> Bool -> Bool -> Int -> String -> Action
-    , labSolver                        :: String -> Action
-    , remote                           :: Action
-    , setButton1,setButton2,setButton3 :: ButtonOpts -> Action
-    , setCurrInPaint                   :: Int -> Action
-    , setEval                          :: String -> Pos -> Action
-    }
+  { buildPaint     :: Bool -> Action
+  , callPaint      :: [Picture] -> [Int] -> Bool -> Int -> String -> Action
+  , getNew         :: Request Bool
+  , labSolver      :: String -> Action
+  , remote         :: Action
+  , setButton3     :: ButtonOpts -> Action
+  , setCurrInPaint :: Int -> Action
+  , setEval        :: String -> Pos -> Action
+  , setNew         :: Action
+  }
 
 painter :: Int -> IORef Solver
         -> IORef Solver -> Template Painter
@@ -320,9 +317,12 @@ painter pheight solveRef solve2Ref = do
         getLabel  = getObject castToLabel
         getScale  = getObject castToScale
         
-    button1 <- getButton "button1"
-    button2 <- getButton "button2"
-    button3 <- getButton "button3"
+    button1 <- (,) <$> getButton "button1"
+                   <*> newIORef (error "narrowButSignal not set")
+    button2 <- (,) <$> getButton "button2"
+                   <*> newIORef (error "simplifyDSignal not set")
+    button3 <- (,) <$> getButton "button3"
+                   <*> newIORef (error "simplifyBSignal not set")
     canv <- canvas
     scrollCanv <- getObject castToScrolledWindow "scrollCanv"
     combiBut <- getButton "combiBut"
@@ -341,10 +341,6 @@ painter pheight solveRef solve2Ref = do
     scaleSlider <- getScale "scaleSlider"
     delaySlider <- getScale "delaySlider"
     
-    button1SignalRef <- newIORef $ error "narrowButSignal not set"
-    button2SignalRef <- newIORef $ error "simplifyDSignal not set"
-    button3SignalRef <- newIORef $ error "simplifyBSignal not set"
-
     fontRef <- newIORef undefined
     
     stopButSignalRef <- newIORef $ error "undefined stopButSignalRef"
@@ -372,7 +368,6 @@ painter pheight solveRef solve2Ref = do
     
     fastRef <- newIORef False
     connectRef <- newIORef False
-    openRef <- newIORef False
     subtreesRef <- newIORef False
     isNewRef <- newIORef True
     
@@ -552,48 +547,53 @@ painter pheight solveRef solve2Ref = do
                     pictSlider `gtkSet` [widgetSensitive := False ]
                     arrangeButton graph
         
-        buildPaint = do
-            solve <- readIORef solveRef
-            solver <- getSolver solve
-            icon <- iconPixbuf
-            win `gtkSet` [ windowTitle := "Painter" ++ [last solver]
-                         , windowDefaultHeight := pheight
-                         , windowIcon := Just icon
-                         ]
-            win `on` deleteEvent $ do
-                lift close
-                return True
-            
-            combiBut `on` buttonActivated $ combis
-            
-            edgeBut `on` buttonActivated $ switchConnect
-            
-            fast <- readIORef fastRef
-            fastBut `gtkSet` [ buttonLabel := if fast then "slow" else "fast" ]
-            fastBut `on` buttonActivated $ switchFast
-            
-            font <- fontDescriptionFromString $ sansSerif ++ " italic 12"
-            widgetOverrideFont lab $ Just font
-            
-            font <- fontDescriptionFromString $ monospace ++ " 14"
-            widgetOverrideFont modeEnt $ Just font
-            
-            let f act btn cmd = do
-                    addContextClass btn defaultButton
-                    setBackground btn blueback
-                    writeIORef cmd =<< (btn `on` buttonActivated $ do
-                        remote'
-                        act
-                        showPicts solve
-                        )
-            f (narrow solve) button1 button1SignalRef
-            f (simplify solve) button2 button2SignalRef
-            -- f (simplify solve False) simplifyB button3SignalRef
-            addContextClass button3 defaultButton
-            setBackground button3 blueback
-            signal <- button3 `on` buttonActivated $ return ()
-            writeIORef button3SignalRef signal
-            buildPaint1
+        buildPaint' checking = do
+          solve <- readIORef solveRef
+          solver <- getSolver solve
+          icon <- iconPixbuf
+          win `gtkSet` [ windowTitle := "Painter" ++ [last solver]
+                       , windowDefaultHeight := pheight
+                       , windowIcon := Just icon
+                       ]
+          win `on` deleteEvent $ do
+              lift close
+              return True
+          
+          combiBut `on` buttonActivated $ combis
+          
+          edgeBut `on` buttonActivated $ switchConnect
+          
+          fast <- readIORef fastRef
+          fastBut `gtkSet` [ buttonLabel := if fast then "slow" else "fast" ]
+          fastBut `on` buttonActivated $ switchFast
+          
+          font <- fontDescriptionFromString $ sansSerif ++ " italic 12"
+          widgetOverrideFont lab $ Just font
+          
+          font <- fontDescriptionFromString $ monospace ++ " 14"
+          widgetOverrideFont modeEnt $ Just font
+          
+          -- Differs from O'Haskell/Tcl.
+          -- Gtk needs signals.
+          let f (btn,signalRef) str act = do
+                  btn `gtkSet` [ buttonLabel := str ]
+                  addContextClass btn defaultButton
+                  writeIORef signalRef =<< (btn `on` buttonActivated $ act)
+          if checking then do
+            f button1 "<---" $ do (solve&backProof)
+                                  (solve&showPicts)
+            f button2 "--->" $ do (solve&forwProof)
+                                  (solve&showPicts)
+            f button3 "stop run" (solve&stopRun)
+          else do
+            f button1 "narrow/rewrite" $ do remote'
+                                            (solve&narrow)
+                                            (solve&showPicts)
+            f button2 "simplify" $ do remote'
+                                      (solve&simplify)
+                                      (solve&showPicts)
+            f button3 "" done
+          buildPaint1
             
         buildPaint1  = do
             solve <- readIORef solveRef
@@ -714,9 +714,8 @@ painter pheight solveRef solve2Ref = do
                 return False
             
             writeIORef isNewRef False
-            resetScale
         
-        callPaint' picts poss b c n str = do
+        callPaint' picts poss b n str = do
             let graphs = map onlyNodes $ filter notnull picts
             when (notnull graphs) $ do
                 writeIORef noOfGraphsRef $ length graphs
@@ -725,7 +724,6 @@ painter pheight solveRef solve2Ref = do
                 writeIORef fontRef =<< getFont solve
                 writeIORef treeNumbersRef poss
                 writeIORef subtreesRef b
-                writeIORef openRef c
                 writeIORef bgcolorRef $ case parse color str of 
                                         Just col -> col; _ -> white
                 noOfGraphs <- readIORef noOfGraphsRef
@@ -734,11 +732,12 @@ painter pheight solveRef solve2Ref = do
                     then curr else 0
                     else get $ search (== n) poss++Just 0
                 isNew <- readIORef isNewRef
-                if isNew then buildPaint >> newPaint
+                if isNew then buildPaint' False >> newPaint
                 else newPaint
          where write2 (xRef, yRef) (x, y)
                     = writeIORef xRef x >> writeIORef yRef y
         
+        -- Haskell/Gtk only.
         changeCanvasBackground c@(RGB r g b) = do
             let f n = fromIntegral $ n * 256
                 (r', g' , b') = (f r, f g, f b)
@@ -748,13 +747,12 @@ painter pheight solveRef solve2Ref = do
         close = do
             scans <- readIORef scansRef
             mapM_ stopScan0 scans
-            clear canv
-            widgetHide win
+            (canv&clear)
             solve <- readIORef solveRef
-            bigWin solve
-            stopRun solve
-            checkInSolver solve
-            drawCurr solve
+            (solve&bigWin)
+            (solve&stopRun)
+            (solve&checkInSolver)
+            (solve&drawCurr)
         
         combis = do
             str <- spaceEnt `gtkGet` entryText
@@ -766,11 +764,6 @@ painter pheight solveRef solve2Ref = do
             setBackground combiBut
                 $ if drawMode == 0 then blueback else redback
             scaleAndDraw $ combi drawMode
-        
-        switchConnect = do 
-            modifyIORef connectRef not
-            connect <- readIORef connectRef
-            setBackground edgeBut $ if connect then redback else blueback
         
         draw55 = drawPict . map (transXY (5,5))
         
@@ -904,7 +897,9 @@ painter pheight solveRef solve2Ref = do
         drawWidget _                   = return ()
         
         getDelay = truncate <$> delaySlider `gtkGet` rangeValue
-        
+
+        getNew' = readIORef isNewRef
+
         interrupt b = 
             if b then do
                 scans <- readIORef scansRef
@@ -1072,49 +1067,45 @@ painter pheight solveRef solve2Ref = do
                  draw55 $ delPict vs++case rect of Just r -> r:ws; _ -> ws
 
         newPaint = do
-            open <- readIORef openRef
-            if open then do
-                solve <- readIORef solveRef
-                backWin solve
-                widgetShowAll win
-                windowPresent  win
-            else windowIconify win
-            bgcolor <- readIORef bgcolorRef
-            changeCanvasBackground bgcolor
-            subtrees <- readIORef subtreesRef
-            stopBut `gtkSet` [buttonLabel := "runnableStop"]
-            replaceCommandButton stopButSignalRef stopBut $ interrupt True
-            noOfGraphs <- readIORef noOfGraphsRef
-            rangeSetRange pictSlider 0 $ fromIntegral $ noOfGraphs-1
-            curr <- readIORef currRef
-            pictSlider `gtkSet` [ rangeValue := fromIntegral curr ]
-            writeIORef rectRef Nothing
-            writeIORef rectIndicesRef []
-            writeIORef changedWidgetsRef nil2
-            writeIORef gradeRef 0
-            writeIORef colsRef 6
-            picEval <- readIORef picEvalRef
-            modeEnt  `gtkSet`
-                [entryText := if picEval == "tree" then "s" else "m16"]
-            pictures <- readIORef picturesRef
-            curr <- readIORef currRef
-            edges <- readIORef edgesRef
-            arrangeMode <- readIORef arrangeModeRef
-            spread <- readIORef spreadRef
-            let graph@(pict,_) = (pictures!!curr,edges!!curr)
-                mode = if isTree arrangeMode then arrangeMode else "t1"
-                ws = wTreeToBunches mode spread 0 $ pictToWTree pict
-                (bunch,g) = if picEval == "tree" then (Just ws,onlyNodes ws)
-                                                 else (Nothing,graph)
-            writeIORef bunchpictRef bunch
-            arrangeGraph True act g
-            where act (pict,arcs) = do
-                        curr <- readIORef currRef
-                        modifyIORef picturesRef $ \pictures ->
-                            updList pictures curr pict
-                        modifyIORef edgesRef $ \edges -> updList edges curr arcs
-                        writeIORef permutationRef $ propNodes pict
-                        scaleAndDraw ""
+          solve <- readIORef solveRef
+          (solve&backWin)
+          (win&windowPresent)
+          bgcolor <- readIORef bgcolorRef
+          changeCanvasBackground bgcolor
+          subtrees <- readIORef subtreesRef
+          stopBut `gtkSet` [buttonLabel := "runnableStop"]
+          replaceCommandButton stopButSignalRef stopBut $ interrupt True
+          noOfGraphs <- readIORef noOfGraphsRef
+          rangeSetRange pictSlider 0 $ fromIntegral $ noOfGraphs-1
+          curr <- readIORef currRef
+          pictSlider `gtkSet` [ rangeValue := fromIntegral curr ]
+          writeIORef rectRef Nothing
+          writeIORef rectIndicesRef []
+          writeIORef changedWidgetsRef nil2
+          writeIORef gradeRef 0
+          writeIORef colsRef 6
+          picEval <- readIORef picEvalRef
+          modeEnt  `gtkSet`
+              [entryText := if picEval == "tree" then "s" else "m16"]
+          pictures <- readIORef picturesRef
+          curr <- readIORef currRef
+          edges <- readIORef edgesRef
+          arrangeMode <- readIORef arrangeModeRef
+          spread <- readIORef spreadRef
+          let graph@(pict,_) = (pictures!!curr,edges!!curr)
+              mode = if isTree arrangeMode then arrangeMode else "t1"
+              ws = wTreeToBunches mode spread 0 $ pictToWTree pict
+              (bunch,g) = if picEval == "tree" then (Just ws,onlyNodes ws)
+                                               else (Nothing,graph)
+          writeIORef bunchpictRef bunch
+          arrangeGraph True act g
+          where act (pict,arcs) = do
+                      curr <- readIORef currRef
+                      modifyIORef picturesRef $ \pictures ->
+                          updList pictures curr pict
+                      modifyIORef edgesRef $ \edges -> updList edges curr arcs
+                      writeIORef permutationRef $ propNodes pict
+                      scaleAndDraw ""
 
         pressButton n p = do
             scans <- readIORef scansRef
@@ -1504,9 +1495,7 @@ painter pheight solveRef solve2Ref = do
             solverMsg <- readIORef solverMsgRef
             labGreen $ str1 ++ add solverMsg ++ add msg
 
-        setButton1' opts = opts button1 button1SignalRef
-        setButton2' opts = opts button2 button2SignalRef
-        setButton3' opts = opts button3 button3SignalRef
+        setButton3' opts = opts button3
 
         setCurrGraph (pict,arcs) = do
             pictures <- readIORef picturesRef
@@ -1571,6 +1560,13 @@ painter pheight solveRef solve2Ref = do
                     solve2 <- readIORef solve2Ref
                     enterTree solve2 False $ graphToTree graph
         
+        setNew' = writeIORef isNewRef True
+
+        switchConnect = do 
+          modifyIORef connectRef not
+          connect <- readIORef connectRef
+          setBackground edgeBut $ if connect then redback else blueback
+
         switchFast = do
             fast <- readIORef fastRef
             setFast $ not fast
@@ -1619,14 +1615,15 @@ painter pheight solveRef solve2Ref = do
 
            
     return Painter
-        { callPaint      = callPaint'
+        { buildPaint     = buildPaint'
+        , callPaint      = callPaint'
+        , getNew         = getNew'
         , labSolver      = labSolver'
         , remote         = remote'
-        , setButton1     = setButton1'
-        , setButton2     = setButton2'
         , setButton3     = setButton3'
         , setCurrInPaint = setCurrInPaint'
         , setEval        = setEval'
+        , setNew         = setNew'
         }
 -- Painter types
 
@@ -1876,9 +1873,9 @@ addFrame d c mode w = turtle0 (getCol w) $ jumpTo (neg2 p) ++
 
            
 -- | nodeLevels b graph!!n returns the length of a shortest path from a root of 
--- graph to n. nodeLevels True counts in control points and is used by shelf
--- (see below). nodeLevels False disregards control points and is used by 
--- colorLevels (see below).
+-- graph to n. 
+-- nodeLevels True counts in control points and is used by shelf.
+-- nodeLevels False disregards control points and is used by colorLevels.
 nodeLevels :: Bool -> Graph -> [Int]
 nodeLevels b (pict,arcs) = iter (replicate (length nodes) 0) nodes
  where nodes = indices_ pict
@@ -2020,9 +2017,8 @@ unTurt pict b = (pr2***pr3) $ foldr f (length pict-1,[],0) pict
                           then (i-1,ws++pict,k+length ws-1) else (i-1,w:pict,k)
                           where ws = mkPict w
 
--- | getRectIndices pict sc rect returns the indices of all widgets of pict
--- within rect. getRectIndices is used by addOrRemove and releaseButton and undo
--- (see below).
+-- getRectIndices pict sc rect returns the indices of all widgets of pict within
+-- rect. getRectIndices is used by addOrRemove and releaseButton and undo. 
 getRectIndices :: Picture -> Double -> Widget_ -> [Int]
 getRectIndices pict sc rect = [i | i <- indices_ scpict, 
                                     let w = scpict!!i, -- propNode w,
@@ -2207,7 +2203,7 @@ mkPict (Turtle (p,a,c,i) sc acts) =
 
 mkPict w = [w]
 
--- inFrame is used by crossing, inWidget and strands (see below).
+-- inFrame is used by crossing, inWidget and strands.
 
 inFrame :: Point -> Point -> Point -> Bool
 inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 `le` x && x `le` max x1 x2 &&
@@ -2221,7 +2217,7 @@ interior :: Point -> Lines -> Bool
 interior p@(_,y) = odd . length . filter (just . crossing ((p,q),q)) . addSuc
                    where q = (2000,y)
 
--- inWidget is used by getWidget and joinPict 6 (see below).
+-- inWidget is used by getWidget and joinPict 6.
 
 inWidget :: Point -> Widget_ -> Bool
 inWidget p w = inFrame (x1,y1) p (x2,y2) where (x1,y1,x2,y2) = widgFrame w
@@ -2229,7 +2225,7 @@ inWidget p w = inFrame (x1,y1) p (x2,y2) where (x1,y1,x2,y2) = widgFrame w
 -- inWidget p@(x,y) = (== p) . coords ||| any (interior p) . getFrameLns
 
 -- getWidget p scale pict returns a widget of pict close to p and scales it.
--- getWidget is used by moveButton and pressButton (see below).
+-- getWidget is used by moveButton and pressButton.
 
 getWidget :: Point -> Double -> Picture -> Maybe (Int,Widget_)
 getWidget p sc = searchGetR (not . isSkip &&& inWidget p) .
@@ -2241,7 +2237,7 @@ getWidget p sc = searchGetR (not . isSkip &&& inWidget p) .
 getFramePts :: Bool -> Widget_ -> Path
 getFramePts edgy = concatMap getPoints . hulls edgy
 
--- getFrameLns is used by hullCross (see below).
+-- getFrameLns is used by hullCross.
 
 getFrameLns :: Widget_ -> [Lines]
 getFrameLns = map getLines . hulls False
@@ -2279,10 +2275,8 @@ hulls edgy = f
        f (Repeat w)   = f w
        f _            = []
 
-{- | 
-    @stringsInPict@ is used by 'Ecom.showSubtreePicts' and
-    'Ecom.showTreePicts'.
--}
+-- stringsInPict is used by Ecom > showMatrix, Ecom > showSubtreePicts,
+-- Ecom > showTransOrKripke and Ecom > showTreePicts.
 stringsInPict :: [Widget_] -> [String]
 stringsInPict = concatMap stringsInWidg
 
@@ -2378,7 +2372,7 @@ solPic sig eval sizes spread t = case parseSol (solAtom sig) t of
                                       _ -> zero
                                  where f = eval sizes spread . getTerm
 
--- searchPic and solPic are used by Ecom.
+-- searchPic and solPic are used by Ecom > getInterpreter.
 
 partition :: Int -> Interpreter
 partition mode sizes _ t = do guard $ not $ isSum t
@@ -2819,7 +2813,7 @@ pictTrans c = f where
      f _                 = Nothing
      mkWidg tr = Just $ single . mkTurt p0 1 . tr
 
--- | wTreeToBunches is used by 'arrangeGraph', 'concatGraphs' and 'newPaint'
+-- wTreeToBunches is used by arrangeGraph, concatGraphs and newPaint.
 wTreeToBunches :: String -> Point -> Double -> TermW -> Picture
 wTreeToBunches mode (hor,ver) grade t = w:ws2
   where w:ws = bunches (if head mode == 'a' then chgY 0 ct else ct) pt
@@ -2963,7 +2957,7 @@ transWLeaves hor ts t = loop hor
                                [w1,w2] = map (midx . fst . root) [last us,t]
 
 
--- | graphToTree is used by 'arrangeGraph' and 'showInSolver'.
+-- graphToTree is used by arrangeGraph and showInSolver.
 graphToTree :: Graph -> TermS
 graphToTree graph = eqsToGraph [] eqs
    where (eqs,_) = relToEqs 0 $ map f $ propNodes $ fst graph
@@ -3028,7 +3022,7 @@ pictFrame pict = foldl f (0,0,0,0) $ indices_ pict
 
 -- | widgFrame w returns the leftmost-uppermost and rightmost-lowermost
 -- coordinates of the smallest rectangle that encloses w. widgFrame is used by
--- scaleAndDraw (see above), addFrame and shelf (see below).
+-- scaleAndDraw, addFrame and shelf.
 widgFrame :: Widget_ -> (Double, Double, Double, Double)
 widgFrame (Turtle st sc acts) = turtleFrame st sc acts
 widgFrame w                   = minmax $ coords w:getFramePts True w
@@ -3077,7 +3071,7 @@ moveTurn :: Bool -> Point -> Double -> WidgTrans
 moveTurn True p a = turnWidg a . moveWidg p 
 moveTurn _ p a    = updState f where f (_,_,c,i) = (p,a,c,i)
 
--- | moveTurnScale is used by mkPict and 'widgFrame'.
+-- moveTurnScale is used by mkPict and widgFrame.
 moveTurnScale :: Bool -> Point -> Double -> Double -> Widget_ -> Widget_
 moveTurnScale b p a sc = scaleWidg sc . moveTurn b p a
 
@@ -3480,7 +3474,7 @@ getSupport graph s t =
       where f path = s `elem` path && t `elem` path && g s <= g t
                      where g s = getInd s path
 
--- | pictToWTree is used by 'newPaint' and 'concatGraphs'.
+-- pictToWTree is used by newPaint and concatGraphs.
 pictToWTree :: Picture -> TermW
 pictToWTree pict = case map f pict of [t] -> t
                                       ts -> F Skip $ zipWith g [0..] ts
@@ -3492,7 +3486,7 @@ pictToWTree pict = case map f pict of [t] -> t
                                      where p = i:getPos x
                       g _ t        = t
 
--- | concatGraphs is used by 'addOrRemove' and 'arrangeOrCopy'.
+-- concatGraphs is used by addOrRemove and arrangeOrCopy.
 concatGraphs :: Point -> Double -> String -> [Graph] -> Graph 
 concatGraphs _ _ _ []                 = nil2
 concatGraphs _ _ _ [graph]            = graph
@@ -3503,11 +3497,9 @@ concatGraphs spread grade mode graphs = (concat pictures,foldl g [] edges)
        g arcs = (arcs++) . map (map (+ length arcs))
        m = if isTree mode then mode else "t1"
 
-{- |
-bunchesToArcs (pict,arcs) removes the bunches of pict and adds their edges to
-arcs. bunchesToArcs is used by arrangeGraph, concatGraphs, scaleAndDraw and 
-showInSolver (see above).
--}
+-- bunchesToArcs (pict,arcs) removes the bunches of pict and adds their edges to
+-- arcs. bunchesToArcs is used by arrangeGraph, concatGraphs, scaleAndDraw and 
+-- showInSolver.
 bunchesToArcs :: Graph -> Graph
 bunchesToArcs graph@(pict,_) = (pict2,foldl removeCycles arcs1 cycles)
   where addArcs (pict,arcs) (m,Bunch w is) = (updList pict m w,
@@ -3530,11 +3522,9 @@ bunchesToArcs graph@(pict,_) = (pict2,foldl removeCycles arcs1 cycles)
                                                   | n == t = arcs!!n`minus1`s
                                                   | otherwise = arcs!!n
 
-{- |
-addSmoothArc graph (s,t,..) adds a smooth line from s to t together with the 
-control points of the line. addSmoothArc is used by releaseButton False False 
-and bunchesToArcs (see above).
--}
+-- addSmoothArc graph (s,t,..) adds a smooth line from s to t together with the 
+-- control points of the line. 
+-- addSmoothArc is used by releaseButton False False and bunchesToArcs.
 addSmoothArc :: Graph -> (Int,Int,Widget_,Widget_,[Int]) -> Graph
 addSmoothArc (pict,arcs) (s,t,v,w,ts)
                          | s == t = (f [(xp,y),mid,(x,yp)],
@@ -3604,13 +3594,10 @@ exchgPositions graph@(pict,arcs) s t = (exchgWidgets pict s t,
                                  where arcs' = updList arcs m (arcs!!m`join1`n)
             paths2arcs arcs _ = arcs
 
-{- |
-buildPaths graph regards the nodes of each maximal path p of graph consisting
-of red dots as control points of smooth lines that connect a direct
-predecessor of p with a direct successor of p. buildPaths is used by
-graphToTree, subgraph, releaseButton, buildAndDrawPaths and exchgPositions
-(see above).
--}
+-- buildPaths graph regards the nodes of each maximal path p of graph consisting
+-- of red dots as control points of smooth lines that connect a direct
+-- predecessor of p with a direct successor of p. buildPaths is used by
+-- graphToTree, subgraph, releaseButton, buildAndDrawPaths and exchgPositions.
 buildPaths :: Graph -> Arcs
 buildPaths (pict,arcs) = connect $ concatMap f $ indices_ pict
   where f i = if isSkip (pict!!i) then [] else [[i,j] | j <- arcs!!i]
@@ -3860,7 +3847,7 @@ lowerTangent ps@(p1:_) (q1:qs@(q2:_))
                                | slope p1 q1 <= slope q1 q2 = lowerTangent ps qs
 lowerTangent (p1:_) (q1:_)                                     = (p1,q1)
 
--- | convexPath is used by 'scaleAndDraw'.
+-- convexPath is used by scaleAndDraw.
 convexPath :: Path -> [Widget_] -> ([Widget_], Path)
 convexPath ps pict = if straight ps then (h ps,ps) else (h $ last qs:qs,qs)
   where qs = convexHull $ sort (<) ps
@@ -4367,12 +4354,12 @@ drawPartition sizes mode = f $ case mode of 0 -> levelTerm
 
 -- * __String parser__ into widgets
 
--- | graphString is used by 'loadGraph'.
+-- graphString is used by loadGraph.
 graphString :: Parser ([Widget_], [[Int]])
 graphString = do symbol "("; pict <- list widgString; symbol ","
                  arcs <- list (list int); symbol ")"; return (pict,arcs)
 
--- widgString is used by loadWidget (see above).
+-- widgString is used by loadWidget.
 widgString :: Parser Widget_
 widgString   = concat [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
                           r <- enclosed double; b <- enclosed double
