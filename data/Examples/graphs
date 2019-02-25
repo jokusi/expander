@@ -1,74 +1,61 @@
 -- graphs
 
-defuncts:   G1 G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12 frame intcirc redassign 
-constructs: F C f g /\
-fovars:     k n
-hovars:     F C
+defuncts:   graph
+constructs: assign /\
+fovars:     k m
 
 axioms:
 
-  frame(g) == wtree(fun(x,rframe(text(x))))(g)
+  drawF == wtree$frameS(5).text
 
-& intcirc(g) == wtree(fun(x,ite(Int(x),circ(11,red),x)))(g)
+& drawI == wtree$fun(x,ite(Int$x,red$circ$11,text$x))
 
-& redassign(g) == wtree(fun(x,ite(x=assign,red(text(x)),x)))(g)
+& drawA == wtree$fun(assign,red$text$assign,x,text$x)
 
-& drawLC(g) == wtreeL(fun(x,k,n,circ(5,color(k,n))))(g)
+& drawC$m == wtree(m)$fun((x,k,n),color(k,n)$circ$5)		-- m in [1..4]
 
-& drawLRC(g) == wtreeL(fun(x,k,n,circ(k*2+2,color(k,n))))(g)
+& drawC1$m == wtree(m)$fun((x,k,n),color(k,n)$circ$k+1)	
 
-& drawLO(g) == wtreeL(fun(x,k,n,oval(5,15,color(k,n))))(g)
+& drawC2$m == wtree(m)$fun((x,k,n),color(k,n)$circ$k*2+2)	
 
-& drawLL(g) == wtreeL(fun(x,k,n,turt(R,leaf(15,15,color(k,n)))))(g)
+& drawO$m == wtree(m)$fun((x,k,n),color(k,n)$oval(5,15))	
 
-& drawLA(g) == wtreeL(fun(x,k,n,turt(R,leafA(100,40,color(k,n)))))(g)
+& drawO1$m == wtree(m)$fun((x,k,n),color(k,n)$oval(k+1,15))
 
-& drawLM(g) == wtreeL(fun(x,k,n,turt(R,leafM(100,40,color(k,n)))))(g)
+& drawO2$m == wtree(m)$fun((x,k,n),color(k,n)$oval(k*2+2,15))
 
-& drawLRO(g) == wtreeL(fun(x,k,n,oval(k*2+2,15,color(k,n))))(g)
+& drawLD$m == wtree(m)$fun((x,k,n),turt[R,color(k,n)$leafD(15,15)])
 
-& drawHC(g) == wtreeH(fun(x,k,n,circ(5,color(k,n))))(g)
+& drawLA$m == wtree(m)$fun((x,k,n),turt[R,color(k,n)$leafA(100,40)])
 
-& drawHRC(g) == wtreeH(fun(x,k,n,circ(k*2+2,color(k,n))))(g)
+& drawLC$m == wtree(m)$fun((x,k,n),turt[R,color(k,n)$leafC(15,5)])
 
-& drawHO(g) == wtreeH(fun(x,k,n,oval(5,15,color(k,n))))(g)
-
-& drawHRO(g) == wtreeH(fun(x,k,n,oval(k*2+2,15,color(k,n))))(g)
-
-& drawPC(g) == wtreeP(fun(x,k,n,circ(5,color(k,n))))(g)
-
-& drawPRC(g) == wtreeP(fun(x,k,n,circ(k+1,color(k,n))))(g)
-
-& drawBC(g) == wtreeB(fun(x,k,n,circ(5,color(k,n))))(g)
-
-& drawBRC(g) == wtreeB(fun(x,k,n,circ(k+1,color(k,n))))(g)
-
-& G1 == [(1,a,[1,2]),(2,a,3),(2,c,[3,4]),(3,a,[1,4]),(4,a,4)]
-& G2 == [(1,4),(2,2),(3,5),(4,3),(5,1)]
-& G3 == 0(1,2(5,6,2(5,6,3)))
-& G4 == [(0,[0,1]),(1,2),(2,[2,3]),(3,4),(4,[4,5]),(5,6)]
-& G5 == [(7,3),(3,[2,1]),(2,5),(6,7),(1,4),(3,5),(4,3)]
-& G6 == 0(0(0(0(1,2),widg(pos 0 0,2,light red(circ(33)))),2),
-        0(pos ,0(0(0(0(1,2),0(pos 1 1 0 0,2)),2),0(pos 1 1,2))))
-& G7 == seq(assign(fact,int(1)),            loop(greater(var(z),int(0)),                 seq(assign(fact,mul(var(fact),var(z))),                     assign(z,sub(var(z),int(1))))))
-& G8 == seq(assign(fact,int(1)),
-            loop(widg(var(z),int(0),red$snow(6,3,88,6,tria(-1))),
-                seq(assign(fact,
-                           widg(var(fact),var(z),
-                                frame(red$text(hans peter wolf)))),
-                    assign(z,sub(var(z),int(pos 1 1 0 1))))))
-& G9 == f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a))
-& G10 == f(f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
+& graph$1 == [(1,a,[1,2]),(2,a,3),(2,c,[3,4]),(3,a,[1,4]),(4,a,4)]
+& graph$2 == [(1,4),(2,2),(3,5),(4,3),(5,1)]
+& graph$3 == 0(1,2(5,6,2(5,6,3)))
+& graph$4 == [(0,[0,1]),(1,2),(2,[2,3]),(3,4),(4,[4,5]),(5,6)]
+& graph$5 == [(7,3),(3,[2,1]),(2,5),(6,7),(1,4),(3,5),(4,3)]
+& graph$6 == 0(0(0(0(1,2),widg(pos 0 0,2,light red(circ(33)))),2),
+               0(pos ,0(0(0(0(1,2),0(pos 1 1 0 0,2)),2),0(pos 1 1,2))))
+& graph$7 == seq(assign(fact,int(1)),                 loop(greater(var(z),int(0)),                      seq(assign(fact,mul(var(fact),var(z))),                          assign(z,sub(var(z),int(1))))))
+& graph$8 == seq(assign(fact,int(1)),
+                 loop(widg(var(z),int(0),red$snow(6,3,88,6,tria(-1))),
+                      seq(assign(fact,
+                                 widg(var(fact),var(z),
+                                      frame(red$text(hans peter wolf)))),
+                          assign(z,sub(var(z),int(pos 1 1 0 1))))))
+& graph$9  == f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a))
+& graph$10 == f(f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
   f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
   f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
   f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)),
   f(f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a),f(a,a,a,a,a)))
-& G11 == 0(1(2,2,2(3(4,4,4,4,4,4,4,4,4,4,4)),2,2,2,2,2,2,2,2,2,2,                 2(3(4,4,4,4,4,4,4,4,4,4,4)),2,2))
-& G12 == 0(1(2,             2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                 4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),             2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,             2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                 4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),             2))
+& graph$11 == 0(1(2,2,2(3(4,4,4,4,4,4,4,4,4,4,4)),2,2,2,2,2,2,2,2,2,2,                        2(3(4,4,4,4,4,4,4,4,4,4,4)),2,2))
+& graph$12 == 0(1(2,                  2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                      4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),                  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,                  2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                      4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),                  2))
 
 terms:   
     hhh(gg,widg(kk,rainbow2(22,4,7)$red$oval(111,44)))
-
+<+> f(g,f(g,h),f(5,f(g,f(g,h),f(g,h),f(g,h),5(g,h),f(g,h))),f(g,h),f(g,h),f(g,h))
 <+> f(widg$matrix[(3,4,c),(a,b,dd)],kkk,kkk)
 <+> fun(x,f(g(444,widg(444,bbb,x),widg(444,widg(444,bbb,x),x)),widg(444,bbb,x)))
     $matrix[(3,4,c),(a,b,dd)]
@@ -77,7 +64,6 @@ terms:
     widg$circ$22,widg$circ$7,						   
     Lisa(Mutter Renate,Vater Heinrich,Kinder([Amalie,Otto,Hans,Emma]))]
 <+> (iterate(fun(x,widg(x,circ$22)))$widg$circ$44)!!3
-<+> drawLC(G7) <+> drawLO(G9) <+> drawLM(G9)
 <+> fun((F,C),F$C$circ$44,7777)((rainbow(0,5),red))
 <+> string[5,6,7](f(g,h)/\h)
 <+> widg(f(g,h)/\h,text[5,6,7])
@@ -91,7 +77,8 @@ terms:
 <+> widg(replicate(5)[1..4],center$turt[shine(11)$red$circ$22,J$33,
 					shine(11)$blue$circ$22])
 <+> widg(hh,widg(gg,load$test),load$test)
-<+> f(g(h,widg(t,z,gif(goat,28,25))),     widg(widg(t,z,gif(nemo,63,49)),z,light green(oval(44,22))))	
+<+> widg(f(g(h,widg(t,z,gif(goat,28,25))),           widg(widg(t,z,gif(nemo,63,49)),z,light green(oval(44,22)))),
+         gif(skater,98,105))	
 <+> f(a,a,a,a,a,widg(a,a,a,a,a,a,a,a,a,a,a,green$circ$55),a,a,a,a,
       widg(a,red$circ$33))
 <+> f(f(f(4,4,4,4,4)),f(widg(g(g(5),g(5),g(5),g(5)),circ(22))),

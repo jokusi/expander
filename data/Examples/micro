@@ -6,7 +6,7 @@ preds:		Sat
 
 axioms:
    
-  states == [1] 
+  states == [1] 	   -- initial sates	
 & atoms == [start,close,heat,error] 
 
 & 1 -> branch[2,3] & 2 -> 5 & 3 -> branch[1,6] 
@@ -19,22 +19,18 @@ axioms:
 
 & (Sat(at)$st <==> at `in` out$st)
 
-conjects: 
+conjects: 		   --		proof files
 
-  EF(Sat$heat)$5	   --> True (df: 89 simplifications + 2 permutations)
-			   --	    (bfp: 28 simplifications + 1 permutation)	
-& EG(Sat$heat)$7	   --> True (2 coinductions + 3 resolutions)
-			   --	    (simplifications become cyclic)	
-& AF(Sat$heat)$6	   --> True (df: 22 simplifications)
-			   --       (bfp: 16 simplifications)	
-& all(EF$Sat$heat)$states  --> True (72 simplifications)
-& all(AF$Sat$heat)[4,6,7]  --> True (36 simplifications)
+  EF(Sat$heat)$5	   --> True 	micro1	
+& EG(Sat$heat)$7	   --> True     micro2, micro2cycle	
+& AF(Sat$heat)$6	   --> True     (16 parallel simplifications)
+& all(EF$Sat$heat)$states  --> True     micro3
+& all(AF$Sat$heat)[4,6,7]  --> True 	(26 parallel simplifications)
 
 terms:
 
     eval(EF$heat)			--> states
 <+> eval(EG$heat)			--> [4,7]
-<+> stateflow(EG$heat)			--> [4,7]
 <+> eval(AF$heat)			--> [4,6,7]
 <+> eval(start`then`heat)		--> [1,3,4,7]
 <+> eval(EX$start`then`heat)		--> [1,3,4,5,6,7]

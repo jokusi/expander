@@ -11,7 +11,7 @@ Equation removal is safe.
 
   (Nat0(x) ===> even(x) | odd(x))
 
-to the axioms and applying FIXPOINT INDUCTION wrt
+to the axioms and applying INDUCTION wrt
 
   Nat(0)
 & (Nat(suc(x)) <=== Nat(x))
@@ -23,15 +23,14 @@ of the preceding trees leads to
 even(0) & All x:(Nat0(x) ==> even(suc(x)) | odd(suc(x))) | 
 odd(0) & All x:(Nat0(x) ==> even(suc(x)) | odd(suc(x)))
 
-The reducts have been simplified.
+The reducts have been simplified in parallel.
 
 2. NARROWING the preceding trees (one step) leads to 
 
 All x0:(Nat0(x0) ==> even(suc(x0)) | odd(suc(x0)))
 
 The axioms have been MATCHED against their redices.
-The reducts have been simplified.
-Failure atoms have been removed.
+The reducts have been simplified in parallel.
 
 3. NARROWING the preceding trees (one step) leads to 
 
@@ -39,22 +38,27 @@ All x0:(even(x0) ==> even(suc(x0)) | odd(suc(x0))) &
 All x0:(odd(x0) ==> even(suc(x0)) | odd(suc(x0)))
 
 The axioms have been MATCHED against their redices.
-The reducts have been simplified.
-Failure atoms have been removed.
+The reducts have been simplified in parallel.
 
 4. NARROWING the preceding trees (one step) leads to 
+
+All x0:(even(x0) ==> odd(x0) | odd(suc(x0))) & 
+All x0:(odd(x0) ==> even(suc(x0)) | odd(suc(x0)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified in parallel.
+
+5. NARROWING the preceding trees (one step) leads to 
 
 All x0:(odd(x0) ==> even(suc(x0)) | odd(suc(x0)))
 
 The axioms have been MATCHED against their redices.
-The reducts have been simplified.
-Failure atoms have been removed.
+The reducts have been simplified in parallel.
 
-5. NARROWING the preceding trees (one step) leads to 
+6. NARROWING the preceding trees (one step) leads to 
 
 True
 
 The axioms have been MATCHED against their redices.
-The reducts have been simplified.
-Failure atoms have been removed.
+The reducts have been simplified in parallel.
 

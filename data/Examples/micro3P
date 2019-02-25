@@ -1,0 +1,54 @@
+-- /Users/Padawitz/ExpanderLib/micro3P
+
+0. Derivation of
+
+all(EF(Sat(heat)))$states
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING depthfirst the preceding trees (24 steps) leads to 
+
+MU X.(Sat(heat)\/EX(X))$5 & MU X.(Sat(heat)\/EX(X))$3 & 
+MU X.(Sat(heat)\/EX(X))$6 & MU X.(Sat(heat)\/EX(X))$7 & 
+MU X.(Sat(heat)\/EX(X))$4
+
+2. PERMUTING THE SUBTREES at positions
+[]
+of the preceding trees leads to 
+
+MU X.(Sat(heat)\/EX(X))$4 & MU X.(Sat(heat)\/EX(X))$7 & 
+MU X.(Sat(heat)\/EX(X))$6 & MU X.(Sat(heat)\/EX(X))$3 & 
+MU X.(Sat(heat)\/EX(X))$5
+
+3. SIMPLIFYING depthfirst the preceding trees (100 steps) leads to 
+
+any(MU X.(Sat(heat)\/EX(X)))[2,3] | MU X.(Sat(heat)\/EX(X))$3
+
+4. SIMPLIFYING depthfirst the preceding trees (20 steps) leads to 
+
+any(MU X.(Sat(heat)\/EX(X)))[2,3] | MU X.(Sat(heat)\/EX(X))$3
+The formula coincides with no. 3
+
+5. PERMUTING THE SUBTREES at positions
+[]
+of the preceding trees leads to 
+
+MU X.(Sat(heat)\/EX(X))$3 | any(MU X.(Sat(heat)\/EX(X)))[2,3]
+
+6. SIMPLIFYING depthfirst the preceding trees (44 steps) leads to 
+
+MU X.(Sat(heat)\/EX(X))$2 | MU X.(Sat(heat)\/EX(X))$3 | 
+MU X.(Sat(heat)\/EX(X))$6
+
+7. PERMUTING THE SUBTREES at positions
+[]
+of the preceding trees leads to 
+
+MU X.(Sat(heat)\/EX(X))$6 | MU X.(Sat(heat)\/EX(X))$3 | 
+MU X.(Sat(heat)\/EX(X))$2
+
+8. SIMPLIFYING depthfirst the preceding trees (17 steps) leads to 
+
+True
+

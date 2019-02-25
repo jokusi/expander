@@ -16,8 +16,8 @@ msgsout(b) = {(b,a)}            &
 msgsout(c) = {(c,a)}            &
 
 msgsin(a) = {(b,a),(c,a)}       &
-msgsin(b) = {(a,b)}         &
-msgsin(c) = {(a,c)}         &
+msgsin(b) = {(a,b)}             &
+msgsin(c) = {(a,c)}             &
 
 --WAITING:    
   quiet(x) -> waiting(x)^mailbox(msgsout(x))

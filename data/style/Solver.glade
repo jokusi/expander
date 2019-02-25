@@ -373,7 +373,7 @@
                       <object class="GtkLabel" id="termBut">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">load</property>
+                        <property name="label" translatable="yes">?</property>
                         <style>
                           <class name="font12"/>
                         </style>

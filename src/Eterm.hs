@@ -1307,6 +1307,16 @@ bool :: Parser Bool
 bool                = (do symbol "True"; return True) ++
                       (do symbol "False"; return False)
 
+data Strategy = DF | BF | PA deriving (Show,Eq)
+
+strategy      = (do symbol "DF"; return DF) ++
+                (do symbol "BF"; return BF) ++
+                (do symbol "PA"; return PA)
+
+stratWord strat = case strat of DF -> "depthfirst"
+                                BF -> "breadthfirst"
+                                _  -> "in parallel"
+
 letters :: String
 letters       = ['a'..'z']++['A'..'Z']
 
@@ -2257,6 +2267,9 @@ apply t u        = F "$" [t,u]
 applyL :: TermS -> [TermS] -> TermS
 applyL (F x []) ts = F x ts
 applyL t ts        = F "$" [t,mkTup ts]
+
+listF str ts = f $ words str where f [x]    = F x ts
+                                   f (x:xs) = F x [f xs]
 
 -- colHidden is used by Epaint > widgConst and Ecom > drawThis.
 colHidden :: TermS -> TermS

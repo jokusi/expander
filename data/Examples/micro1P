@@ -1,0 +1,26 @@
+-- /Users/Padawitz/ExpanderLib/micro1P
+
+0. Derivation of
+
+EF(Sat(heat))$5
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING in parallel the preceding trees (19 steps) leads to 
+
+heat `in` [start,close,error] | any(MU X.(Sat(heat)\/EX(X)))[2,3] | 
+heat `in` [] | heat `in` [start,close] | any(MU X.(Sat(heat)\/EX(X)))[7]
+
+2. PERMUTING THE SUBTREES at positions
+[]
+of the preceding trees leads to 
+
+any(MU X.(Sat(heat)\/EX(X)))[7] | heat `in` [start,close] | heat `in` [] | 
+any(MU X.(Sat(heat)\/EX(X)))[2,3] | heat `in` [start,close,error]
+The formula coincides with no. 1
+
+3. SIMPLIFYING in parallel the preceding trees (9 steps) leads to 
+
+True
+

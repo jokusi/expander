@@ -1,0 +1,2 @@
+-- /Users/Padawitz/ExpanderLib/micro3T
+[SetStrat DF, Simplify 100 False, PermuteSubtrees, Simplify 100 False, Simplify 100 False, PermuteSubtrees, Simplify 100 False, PermuteSubtrees, Simplify 100 False]

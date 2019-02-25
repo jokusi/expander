@@ -792,7 +792,7 @@ subsumes sig = h
 -- * __Simplification__
 
 simplifyIter :: Sig -> TermS -> TermS
-simplifyIter sig = pr1 . simplifyLoop sig BFP 100
+simplifyIter sig = pr1 . simplifyLoop sig 100 PA
 
 sapply :: Sig -> TermS -> TermS -> TermS
 sapply sig t  = simplifyIter sig . apply t
@@ -812,78 +812,77 @@ reduceString sig t = do t <- parse (term sig) t
 -- (see Ecom).
 
 applyDrawFun :: Sig -> String -> String -> [TermS] -> [TermS]
-applyDrawFun _ "" _       = id
-applyDrawFun _ "text" ""  = id
-applyDrawFun _ "text" str = map $ add . addToPoss [0]
-                            where add t = mkSum [t,F "widg" [F "red" [F "frame"
-                                           [F "black" [F "text" [leaf str]]]]]]
-applyDrawFun sig draw _   = map $ wtree . simplifyIter sig
-                                        . F draw . single . addToPoss [0]
-     where wtree (F "$" [F "wtree" [f],t]) = g t
+applyDrawFun _ "" _        = id
+applyDrawFun _ "title" ""  = id
+applyDrawFun _ "title" str = map $ add . addToPoss [0]
+     where add t = mkSum [t,listF "widg blue $" [listF "frame 5" [],
+                                                 F "text" [leaf str]]]
+applyDrawFun sig draw _ | just t = map $ wtree . simplifyIter sig
+                                               . apply (get t) . addToPoss [0]
+     where t = parse (term sig) draw
+           wtree (F "$" [F "$" [F "wtree" [m],f],t]) | just m' = g t pt
+              where m' = parsePnat m
+                    order = case get m' of 1 -> levelTerm; 2 -> preordTerm
+                                           3 -> heapTerm;  _ -> hillTerm
+                    (pt,n) = order black (const id) t
+                    h t k = sapplyL sig f [t,mkConst k,mkConst n]
+                    g (F x ts) (F k us) | just u = F "widg" $ vs++[h (get u) k]
+                                        | True   = F x vs
+                                                   where vs = zipWith g ts us
+                                                         u = parse (term sig) x
+                    g t@(V x) (F k _) | isPos x = mkPos $ tail $ getPos x
+                                      | True    = F "widg" [h t k]
+                    g t _ = t
+           wtree (F "$" [F "wtree" [f],t]) = g t
              where g (F x ts) | just u  = F "widg" $ vs++[sapply sig f $ get u]
                               | True    = F x vs where vs = map g ts
                                                        u = parse (term sig) x
                    g t@(V x)  | isPos x = mkPos $ tail $ getPos x
                               | True    = F "widg" [sapply sig f t]
                    g t = t
-           wtree (F "$" [F "wtree" [m,f],t]) | just m' = g t pt
-               where m' = parsePnat m
-                     order = case get m' of 1 -> levelTerm; 2 -> preordTerm
-                                            3 -> heapTerm;  _ -> hillTerm
-                     (pt,n) = order black (const id) t
-                     h t k = sapplyL sig f [t,mkConst k,mkConst n]
-                     g (F x ts) (F k us) | just u = F "widg" $ vs++[h (get u) k] 
-                                         | True   = F x vs
-                                                   where vs = zipWith g ts us
-                                                         u = parse (term sig) x
-                     g t@(V x) (F k _) | isPos x = mkPos $ tail $ getPos x
-                                       | True    = F "widg" [h t k]
-                     g t _ = t
            wtree t = simplifyIter sig t
 
--- wtree(f)(t) replaces each subgraph x(t1,..,tm) of t by the subgraph 
--- widg(t1,...,tm,f(x)).
+-- wtree(f)(t) replaces each subgraph x(t1,..,tn) of t by the subgraph 
+-- widg(t1,...,tn,f(x)).
 
--- wtree(i,f)(t) replaces each subtree x(t1,...,tm) of t by the subtree 
--- widg(t1,...,tm,f(x,k,n)) where k is the position of x within t with respect
--- to level order (i=1), prefix order (i=2), heap order (i=3) or hill order 
--- (i>3) and n is the maximum of positions of t.
+-- wtree(m,f)(t) replaces each subtree x(t1,...,tn) of t by the subtree 
+-- widg(t1,...,tn,f(x,k,max)) where k is the position of x within t with respect
+-- to level order (m=1), prefix order (m=2), heap order (m=3) or hill order 
+-- (m>3) and max is the maximum of positions of t.
 
 -- If the interpreter widgetTree is applied to the resulting term, node x is 
--- replaced by the widget f(x) resp. f(x,k,n).
+-- replaced by the widget f(x) resp. f(x,k,max).
 
-data Strategy = DF | BF | BFP deriving Show
-
--- simplifyLoop sig depthfirst m t applies simplification rules at most m times
+-- simplifyLoop sig limit strat t applies simplification rules at most m times
 -- to the maximal subtrees of t and returns the simplified tree together with 
 -- the number of actually applied steps. 
 -- simplifyLoop is used by applyDrawFun, simplifyIter, simplifyA lambda 
 -- (see here), simplify' and Ecom > simplifySubtree.
-simplifyLoop :: Sig -> Strategy -> Int -> TermS -> (TermS,Int,Bool)
-simplifyLoop sig strat m t = loop 0 m [t] where
-  loop k m ts = if m == 0 then (t,k,False)
-                else case f (simplifyOne sig) t of
-                          Just t -> loop' t
-                          _ -> case f (expandFix sig) t of Just t -> loop' t
-                                                           _ -> (t,k,False)
-                where t = head ts
-                      loop' t = if just $ search (eqTerm t) ts then (t,k,True)
-                                else loop (k+1) (m-1) $ t:ts
+simplifyLoop :: Sig -> Int -> Strategy -> TermS -> (TermS,Int,Bool)
+simplifyLoop sig limit strat t = loop 0 limit [t] where
+ loop k limit ts = if limit == 0 then (t,k,False)
+                   else case f (simplifyOne sig) t of
+                             Just t -> loop' t
+                             _ -> case f (expandFix sig) t of Just t -> loop' t
+                                                              _ -> (t,k,False)
+                 where t = head ts
+                       loop' t = if just $ search (eqTerm t) ts then (t,k,True)
+                                 else loop (k+1) (limit-1) $ t:ts
 
-  f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
-  f g t = case strat of DF -> modifyDF [] t                     -- depthfirst
-                        BF -> modifyBF [[]] [t]                 -- breadthfirst
-                        _  -> do let u = modifyBFP t [] t       -- parallel
-                                 guard $ t /= u; Just u
-         where modifyDF p u = concat $ g t p:zipWithSucs modifyDF p (subterms u)
-               modifyBF [] _  = Nothing
-               modifyBF ps us = concat (map (g t) ps) ++ modifyBF qs vs
-                   where (qs,vs) = unzip $ concat $ zipWith (zipWithSucs (,)) ps
-                                                  $ map subterms us
-               modifyBFP t p u = case g t p of
-                                      Just t -> t
-                                      _ -> fold2 modifyBFP t (succsInd p ts) ts
-                                           where ts = subterms u
+ f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
+ f g t = case strat of DF -> modifyDF [] t                     -- depthfirst
+                       BF -> modifyBF [[]] [t]                 -- breadthfirst
+                       _  -> do let u = modifyPA t [] t        -- parallel
+                                guard $ t /= u; Just u
+        where modifyDF p u = concat $ g t p:zipWithSucs modifyDF p (subterms u)
+              modifyBF [] _  = Nothing
+              modifyBF ps us = concat (map (g t) ps) ++ modifyBF qs vs
+                  where (qs,vs) = unzip $ concat $ zipWith (zipWithSucs (,)) ps
+                                                 $ map subterms us
+              modifyPA t p u = case g t p of
+                                    Just t -> t
+                                    _ -> fold2 modifyPA t (succsInd p ts) ts
+                                         where ts = subterms u
 
 -- simplifyOne sig t p applies the first applicable simplification rule to the
 -- subterm of t at position p.
@@ -1042,7 +1041,7 @@ simplCoInd sig (F "==>" [F "$" [F x [t],arg],u])
                             where _:xs = words x
                                   us = mkGets xs $ F "rel" [arg,u]
 
--- apply coinduction to an inequation or an implication
+-- apply fixpoint coinduction to an inequation or an implication
 
 simplCoInd _ (F "<=" [u,F x [t]])
     | leader x "nu" = Just $ F "<=" [t>>>forL us xs,u]
@@ -2053,9 +2052,9 @@ solveGuard :: Sig -> TermS -> [TermS] -> (String -> Int) -> Maybe [[IterEq]]
 solveGuard sig cond axs vc = do guard $ notnull sols; Just sols
                   where sols = Haskell.mapMaybe f (mkSummands $ pr1 t)
                         f = parseSol $ solEq sig
-                        t = applyLoop cond 100 vc axs axs sig True 2 True False
+                        t = applyLoop cond 100 vc axs axs sig True 2 False True
 
--- | applyLoop t 0 m ... axs preAxs sig nar match simplify refute applies axioms
+-- applyLoop t 0 m ... axs preAxs sig nar match refute simplify applies axioms 
 -- at most m times to the maximal subtrees of t and returns the modified tree 
 -- together with the number of actually applied steps. 
 -- preAxs are applied to the guards of axs. 
@@ -2070,8 +2069,7 @@ solveGuard sig cond axs vc = do guard $ notnull sols; Just sols
 -- applyLoop is used by solveGuard (see above) and Ecom > narrowStep.
 applyLoop :: TermS -> Int -> (String -> Int) -> [TermS] -> [TermS] -> Sig 
                     -> Bool -> Int -> Bool -> Bool -> (TermS,Int,String -> Int)
-applyLoop t m vc axs preAxs sig nar match simplify refute =
-          f t 0 m vc
+applyLoop t m vc axs preAxs sig nar match refute simplify = f t 0 m vc
  where f t k 0 vc = (t,k,vc)
        f t k m vc = case modify t vc [] of Just (t,vc) -> f t (k+1) (m-1) vc 
                                            _ -> (t,k,vc)
@@ -2807,8 +2805,8 @@ preStretch prem f t =
                                   isF t || not (noExcl x) ||
                                 any (x `isin`) (context i ts) ]
 
--- | stretchConc k ns t replaces the subterms of t at positions ns by variables
--- zk,z(k+1),... and turns t into a Horn axiom to be used by a proof by 
+-- stretchConc k ns t replaces the subterms of t at positions ns by variables
+-- zk,z(k+1),... and turns t into a Horn axiom to be used by a proof by fixpoint
 -- coinduction.
 stretchConc,stretchPrem :: Int -> [Int] -> TermS -> (TermS,Int)
 

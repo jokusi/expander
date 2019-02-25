@@ -1,0 +1,63 @@
+-- /Users/Padawitz/ExpanderLib/micro2P
+
+0. Derivation of
+
+EG(Sat(heat))$7
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Adding
+
+  (EG0(z0)$z1 <=== z0 = Sat(heat) & z1 = 7)
+
+to the axioms and applying COINDUCTION wrt
+
+  (EG(P)$st ===> P(st) & (EX(EG(P))$st | AX(false)$st))
+
+at positions
+[]
+of the preceding trees leads to 
+
+EG0(Sat(heat))$4
+
+The reducts have been simplified in parallel.
+
+2. Adding
+
+  (EG0(z2)$z3 <=== z2 = Sat(heat) & z3 = 4)
+
+to the axioms and applying COINDUCTION wrt
+
+  (EG(P)$st ===> P(st) & (EX(EG(P))$st | AX(false)$st))
+
+at positions
+[]
+of the preceding trees leads to 
+
+EG0(Sat(heat))$1 | EG0(Sat(heat))$3 | EG0(Sat(heat))$4
+
+The reducts have been simplified in parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+EG0(Sat(heat))$3 | EG0(Sat(heat))$4
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified in parallel.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+EG0(Sat(heat))$4
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified in parallel.
+The formula coincides with no. 1
+
+5. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified in parallel.
+

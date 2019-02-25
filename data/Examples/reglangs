@@ -1,9 +1,9 @@
 -- reglangs
 
 constructs: 	a b c d e h aa gg pp vv final q qa qb qab
-defuncts:	delta beta plus unfold unfoldND unfoldBro reg drawL drawC
+defuncts:	delta beta plus unfold unfoldND unfoldBro reg draw drawC
 preds:          Unfold
-fovars: 	e st st' w k
+fovars: 	e st st' w k m
 
 axioms:
 
@@ -68,10 +68,10 @@ reg$10 == star(a)+star(a)*b*star(c*star(a)*b)*c*star(a) &
 	
 -- widget interpreters
 
-drawL == wtree(1,fun((eps,k,n),text$eps,
-                     (st,k,n),ite(Int$st,
-				  color(k,n)$circ$11,
-				  frame$blue$text$st))) &
+draw(m) == wtree(m)$fun((eps,k,n),text$eps,
+                        (st,k,n),ite(Int$st,
+				     color(k,n)$circ$11,
+				     frame$blue$text$st)) &
 
 drawC == wtree $ fun(eps,gif(cat,16,14),x,text$x) 
 

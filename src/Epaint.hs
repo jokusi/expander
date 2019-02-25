@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, January 2018
-                  Jos Kusiek, January 2018
+Copyright   : (c) Peter Padawitz, February 2019
+                  Jos Kusiek, February 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -51,7 +51,6 @@ data Solver = Solver
     , buildSolve      :: Action
     -- ^ Initializes and shows the @Solver@ GUI.
     -- Main @Solver@ function that has to be called first.
-    , enterPT         :: Int -> [Step] -> Action -- ^ Show pointer in textfield.
     , enterText       :: String -> Action -- ^ Show text in textfield.
     , enterFormulas   :: [TermS] -> Action -- ^ Show formulas in textfield.
     , enterTree       :: Bool -> TermS -> Action -- ^ Show tree in canvas.
@@ -61,7 +60,6 @@ data Solver = Solver
     , getFont         :: Request FontDescription
     , getPicNo        :: Request Int
     , getSignatureR   :: Request Sig
-    , getSpread       :: Request Pos
     , getTree         :: Request (Maybe TermS)
     , iconify         :: Action -- ^ Minimize solver window.
     , isSolPos        :: Int -> Request Bool
@@ -90,22 +88,22 @@ data Solver = Solver
 data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep Bool |
             ComposePointers | CopySubtrees | CreateIndHyp |
-            CreateInvariant Bool | DecomposeAtom | DeriveMode Bool Bool |
-            EvaluateTrees | ExpandTree Bool Int | FlattenImpl |
-            Generalize [TermS] | Induction Bool Int | Mark [[Int]] |
-            Match Int | Minimize | ModifyEqs Int | Narrow Int Bool |
-            NegateAxioms [String] [String] | PermuteSubtrees |
-            RandomLabels | RandomTree | ReduceRE Int | ReleaseNode |
-            ReleaseSubtree | ReleaseTree | RemoveCopies | RemoveEdges Bool |
-            RemoveNode | RemoveOthers | RemovePath | RemoveSubtrees |
-            RenameVar String | ReplaceNodes String | ReplaceOther |
-            ReplaceSubtrees [[Int]] [TermS] | ReplaceText String | 
-            ReplaceVar String TermS [Int] | ReverseSubtrees | SafeEqs | 
-            SetAdmitted Bool [String] | SetCurr String Int | SetDeriveMode | 
-            SetMatch | ShiftPattern | ShiftQuants | ShiftSubs [[Int]] | 
-            Simplify Int Bool | SplitTree | StretchConclusion | 
-            StretchPremise | SubsumeSubtrees | Theorem Bool TermS | 
-            Transform Int | UnifySubtrees | POINTER Step
+            CreateInvariant Bool | DecomposeAtom | EvaluateTrees |
+            ExpandTree Bool Int | FlattenImpl | Generalize [TermS] |
+            Induction Bool Int | Mark [[Int]] | Matching Int | Minimize |
+            ModifyEqs Int | Narrow Int Bool | NegateAxioms [String] [String] |
+            PermuteSubtrees | RandomLabels | RandomTree | ReduceRE Int |
+            Refuting Bool | ReleaseNode | ReleaseSubtree | ReleaseTree |
+            RemoveCopies | RemoveEdges Bool | RemoveNode | RemoveOthers |
+            RemovePath | RemoveSubtrees | RenameVar String |
+            ReplaceNodes String | ReplaceOther |
+            ReplaceSubtrees [[Int]] [TermS] | ReplaceText String |
+            ReplaceVar String TermS [Int] | ReverseSubtrees | SafeEqs |
+            SetAdmitted Bool [String] | SetCurr String Int | SetDeriveMode |
+            SetMatch | SetStrat Strategy | ShiftPattern | ShiftQuants |
+            ShiftSubs [[Int]] | Simplify Int Bool | Simplifying Bool |
+            SplitTree | StretchConclusion | StretchPremise | SubsumeSubtrees |
+            Theorem Bool TermS | Transform Int | UnifySubtrees | POINTER Step
             deriving Show
 
 -- Small templates
@@ -298,13 +296,13 @@ type MenuOpts   = MenuItem -> IORef (ConnectId MenuItem) -> Action
 data Painter = Painter
   { buildPaint     :: Bool -> Action
   , callPaint      :: [Picture] -> [Int] -> Bool -> Int -> String -> Action
-  , getNew         :: Request Bool
+  , getNewCheck    :: Request Bool
   , labSolver      :: String -> Action
   , remote         :: Action
-  , setButton3     :: ButtonOpts -> Action
+  , setButton      :: Int -> ButtonOpts -> Action
   , setCurrInPaint :: Int -> Action
   , setEval        :: String -> Pos -> Action
-  , setNew         :: Action
+  , setNewCheck    :: Action
   }
 
 painter :: Int -> IORef Solver
@@ -370,6 +368,7 @@ painter pheight solveRef solve2Ref = do
     connectRef <- newIORef False
     subtreesRef <- newIORef False
     isNewRef <- newIORef True
+    isNewCheckRef <- newIORef True
     
     edgesRef <- newIORef []
     permutationRef <- newIORef []
@@ -593,6 +592,7 @@ painter pheight solveRef solve2Ref = do
                                       (solve&simplify)
                                       (solve&showPicts)
             f button3 "" done
+            when checking $ writeIORef isNewCheckRef False
           buildPaint1
             
         buildPaint1  = do
@@ -714,6 +714,7 @@ painter pheight solveRef solve2Ref = do
                 return False
             
             writeIORef isNewRef False
+            win&windowIconify
         
         callPaint' picts poss b n str = do
             let graphs = map onlyNodes $ filter notnull picts
@@ -748,6 +749,7 @@ painter pheight solveRef solve2Ref = do
             scans <- readIORef scansRef
             mapM_ stopScan0 scans
             (canv&clear)
+            win&windowIconify
             solve <- readIORef solveRef
             (solve&bigWin)
             (solve&stopRun)
@@ -898,7 +900,7 @@ painter pheight solveRef solve2Ref = do
         
         getDelay = truncate <$> delaySlider `gtkGet` rangeValue
 
-        getNew' = readIORef isNewRef
+        getNewCheck' = readIORef isNewCheckRef
 
         interrupt b = 
             if b then do
@@ -1069,6 +1071,7 @@ painter pheight solveRef solve2Ref = do
         newPaint = do
           solve <- readIORef solveRef
           (solve&backWin)
+          win&windowDeiconify
           (win&windowPresent)
           bgcolor <- readIORef bgcolorRef
           changeCanvasBackground bgcolor
@@ -1495,7 +1498,9 @@ painter pheight solveRef solve2Ref = do
             solverMsg <- readIORef solverMsgRef
             labGreen $ str1 ++ add solverMsg ++ add msg
 
-        setButton3' opts = opts button3
+        setButton' 1 opts = opts button1
+        setButton' 2 opts = opts button2
+        setButton' 3 opts = opts button3
 
         setCurrGraph (pict,arcs) = do
             pictures <- readIORef picturesRef
@@ -1542,6 +1547,8 @@ painter pheight solveRef solve2Ref = do
             when (not isNew)
                 $ fastBut `gtkSet` [ buttonLabel := if b then "slow" else "fast"]
         
+        setNewCheck' = writeIORef isNewCheckRef True
+
         showInSolver = do
             pictures <- readIORef picturesRef
             curr <- readIORef currRef
@@ -1560,8 +1567,6 @@ painter pheight solveRef solve2Ref = do
                     solve2 <- readIORef solve2Ref
                     enterTree solve2 False $ graphToTree graph
         
-        setNew' = writeIORef isNewRef True
-
         switchConnect = do 
           modifyIORef connectRef not
           connect <- readIORef connectRef
@@ -1617,13 +1622,13 @@ painter pheight solveRef solve2Ref = do
     return Painter
         { buildPaint     = buildPaint'
         , callPaint      = callPaint'
-        , getNew         = getNew'
+        , getNewCheck    = getNewCheck'
         , labSolver      = labSolver'
         , remote         = remote'
-        , setButton3     = setButton3'
+        , setButton      = setButton'
         , setCurrInPaint = setCurrInPaint'
         , setEval        = setEval'
-        , setNew         = setNew'
+        , setNewCheck    = setNewCheck'
         }
 -- Painter types
 
@@ -1780,10 +1785,10 @@ open = Open black 0
 close2 :: [TurtleAct]
 close2 = [Close,Close]
 
-text0 :: Color -> Sizes -> String -> Widget_
-text0 c (n,width) x = Text_ (st0 c) n strs $ map width strs
-                      where strs = words x
-
+textWidget :: Color -> Sizes -> String -> Widget_
+textWidget c (n,width) x = Text_ (st0 c) n strs $ map width strs
+                           where strs = map (map h) $ words x
+                                 h x = if x == '\'' then ' ' else x
 
 inRect :: (Double, Double) -> Widget_ -> Bool
 (x',y') `inRect` Rect ((x,y),_,_,_) b h = x-b <= x' && x' <= x+b &&
@@ -2322,10 +2327,10 @@ rturtle = lift' . jturtleP
 
 loadWidget :: Color -> Sizes -> String -> Cmd Widget_
 loadWidget c sizes file =
-          do str <- lookupLibs file
-             if null str then return $ text0 c sizes file
-             else return $ case parse widgString str of Just w -> w
-                                                        _ -> text0 c sizes file
+      do str <- lookupLibs file
+         if null str then return $ textWidget c sizes file
+         else return $ case parse widgString str of Just w -> w
+                                                    _ -> textWidget c sizes file
 
 loadTerm :: Sig -> Color -> Sizes -> String -> Cmd TermS
 loadTerm sig c sizes file = 
@@ -2435,10 +2440,10 @@ widgetTree sig sizes spread t = do t <- f [] t; return [WTree t] where
                                     ts <- zipWithSucsM f p $ init ts
                                     return $ F w ts
        f p (F x ts)            = do ts <- zipWithSucsM f p ts
-                                    return $ F (text0 black sizes x) ts
+                                    return $ F (textWidget black sizes x) ts
        f _ (V x)               = return $ V $ if isPos x then posWidg x
-                                              else text0 black sizes x
-       f _ _                   = return $ leaf $ text0 blue sizes "hidden"
+                                              else textWidget black sizes x
+       f _ _                   = return $ leaf $ textWidget blue sizes "hidden"
 
 widgets :: Sig -> Color -> Interpreter
 widgets sig c sizes spread t = f c t' where
@@ -2520,7 +2525,8 @@ widgets sig c sizes spread t = f c t' where
    open c mode = do c <- lift' $ parseColor c; return [Open c mode]
 
    widgAct :: Bool -> Color -> TermS -> MaybeT Cmd TurtleActs
-   widgAct b c t = do [w] <- fs c t ++ return [text0 black sizes $ showTerm0 t]
+   widgAct b c t = do [w] <- fs c t ++
+                             return [textWidget black sizes $ showTerm0 t]
                       return [Widg b w]
 
 widgConst,widgConstC :: Color -> Sizes -> Pos -> TermS -> Maybe Widget_
@@ -2564,6 +2570,7 @@ widgConst c sizes@(n,width) spread = f where
    f (F "fern2" [n,d,r])         = do n <- parsePnat n; (d,r) <- parseReals d r
                                       jturtle $ fern2 n c d r
    f (F "gif" [F file [],b,h])   = do (b,h) <- parseReals b h
+                                   -- b = breadth/2, h = height/2
                                       Just $ Gif 1 True file $ Rect st0B b h
    f (F "gif" [F file [],p,b,h]) = do p <- parsePnat p
                                       (b,h) <- parseReals b h                                      
@@ -2646,10 +2653,8 @@ widgConst c sizes@(n,width) spread = f where
    f (F "stick" [])      = Just $ Path (p0,0,c,-16) 4
                                              [p0,(-4,-8),(0,-150),(4,-8),p0]
    f (F "taichi" s)      = jturtle $ taichi sizes s c
-   f (F "text" ts)       = Just $ Text_ (st0 c) n strs $ map width strs
-                           where strs = map (map h) $ words $ showTree False
-                                                    $ colHidden $ mkTup ts
-                                 h x = if x == '\'' then ' ' else x
+   f (F "text" ts)       = Just $ textWidget c (n,width) $ showTree False
+                                                         $ colHidden $ mkTup ts
    f (F "tree" [t])      = Just $ Tree st0B n c $ mapT h ct
                            where ct = coordTree width spread (20,20) $
                                                              colHidden t
@@ -3864,7 +3869,7 @@ halfmax :: (a -> Int) -> [a] -> Double
 halfmax width = (/2) . fromInt . maximum . map width
 
 blackText :: Sizes -> String -> TurtleAct
-blackText sizes = widg . text0 black sizes
+blackText sizes = widg . textWidget black sizes
 -- * alignments
 
 drawAlignment :: Sizes -> Align_ String -> [TurtleAct]
@@ -3920,9 +3925,9 @@ star n c = f $ n+n
 taichi :: Sizes -> [TermS] -> Color -> [TurtleAct]
 taichi sizes s c = [open,circ c 120,down,widg $ Arc (st0 d) Pie 120 180,
                     Jump 60,back,circ d 60,circ c 12,open,jump1,down,jump2,
-                    widg $ text0 c sizes yang,Close,Jump 120,back,circ c 60,
-                    circ d 12,open,jump1,down,jump2,widg $ text0 d sizes yin,
-                    Close]
+                    widg $ textWidget c sizes yang,Close,Jump 120,back,
+                    circ c 60,circ d 12,open,jump1,down,jump2,
+                    widg $ textWidget d sizes yin,Close]
                    where d = complColor c; jump1 = Jump 32; jump2 = Jump 52
                          circ c r = widg $ Oval (st0 c) r r
                          (yin,yang) = case s of t:u:_ -> (root t,root u)
@@ -4265,7 +4270,7 @@ rectMatrix sizes@(n,width) entry dom1 dom2 btf htf =
            actsToCenter $ down:open:up:rectC black bt ht:JumpA bt:  
                           rectRow lineHead ht btf dom2++Close:JumpA ht:
                           concatMap h dom3
-           where lineHead a = [widg $ text0 blue sizes a]
+           where lineHead a = [widg $ textWidget blue sizes a]
                  bt = halfmax width dom3+3
                  ht = fromInt n/2+3
                  h i = JumpA ht:open:up:rectC black bt ht:lineHead i++
@@ -4308,7 +4313,7 @@ termMatrix sizes@(n,width) ts = rectMatrix sizes entry dom1 dom2 btf htf
                        f i j = colTerm $ lookupT i j ts
                        btf j = halfmax width (j:map (snd . flip f j) dom1)+3
                        htf _ = fromInt n/2+3
-                       colTerm t = (widg . text0 col sizes,delBrackets t)
+                       colTerm t = (widg . textWidget col sizes,delBrackets t)
                                    where col = case parse colPre $ root t of 
                                                     Just (c,_) -> c; _ -> black
 
@@ -4342,7 +4347,7 @@ drawPartition sizes mode = f $ case mode of 0 -> levelTerm
                                           lg = fromInt (length ts)
                   split _ dx dy t = [open,Jump dx',down,Jump dy',up,
                                             rectC c dx' dy',
-                                     --blackText sizes $ show n,
+                                     blackText sizes $ show n,
                                      Close]
                                      where dx' = dx/2; dy' = dy/2; F (c,n) _ = t
                   split1 dx dy [t]    = split False dx dy t

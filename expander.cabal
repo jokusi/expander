@@ -53,7 +53,7 @@ data-files:          Examples/*.gif
                    , style/Solver.glade
                    , style/Painter.glade
                    , style/icon.png
-                   -- generated with "script/examples.hs"
+                   -- generated with "script/specifications.hs"
                    , "Examples/ABPproofA1"
                    , "Examples/ABPproofA2"
                    , "Examples/ABPproofB"
@@ -399,6 +399,14 @@ data-files:          Examples/*.gif
                    , "Examples/mergePT"
                    , "Examples/mergePalt"
                    , "Examples/micro"
+                   , "Examples/micro1P"
+                   , "Examples/micro1T"
+                   , "Examples/micro2P"
+                   , "Examples/micro2T"
+                   , "Examples/micro2cycleP"
+                   , "Examples/micro2cycleT"
+                   , "Examples/micro3P"
+                   , "Examples/micro3T"
                    , "Examples/mirrorP"
                    , "Examples/mirrorPT"
                    , "Examples/mirrorcoP"

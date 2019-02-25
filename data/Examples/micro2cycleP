@@ -1,0 +1,24 @@
+-- /Users/Padawitz/ExpanderLib/micro2P
+
+0. Derivation of
+
+EG(Sat(heat))$7
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. SIMPLIFYING in parallel the preceding trees (29 steps) leads to 
+
+any(NU X.(Sat(heat)/\(EX(X)\/AX(false))))[1,3,4] | all(false)[1,3,4]
+
+2. PERMUTING THE SUBTREES at positions
+[]
+of the preceding trees leads to 
+
+all(false)[1,3,4] | any(NU X.(Sat(heat)/\(EX(X)\/AX(false))))[1,3,4]
+
+3. SIMPLIFYING in parallel the preceding trees (11 steps) leads to 
+
+any(NU X.(Sat(heat)/\(EX(X)\/AX(false))))[1,3,4] | all(false)[1,3,4]
+The formula coincides with no. 1
+
