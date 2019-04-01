@@ -38,9 +38,10 @@ A -> branch[2,3,4] & (B,a) -> 3 &
 (seven(st)  ===> seven'(st)) &			       -- alternating fixpoints
 (seven'(st) <=== (a#((Sat(A)/\seven)\/seven'))(st)) &
 
--- widget interpreter:
-
-drawS == wtree $ fun(sat$x,green$text$x,x,ite(Int$x,red$text$x,text$x)) 
+drawS == wtree $ fun(dark green$x,green$text$x,
+		     red$x,text$x,
+		     [],text[],
+		     x,red$text$x)
 
 conjects: 
 

@@ -617,42 +617,6 @@ fixptM :: BoolFun a -> (a -> Maybe a) -> a -> Maybe a
 fixptM rel step a = do b <- step a
                        if rel b a then Just a else fixptM rel step b
 
--- | @mkAcyclic ps qs@ removes all pairs resp. triples @p@ from @qs@ that close
--- a cycle wrt @ps ++ qs@.
-mkAcyclic
-    :: Eq a
-    => [(a,[a])] -- ^ ps
-    -> [(a,[a])] -- ^ qs
-    -> [(a,[a])]
-mkAcyclic ps qs = case f [] qs of Just qs -> mkAcyclic ps qs; _ -> ps++qs
-    where f qs rs = do p@(x,xs):rs <- Just rs 
-                       let y = g x xs
-                       if just y then Just $ qs++(x,xs`minus1`get y):rs
-                                 else f (p:qs) rs
-          g x xs = do y:xs <- Just xs
-                      if back x [] y then Just y else g x xs
-          back x xs y = x == y || y `notElem` xs && just zs && 
-                                     any (back x $ y:xs) (get zs)
-                                  where zs = lookup y $ ps++qs
-
--- | @mkAcyclicL ps qs@ removes all pairs resp. triples @p@ from @qs@ that close
--- a cycle wrt @ps ++ qs@.
-mkAcyclicL
-    :: Eq a
-    => [(a,b,[a])] -- ^ ps
-    -> [(a,b,[a])] -- ^ qs
-    -> [(a,b,[a])]
-mkAcyclicL ps qs = case f [] qs of Just qs -> mkAcyclicL ps qs; _ -> ps++qs
-  where f qs rs = do p@(x,b,xs):rs <- Just rs
-                     let y = g x xs
-                     if just y then Just $ qs++(x,b,xs`minus1`get y):rs
-                               else f (p:qs) rs
-        g x xs = do y:xs <- Just xs
-                    if back x [] y then Just y else g x xs
-        back x xs y = x == y || y `notElem` xs && 
-                                       any (back x $ y:xs) zs
-                                where zs = concat $ lookupL1 y $ ps++qs
-
 -- | extensional equality
 eqFun :: (a1 -> b -> Bool) -> (a -> a1) -> (a -> b) -> [a] -> Bool
 eqFun eq f g s = length fs == length gs && and (zipWith eq fs gs)
@@ -1036,7 +1000,7 @@ binsToBinMat
     -> a
     -> b
     -> String
-binsToBinMat bins arr i j = if any (e `leqBin`) bins then "red_"++e else e
+binsToBinMat bins arr i j = if any (e `leqBin`) bins then ("red$"++e) else e
                             where e = arr!(i,j)
 
 -- * Sorting and permuting
@@ -1276,6 +1240,9 @@ item = P $ do
 char :: Char -> Parser Char
 char x        = sat item (== x)
 
+nchar :: Char -> Parser Char
+nchar x       = sat item (/= x)
+
 string :: String -> Parser String
 string        = mapM char
 
@@ -1315,7 +1282,7 @@ strategy      = (do symbol "DF"; return DF) ++
 
 stratWord strat = case strat of DF -> "depthfirst"
                                 BF -> "breadthfirst"
-                                _  -> "in parallel"
+                                _  -> "parallel"
 
 letters :: String
 letters       = ['a'..'z']++['A'..'Z']
@@ -1408,11 +1375,13 @@ color         = concat [ do symbol "dark"; c <- color; return $ dark c
                        ]
 
 colPre :: Parser (Color, String)
-colPre        = do col <- color; char '_'; x <- p; return (col,x)
-                 where p = P $ Haskell.state $ \x -> (x,[])
+colPre        = do col <- color
+                   (do char '$'; x <- some item; return (col,x)) ++
+                    do char '('; x <- some $ nchar ')'; char ')'
+                       return (col,x)
 
 delCol :: String -> String
-delCol x      = case parse colPre x of Just (_,x) -> x; _ -> x
+delCol a      = case parse colPre a of Just (_,a) -> a; _ -> a
 
 quoted :: Parser String
 quoted        = do char '"'; x <- many $ sat item (/= '"'); char '"'; return x
@@ -2275,7 +2244,7 @@ listF str ts = f $ words str where f [x]    = F x ts
 colHidden :: TermS -> TermS
 colHidden (F x ts)   = F x $ map colHidden ts
                      -- if isFix x then leaf x else F x $ map colHidden ts
-colHidden (Hidden _) = leaf "blue_hidden"
+colHidden (Hidden _) = leaf "hidden"
 colHidden t          = t
 
 bothHidden :: Term t -> Term t1 -> Bool
@@ -3018,10 +2987,8 @@ isNormal sig = andT $ isConstruct sig ||| (`elem` words "^ {} $") ||| isPos
                                        ||| isVar sig
 
 isFormula :: Sig -> TermS -> Bool
-isFormula sig t@(F x ts) = case parse colPre x of 
-                                Just (_,x) -> isFormula sig $ F x ts
-                                _ -> logical x || isAtom sig t
-isFormula _ _                  = False
+isFormula sig t@(F x _) = logical x || isAtom sig t
+isFormula _ _           = False
 
 isTerm :: Sig -> TermS -> Bool
 isTerm sig = not . isFormula sig
@@ -3631,11 +3598,13 @@ mkInvs hoare loop as bs cs inits d conc = F "&" [factor1,factor2]
                                    else (mkImpl (inv (bs++inits++[d])) conc,
                                          mkImpl eq (inv (ys++[d])))
 
-trips xs axs = foldr f [] axs where
-               f (F x [t,u]) trips | x `elem` xs  = (t,[],u):trips
-               f (F "==>" [c,F x [t,u]]) trips | x `elem` xs 
-                                                  = (t,mkFactors c,u):trips
-               f _ trips = trips
+trips :: [String] -> [TermS] -> [(TermS, [TermS], TermS)]
+trips xs = foldr f []
+           where f (F x [t,u]) trips | x `elem` xs  = (t,[],u):trips
+                 f (F "==>" [c,F x [t,u]]) trips | x `elem` xs
+                                                    = (t,mkFactors c,u):trips
+                 f _ trips = trips
+
 
 -- transClosure ts applies rules to ts that employ the transitivity of the
 -- relation between the elements of ts. 
@@ -3854,12 +3823,12 @@ boolPositions _ _            = []
 -- colorWith2 c d ps t colors t at all positions of ps with c and at all other 
 -- positions with d.
 colorWith2 :: String -> String -> [[Int]] -> TermS -> TermS
-colorWith2 c d ps = f [] 
-            where f p (F x ts) = F (e++'_':x) $ zipWithSucs f p ts
-                                     where e = if p `elem` ps then c else d
-                  f p t@(V x)  = if isPos x then t else V $ e++'_':x
-                                     where e = if p `elem` ps then c else d
-                  f _ t         = t
+colorWith2 c d ps = f []
+                    where f p (F x ts) = F (e++'$':x) $ zipWithSucs f p ts
+                                         where e = if p `elem` ps then c else d
+                          f p t@(V x)  = if isPos x then t else V $ e++'$':x
+                                         where e = if p `elem` ps then c else d
+                          f _ t        = t
 
 -- changedPoss t u returns the minimal positions p of u such that the subterms
 -- of t resp. u at position p differ from each other.
@@ -4022,9 +3991,7 @@ cutTree max t ps col qs = f [] $ fold2 replace (head $ cutTreeL [t] 0) qs
          h (ts,us,n) (x,isv) lg = (ts++[if isv then V y else F y subs],
                                    drop lg us,n+1)
                      where (y,subs) = (if n < max then x else '@':x,take lg us)
-         c p x = if p `elem` ps then col++'_':case parse colPre x of 
-                                                     Just (_,x) -> x; _ -> x
-                                else x
+         c p x = if p `elem` ps then col++'$':delCol x else x
          hide t@(F ('@':_) _) = t
          hide (F x ts)        = F ('@':x) ts   
          hide t@(V ('@':_))   = t
@@ -4093,7 +4060,7 @@ changePoss p q = mapT f where f x = if isPos x && p <<= r
                                     then mkPos0 $ q++drop (length p) r else x
                                     where r = getPos x
 
--- changeLPoss p q ts applies changePoss p(i) q(i) to ts for all 0<=i<=|ts|-1.
+-- changeLPoss p q ts applies changePoss p(i) q(i) to ts!!i.
 changeLPoss :: (Int -> [Int]) -> (Int -> [Int]) -> [TermS] -> [TermS]
 changeLPoss p q ts = map f ts where f t = foldl g t $ indices_ ts
                                     g t i = changePoss (p i) (q i) t
@@ -4386,10 +4353,11 @@ extendNode sts ats out x = if isPos x || x == "<+>" then x
 extendNodeL :: [String] -> [String] -> [String] -> [[[Int]]] -> String 
             -> String -> String
 extendNodeL _ _ _ [] x _            = x
-extendNodeL sts labs ats outL x lab = if isPos x || x == "<+>" then x
-                                      else enterAtoms lab $ map (ats!!) $ 
-                                           outL!!getInd x sts!!getInd lab labs
-
+extendNodeL sts labs ats outL x lab =
+             if isPos x || x == "<+>" then x
+             else enterAtoms lab $ map (ats!!)
+                                 $ outL!!getInd x sts!!getInd (drop 4 lab) labs
+                                    -- drop4 lab removes "red$" (see relLToEqs)
 
 enterAtoms :: String -> [String] -> String
 enterAtoms x []       = x
@@ -4416,7 +4384,7 @@ colorClassesL sig = g where
 setColor :: [String] -> [[Int]] -> Int -> String -> String
 setColor sts part n x = if x `notElem` sts then x
                         else case searchGet (elem $ getInd x sts) part of
-                          Just (k,_) -> show (hue 0 red n k) ++ '_':x
+                          Just (k,_) -> show (hue 0 red n k) ++ '$':x
                           _          -> x
 
 -- concept ts posExas negExas computes the minimal concept wrt the feature trees
@@ -4670,7 +4638,7 @@ relToEqs n rel = (map g $ indices_ ps,n+length ps)
 
 -- relLToEqs n rel transforms a ternary relation into an equivalent set of 
 -- iterative equations and is used by Esolve > simplifyT "auto" and 
--- Ecom > showEqsOrGraph.
+-- Ecom > showTransOrKripke and Ecom > transformGraph.
 relLToEqs :: Int -> Triples String String -> ([IterEq],Int)
 relLToEqs n rel = (map g $ indices_ ts,n+length ts)
      where ts = foldr f [] rel
@@ -4679,8 +4647,8 @@ relLToEqs n rel = (map g $ indices_ ts,n+length ts)
                                  Just bcs -> updAssoc rel a $ updAssoc bcs b cs
                                  _ -> (a,[(b,cs)]):rel
            g i = Equal ('z':show (n+i)) $ F a $ map f bcs 
-                            where (a,bcs) = ts !! i
-                                  f (b,cs) = F b $ map h cs
+                            where (a,bcs) = ts!!i
+                                  f (b,cs) = F ("red$"++ b) $ map h cs
                                   h c = case search ((== c) . fst) ts of
                                              Just i -> V $ 'z':show (n+i)
                                              _ -> F c []
@@ -4802,7 +4770,7 @@ mkNodes (F x ts) = ([],x,map (:[]) is):concatMap h is
                    where is = indices_ ts
                          h i = map g $ mkNodes $ ts!!i
                                where g (p,x,ps) = (i:p,x,map (i:) ps)
-mkNodes _        = [([],"blue_hidden",[])]
+mkNodes _        = [([],"hidden",[])]
 
 -- | @collapseCycles t@ removes all duplicates of cycles of @t@.
 collapseCycles

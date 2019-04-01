@@ -17,7 +17,7 @@ axioms:
 & turt4 == turt[hilb(3),M(33),blue$koch(3),M(33),T(40),M(33),green$snow(3,22)] 
 & turt5 == turt[OFS(red),blue$circ(5),M(11),T(30),M(22),green$circ(5),
 	        rect(5,11),tria(11),C] 
-& turt6 == turt[rect(22,11),yellow$circ(20),M(111),budP,M(111),T(40),                M(111),RGB 13 131 200$polySF(5,33,11)] 
+& turt6 == turt[rect(22,11),yellow$circ(20),M(111),TR,M(111),T(40),                M(111),RGB 13 131 200$polySF(5,33,11)] 
 & turt7 == turt[OS(dark red),T(40),M(22),red$rect(11,16),M(45),
 	        magenta$snow(1,2,3,6)$turt[tria(-22),tria$22],M(45),
 		dark green$tria(-22),T(-40),
@@ -52,9 +52,6 @@ terms:
 <+> shelf(3)$unturt$red$hue$replicate(6)$shine(21)$grav$SQ
 <+> shelfS(1)$unturt$red$hue$replicate(25)$SQ
 
-<+> red$save(circ$88,test)
-<+> red$save(turt[green$circ$88,M$222,T$45,M$55,blue$tria$77],test)
-<+> green$load$test
 <+> red$turt[green$circ$88,M$222,T$45,M$55,blue$tria$77]
 <+> blue$frame(5)$red$turt[green$circ$88,M$222,T$45,M$55,blue$tria$77]
 <+> place(111,222)$red$circ$33
@@ -154,13 +151,17 @@ terms:
 	 (zzz,uuu,center$tria$55),	
          (aaa,bbb,center$tree$zz(uu,pp,pp)))    		
 <+> (pict((4,6,[h,kk]),(bb,7,[1..4]),(cc,p,tria(-33)),(cc,u,circ$11)),
-     pict((b,u,red(circ(22))),(4,6,[h,kk])))		
+     pict((b,u,red(circ(22))),(4,6,[h,kk])))	
+	
+<+> red$save(circ$88,test)
+<+> red$save(turt[green$circ$88,M$222,T$45,M$55,blue$tria$77],test)
+<+> green$load$test
 
 <+> scale(11)$track(asc)$red$center$hilb$2
 <+> red$rainbow(55)$track(ascF)$center$HE
 <+> scale(2)$red$rainbow(55)$grav$track(ascF)$PE
 <+> scale(4)$red$track(ascF)$tria$22
-<+> save(scale(4)$red$track(ascF)$tria$22,test)
+<+> save(scale(4)$red$track(ascF)$tria$22,test)  -- error with laod$test
 <+> scale(2)$load$test
 <+> scale(4)$red$track(ascF)$poly(33,28,55,22)
 <+> scale(4)$red$track(symF)$poly(33,28,55,22)

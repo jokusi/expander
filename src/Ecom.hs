@@ -174,7 +174,7 @@ linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (February 12, 2019)"
+start = "Welcome to Expander3 (March 25, 2019)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -738,7 +738,7 @@ solver this solveRef enum paint = do
 
 
     let mkSub :: Menu -> String -> Request Menu
-        mkSub m text = cascade m text menuOpt{ font = font12 }
+        mkSub m text = cascade m text menuOpt{ menuFont = font12 }
         
         mkBut :: Menu -> String -> Action -> Request MenuItem
         mkBut m text cmd = do
@@ -2711,15 +2711,15 @@ solver this solveRef enum paint = do
         -- 'moveNode', 'moveSubtree' and 'catchNode'.
         drawNode :: (String, Pos) -> Color -> Action
         drawNode (a,p) c =
-            when (not $ isPos a) $ do
-                font <- readIORef fontRef
-
-                canvasText canv p textOpt{ textFont = Just font
+          if isPos a then done
+          else do
+            font <- readIORef fontRef
+            canvasText canv p textOpt{ textFont = Just font
                                          , textFill = c'
                                          , textJustify = CenterAlign
                                          }
                     (delQuotes a)
-                return ()
+            done
          where c' = case parse colPre a of Just (c,_) -> c; _ -> c
         
         -- | Used by 'drawTree'.
@@ -5751,7 +5751,7 @@ solver this solveRef enum paint = do
                     (v,_) = order c label u
                 drawThis (replace1 t p v) [] ""
          where label (RGB 0 0 0) n = show n
-               label c n           = show c++'_':show n
+               label c n           = show c++'$':show n
                order = case m of 1 -> levelTerm -- "level numbers"
                                  2 -> preordTerm -- "preorder positions"
                                  3 -> heapTerm -- "heap positions"

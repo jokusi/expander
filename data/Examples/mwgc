@@ -1,27 +1,29 @@
 -- mwgc
 
-constructs: 	m w g c
-defuncts:     	goods draw1 draw2 draw3 pic river triple save' 
-preds:		final 
-fovars:	  	left
+specs:   	modal
+constructs: 	m w g c final success
+defuncts:     	goods draw1 draw2 draw3 pic river triple save'
+preds:		Final
 
 axioms:
 
 goods  == [w,g,c] &
 labels == m:goods &
 states == [labels] &
+atoms  == [final,success] &
 
-(final$left <==> null$left | any(`in`[[m],[w,g],[g,c]])[left,labels-left]) & 
+final -> branch$filter(Final)$states &
+success -> [] &
+(Final$st <==> null$st | any(`in`[[m],[w,g],[g,c]])[st,labels-st]) & 
 
-(m `in` left & Not(final$left) ==> (left,m) -> left-[m]) &
+(m `in` st & Not(Final$st) ==> (st,m) -> st-[m]) &
 
-(m `NOTin` left & Not(final$left) ==> (left,m) -> m:left) &
+(m `NOTin` st & Not(Final$st) ==> (st,m) -> m:st) &
 
-(x `in` goods & [m,x] `subset` left & Not(final$left)
-                ==> (left,x) -> left-[m,x]) &
+(x `in` goods & [m,x] `subset` st & Not(Final$st) ==> (st,x) -> st-[m,x]) &
 
-(x `in` goods & [m,x] `NOTshares` left & Not(final$left)
-                ==> (left,x) -> m:insertL(x)(left)(goods)) &
+(x `in` goods & [m,x] `NOTshares` st & Not(Final$st)
+                		   ==> (st,x) -> m:insertL(x)(st)(goods)) &
 
 -- widget interpreters:
 
@@ -29,35 +31,37 @@ pic$m == gif(man,8,15) &
 pic$w == gif(wolf,30,25) &
 pic$g == gif(goat,28,25) &
 pic$c == gif(cabbage,22,20) &
-river == gif(wave,70,10) &
-      -- blue$waveSF(5,20,45) 
+river == gif(wave,70,10) & 	-- blue$waveSF(5,20,45) 
 
 triple$s == center$shelf(1,3)[shelf(4)$map(pic)$s,river,
 		              shelf(4)$map(pic)$labels-s] &
 
 save'$s == save(triple$s,s) &
 
-draw1 == wtree $ fun(x,ite(List$x,triple$x,text$x)) & 	-- paints states
+draw1 == wtree $ fun(red$x,text$x,x,triple$x) & -- paints states
 
-draw2 == wtree $ fun(x,ite(List$x,load$x,text$x)) &     -- paints saved states
+draw2 == wtree $ fun(red$x,text$x,x,load$x) &	-- loads and paints states
 
-draw3 == wtree $ fun(m,pic$m,				-- paints labels
-		     w,center$shelf(2)[pic$m,pic$w],
-		     g,center$shelf(2)[pic$m,pic$g],
-		     c,center$shelf(2)[pic$m,pic$c],
+draw3 == wtree $ fun(red$m,pic$m,		-- paints labels
+		     red$x,center$shelf(2)[pic$m,pic$x],
 		     x,text$x) 
 
 conjects: 
 
-x `in` goods & [m,x] `subset` [m,w,c]
+(x `in` goods & x `in` [m,w,c])	& --> x = w | x = c
+
+EF(null)$labels --> True
+                --  (189 depthfirst simplification steps;
+	        --   79 parallel simplification steps + 3 subtree permutations)
 
 terms: 
 
-insertL(c)[w,g]$goods <+>			--> [w,g,c]
+insertL(c)[w,g]$goods <+> --> [w,g,c]
 
-triple[m,g,c] <+>				-- paint widgets
+eval$EF$success <+>
+
+triple[m,g,c] <+>		  
 map(save')[[m,w,g,c],[w,c]] <+> 
-map(load)[[m,w,g,c],[w,c]] <+>
+map(load.string)[[m,w,g,c],[w,c]] <+>
 
 gggg(widg(tt(zz,widg(tt(pos 0 0,kk),load[w,c])),load[m,w,g,c])) 
-						-- paint tree

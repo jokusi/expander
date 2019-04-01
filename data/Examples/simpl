@@ -54,8 +54,8 @@ conjects:
 
 & f[1,x,3,4,5] == 111
 & disjoint[[1,2,3],[4,1,6]]
-
 & any((=5))[6,7,5,4]
+& set[5,5,6]=set[6,5]
 
 terms: 
 
@@ -87,9 +87,9 @@ terms:
 <+> fun(x,fun(y,5+x))$3+y   			--> fun(y0,8+y)
 
 <+> (suc.length)$get0$([1..5],99)      		--> 6
+<+> get5$tup[1..11]				--> 6
 
 <+> foldl(+)(0)[1..9]				--> 45
-
 <+> length$kfold(fun(x,fun(y,[y,y])))[0][1..4]	--> 2^4
 
 <+> 1*2*3-4*5*6+7/8*9^1*2*3-4*5*6+7*8*9		--> -114^390
@@ -165,6 +165,10 @@ terms:
 <+> prodE(id,suc,fun(z,z+2),fun(z,z*(5+3)))(3)			--> (3,4,5,24)
 
 <+> (get1.prodE(suc,suc.suc))(9) - (get0.prodE(suc,suc.suc))(9)	--> 1
+
+<+> string$dark orange$f(g,h) 	--> brown string f(g(h) 
+<+> string$dark'orange$f(g,h)   --> string dark'orange$f(g,h) 
+			            --paint-> brown string f(g(h) 
 	
 <+> red_uuu(light blue_hhhh,
 	     magenta_uuu(bbbbbbb(light blue_hhhh,
@@ -182,7 +186,7 @@ terms:
 <+> [(2,b,[1,3,3,3,3]),(3,b,[3]),(3,a,[4]),(2,a,[4,4]),		-- matrix
      (2,c,[4,uuuuuuuuuuuuuuuuuuuuuuu,5]),(4,b,[3]),		-- interpreter
      (2,d,[1,3,3,3,3,3,3,3,3,3,39,3,3,3,3,3,3])]
-
+<+> f(a,f(a,a,f(a,a,a,f(a,a,a,a,a,a,a,a,a),a,a,a),a,a),a)	-- hill term
 {- <+> f(f(a,f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,a)))),a) 
 <+> aaaa(ddd,
      aaaa(ddd,

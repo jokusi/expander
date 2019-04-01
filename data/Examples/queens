@@ -2,8 +2,8 @@
 
 specs:       	modal
 constructs:	final
+defuncts:	procs start add shift draw drawO drawT drawAll pic
 preds:		Final safe queens loop rec select select'
-defuncts:	procs start add shift draw drawO drawAll pic drawS
 fovars:         val
 
 axioms:
@@ -12,7 +12,15 @@ axioms:
 & start == (procs,[]) 
 & atoms == [final]
 
--- & (s=/=[] ==> (s,val) -> branch$map(shift$s)$filter(safe$1)$map(add$val)$s)
+& (s=/=[] ==> (s,val) -> branch$map(shift$s)$filter(safe$1)$map(add$val)$s)
+
+& add(val)(x) == x:val
+& (safe(n)[x] <==> True)
+& (safe(n)(x:y:s) <==> x =/= y+n & y =/= x+n & safe(n+1)(x:s))
+& shift(s)(x:val) == (s-[x],x:val)
+
+& final -> branch$filter(Final)$states
+& (Final <==> null.get0)
 
 -- 4 queens yield 2 solutions and 15 further states
 -- 5 queens yield 10 solutions and 44 further states
@@ -22,58 +30,35 @@ axioms:
 -- 9 queens yield 352 solutions and 8042 further states
 -- 10 queens yield 724 solutions and 34815 further states
 
-& (Final(s,val) <==> null$s)
+& pic(s,val) == mat$zip(drop(length$s)$procs)$val
 
-& final -> branch$filter(Final)$states
-
-& add(val)(x) == x:val
-
-& (safe(n)[x] <==> True)
-& (safe(n)(x:y:s) <==> x =/= y+n & y =/= x+n & safe(n+1)(x:s))
-
-& shift(s)(x:val) == (s-[x],x:val)
-
-
-& draw == wtree$fun(st,ite(Final$st,pic$st,st))
+& draw == wtree$fun(st,ite(Final$st,pic$st,text$st))
 
 & drawO == wtree$fun(st,ite(Final$st,pic$st,text$o))
 
+& drawT == wtree$fun(st,ite(Final$st,text$final,text$o))
+
 & drawAll == wtree$pic
 
-& pic(s,val) == matrix$zip(drop(length$s)$procs)$val
-
-& drawS == wtree $ fun(sat$st,frame$text$st)
-
--- iterative programs
+-- logic programs for computing safe board valuations
 
 & (queens(n,val) <=== loop([1..n],[],([],val)))
-
 & (loop(s,val,st) <=== select(s,x) & safe(1)(x:val) & loop(s-[x],x:val,st))
-& (loop(s,val,st) <=== select'(s,x:s') & safe(1)(x:val) & loop(s',x:val,st)) 
+
+& (queens(n,val) <=== rec([1..n],val))
+& rec([],[])
+& (rec(x:s,y:val) <=== select(x:s,y) & rec(x:s-[y],val) & safe(1)(y:val))
 
 & select(x:s,x)
 & (select(x:s,y) <=== select(s,y))
 
-
--- recursive program
-
-& (queens(n,val) <=== rec([1..n],val))
-
-& rec([],[])
-& (rec(x:s,y:val) <=== select'(x:s,y:s') & rec(s',val) & safe(1)(y:val))
-
-& select'(x:s,x:s)
-& (select'(x:s,y:x:s') <=== select'(s,y:s'))
-
-
 conjects:
 
-  Final$start		--> False	5 simplification steps	
-			--		if procs = [0..3]
-& EF(Final)$start	--> True	92 simplification steps
-& AF(Final)$start	--> False    	218 simplification steps
-& EG(Final)$start	--> False	9 simplification steps
-& AG(Final)$start	--> False	9 simplification steps
+-- 4 queens
+  EF(Final)$start	--> True	42 parallel simplification steps
+& AF(Final)$start	--> False    	219 depthfirst simplification steps
+& EG(Final)$start	--> False	11 parallel simplification steps
+& AG(Final)$start	--> False	10 parallel simplification steps
 
 & queens(4,val) -- derive/simplify/refute --> val=[3,1,4,2]|val=[2,4,1,3]
 
@@ -88,10 +73,8 @@ conjects:
 & (x=[(0,2),(1,0),(2,3),(3,1)]&[(0,1),(1,3),(2,0),(3,2)]=z) 
 
 terms:
-    
-    map(pic)$filter(Final)$states
 
-<+> eval$final
+    eval$final
 
     --> [([],[2,0,3,1]),([],[1,3,0,2])] 		if procs = [0..3]
 

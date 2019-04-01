@@ -24,7 +24,7 @@ axioms:
 			      color(index(st,states),length$states)$circ$11,
 			      frame(3)$blue$text$st))
 
-& drawS == wtree $ fun(sat$st,red$frame(5)$dark$green$text$st,st,text$st)
+& drawS == wtree $ fun(dark green$st,red$frame(5)$dark green$text$st,st,text$st)
 
 conjects:  
 
@@ -34,15 +34,15 @@ conjects:
 
 terms:   
 
-    eval(is$4)		--> [4]
-<+> eval(elem[2,4])	--> [2,4]
-<+> eval(EX$is$4)	--> [3,4,6]
-<+> eval(EF$is$4)	--> [4,0,1,2,3,5,6]
-<+> eval(EF$less$4)	--> [0..6]	
-<+> eval(AF$less$4)	--> [0..3]	
-<+> eval(EG$less$4)	--> [0..2]	
-<+> eval(AG$less$4)	--> []
-<+> eval(AG$less$14)	--> [8..10]
+    eval$is$4		--> [4]
+<+> eval$elem[2,4]	--> [2,4]
+<+> eval$EX$is$4	--> [3,4,6]
+<+> eval$EF$is$4	--> [4,0,1,2,3,5,6]
+<+> eval$EF$less$4	--> [0..6]	
+<+> eval$AF$less$4	--> [0..3]	
+<+> eval$EG$less$4	--> [0..2]	
+<+> eval$AG$less$4	--> []
+<+> eval$AG$less$14	--> [8..10]
 
 <+> eval $ is(4) `then` EF(less$2)	--> [0..10,14,22,33,44]
 <+> eval $ is(4) `then` EF(less$1)	--> [0..3,5..10,14,22,33,44]

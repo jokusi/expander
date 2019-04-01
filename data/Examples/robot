@@ -1,37 +1,49 @@
--- ROBOT
+-- robot
 
-specs:      	MODAL
-preds:	    	final
-defuncts:   	start states blocks pic pic1 pic2
+specs:      	modal
+constructs:	final
+defuncts:   	start blocks blocksCode blocksPic pic
 fovars:		pa
 
 axioms:
 
-start == (0,0) & 
-
 states == [start] &
+start == (0,0) & 
+atoms == [final] &
 
 blocks == [(20,60),(60,20)] &
 
 (x < 80  & (x+20,y) `NOTin` blocks ==> (x,y) -> (x+20,y)) &
 (y < 120 & (x,y+20) `NOTin` blocks ==> (x,y) -> (x,y+20)) &
 
-(final <==> atom(=(80,120))) &
+final -> (80,120) &			
 
-pic$pa == turt$path(pa):map(place$red$circ$20)$blocks &
+blocksCode == turt$map(fun(x,place(x)$red$circ$20))$blocks &
 
-pic1$pa == turt$[path$pa,place(red$circ$20)(20,60)] &
+pic1$pa == turt[path(pa),blocksCode] &
 
-pic2$pa == turt$[path$pa,place(red$circ$20)(20,60),place(red$circ$20)(60,20)] &
-
-pic3$pa == turt$[path$pa,load$place1]
+pic2$pa == turt[path(pa),load$blocksPic]
 
 conjects: 
 
-EF(final)$start      --> True
-	
+EF(=(80,120))$start --> True (98 depth- or breadthfirst simplification steps;
+		    --        83 simplification steps in parallel with 
+		    --        selection > permute subtrees after 30 steps)
+		    
+& set(eval$EF$final) = set$states	--> True 
+& (80,120)`in`succs(0,0)		--> True
+
 terms:
 
-mapS(pic3)$traces(0,0)(40,120) <+>  	-- 12 traces
+path[(0,0),(20,0),(40,0),(40,20),(40,40),(40,60),(40,80),(40,100),(40,120)] <+>
+					--> path[(0,0),(40,0),(40,120)]
 
-mapS(pic3)$traces(0,0)(80,120)		-- 106 traces
+map(pic1)$traces(0,0)(40,120) <+>  	-- 12 traces from (0,0) to (40,120)
+map(pic2)$traces(0,0)(40,120) <+>  	  
+
+map(pic2)$traces(0,0)(80,120) <+>       -- 106 traces from (0,0) to (80,120)
+
+save(blocksCode,blocksPic) <+> load$blocksPic
+
+
+  

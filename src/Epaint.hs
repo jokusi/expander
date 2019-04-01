@@ -754,7 +754,6 @@ painter pheight solveRef solve2Ref = do
             (solve&bigWin)
             (solve&stopRun)
             (solve&checkInSolver)
-            (solve&drawCurr)
         
         combis = do
             str <- spaceEnt `gtkGet` entryText
@@ -2325,29 +2324,31 @@ jturtleP = Just . single . turtle1
 rturtle :: TurtleActs -> MaybeT Cmd Picture
 rturtle = lift' . jturtleP
 
-loadWidget :: Color -> Sizes -> String -> Cmd Widget_
-loadWidget c sizes file =
-      do str <- lookupLibs file
-         if null str then return $ textWidget c sizes file
-         else return $ case parse widgString str of Just w -> w
-                                                    _ -> textWidget c sizes file
+loadWidget :: Color -> Sizes -> TermS -> Cmd Widget_
+loadWidget c sizes t =
+              do str <- lookupLibs file
+                 if null str then return w
+                 else return $ case parse widgString str of Just w -> w; _ -> w
+              where file = showTerm0 t
+                    w = textWidget c sizes file
 
-loadTerm :: Sig -> Color -> Sizes -> String -> Cmd TermS
-loadTerm sig c sizes file = 
-     do str <- lookupLibs file       
-        if null str then return $ leaf $ show c++'_':file
-        else return $ case parse (term sig) str of Just t -> t
-                                                   _ -> leaf $ show c++'_':file
+loadTerm :: Sig -> Color -> Sizes -> TermS -> Cmd TermS
+loadTerm sig c sizes t =
+              do str <- lookupLibs file
+                 if null str then return u
+                 else return $ case parse (term sig) str of Just t -> t; _ -> u
+              where file = showTerm0 t
+                    u = leaf $ show c++'$':file
 
-saveWidget :: Widget_ -> String -> Cmd ()
-saveWidget w file = do
-  path <- userLib file
+saveWidget :: Widget_ -> TermS -> Cmd ()
+saveWidget w t = do
+  path <- userLib $ showTerm0 t
   writeFile path $ show w
 
-saveTerm :: TermS -> String -> Cmd ()
-saveTerm t file = do
-  usr <- userLib file
-  writeFile usr $ showTerm0 t
+saveTerm :: TermS -> TermS -> Cmd ()
+saveTerm t u = do
+  path <- userLib $ showTerm0 u
+  writeFile path $ showTerm0 t
 
 concatJust :: Monad m => [MaybeT m [a]] -> MaybeT m [a]
 concatJust s = maybeT $ do s <- mapM runT s
@@ -2361,12 +2362,14 @@ type Interpreter = Sizes -> Pos -> TermS -> MaybeT Cmd Picture
 
 searchPic :: Interpreter -> Interpreter
 searchPic eval sizes spread t = g [] t where
- g p (V x) | isPos x = g p $ getSubterm t $ getPos x
+ -- g p (V x) | isPos x = g p $ getSubterm t $ getPos x
  g p t = maybeT $ do pict <- runT (eval sizes spread t)
                      if just pict then return pict
-                     else case t of
-                          F _ ts -> runT (concatJust $ zipWithSucs g p ts)
-                          _ -> return Nothing
+                     else case t of F _ ts -> (h ts)&runT
+                                    _ -> return Nothing
+                  where h = concatJust . zipWithSucs g p . changeLPoss q r
+                        q i = [i]; r i = []
+
 
 -- solPic sig eval ... t recognizes the terms of a solution t that are
 -- interpretable by eval and combines the resulting pictures into a single one.
@@ -2481,21 +2484,20 @@ widgets sig c sizes spread t = f c t' where
                                         hue <- lift' $ search (== hue) huemodes
                                         return [turtle0 c $ mkHue hue 0 acts]
                                      where (z,hue) = splitAt 3 x
-   f c (F "load" [t])     = do w <- lift $ loadWidget c sizes $ root t
+   f c (F "load" [t])     = do w <- lift $ loadWidget c sizes t
                                return [updCol c w]
-   f c (F "loadT" [t])    = do t <- lift $ loadTerm sig c sizes $ root t
-                               f c t
+   f c (F "loadT" [t])    = do t <- lift $ loadTerm sig c sizes t; f c t
    f _ (F "mat" [t])      = matrix sizes spread t
-   f _ (F "save" [t,u])   = do pict@[w] <- f black t
-                               lift $ saveWidget w $ root u; return pict
-   f _ (F "saveT" [t,u])  = do pict@[w] <- f black t
-                               lift $ saveTerm t $ root u; return pict
+   f _ (F "save" [t,u])   = do pict@[w] <- f black t; lift $ saveWidget w u
+                               return pict
+   f _ (F "saveT" [t,u])  = do pict@[w] <- f black t; lift $ saveTerm t u
+                               return pict
    f c (F "turt" [acts])  = do acts <- parseActs c acts
                                return [turtle0 c acts]
    f _ (F x [t]) | just c = f (get c) t where c = parse color x
-   f c t = concat [do w <- lift' $ widgConst c sizes spread t; return [w],
-                   do pict <- lift' $ widgConsts c sizes spread t; return pict]
-   liftR = lift' . parseReal
+   f c t   = concat [do w <- lift' $ widgConst c sizes spread t; return [w],
+                     do pict <- lift' $ widgConsts sizes spread t; return pict]
+   liftR   = lift' . parseReal
    fgrow c tr t u = do [w] <- fs c t; pict <- fs (next c) u
                        rturtle $ grow tr (updCol c w) $ map getActs pict
 
@@ -2671,11 +2673,11 @@ widgConstC c sizes spread = f c where
    f _ (F x [t]) | just c = f (get c) t where c = parse color x
    f c t                  = widgConst c sizes spread t
 
-widgConsts :: Color -> Sizes -> Pos -> TermS -> Maybe Picture
-widgConsts c sizes spread = f where
+widgConsts :: Sizes -> Pos -> TermS -> Maybe Picture
+widgConsts sizes spread = f where
    f (F "gifs" [d,n,b,h]) = do d <- parseConst d; n <- parsePnat n
                                b <- parseReal b; h <- parseReal h
-                               let gif i = Gif i False d $ Rect (st0 c) b h
+                               let gif i = Gif i False d $ Rect st0B b h
                                Just $ map gif [1..n]
                                -- Just $ map (turtle0B . onoff . gif) [1..n]
    f _ = Nothing
@@ -3626,8 +3628,8 @@ buildPaths (pict,arcs) = connect $ concatMap f $ indices_ pict
 
 -- CROSSINGS and PICTURE EXTENSIONS
 
--- hullCross (p1,p2) w computes the crossing of line with w such that p2 agrees
--- with the coordinates of w. 
+-- hullCross (p1,p2) w computes the crossing of (p1,p2) with w such that p2 
+-- agrees with the coordinates of w. 
 -- hullCross is used by buildAndDrawPaths, convexPath and drawTrees.
 
 hullCross :: Line_ -> Widget_ -> Point

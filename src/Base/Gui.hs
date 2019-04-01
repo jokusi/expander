@@ -29,7 +29,7 @@ module Base.Gui
   , orange
   , brown
   , darkGreen
-  , GtkColor(..)
+  , GtkColor
   , gtkColor
   , toGtkColor
   , gtkGet
@@ -88,7 +88,7 @@ import qualified Base.Haskell as Haskell
 import qualified Codec.Picture as Picture
 import Control.DeepSeq
 import qualified Data.Text as Text
-import Graphics.Rendering.Cairo as Cairo
+import Graphics.Rendering.Cairo as Cairo hiding (x, y, width, height)
 import Graphics.UI.Gtk hiding
   (Color, Action, Font, ArrowType, Arrow, Fill
   , ArrowClass, Image, Star , Circle, Point, Dot, get, set)
@@ -184,10 +184,10 @@ canvas = do
     sizeRef <- newIORef (0, 0)
     backgroundRef <- newIORef $ RGB 0 0 0
     
-    surface <- createImageSurface FormatRGB24 1 1
-    writeIORef surfaceRef surface
+    surface0 <- createImageSurface FormatRGB24 1 1
+    writeIORef surfaceRef surface0
     drawingArea <- drawingAreaNew
-    drawingArea `on` draw $ do
+    _ <- drawingArea `on` draw $ do
         surface <- liftIO $ readIORef surfaceRef
         setSourceSurface surface 0 0
         paint
@@ -195,15 +195,15 @@ canvas = do
     return $ let
         calcVertexes :: Pos -> Pos -> ((Double, Double), (Double, Double))
         calcVertexes tip end = ((x1, y1), (x2, y2))
-            where length = 7
+            where len = 7
                   degree = 0.5
                   (tipX, tipY) = fromInt2 tip
                   (endX, endY) = fromInt2 end
                   angle  = atan2 (tipY - endY) (tipX - endX) + pi
-                  x1 = tipX + length * cos (angle - degree)
-                  y1 = tipY + length * sin (angle - degree)
-                  x2 = tipX + length * cos (angle + degree)
-                  y2 = tipY + length * sin (angle + degree)
+                  x1 = tipX + len * cos (angle - degree)
+                  y1 = tipY + len * sin (angle - degree)
+                  x2 = tipX + len * cos (angle + degree)
+                  y2 = tipY + len * sin (angle + degree)
         
         arrowTriangle :: Pos -> Pos -> Render ()
         arrowTriangle tip@(tipX, tipY) end = do
@@ -218,8 +218,8 @@ canvas = do
         arrow :: Maybe ArrowType -> [Pos] -> Render ()
         arrow (Just First) (p1:p2:_) = arrowTriangle p1 p2
         arrow (Just Last) ps@(_:_:_) = arrowTriangle p1 p2
-            where last2 (p1:[p2]) = (p1,p2)
-                  last2 (_:ps)  = last2 ps
+            where last2 (p1':[p2']) = (p1',p2')
+                  last2 (_:ps')  = last2 ps'
                   last2 []      = error "Gui.arrow.last2: List is empty."
                   (p2, p1) = last2 ps
         arrow (Just Both) ps@(_:_:_)
@@ -227,9 +227,9 @@ canvas = do
         arrow _ _ = return ()
         
         setLineOpt :: LineOpt -> Render ()
-        setLineOpt (LineOpt col width _ cap joinStyle aa _) = do
+        setLineOpt (LineOpt col wdth _ cap joinStyle aa _) = do
             setColor col
-            setLineWidth width
+            setLineWidth wdth
             setLineCap cap
             setLineJoin joinStyle
             setAntialias $ if aa then AntialiasDefault else AntialiasNone
@@ -344,13 +344,13 @@ canvas = do
                   (width, height) = fromInt2 dim
         
         canvasText' :: Pos -> TextOpt -> String -> Action
-        canvasText' (x, y) (TextOpt font align anchor col) str = do
+        canvasText' (x, y) (TextOpt fnt align anchor col) str = do
             surface <- readIORef surfaceRef
             renderWith surface $ do
                 save
                 setColor col
                 layout <- createLayout str
-                liftIO $ layoutSetFontDescription layout font
+                liftIO $ layoutSetFontDescription layout fnt
                 liftIO $ layoutSetAlignment layout $ case align of
                     LeftAlign   -> AlignLeft
                     CenterAlign -> AlignCenter
@@ -432,7 +432,7 @@ canvas = do
           if format == "gif"
             then do
               let tmpfile = file -<.> "png"
-              canvasSave' tmpfile
+              _ <- canvasSave' tmpfile
               eitherimg <- Picture.readImage tmpfile
               either (const $ putStrLn "gif failed") id $ do
                 img <- eitherimg
@@ -715,9 +715,9 @@ data ImageOpt = ImageOpt
 imageOpt :: ImageOpt
 imageOpt = ImageOpt 0.0 1.0 C
 
-imageGetSize :: Image -> IO Pos
-imageGetSize (Image _ buf)
-  = (,) <$> (pixbufGetWidth buf) <*> (pixbufGetHeight buf)
+-- imageGetSize :: Image -> IO Pos
+-- imageGetSize (Image _ buf)
+--   = (,) <$> (pixbufGetWidth buf) <*> (pixbufGetHeight buf)
 
 -- data MenuOpt        > WindowOpt, Enabled
 -- data MButtonOpt     > StdOpt, FontOpt, PadOpt, Img, Btmp, Underline, 
@@ -731,7 +731,8 @@ instance Show ArcStyleType where show Pie       = "pieslice"
 
 instance Show Color where 
    showsPrec _ (RGB r g b) rest = "#" ++ concatMap (hex 2 "") [r,g,b] ++ rest
-                    where hex 0 rs _ = rs
+                    where hex :: Int -> [Char] -> Int -> [Char]
+                          hex 0 rs _ = rs
                           hex t rs 0 = hex (t-1) ('0':rs) 0
                           hex t rs i = hex (t-1)(chr (48+m+7*div m 10):rs) d
                                        where m = mod i 16; d = div i 16
@@ -762,8 +763,8 @@ periodic millisecs act = do
         { runnableStart = do
             maybeID <- readIORef handlerID
             when (Haskell.isNothing maybeID) $ do -- if not running
-                id <- timeoutAdd (act >> return True) millisecs
-                writeIORef handlerID $ Just id
+                hID <- timeoutAdd (act >> return True) millisecs
+                writeIORef handlerID $ Just hID
         , runnableStop  = do
             maybeID <- readIORef handlerID
             when (Haskell.isJust maybeID) $ do -- if running
@@ -771,16 +772,19 @@ periodic millisecs act = do
                 writeIORef handlerID Nothing
         }
 
-data MenuOpt = MenuOpt { font :: Maybe String, background :: Maybe Background }
+data MenuOpt = MenuOpt
+  { menuFont :: Maybe String
+  , menuBackground :: Maybe Background
+  }
 menuOpt :: MenuOpt
-menuOpt = MenuOpt { font = Nothing, background = Nothing }
+menuOpt = MenuOpt { menuFont = Nothing, menuBackground = Nothing }
 
 -- Tk.Menu.cascade
 cascade :: Menu -> String -> MenuOpt -> Request Menu
-cascade menu label MenuOpt{ font = menuFont, background = bg } = do
+cascade menu label MenuOpt{ menuFont = mFont, menuBackground = bg } = do
   item <- menuItemNewWithLabel label
   menuShellAppend menu item
-  doMaybe (addContextClass item) menuFont
+  doMaybe (addContextClass item) mFont
   doMaybe (setBackground item) bg
   subMenu <- menuNew
   item `Gtk.set` [ menuItemSubmenu := subMenu, widgetVisible := True ]
@@ -793,7 +797,7 @@ cascade menu label MenuOpt{ font = menuFont, background = bg } = do
 
 smooth' :: [(Double,Double)] -> [(Double,Double)]
 smooth' ps = interpolate' $!! clean $!! spline' ps
-    where clean (p:ps) = p : dropWhile (==p) ps
+    where clean (p':ps') = p' : dropWhile (==p') ps'
           clean [] = []
 
 -- spline is used by 'Ecom.hulls', 'Ecom.splinePict' and 'smooth'.
@@ -816,20 +820,23 @@ spline' ps = ps
 -- (http://ls7-www.cs.tu-dortmund.de).
 
 spline0 :: Bool -> [(Double,Double)] -> [(Double,Double)]
-spline0 b ps = first:map f [1..resolution] ++ map g [1..9] ++
-                 [if b then first else ps!!(n-1)]
+spline0 isClosed ps = first:map f [1..resolution] ++ map g [1..9] ++
+                 [if isClosed then first else ps!!(n-1)]
         where add2 (x,y) (a,b) = (a+x,b+y)
-              apply2 f (x,y) = (f x,f y)
-              first = f 0; n = length ps; resolution = n*6
+              apply2 fun (x,y) = (fun x,fun y)
+              first = f 0
+              n = length ps; resolution = n*6
+              f, g :: Int -> (Double, Double)
               f i = point $ upb*fromIntegral i/fromIntegral resolution 
               g i = point $ upb+fromIntegral i/10
-              upb = fromIntegral n-if b then 1 else 3
-              point v = foldl1 add2 $ map h [0..n-1]
-                        where h i = apply2 (*z) $ ps!!i
-                                where z | b && v < u i = blend2 u i $ v-u 0+u n 
-                                        | b                 = blend2 u i v
-                                        | otherwise         = blend2 t i v 
-              t i = if i < 3 then 0 else fromIntegral (min i n)-2
+              upb = fromIntegral n-if isClosed then 1 else 3
+              point v = foldl1 add2 $ map helper [0..n-1]
+                        where helper i = apply2 (*z) $ ps!!i
+                                where z | isClosed && v < u i
+                                          = blend2 u i $ v-u 0+u n 
+                                        | isClosed          = blend2 u i v
+                                        | otherwise         = blend2 sub2 i v 
+              sub2 i = if i < 3 then 0 else fromIntegral (min i n)-2
               u i = if i <= n then fromIntegral i else u (i-1)+u (i-n)-u (i-n-1)
               h d s = if d == 0 then 0 else s
               blend2 t i v = h denom1 sum1+h denom2 sum2
@@ -844,28 +851,30 @@ spline0 b ps = first:map f [1..resolution] ++ map g [1..9] ++
                                    denom2 = ti2-ti1; num2 = ti2-v
                                    sum1 = if b i then num1/denom1 else 0
                                    sum2 = if b $ i+1 then num2/denom2 else 0
-                                   b i = t i <= v && v < t (i+1)
+                                   b i' = t i' <= v && v < t (i'+1)
 
 spline0' :: Bool -> [(Double,Double)] -> [(Double,Double)]
-spline0' b ps = first:map f [1..resolution] ++ map g [1..9] ++
-                 [if b then first else ps!!(n-1)]
+spline0' isClosed ps = first:map f [1..resolution] ++ map g [1..9] ++
+                 [if isClosed then first else ps!!(n-1)]
         where add2 (x,y) (a,b) = let !r1 = a+x
                                      !r2 = b+y
                                  in (r1, r2)
-              apply2 f (x,y) = let !r1 = f x
-                                   !r2 = f y
+              apply2 fun (x,y) = let !r1 = fun x
+                                     !r2 = fun y
                                in (r1, r2)
               first = f 0; !n = length ps; !resolution = n*6
+              f, g :: Int -> (Double, Double)
               f i = point $!! upb*fromIntegral i/fromIntegral resolution 
               g i = point $!! upb+fromIntegral i/10
               !n' = fromIntegral n
-              upb = n'-if b then 1 else 3
-              point v = Haskell.foldl1' add2 $!! map h [0..n-1]
-                        where h i = apply2 (*z) $ ps!!i
-                               where z | b && v < u i = blend2 u i $!! v-u 0+u n
-                                       | b                 = blend2 u i v
-                                       | otherwise         = blend2 t i v 
-              t i | i < 3     = 0
+              upb = n'-if isClosed then 1 else 3
+              point v = Haskell.foldl1' add2 $!! map helper [0..n-1]
+                        where helper i = apply2 (*z) $ ps!!i
+                               where z | isClosed && v < u i
+                                         = blend2 u i $!! v-u 0+u n
+                                       | isClosed          = blend2 u i v
+                                       | otherwise         = blend2 sub2 i v 
+              sub2 i | i < 3     = 0
                   | otherwise = fromIntegral (min i n)-2
               u i | i <= n    = fromIntegral i
                   | otherwise = u (i-1)+u (i-n)-u (i-n-1)
@@ -883,7 +892,7 @@ spline0' b ps = first:map f [1..resolution] ++ map g [1..9] ++
                                    denom2 = ti2-ti1; num2 = ti2-v
                                    sum1 = if b i then num1/denom1 else 0
                                    sum2 = if b $ i+1 then num2/denom2 else 0
-                                   b i = t i <= v && v < t (i+1)
+                                   b i' = t i' <= v && v < t (i'+1)
 
 {- |
 Calculate multiple helper positions for beziere curves out of a
@@ -891,7 +900,7 @@ straight line path.
 -}
 interpolate' :: [(Double,Double)] -> [(Double,Double)]
 interpolate' pss@(p1:p2:_:_) = p1:q1:interpolate0 pss
-    where scale = 0.35
+    where scl = 0.35 -- scaling factor
           !closed = p1 == last pss
           p0 = last $!! init pss
           mag (x,y) = let !r1 = (x ** 2)
@@ -904,24 +913,25 @@ interpolate' pss@(p1:p2:_:_) = p1:q1:interpolate0 pss
           calc op (x1,y1) (x2,y2) = let !r1 = x1 `op` x2
                                         !r2 = y1 `op` y2
                                     in (r1, r2)
-          sub = calc (-)
-          add = calc (+)
+          csub = calc (-)
+          cadd = calc (+)
           -- mul = calc (*)
-          tangent = if closed then norm $!! sub p2 p0
-                    else sub p2 p1
+          tangent = if closed then norm $!! csub p2 p0
+                    else csub p2 p1
           q1 = if closed
-               then add p1 $ skalar (scale * mag (sub p2 p1)) tangent
-               else add p1 $ skalar scale tangent
-          interpolate0 (p0:p1:p2:ps) = q0:p1:q1:interpolate0 (p1:p2:ps)
-            where tangent = norm $!! sub p2 p0
-                  q0 = sub p1 $!! skalar (scale * mag (sub p1 p0)) tangent
-                  q1 = add p1 $!! skalar (scale * mag (sub p2 p1)) tangent
-          interpolate0 [p0, p1] = [q0, p1]
-            where tangent = if closed then norm $!! sub p2 p0
-                            else sub p1 p0
-                  q0 = if closed
-                       then sub p1 $!! skalar (scale * mag (sub p1 p0)) tangent
-                       else sub p1 (skalar scale tangent)
+               then cadd p1 $ skalar (scl * mag (csub p2 p1)) tangent
+               else cadd p1 $ skalar scl tangent
+          interpolate0 (p0':p1':p2':ps') = q0':p1':q1':interpolate0(p1':p2':ps')
+            where tangent' = norm $!! csub p2' p0'
+                  q0' = csub p1' $!! skalar (scl * mag (csub p1' p0')) tangent'
+                  q1' = cadd p1' $!! skalar (scl * mag (csub p2' p1')) tangent'
+          interpolate0 [p0', p1'] = [q0', p1']
+            where tangent' = if closed then norm $!! csub p2 p0'
+                            else csub p1' p0'
+                  q0' = if closed
+                       then csub p1'
+                              $!! skalar (scl * mag (csub p1' p0')) tangent'
+                       else csub p1' (skalar scl tangent')
           interpolate0 _ = error "Gui.interpolate: interpolate' should never be\
                                 \ called with list of length < 2."
 interpolate' pss = pss

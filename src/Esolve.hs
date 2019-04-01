@@ -1,8 +1,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, November 2018
-                  Jos Kusiek, November 2018
+Copyright   : (c) Peter Padawitz, March 2019
+                  Jos Kusiek, March 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -1407,7 +1407,7 @@ simplifyA _ (F "List" [t])    = jConst $ isList t
 
 simplifyA sig (F "Value" [t]) = jConst $ isValue sig t
 
-simplifyA sig t = simplifyS sig t
+simplifyA sig t               = simplifyS sig t
 
 mkStates :: Sig -> [Int] -> TermS
 mkStates sig = mkList . map (states sig!!)
@@ -1570,7 +1570,7 @@ simplifyS sig (F "eval" [phi])  = do sts <- foldModal sig phi
 
 simplifyS sig (F "evalG" [phi]) = do sts <- foldModal sig phi
                                      let f st = if st `elem` map (strs!!) sts 
-                                                then "sat$"++st else st
+                                                then "dark green$"++st else st
                                      Just $ mapT f $ eqsToGraph [] eqs
     where [strs,labs] = map (map showTerm0)[(sig&states),(sig&labels)]
           (eqs,_) = if null labs then relToEqs 0 $ mkPairs strs strs (sig&trans)
@@ -1696,8 +1696,8 @@ simplifyT (F "noBrackets" [t])   = Just $ leaf $ minus (showTree False t) "()"
 
 simplifyT (F "getCols" [F x ts]) = Just $ if null z then F x $ map f ts
                                           else F col [F (tail z) $ map f ts]
-                                 where (col,z) = span (/= '_') x
-                                       f t = F "erect" [t]
+                                   where (col,z) = span (/= '$') x
+                                         f t = F "erect" [t]
 
 -- projection
 
@@ -1940,7 +1940,7 @@ simplifyT (F "light" [i,n,c]) = do i <- parseNat i; n <- parseNat n
 
 simplifyT (F x@('p':'a':'t':'h':_) [F "[]" ts])
                                | all just ps && length qs < length ps =
-                                 Just $ F x $ map mkConstPair qs
+                                 Just $ F x [mkList $ map mkConstPair qs]
                                  where ps = map parseRealReal ts
                                        qs = reducePath $ map get ps
 
@@ -2009,25 +2009,37 @@ rewriteSig sig ts = (zip ts $ reduce ts,
 -- (sig&states) and the simplification and transition axioms of sig.
 -- rewriteStates is used by Ecom > buildKripke.
 rewriteStates :: Sig -> Int -> ([TermS],Pairs TermS,Triples TermS TermS)
-rewriteStates sig mode = h (sig&states) (sig&states) [] [] where
-                    h sts ts ps psL = if null new then (sts,rs,rsL) 
-                                      else h (sts `join` new) new rs rsL
-                      where new = reds `minus` sts
-                            reds = joinM redss `join` joinM redssL
-                            redss = reduce ts
-                            redssL = reduce [mkPair t lab | (t,lab) <- pairs]
-                            reduce = map $ simplReducts sig True
-                            pairs = prod2 ts (sig&labels)
-                            qs = zip ts redss
-                            qsL = zipL pairs redssL
-                            (rs,rsL) = case mode of 
-                                       0 -> (mkAcyclic ps qs,mkAcyclicL psL qsL)
-                                       1 -> (ps++map f qs,psL++map fL qsL)
-                                       _ -> (ps++qs,psL++qsL)
-                            f (t,ts)    = (t,onlyNew ts)
-                            fL (t,u,ts) = (t,u,onlyNew ts)
-                            onlyNew ts = minus ts $ meet reds sts
-                           
+rewriteStates sig mode = loop (sig&states) (sig&states) [] [] where
+                  loop old sts ps psL =
+                     if null new then (old,rs,rsL)
+                                 else loop (old `join` new) new rs rsL
+                     where new = (joinM redss `minus` old) `join`
+                                 (joinM redssL `minus` old)
+                           redss = reduce sts
+                           redssL = reduce [mkPair st lab | (st,lab) <- pairs]
+                           reduce = map $ simplReducts sig True
+                           pairs = prod2 sts (sig&labels)
+                           qs = zip sts redss
+                           qsL = zipL pairs redssL
+                           meetNew = map $ meet new
+                           rs = ps ++ case mode of 0 -> map removeCycles qs
+                                                   1 -> zip sts $ meetNew redss
+                                                   _ -> qs
+                           rsL = psL ++ case mode of
+                                             0 -> map removeCyclesL qsL
+                                             1 -> zipL pairs $ meetNew redssL
+                                             _ -> qsL
+                           removeCycles (st,reds) = (st,f st reds)
+                           removeCyclesL (st,lab,reds) = (st,lab,f st reds)
+                           f st sts = [st' | st' <- sts,
+                                             st `notElem` fixpt subset g [st']]
+                           g sts = sts `join` joinMap h sts where
+                           h st = (case lookup st ps of Just sts -> sts
+                                                        _ -> []) ++
+                                  joinMap f (sig&labels)
+                                  where f lab = case lookupL st lab psL of
+                                                     Just sts -> sts; _ -> []
+
 pairsToInts :: [TermS] -> Pairs TermS -> [TermS] -> [[Int]]
 pairsToInts us ps = map f where
   f t = searchAll (`elem` (get $ lookup t ps)) us

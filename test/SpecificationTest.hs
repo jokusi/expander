@@ -8,6 +8,7 @@ import Base.OHaskell
 import Base.System
 import Eterm
 import Esolve
+import Ecom (illformed, illformedF, illformedSig)
 
 import Control.Monad (void, msum, when, unless, filterM)
 import Data.IORef
@@ -35,6 +36,7 @@ isSpecification file = all (not . ($ file))
     , isSuffixOf "R"
     , isSuffixOf "G"
     , isSuffixOf "W"
+    , isSuffixOf "Pic"
     , isPrefixOf "["
     ]
 
@@ -57,18 +59,7 @@ test_all_specifications = buildTest $ do
 
 
 loadSpec spec = do
-    let -- messages
-
-        illformed :: String
-        illformed = "The term or formula in the text field is not well-formed."
-
-        illformedF :: String
-        illformedF = "The formula in the text field is not well-formed."
-
-        illformedSig :: String
-        illformedSig = "The signature in the text field is not well-formed."
-    
-    
+    let
     -- REFS
     
     safeRef <- newIORef True
@@ -281,3 +272,5 @@ loadSpec spec = do
     addSpecWithBase spec
     return ()
     
+data SolverState = SolverState
+  {}
