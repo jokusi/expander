@@ -1503,18 +1503,16 @@ application x t u = return $ if x == "$" && root t /= "_" && null (subterms t)
                     where z = root t
 
 enclosedAtom :: Sig -> Bool -> Parser TermS
-enclosedAtom sig b = concat [ do tchar '('; concat [ enclosedSect sig True
-                                               , do ts <- p; tchar ')'
-                                                    return $ mkTup ts
-                                               ]
-                          , do t <- listTerm sig
-                               if b then return t else zero
-                          , do tchar '['; ts <- p; tchar ']'
-                               return $ mkList ts
-                          ]
-           where p = do t <- relTerm sig b
-                        (do tchar ','; ts <- p
-                            return $ t:ts) ++ return [t]
+enclosedAtom sig b = concat [do tchar '('
+                                (enclosedSect sig ++
+                                 do ts <- p; tchar ')'; return $ mkTup ts),
+                             do t <- listTerm sig
+                                if b then return t else zero,
+                             do tchar '['; ts <- p; tchar ']'
+                                return $ mkList ts]
+             where p = do t <- relTerm sig b
+                          (do tchar ','; ts <- p; return $ t:ts) ++ return [t]
+
 
 curryrestR :: Sig -> TermS -> Parser TermS
 curryrestR sig = curryrest sig $ enclosedAtom sig True
@@ -1624,27 +1622,22 @@ curryrestF :: Sig -> TermS -> Parser TermS
 curryrestF sig = curryrest sig $ enclosedTerm sig
 
 enclosedTerm :: Sig -> Parser TermS
-enclosedTerm sig = concat [ do tchar '('; concat [ enclosedSect sig False
-                                             , do ts <- terms sig ')'
-                                                  return $ mkTup ts
-                                             ]
-                        , listTerm sig, setTerm sig
-                        ]
+enclosedTerm sig = concat [do tchar '('
+                              (enclosedSect sig ++
+                               do ts <- terms sig ')'; return $ mkTup ts),
+                           listTerm sig, setTerm sig]
 
-enclosedSect :: Sig -> Bool -> Parser TermS
-enclosedSect sig b = concat [ do x <- pL; guard (x /= "-")
-                                 concat [ do tchar ')'; return $ F x []
-                                        , do t <- termOrRelTerm sig; tchar ')'
-                                             return $ F "rsec" [F x [],t]
-                                        ]
-                          , do t <- termOrRelTerm sig
-                               concat [ do tchar ')'; return t
-                                      , do x <- pR; tchar ')'
-                                           return $ F "lsec" [t,F x []]
-                                      ]
-                          ]
-                     where pL = if b then infixRel sig else infixFun sig
-                           pR = if b then infixRel sig else infixFun sig
+enclosedSect :: Sig -> Parser TermS
+enclosedSect sig = concat [do x <- (infixRel sig ++ infixFun sig)
+                              guard (x /= "-")
+                              concat [do tchar ')'; return $ F x [],
+                                      do t <- termOrRelTerm sig; tchar ')'
+                                         return $ F "rsec" [F x [],t]],
+                           do t <- termOrRelTerm sig
+                              concat [do tchar ')'; return t,
+                                      do x <- (infixRel sig ++ infixFun sig)
+                                         tchar ')'
+                                         return $ F "lsec" [t,F x []]]]
 
 listTerm :: Sig -> Parser TermS
 listTerm sig = (do symbol "[]"; return mkNil) ++
@@ -1688,12 +1681,13 @@ data RegExp = Mt | Eps | Const String | Sum_ RegExp RegExp | Int_ |
               Prod RegExp RegExp | Star RegExp | Var String deriving Eq
 
 parseRE :: Sig -> TermS -> Maybe (RegExp,[String])
+                                      -- list of labels of acceptors
 parseRE _ (F "mt" [])          = Just (Mt,[])
 parseRE _ (F "eps" [])         = Just (Eps,["eps"])
 parseRE _ (F "int" [])         = Just (Int_,["int"])
 parseRE sig (F a [])           = if (sig&isConstruct) a then Just (Const a,[a])
                                  else do guard $ (sig&isDefunct) a
-                                         Just (Var a,[a])
+                                         Just (Var a,[a]) -- a is a nonterminal
 parseRE sig (F "+" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
                                     let (e:es,ass) = unzip pairs
                                     Just (foldl Sum_ e es,joinM ass)
@@ -2862,13 +2856,13 @@ iniPreds = words "_ () [] : ++ $ . == -> -/-> <= >= < > >> true false" ++
 
 
 iniDefuncts :: [String]
-iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch" ++
-              words "color concat count curry dnf drop eval filter flip" ++
-              words "foldl foldr head height id init insert `join`" ++
-              words "labels lsec last length list map max `meet` min" ++
-              words "minimize `mod` nextperm obdd out outL parseLR permute" ++
-              words "prodE prodL product reverse rsec set shuffle states" ++
-              words "sucs sum tail trans transL tup uncurry upd zip zipWith"
+iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch color" ++
+              words "concat count curry dnf eval filter flip foldl foldr" ++
+              words "height id insert `join` labels lsec length list map" ++
+              words "`meet` min minimize `mod` nextperm obdd out outL" ++
+              words "parseLR permute prodE prodL product reverse rsec set" ++
+              words "shuffle states sucs sum trans transL tup uncurry upd" ++
+              words "zip zipWith"
 
 iniSymbols :: ([String], [String], [String], [String], [t], [t1])
 iniSymbols = (iniPreds,[],words "() [] : 0 lin suc",iniDefuncts,[],[])
@@ -4332,14 +4326,20 @@ boundedGraph x n t = if null ps then t else h u
 outGraph :: [String] -> [String] -> [[Int]] -> TermS -> TermS
 outGraph sts ats out = mapT $ extendNode sts ats out 
 
-outGraphL :: [String] -> [String] -> [String] -> [[Int]] -> [[[Int]]] -> TermS 
-          -> TermS
-outGraphL sts labs ats out outL = g 
-      where g (F x ts) | x == "<+>" = F x $ map g ts
-            g (F x ts) = F (extendNode sts ats out x) $ map (h x) ts
-            g t        = t
-            h x (F lab ts) = F (extendNodeL sts labs ats outL x lab) $ map g ts
-            h _ t          = t
+outGraphL :: [String] -> [String] -> [String] -> [[Int]] -> [[[Int]]] -> TermS
+                                                                      -> TermS
+outGraphL sts labs ats out outL = f where
+      f (F x ts) | x == "<+>" = F x $ map f ts
+      f (F x ts) = F (extendNode sts ats out x) $ map g ts ++ map h labs' where
+            xoutL = outL!!getInd x sts
+            labs' = [lab | lab <- labs, all ((/= lab) . drop 4 . root) ts,
+                                        notnull $ xoutL!!getInd lab labs]
+            g (F lab ts) = F (extendNodeL $ drop 4 lab) $ map f ts
+            g t = t                 -- drop4 lab removes "red$" (see relLToEqs)
+            h = leaf . extendNodeL
+            extendNodeL lab = enterAtoms ("red$"++lab) $ map (ats!!)
+                                                       $ xoutL!!getInd lab labs
+      f t = t
 
 -- mkAtGraph{L} ... out {outL} t adds out!!x to each state node x of t and 
 -- outL!!x!!y to each label node y of t with state predecessor x. 
@@ -4350,19 +4350,10 @@ extendNode _ _ [] x      = x
 extendNode sts ats out x = if isPos x || x == "<+>" then x
                            else enterAtoms x $ map (ats!!) $ out!!getInd x sts
 
-extendNodeL :: [String] -> [String] -> [String] -> [[[Int]]] -> String 
-            -> String -> String
-extendNodeL _ _ _ [] x _            = x
-extendNodeL sts labs ats outL x lab =
-             if isPos x || x == "<+>" then x
-             else enterAtoms lab $ map (ats!!)
-                                 $ outL!!getInd x sts!!getInd (drop 4 lab) labs
-                                    -- drop4 lab removes "red$" (see relLToEqs)
-
 enterAtoms :: String -> [String] -> String
 enterAtoms x []       = x
-enterAtoms x [at]     = x ++ ':':at
-enterAtoms x (at:ats) = x ++ ":[" ++ at ++ concatMap (',':) ats ++ "]"
+enterAtoms x [at]     = x++':':at
+enterAtoms x (at:ats) = x++":["++at++concatMap (',':) ats++"]"
 
 -- colorClasses{L} colors equivalent states of a transition graph with the same
 -- color and equivalent states with different colors unless they belong to 

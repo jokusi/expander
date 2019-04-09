@@ -1,0 +1,25 @@
+-- fact
+
+specs:   	modal
+constructs:	final
+preds:		Final
+
+axioms:
+
+  states == map (fun(x,(x,1)))[1..9] 
+& atoms == [final]
+
+& (x > 1 ==> (x,y) -> (x-1,x*y))		 
+
+& final -> branch$filter(Final)$states
+& (Final <==> (=1).get0)
+
+conjects: 
+
+EF(Final)(5,1)   --> True  	-- 49 simplification steps
+    
+terms:
+
+evalG$final <+>	    
+evalG$EF$final   
+

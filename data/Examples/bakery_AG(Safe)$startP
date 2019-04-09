@@ -1,0 +1,169 @@
+-- /Users/Padawitz/ExpanderLib/bakery_AG(Safe)$startP
+
+0. Derivation of
+
+AG(Safe)$start
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Adding
+
+  (AG0(z0)$z1 <=== z0 = Safe & z1 = start)
+
+to the axioms and applying COINDUCTION wrt
+
+  (AG(P)$st ===> P(st) & AX(AG(P))$st)
+
+at positions
+[]
+of the preceding trees leads to 
+
+AG0(((<=1).length).filterP((=crit)))[wait,idle]
+
+The reducts have been simplified parallel.
+
+2. Adding
+
+  (AG0(z2)$z3 <=== z2 = (((<=1).length).filterP((=crit))) & z3 = [wait,idle])
+
+to the axioms and applying COINDUCTION wrt
+
+  (AG(P)$st ===> P(st) & AX(AG(P))$st)
+
+at positions
+[]
+of the preceding trees leads to 
+
+AG0(((<=1).length).filterP((=crit)))[wait,wait] & 
+AG0(((<=1).length).filterP((=crit)))[crit,idle]
+
+The reducts have been simplified parallel.
+
+3. Adding
+
+  (AG0(z4)$z5 <=== 
+   z4 = (((<=1).length).filterP((=crit))) & z5 = [wait,wait] | 
+   z4 = (((<=1).length).filterP((=crit))) & z5 = [crit,idle])
+
+to the axioms and applying COINDUCTION wrt
+
+  (AG(P)$st ===> P(st) & AX(AG(P))$st)
+
+at positions
+[]
+of the preceding trees leads to 
+
+AG0(((<=1).length).filterP((=crit)))[crit,wait] & 
+AG0(((<=1).length).filterP((=crit)))[idle,idle]
+
+The reducts have been simplified parallel.
+
+4. Adding
+
+  (AG0(z6)$z7 <=== 
+   z6 = (((<=1).length).filterP((=crit))) & z7 = [crit,wait] | 
+   z6 = (((<=1).length).filterP((=crit))) & z7 = [idle,idle])
+
+to the axioms and applying COINDUCTION wrt
+
+  (AG(P)$st ===> P(st) & AX(AG(P))$st)
+
+at positions
+[]
+of the preceding trees leads to 
+
+AG0(((<=1).length).filterP((=crit)))[idle,wait] & 
+AG0(((<=1).length).filterP((=crit)))[wait,idle]
+
+The reducts have been simplified parallel.
+
+5. Adding
+
+  (AG0(z8)$z9 <=== 
+   z8 = (((<=1).length).filterP((=crit))) & z9 = [idle,wait] | 
+   z8 = (((<=1).length).filterP((=crit))) & z9 = [wait,idle])
+
+to the axioms and applying COINDUCTION wrt
+
+  (AG(P)$st ===> P(st) & AX(AG(P))$st)
+
+at positions
+[]
+of the preceding trees leads to 
+
+AG0(((<=1).length).filterP((=crit)))[wait,wait] & 
+AG0(((<=1).length).filterP((=crit)))[idle,crit] & 
+AG0(((<=1).length).filterP((=crit)))[crit,idle]
+
+The reducts have been simplified parallel.
+
+6. NARROWING the preceding trees (one step) leads to 
+
+AG0(((<=1).length).filterP((=crit)))[idle,crit] & 
+AG0(((<=1).length).filterP((=crit)))[crit,idle]
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+7. Adding
+
+  (AG0(z10)$z11 <=== 
+   z10 = (((<=1).length).filterP((=crit))) & z11 = [idle,crit] | 
+   z10 = (((<=1).length).filterP((=crit))) & z11 = [crit,idle])
+
+to the axioms and applying COINDUCTION wrt
+
+  (AG(P)$st ===> P(st) & AX(AG(P))$st)
+
+at positions
+[]
+of the preceding trees leads to 
+
+AG0(((<=1).length).filterP((=crit)))[idle,idle] & 
+AG0(((<=1).length).filterP((=crit)))[wait,crit] & 
+AG0(((<=1).length).filterP((=crit)))[crit,wait]
+
+The reducts have been simplified parallel.
+
+8. NARROWING the preceding trees (one step) leads to 
+
+AG0(((<=1).length).filterP((=crit)))[wait,crit] & 
+AG0(((<=1).length).filterP((=crit)))[crit,wait]
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+9. Adding
+
+  (AG0(z12)$z13 <=== 
+   z12 = (((<=1).length).filterP((=crit))) & z13 = [wait,crit] | 
+   z12 = (((<=1).length).filterP((=crit))) & z13 = [crit,wait])
+
+to the axioms and applying COINDUCTION wrt
+
+  (AG(P)$st ===> P(st) & AX(AG(P))$st)
+
+at positions
+[]
+of the preceding trees leads to 
+
+AG0(((<=1).length).filterP((=crit)))[wait,idle] & 
+AG0(((<=1).length).filterP((=crit)))[idle,wait]
+
+The reducts have been simplified parallel.
+
+10. NARROWING the preceding trees (one step) leads to 
+
+AG0(((<=1).length).filterP((=crit)))[idle,wait]
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+11. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

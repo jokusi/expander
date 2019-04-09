@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, February 2019
-                  Jos Kusiek, February 2019
+Copyright   : (c) Peter Padawitz, March 2019
+                  Jos Kusiek, March 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -2215,7 +2215,7 @@ inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 `le` x && x `le` max x1 x2 &&
                                 where le a b = a < b || abs (a-b) < 0.5
 
 -- interior p lines returns True iff p is located within lines.
--- interior is used by inWidget, joinPict 13/14 and strands.
+-- interior is used by strands and joinPict 13/14.
 
 interior :: Point -> Lines -> Bool
 interior p@(_,y) = odd . length . filter (just . crossing ((p,q),q)) . addSuc

@@ -1,0 +1,45 @@
+-- bakery
+
+specs:   	modal
+constructs:	idle wait crit safe
+defuncts:       procs filterP minP start
+preds:		P anyP allP Safe
+fovars:		st
+hovars:		P
+
+axioms:
+
+  (anyP(P)$st <==> any(P.(st!!))$procs)
+
+& (allP(P)$st <==> all(P.(st!!))$procs)
+
+& filterP(P)$st == filter(P.(st!!))$procs
+
+& minP(P) == min.filterP(P)
+
+& start == take(length$procs)$mu s.(idle:s)
+
+& states == [start]
+
+& (anyP(=idle)$st
+	==> st -> upd(st)(minP(=idle)$st)$wait)		-- next idle waits	
+	 
+& (anyP(=wait)$st & allP(=/=crit)$st
+	==> st -> upd(st)(minP(=wait)$st)$crit)		-- next wait enters	 
+	 
+& (anyP(=crit)$st
+	==> st -> upd(st)(minP(=crit)$st)$idle)		-- crit leaves	
+
+& atoms == [safe]
+
+& (Safe <==> (<=1).length.filterP(=crit))
+
+& safe -> branch$filter(Safe)$states
+
+conjects:
+
+  AG(Safe)$start	--> True	6 x coinduction + 3 x narrowing
+					if length$procs = 2
+terms:
+
+  eval$AG$safe		--> states

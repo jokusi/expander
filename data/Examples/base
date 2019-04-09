@@ -1,6 +1,6 @@
 -- base
 
-defuncts: <=< kfold
+defuncts: head tail init last take drop <=< kfold
 fovars:	  x y z s s' n
 hovars:   F G
 
@@ -18,18 +18,18 @@ s++[] == s &
 head$x:s == x &
 tail$x:s == s &
 
-take(0)$s == [] &
-take(n)$x:s == x:take(n-1)$s &
-
-drop(0)$s == s &
-drop(n)$x:s == drop(n-1)$s &
-
 init[x] == [] &
 init$x:y:s == x:init$y:s &
 init(s)++[last$s] == s &
 
 last[x] == x &
 last$x:y:s == last$y:s &
+
+take(0)$s == [] &
+take(n)$x:s == x:take(n-1)$s &
+
+drop(0)$s == s &
+drop(n)$x:s == drop(n-1)$s &
 
 length$x:s == length(s)+1 &
 length$init$x:s == length(s) &

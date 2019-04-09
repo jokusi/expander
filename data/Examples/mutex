@@ -28,9 +28,9 @@ start == (procs,[],[]) &
 atoms == map($)$pairs & 
 pairs == prodL[[idle,wait,crit],procs] &
 
-(NOTnull$is ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & 
+(is=/=[] ==> (is,ws,cs) -> branch$map(fun(i,(is-[i],i:ws,cs)))$is) & 
 							-- i waits
-(NOTnull$ws ==> (is,ws,[]) -> (is,init$ws,[last$ws])) &	-- last$ws enters
+(ws=/=[] ==> (is,ws,[]) -> (is,init$ws,[last$ws])) &	-- last$ws enters
 (is,ws,[c]) -> (insert(c)$is,ws,[]) &			-- c leaves
 
 -- 2 processes yield 9 states

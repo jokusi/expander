@@ -59,21 +59,29 @@ conjects:
 
 terms: 
 
-    g(s,g(s,sd,g(s,sd,r)),r)
+    branch[3,(),4,5,(),7] 	--> 3 <+> 4 <+> 5 <+> 7
+<+> upd[1..9](6)(hhh)    	--> [1,2,3,4,5,6,hhh,8,9]
+<+> replicate(9)[1..4]  
+                --> [[1,2,3,4],pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0]
+<+> concRepl(3)[1..4]
+		--> [1,2,3,4,pos 0,pos 1,pos 2,pos 3,pos 0,pos 1,pos 2,pos 3]
+<+> take(4)$iter(+1)$0 		--> [0,1,2,3]
+<+> take(4)$iterate(+1)$0 	--> [0,1,2,3]
+<+> take(4)$iter(+3*2)$0 	--> [0,6,12,18]
+<+> take(4)$iter(f.g)$0		
+	        --> [0,f(g(0)),f(g(f(g(0)))),f(g(f(g(f(g(0))))))]
+<+> take(4)$mu s.(idle:s)	--> [idle,idle,idle,idle]
+<+> f$(hh(uuu)**5)$888	
+		--> f(hh(uuu)$(pos 0 0$(pos 0 0$(pos 0 0$(pos 0 0$888)))))
+
+<+> g(s,g(s,sd,g(s,sd,r)),r)
 <+> g(s,sd,r)
 <+> g(s,sd,g(s,sd,r))
 <+> g(g(s,sd,r),sd,r)
 
-<+> take(4)$iter(+1)$0 
-<+> take(4)$iterate(+1)$0 
-<+> take(4)$iter(+3*2)$0 
-<+> take(4)$iter(f.g)$0
-
-<+> concRepl(2)[1..4]
-<+> f$(hh(uuu)**5)$888	
-		--> f(hh(uuu)$(pos 0 0$(pos 0 0$(pos 0 0$(pos 0 0$888)))))
-
 <+> 2^3^4^5^6^7^8^9^10^11^12^13^14^15		--rewrite-> 3^2^11^13^5^7
+
+<+> fun(x,ite(x>0&x=/=6,x-1,88))(7-1)		--> 88
 
 <+> fun(suc(x)||x>4,x+x,z,x*x)$5		--> 25
 <+> fun(suc(x)||x>4,x+x,z,x*x)$6		--> 10
