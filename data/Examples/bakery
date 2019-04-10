@@ -30,6 +30,9 @@ axioms:
 & (anyP(=crit)$st
 	==> st -> upd(st)(minP(=crit)$st)$idle)		-- crit leaves	
 
+-- 2 processes (= tickets) yield 8 states
+-- 3 processes yield 19 states
+
 & atoms == [safe]
 
 & (Safe <==> (<=1).length.filterP(=crit))
@@ -39,7 +42,7 @@ axioms:
 conjects:
 
   AG(Safe)$start	--> True	6 x coinduction + 3 x narrowing
-					if length$procs = 2
+			--		if length$procs = 2
 terms:
 
   eval$AG$safe		--> states
