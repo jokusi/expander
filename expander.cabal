@@ -517,7 +517,6 @@ data-files:          Examples/*.gif
                    , "Examples/repBy1bfPT"
                    , "Examples/repBy2P"
                    , "Examples/repBy2PT"
-                   , "Examples/reqs"
                    , "Examples/robot"
                    , "Examples/robot80-120"
                    , "Examples/robotActs"
@@ -589,7 +588,7 @@ data-files:          Examples/*.gif
                    , "Examples/zip"
                    , "Examples/zipEvensOddsP"
                    , "Examples/zipmorse"
-                   
+
 -- Extra files to be distributed with the package, such as examples or a 
 -- README.
 extra-source-files:  win/icon.ico

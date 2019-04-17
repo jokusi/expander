@@ -1,18 +1,25 @@
 -- modal
 
-preds:   X P Q true false not \/ /\ `then` or and Path 
-         allanytrans allanytransL alloutL EX XE <> >< EF AF FE FA `EU` `AU`
-         -- nxt nxt2 F `U` `leadsto` 
-copreds: `~` eqstate AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR`
-         -- Path eqpath G `W` `R` `H` 
-fovars:  s s' st st' lab at
-hovars:  X P Q
+defuncts: noProcs procs states labels atoms valid
+preds:    Sat SatL X P Q true false not \/ /\ `then` or and  
+          allanytrans allanytransL alloutL EX XE <> >< EF AF FE FA `EU` `AU`
+          -- nxt nxt2 F `U` `leadsto` 
+copreds:  `~` eqstate AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR`
+          -- Path eqpath G `W` `R` `H` 
+fovars:   s s' st st' lab at
+hovars:   X P Q
 
 axioms:
 
+   procs == [0..noProcs-1]    -- used in many specifications that import modal
+
+&  valid$P == branch$filter(P)$states
+&  (Sat(at)$st <==> at `in` out$st)
+&  (SatL(at)$st$lab <==> at `in` outL$st$lab)
+
 -- state equivalence relations
 
-   (allanytrans(P)(st,st')  <==> allany(P)(trans$st,trans$st'))
+ & (allanytrans(P)(st,st')  <==> allany(P)(trans$st,trans$st'))
  & (allanytransL(P)(st,st') <==> all(rel(lab,allany(P)(transL(st)$lab,
 						       transL(st')$lab)))
  				     $labels)
@@ -72,16 +79,16 @@ axioms:
 -- narrowing of first-order state formulas
 
  & (EF(P)$st <=== P$st | EX(EF$P)$st)	     -- forward finally on some path  	   
- & (AG(P)$st ===> P$st & AX(AG(P))$st)	     -- forward generally on all paths
- & (AF(P)$st <=== P$st | AX(AF(P))$st & EX(true)$st)	
+ & (AG(P)$st ===> P$st & AX(AG$P)$st)	     -- forward generally on all paths
+ & (AF(P)$st <=== P$st | AX(AF$P)$st & EX(true)$st)	
 					     -- forward finally on all paths   	
- & (EG(P)$st ===> P$st & (EX(EG(P))$st | AX(false)$st)) 	
+ & (EG(P)$st ===> P$st & (EX(EG$P)$st | AX(false)$st)) 	
 					     -- forward generally on some path
  & (FE(P)$st <=== P$st | XE(FE$P)$st)	     -- backwards finally on some path	 
- & (GA(P)$st ===> P$st & XA(GA(P))$st)	     -- backwards generally on all paths
- & (FA(P)$st <=== P$st | XA(FA(P))$st & XE(true)$st)		
+ & (GA(P)$st ===> P$st & XA(GA$P)$st)	     -- backwards generally on all paths
+ & (FA(P)$st <=== P$st | XA(FA$P)$st & XE(true)$st)		
 					     -- backwards finally on all paths
- & (GE(P)$st ===> P$st & (XE(GE(P))$st | XA(false)$st)) 	
+ & (GE(P)$st ===> P$st & (XE(GE$P)$st | XA(false)$st)) 	
 					     -- backwards generally on some path
 	
  & ((P`EU`Q)$st <=== Q$st | P$st & EX(P`EU`Q)$st)	-- until
@@ -91,9 +98,7 @@ axioms:
  & ((P`ER`Q)$st ===> Q$st & (P$st | EX(P`ER`Q)$st))	-- release
  & ((P`AR`Q)$st ===> Q$st & (P$st | AX(P`AR`Q)$st))
 
-{- 
-
--- path equivalence relations
+{- path equivalence relations
 
  & (Path <==> NU X.nxt$X)
  & (eqpath <==> NU X.rel((s,s'),out$head$s=out$head$s' & nxt2(X)(s,s')))
@@ -109,12 +114,12 @@ axioms:
 
 -- simplification of second-order path formulas
 
- & (F(P) <==> MU X.(P\/nxt$X))			-- finally
- & (G(P) <==> NU X.(P/\nxt$X))			-- generally
+ & (F$P <==> MU X.(P\/nxt$X))			-- finally
+ & (G$P <==> NU X.(P/\nxt$X))			-- generally
  & (P`U`Q <==> MU X.(Q\/(P/\nxt$X)))		-- until
  & (P`W`Q <==> NU X.(Q\/(P/\nxt$X)))		-- weak until
  & (P`R`Q <==> NU X.(Q/\(P\/nxt$X)))		-- release
- & (P`leadsto`Q <==> G(P`then`F$Q))
+ & (P`leadsto`Q <==> G$P`then`F$Q)
  
 -- narrowing of first-order path formulas
 
@@ -133,7 +138,4 @@ theorems:
  & ((P`W`Q)$s <=== (P`U`Q)$s | G(P)$s)
  & (not(F$P)$s <=== (G$not$P)$s)
  & (not(G$P)$s <=== (F$not$P)$s)
- & (not(P`R`Q)$s <=== (not(P)`U`not(Q))$s) 
-
--}
-
+ & (not(P`R`Q)$s <=== (not(P)`U`not(Q))$s) -}

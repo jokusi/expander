@@ -80,18 +80,18 @@ t*(u+v) = t*u+t*v &
 
 conjects:
 
-star(a+b) `~` star(star(a)*star(b)) &		-- brzo1 (Rosu, Example 3.4)
+star(a+b) `~` star(star(a)*star(b)) &	-- brzo1 (Rosu, Example 3.4)
+					-- 3 x coinduction + 3 x narrowing
+star(t+u) `~` star(star(t)*star(u)) &	-- brzo1v	
 
-star(t+u) `~` star(star(t)*star(u)) &		-- brzo1v	
-
-star(a)*b `~` a*star(a)*b+b &			-- brzo2 (Rosu, Example 3.6)
-
-star(t)*u `~` t*star(t)*u+u &			-- brzo2v	
-
-t*(u+v) `~` t*u+t*v &				-- brzo3 (ELAS, Example SEQPAR)
-
-(RegExp$t ==> beta$t = 0 | beta$t = 1)  	-- brzo4
-
+star(a)*b `~` a*star(a)*b+b &		-- brzo2 (Rosu, Example 3.6)
+					-- 1 x coinduction + 1 x narrowing
+star(t)*u `~` t*star(t)*u+u &		-- brzo2v	
+					-- 1 x coinduction + theorems
+t*(u+v) `~` t*u+t*v &			-- brzo3 (ELAS, Example SEQPAR)
+					-- 1 x coinduction + theorems + substitutions
+(RegExp$t ==> beta$t = 0 | beta$t = 1)	-- brzo4
+					-- 1 x induction
 terms:
 
 unfold1(reg)[a,b,c,a]	<+>		--> 1 	35 steps (some are slow)

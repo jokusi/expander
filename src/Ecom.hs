@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, January 2019
-                  Jos Kusiek, January 2019
+Copyright   : (c) Peter Padawitz, April 2019
+                  Jos Kusiek, April 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -208,6 +208,9 @@ admitted block xs = (if block then "All simplifications except those for "
 
 axsRemovedFor :: Show a => a -> String
 axsRemovedFor xs = "The axioms for " ++ showStrList xs ++ " have been removed."
+
+badNoProcs :: String
+badNoProcs = "Enter a positive number of processes into the entry field."
 
 check :: String -> String
 check rest = "\n--CHECK FROM HERE:\n" ++ rest
@@ -684,8 +687,9 @@ solver this solveRef enum paint = do
     canvSizeRef <- newIORef (0,0)
     cornerRef <- newIORef (30,20)
     currRef <- newIORef 0
-    -- curr1Ref <- newIORef 0
+    -- curr1Ref <- newIORef 0 -- Gtk does not need this
     matchingRef <- newIORef 0
+    noProcsRef <- newIORef 0
     proofPtrRef <- newIORef 0
     proofTPtrRef <- newIORef 0
     picNoRef <- newIORef 0
@@ -1052,6 +1056,8 @@ solver this solveRef enum paint = do
           mkBut addMapMenu "remove map" removeSigMap
 
           streeMenu <- getMenu "streeMenu"
+          mkBut streeMenu "induction" $ startInd True
+          mkBut streeMenu "coinduction" $ startInd False
           mkBut streeMenu "stretch premise" $ stretch True
           mkBut streeMenu "stretch conclusion" $ stretch False
           mkBut streeMenu "instantiate" instantiate
@@ -1073,8 +1079,6 @@ solver this solveRef enum paint = do
           mkBut subMenu ".. and save redex" $ applyClause True True True
           mkBut streeMenu "move up quantifiers" shiftQuants
           mkBut streeMenu "shift subformulas" shiftSubs
-          mkBut streeMenu "coinduction" $ startInd False
-          mkBut streeMenu "induction" $ startInd True
           mkBut streeMenu "create Hoare invariant" $ createInvariant True
           mkBut streeMenu "create subgoal invariant" $ createInvariant False
           mkBut streeMenu "flatten (co-)Horn clause" flattenImpl
@@ -1108,6 +1112,8 @@ solver this solveRef enum paint = do
           mkBut specMenu "re-add" reAddSpec
           mkBut specMenu "remove"
                 $ do removeSpec; labGreen' $ iniSpec++iniSigMap
+          mkBut specMenu "remove Kripke model" removeKripke
+          mkBut specMenu "set number of processes" setNoProcs
           mkBut specMenu "set pic directory (t)" $ setPicDir False
           mkBut specMenu "build Kripke model" $ buildKripke 2
           mkBut specMenu ".. from current graph" $ buildKripke 3
@@ -1177,37 +1183,21 @@ solver this solveRef enum paint = do
           sig <- getSignature
           let axs = if isConjunct t then subterms t else [t]
               cls = filter (not . isAxiom sig) axs
-          if null cls then do
-                           writeIORef solPositionsRef []
-                           modifyIORef axiomsRef $ \axioms -> axioms `join` axs
-                           modifyIORef simplRulesRef $ \simplRules
-                               -> simplRules ++ trips ["==","<==>"] axs
-                           modifyIORef transRulesRef $ \transRules
-                               -> transRules ++ trips ["->"] axs
-                           labGreen' $ newCls "axioms" file
-          else do
-              enterFormulas' cls
-              labRed' "The clauses in the text field are not axioms."
+          if null cls
+             then do
+                  writeIORef solPositionsRef []
+                  modifyIORef axiomsRef $ \axioms -> axioms `join` axs
+                  modifyIORef simplRulesRef
+                    $ \simplRules -> simplRules `join` trips ["==","<==>"] axs
+                  modifyIORef transRulesRef
+                    $ \transRules -> transRules `join` trips ["->"] axs
+                  labGreen' $ newCls "axioms" file
+             else do
+                  enterFormulas' cls
+                  labRed' "The clauses in the text field are not axioms."
 
-        -- | Used by 'createClsMenu'.
-        addClauses :: Int -> FilePath -> Action
-        addClauses treetype file = do
-            str <- if text then getTextHere else lookupLibs file
-            let str' = removeComment 0 str
-                file' = if text then "the text field" else file
-            sig <- getSignature
-            case treetype of
-                0 -> case parseE (implication sig) str' of
-                        Correct t -> addAxioms t file'
-                        p -> incorrect p str' illformedF
-                1 -> case parseE (implication sig) str' of
-                        Correct t -> addTheorems t file'
-                        p -> incorrect p str' illformedF
-                _ -> parseConjects sig file' str'
-            where text = null file
-
-        addNamedAxioms :: Action
-        addNamedAxioms = do
+        addCongAxioms :: Action
+        addCongAxioms = do
           trees <- readIORef treesRef
           if null trees then labBlue' start
           else do
@@ -1230,9 +1220,9 @@ solver this solveRef enum paint = do
                   then labRed' "Enter axiom names into the entry field."
                   else if null axs then
                           labRed' "Select a binary relation in the current tree."
-                       else addNamedAxioms' axs
+                       else addCongAxioms' axs
 
-        addNamedAxioms' axs = do
+        addCongAxioms' axs = do
           modifyIORef axiomsRef $ \axioms -> axioms `join` axs
           modifyIORef indClausesRef $ \indClauses -> indClauses `join` axs
           enterFormulas' axs
@@ -1240,6 +1230,21 @@ solver this solveRef enum paint = do
           let msg = "Adding\n\n" ++ showFactors axs ++
                     "\n\nto the axioms and applying nothing"
           setProof True False msg [] $ newCls "axioms" "the text field"
+
+        addClauses :: Int -> FilePath -> Action
+        addClauses treetype file = do
+          str <- if text then getTextHere else lookupLibs file
+          let str' = removeComment 0 str
+              file' = if text then "the text field" else file
+          sig <- getSignature
+          case treetype of 0 -> case parseE (implication sig) str' of
+                                     Correct t -> do addAxioms t file'; done
+                                     p -> incorrect p str' illformedF
+                           1 -> case parseE (implication sig) str' of
+                                     Correct t -> do addTheorems t file'; done
+                                     p -> incorrect p str' illformedF
+                           _ -> do parseConjects sig file' str'; done
+          where text = null file
 
         -- | Called by menu items /STACK2IMPL/ and /from file/ from menu
         -- /signature/.
@@ -1260,40 +1265,59 @@ solver this solveRef enum paint = do
         -- 'Epaint.addSpec'.
         addSpec' :: Bool -> FilePath -> Action
         addSpec' b file = do
-            checking <- readIORef checkingRef
-            when (not checking) $ do
-                when b $ modifyIORef specfilesRef $ \specfiles -> file:specfiles
-                str <- get
-                if null str then labRed' $ file ++ " is not a file name."
-                else do
-                    let (sig,axs,ths,conjs,ts) = splitSpec $ removeComment 0 str
-                        act1 = do
-                            sig <- getSignature
-                            if onlySpace axs then act2 sig
-                            else case parseE (implication sig) axs of
-                                    Correct t -> do
-                                        addAxioms t file'
-                                        delay $ act2 sig
-                                    p -> incorrect p axs illformedF
-                        act2 sig =
-                            if onlySpace ths then act3 sig
-                            else case parseE (implication sig) ths of
-                                Correct t -> do
-                                    addTheorems t file'
-                                    delay $ act3 sig
-                                p -> incorrect p ths illformedF
-                        act3 sig =
-                            if onlySpace conjs then act4 sig
-                            else do
-                                parseConjects sig file' conjs
-                                delay $ act4 sig
-                        act4 sig =
-                            if onlySpace ts then delay $ return ()
-                            else parseTerms sig file' ts
-                    if onlySpace sig then act1
-                    else do
-                        parseSig file' sig
-                        delay act1
+          checking <- readIORef checkingRef
+          when (not checking) $ do
+              when b $ modifyIORef specfilesRef $ \specfiles -> file:specfiles
+              str <- get
+              if null str then labRed' $ file ++ " is not a file name."
+              else do
+                  let (sig,axs,ths,conjs,ts) = splitSpec $ removeComment 0 str
+                      act1 = do
+                          sig <- getSignature
+                          if onlySpace axs then act2 sig
+                          else case parseE (implication sig) axs of
+                                  Correct t -> do
+                                      addAxioms t file'
+                                      delay $ act2 sig
+                                  p -> incorrect p axs illformedF
+                      act2 sig =
+                          if onlySpace ths then act3 sig
+                          else case parseE (implication sig) ths of
+                              Correct t -> do
+                                  addTheorems t file'
+                                  delay $ act3 sig
+                              p -> incorrect p ths illformedF
+                      act3 sig =
+                          if onlySpace conjs then act4 sig
+                          else do
+                              parseConjects sig file' conjs
+                              delay $ act4 sig
+                      act4 sig =
+                          if onlySpace ts then delay $ return ()
+                          else parseTerms sig file' ts
+                  if onlySpace sig then act1
+                  else do
+                       (ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
+                       let syms = ps++cps++cs++ds++fs++map fst hs
+                       case parseE (signature ([],ps,cps,cs,ds,fs,hs)) sig of
+                            Correct (specs,ps,cps,cs,ds,fs,hs)
+                              -> do
+                                writeIORef symbolsRef (ps,cps,cs,ds,fs,hs)
+                                let finish = do
+                                      writeIORef varCounterRef $ iniVC syms
+                                      labGreen' $ newSig file'
+                                      delay act1
+                                specfiles <- readIORef specfilesRef
+                                mapM_ (addSpec' False) $ specs `minus` specfiles
+                                delay finish
+                            Partial (_,ps,cps,cs,ds,fs,hs) rest
+                              -> do
+                                 enterText' $ showSignature (ps,cps,cs,ds,fs,hs)
+                                            $ check rest
+                                 labRed' illformedSig
+                            _ -> do
+                                 enterText' sig
+                                 labRed' illformedSig
          where (file',get) = if null file then ("the text field",getTextHere)
                                           else (file,lookupLibs file)
                onlySpace = all (`elem` " \t\n")
@@ -1305,7 +1329,14 @@ solver this solveRef enum paint = do
         addSpecWithBase :: FilePath -> Action
         addSpecWithBase spec = do
           addSpec' True "base"
-          when (spec /= "base") $ addSpec' True spec
+          when (spec == "base") $ do addSpec' True spec
+                                     mapM_ act w
+          where act x = do
+                  simplRules <- readIORef simplRulesRef
+                  when (nothing $ search ((== x) . root . pr1) simplRules)
+                      $ modifyIORef simplRulesRef
+                      $ \simplRules -> (leaf x,[],mkList []):simplRules
+                w = words "states labels atoms"
         
         -- | Adds substitutions. Called by menu item
         -- /add from text field/ from menu /substitution/.
@@ -1844,17 +1875,18 @@ solver this solveRef enum paint = do
             curr <- readIORef currRef
             let t = trees!!curr
                 (states',atoms',rules') = graphToTransRules t
+            writeIORef kripkeRef (states',[],atoms',[],[],[],[])
             changeSimpl "states" $ mkList states'
             changeSimpl "atoms" $ mkList atoms'
             changeSimpl "labels" $ mkList []
+            changeSimpl "atoms" $ mkList atoms'
             writeIORef transRulesRef rules'
-            writeIORef kripkeRef (states',atoms',[],[],[],[],[])
             sig <- getSignature
-            let (rs1,_) = rewriteSig sig (sig&states)
-                (rs2,_) = rewriteSig sig (sig&atoms)
+            let (rs1,_) = buildTrans sig (sig&states)
+                (rs2,_) = buildTrans sig (sig&atoms)
                 tr = pairsToInts states' rs1 states'
                 va = pairsToInts states' rs2 atoms'
-            writeIORef kripkeRef (states',atoms',[],tr,[],va,[])
+            writeIORef kripkeRef (states',[],atoms',tr,[],va,[])
             delay $ setProof True False kripkeMsg []
                      $ kripkeBuilt 3 0 (length states') 0 $ length atoms'
 
@@ -1880,64 +1912,53 @@ solver this solveRef enum paint = do
                         states' = map mkTerm sts
                         labels' = map leaf as'
                         atom' = leaf "final"
+                    writeIORef transRulesRef $  map f $ prod2 sts as'
+                    writeIORef kripkeRef (states',labels',[atom'],[],[],[],[])
                     changeSimpl "states" $ mkList states'
-                    changeSimpl "atoms" $ mkList [atom']
                     changeSimpl "labels" $ mkList labels'
-                    writeIORef transRulesRef $ map f $ prod2 sts as'
-                    writeIORef kripkeRef (states',[atom'],labels',[],[],[],[])
+                    changeSimpl "atoms"  $ mkList [atom']
                     sig <- getSignature
-                    let (_,rsL) = rewriteSig sig (sig&states)
+                    let (_,rsL) = buildTrans sig (sig&states)
                         trL = tripsToInts states' labels' rsL states'
                     writeIORef kripkeRef
-                      (states',[atom'],labels',[],trL,[finals],[])
+                      (states',labels',[atom'],[],trL,[finals],[])
                     delay $ setProof True False kripkeMsg []
                           $ kripkeBuilt 4 0 (length sts) (length as') 1
                  _ -> labMag "Select a regular expression!"
 
-        buildKripke mode = do
+
+        buildKripke mode = do                     -- from transition axioms
           trees <- readIORef treesRef
           when (null trees) $ enterTree' False $ V""
-          str <- ent `gtkGet` entryText
           sig <- getSignature
-          let noProcs = if (sig&isDefunct) "procs" 
-                           then case parse pnat str of Just n -> n; _ -> 0
-                           else 0
-          when (noProcs > 0) $ changeSimpl "procs" $ mkConsts [0..noProcs-1]
-          simplRules <- readIORef simplRulesRef
-          let iniStates = [t | (F "states" _,_,t) <- simplRules]
-          changeSimpl "states" $ if null iniStates then mkList [] 
-                                                   else head iniStates
-          delay $ buildKripke1 mode noProcs
-
-        buildKripke1 mode noProcs = do
-          sig <- getSignature
-          let states = simplify2List sig "states"
-              labels = simplify2List sig "labels" 
-          writeIORef kripkeRef (states,[],labels,[],[],[],[])
+          let states = simplifytoList sig "states"
+              labels = simplifytoList sig "labels"
+          writeIORef kripkeRef (states,labels,[],[],[],[],[])
           changeSimpl "states" $ mkList states
           changeSimpl "labels" $ mkList labels
-          
           sig <- getSignature
-          let (states,rs,rsL) = rewriteStates sig mode
+          let (states,rs,rsL) = buildTransLoop sig mode    -- build trans/L
               tr  = pairsToInts states rs states
               trL = tripsToInts states labels rsL states
-          writeIORef kripkeRef (states,[],labels,tr,trL,[],[])
+          writeIORef kripkeRef (states,labels,[],tr,trL,[],[])
           changeSimpl "states" $ mkList states
-          delay $ buildKripke2 mode noProcs states labels tr trL
-        
-        buildKripke2 mode noProcs states labels tr trL = do
+          delay $ buildKripke1 mode
+
+        buildKripke1 mode = do
           sig <- getSignature
-          let atoms' = simplify2List sig "atoms"
-          writeIORef kripkeRef (states,atoms',labels,tr,trL,[],[])
+          let atoms' = simplifytoList sig "atoms"
+          writeIORef kripkeRef
+            ((sig&states),(sig&labels),atoms',(sig&trans),(sig&transL),[],[])
           changeSimpl "atoms" $ mkList atoms'
           sig <- getSignature
-          let (rs,rsL) = rewriteSig sig (sig&atoms)
-              va  = pairsToInts states rs atoms'
-              vaL = tripsToInts states labels rsL atoms'
-          writeIORef kripkeRef (states,atoms',labels,tr,trL,va,vaL)
-          delay $ setProof True False kripkeMsg []
-                $ kripkeBuilt mode noProcs (length states) (length labels)
-                $ length atoms'
+          let (rs,rsL) = buildTrans sig atoms'              -- build value/L
+              va  = pairsToInts (sig&states) rs atoms'
+              vaL = tripsToInts (sig&states) (sig&labels) rsL atoms'
+              [l,m,n] = map length [(sig&states),atoms',(sig&labels)]
+          writeIORef kripkeRef
+            ((sig&states),(sig&labels),atoms',(sig&trans),(sig&transL),va,vaL)
+          noProcs <- readIORef noProcsRef
+          setProof True False kripkeMsg [] $ kripkeBuilt mode noProcs l m n
         
         buildRegExp = do
           trees <- readIORef treesRef
@@ -2228,7 +2249,7 @@ solver this solveRef enum paint = do
                 when (deriveStep step && k < length proof)
                     $ writeIORef proofPtrRef k
                 case step of
-                    AddAxioms axs -> addNamedAxioms' axs
+                    AddAxioms axs -> addCongAxioms' axs
                     ApplySubst -> applySubst
                     ApplySubstTo x t -> applySubstTo' x t
                     ApplyTransitivity -> applyTransitivity
@@ -2607,8 +2628,8 @@ solver this solveRef enum paint = do
         createSub mode menu = do
           mkBut menu "from file" $ getFileAnd $ addClauses mode
           mkBut menu "from text field" $ addClauses mode ""
-          when (mode == 0) $ do
-            mkBut menu "from entry field" addNamedAxioms; return ()
+          when (mode == 0) $ do mkBut menu "from entry field" addCongAxioms
+                                done
           solve <- readIORef solveRef
           other <- getSolver solve
           mkBut menu ("from "++ other) $ do tree <- (solve&getTree)
@@ -3195,7 +3216,7 @@ solver this solveRef enum paint = do
         getSignature :: Request Sig
         getSignature = do
             (ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
-            (sts,ats,labs,tr,trL,va,vaL) <- readIORef kripkeRef
+            (sts,labs,ats,tr,trL,va,vaL) <- readIORef kripkeRef
             simplRules <- readIORef simplRulesRef
             transRules <- readIORef transRulesRef
             (block,xs) <- readIORef constraintsRef
@@ -3217,10 +3238,10 @@ solver this solveRef enum paint = do
                       _ -> not $ isFovar' y
               blocked' x = if block then z `elem` xs else z `notElem` xs
                         where z = head $ words x
-              safeEqs' = safe; simpls' = simplRules
-              transitions' = transRules
-              states' = sts; atoms' = ats; labels' = labs; trans' = tr
-              transL' = trL; value' = va; valueL' = vaL
+              simpls' = simplRules; transitions' = transRules
+              states' = sts; atoms' = ats; labels' = labs;
+              trans' = tr; transL' = trL; value' = va; valueL' = vaL
+              safeEqs' = safe
               base = pr1 . splitVar
              in Sig
                 { isPred      = isPred'
@@ -3568,7 +3589,7 @@ solver this solveRef enum paint = do
           when (notnull (sig&states)) $ do
              let (states,tr,trL,va,vaL) = mkQuotient sig
              writeIORef kripkeRef
-                $ (states,(sig&atoms),(sig&labels),tr,trL,va,vaL)
+                $ (states,(sig&labels),(sig&atoms),tr,trL,va,vaL)
              changeSimpl "states" $ mkList states
              extendPT False False False False Minimize
              setProof True False "MINIMIZING THE KRIPKE MODEL" [] $ minimized 
@@ -4097,29 +4118,6 @@ solver this solveRef enum paint = do
                     labGreen' $ newCls "conjectures" file
                 p -> incorrect p conjs illformed
         
-        -- | Used by 'addSpec''.
-        parseSig :: FilePath -> String -> Action
-        parseSig file str = do
-            (ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
-            let syms = ps++cps++cs++ds++fs++map fst hs
-            case parseE (signature ([],ps,cps,cs,ds,fs,hs)) str of
-                Correct (specs,ps,cps,cs,ds,fs,hs) -> do
-                    writeIORef symbolsRef (ps,cps,cs,ds,fs,hs)
-                    symbols <- readIORef symbolsRef
-                    specfiles <- readIORef specfilesRef
-                    
-                    let finish = do
-                          writeIORef varCounterRef $ iniVC syms
-                          labGreen' $ newSig file
-                    mapM_ (addSpec' False) $ specs `minus` specfiles
-                    delay finish
-                Partial (_,ps,cps,cs,ds,fs,hs) rest -> do
-                    enterText' $ showSignature (ps,cps,cs,ds,fs,hs) $ check rest
-                    labRed' illformedSig
-                _ -> do
-                    enterText' str
-                    labRed' illformedSig
-        
         -- | Used by 'addSigMap' and 'addSigMapT'.
         parseSigMap :: FilePath -> String -> Action
         parseSigMap file str = do
@@ -4505,7 +4503,10 @@ solver this solveRef enum paint = do
                 setProof False False "REMOVING EDGES" [] $ edgesRemoved b
                 clearTreeposs; drawCurr'
             where f = if b then removeCyclePtrs else moreTree
-        
+
+        removeKripke = do writeIORef kripkeRef ([],[],[],[],[],[],[])
+                          labGreen' "The Kripke model has been removed."
+
         -- | Used by 'checkForward'. Called by menu item /remove node/ from menu
         -- /transform selection/.
         removeNode :: Action
@@ -5271,6 +5272,18 @@ solver this solveRef enum paint = do
             initialize [] "trees"
             setTreesFrame []
 
+        setNoProcs = do
+          str <- ent `gtkGet` entryText
+          case parse pnat str of
+               Just n -> do
+                         writeIORef noProcsRef n
+                         writeIORef kripkeRef ([],[],[],[],[],[],[])
+                         changeSimpl "noProcs" $ mkConst n
+                         labGreen' $ "The Kripke model has been removed.\n" ++
+                                     "There are " ++ show n ++ " processes."
+
+               _ -> labRed' badNoProcs
+
         setPicDir :: Bool -> Action
         setPicDir b = do
           dir <- ent `gtkGet` entryText
@@ -5306,11 +5319,11 @@ solver this solveRef enum paint = do
           fast <- readIORef fastRef
           simplStrat <- readIORef simplStratRef
           let oldProofElem = proof!!proofPtr
-              t = trees!!curr
               n = counter 'd'
               msgAE = msg == "ADMITTED" || msg == "EQS"
               msgSP = msg == "SPLIT"
               msgMV = msg == "MOVED" || msg == "JOIN"
+              t = trees!!curr
               str | msgAE     = labMsg
                   | msgSP     = labMsg ++ show (length trees)
                                    ++ ' ':treeMode ++ "s."

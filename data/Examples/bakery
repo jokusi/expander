@@ -2,33 +2,30 @@
 
 specs:   	modal
 constructs:	idle wait crit safe
-defuncts:       procs filterP minP start
+defuncts:       start filterP updMin
 preds:		P anyP allP Safe
 fovars:		st
 hovars:		P
 
 axioms:
 
-  (anyP(P)$st <==> any(P.(st!!))$procs)
+  (anyP(P)$st <==> any(P.(st!!))$procs)	  -- procs = tickets = indices$st
 
 & (allP(P)$st <==> all(P.(st!!))$procs)
 
 & filterP(P)$st == filter(P.(st!!))$procs
 
-& minP(P) == min.filterP(P)
+& updMin(st)(x,y) == upd(st)(min$filterP(=x)$st)$y
 
-& start == take(length$procs)$mu s.(idle:s)
+& start == replicate(noProcs)$idle 	  -- = take(noProcs)$mu s.(idle:s)
 
 & states == [start]
 
-& (anyP(=idle)$st
-	==> st -> upd(st)(minP(=idle)$st)$wait)		-- next idle waits	
+& (anyP(=idle)$st ==> st -> updMin(st)(idle,wait))	-- min idle waits	
 	 
-& (anyP(=wait)$st & allP(=/=crit)$st
-	==> st -> upd(st)(minP(=wait)$st)$crit)		-- next wait enters	 
-	 
-& (anyP(=crit)$st
-	==> st -> upd(st)(minP(=crit)$st)$idle)		-- crit leaves	
+& (anyP(=wait)$st & allP(=/=crit)$st 
+		  ==> st -> updMin(st)(wait,crit))	-- min wait enters	 
+& (anyP(=crit)$st ==> st -> updMin(st)(crit,idle))	-- crit leaves	
 
 -- 2 processes (= tickets) yield 8 states
 -- 3 processes yield 19 states
@@ -37,11 +34,12 @@ axioms:
 
 & (Safe <==> (<=1).length.filterP(=crit))
 
-& safe -> branch$filter(Safe)$states
+& safe -> valid$Safe
 
 conjects:
 
-  AG(Safe)$start	--> True	6 x coinduction + 3 x narrowing
+  EX(true)$start	-->             8 simplification steps
+& AG(Safe)$start	--> True	6 x coinduction + 3 x narrowing
 			--		if length$procs = 2
 terms:
 

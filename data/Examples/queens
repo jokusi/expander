@@ -19,7 +19,7 @@ axioms:
 & (safe(n)(x:y:s) <==> x =/= y+n & y =/= x+n & safe(n+1)(x:s))
 & shift(s)(x:val) == (s-[x],x:val)
 
-& final -> branch$filter(Final)$states
+& final -> valid$Final
 & (Final <==> null.get0)
 
 -- 4 queens yield 2 solutions and 15 further states

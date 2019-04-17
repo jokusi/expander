@@ -2,7 +2,6 @@
 
 specs:      	modal
 constructs: 	start close heat error
-preds:		Sat 
 
 axioms:
    
@@ -16,8 +15,6 @@ axioms:
 & close -> branch[3..7]
 & heat -> branch[4,7]
 & error -> branch[2,5]
-
-& (Sat(at)$st <==> at `in` out$st)
 
 conjects: 		   --		proof files
 

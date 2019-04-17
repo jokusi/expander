@@ -760,17 +760,9 @@ odds _      = []
 
 -- | @search f s@ searches for the first element of @s@ satisfying @f@ and
 -- returns its position within @s@.
-search
-    :: (a -> Bool) -- ^ f
-    -> [a] -- ^ s
-    -> Maybe Int
+search :: (a -> Bool) -> [a] -> Maybe Int
 search f = g 0 where g i (a:s) = if f a then Just i else g (i+1) s
                      g _ _     = Nothing
-
-
-searchTup :: [TermS] -> [TermS] -> Maybe Int
-searchTup [] _  = Nothing
-searchTup ts us = search (== (mkTup ts)) us
 
 getInd :: Eq a => a -> [a] -> Int
 getInd a = get . search (== a)
@@ -1655,9 +1647,8 @@ setTerm sig = (do symbol "{}"; return $ F "{}" []) ++
               (do tchar '{'; ts <- terms sig '}'; return $ F "{}" ts)
 
 termBuilders :: [String]
-termBuilders = words "bool curryR filterL filter flipR gaussI gauss ite" ++
-               words "mapfilterL postflow evalG eval stateflowT stateflow" ++
-               ["subsflow"]
+termBuilders = words "bool filterL filter gaussI gauss mapfilterL postflow" ++
+               words "evalG eval stateflowT stateflow subsflow"
 
 -- ** From GRAPHS to TRANSRULES
 
@@ -2782,8 +2773,8 @@ parseIntQuad t      = do F "()" [i,j,b,h] <- Just t; i <- parseInt i
                          Just (i,j,b,h)
 
 parseRealReal :: TermS -> Maybe (Double, Double)
-parseRealReal t     = do F "()" [r,s] <- Just t; r <- parseReal r
-                         s <- parseReal s; Just (r,s)
+parseRealReal t = do F "()" [r,s] <- Just t; r <- parseReal r; s <- parseReal s
+                     Just (r,s)
 
 parseRealPair :: TermS -> Maybe ((Double, Double), Double)
 parseRealPair t     = do F "()" [p,r] <- Just t; p <- parseRealReal p
@@ -2845,27 +2836,29 @@ parseRel sts t = do F "rel" [t] <- Just t
                                 Just [(t,u)]
 
 -- * Signatures, Horn and Co-Horn clauses
+iniSymbols :: ([String], [String], [String], [String], [a], [b])
+iniSymbols = (iniPreds,[],iniConstructs,iniDefuncts,[],[])
+
+iniConstructs :: [String]
+iniConstructs = words "() [] : 0 suc lin"
+
+iniDefuncts :: [String]
+iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch color" ++
+              words "concat count curry dnf eval filter flip foldl foldr" ++
+              words "height id index indices insert `join` labels lsec" ++
+              words "length list map `meet` min minimize `mod` nextperm" ++
+              words "noProcs obdd out outL parents parseLR permute preds" ++
+              words "procs prodE prodL product procs range reverse rsec set" ++
+              words "shuffle states succs sum trans transL tup uncurry upd" ++
+              words "value valueL zip zipWith"
 
 iniPreds :: [String]
 iniPreds = words "_ () [] : ++ $ . == -> -/-> <= >= < > >> true false" ++
            words "not /\\ \\/ `then` EX AX # <> nxt all any allany disjoint" ++
            words "filter filterL flip foldl foldr foldr1 `in` `NOTin` Int" ++
            words "`IN` `NOTIN` INV Nat List lsec map null NOTnull prodL" ++
-           words "Real `shares` `NOTshares` single `subset` `NOTsubset` rsec" ++
-           words "Value zipWith"
-
-
-iniDefuncts :: [String]
-iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch color" ++
-              words "concat count curry dnf eval filter flip foldl foldr" ++
-              words "height id insert `join` labels lsec length list map" ++
-              words "`meet` min minimize `mod` nextperm obdd out outL" ++
-              words "parseLR permute prodE prodL product reverse rsec set" ++
-              words "shuffle states sucs sum trans transL tup uncurry upd" ++
-              words "zip zipWith"
-
-iniSymbols :: ([String], [String], [String], [String], [t], [t1])
-iniSymbols = (iniPreds,[],words "() [] : 0 lin suc",iniDefuncts,[],[])
+           words "Real `shares` `NOTshares` single `subset` `NOTsubset`" ++
+           words "rsec Value zipWith"
 
 data Sig = Sig { isPred
                , isCopred
@@ -2875,25 +2868,25 @@ data Sig = Sig { isPred
                , isHovar
                , blocked     :: String -> Bool
                , hovarRel    :: BoolFun String
-               , safeEqs     :: Bool
                , simpls
                , transitions :: [(TermS,[TermS],TermS)]
                , states
                , atoms
-               , labels      :: [TermS] -- types of Kripke model
+               , labels      :: [TermS]     -- components of a Kripke model
                , trans
                , value       :: [[Int]]
                , transL
                , valueL      :: [[[Int]]]
+               , safeEqs     :: Bool
                }
 
-parents, out :: Sig -> [[Int]]
-parents sig = invertRel (sig&states) (sig&states) (sig&trans)
+out,parents :: Sig -> [[Int]]
 out sig     = invertRel (sig&atoms) (sig&states) (sig&value)
+parents sig = invertRel (sig&states) (sig&states) (sig&trans)
 
-parentsL, outL :: Sig -> [[[Int]]] 
-parentsL sig = invertRelL (sig&labels) (sig&states) (sig&states) (sig&transL)
+outL,parentsL :: Sig -> [[[Int]]] 
 outL sig     = invertRelL (sig&labels) (sig&atoms) (sig&states) (sig&valueL)
+parentsL sig = invertRelL (sig&labels) (sig&states) (sig&states) (sig&transL)
 
 predSig :: [String] -> Sig
 predSig preds = Sig { isPred = (`elem` preds)
@@ -3537,7 +3530,7 @@ mkIndHyps t desc = case t of F "==>" [u,v] -> [mkHorn v $ F "&" [u,desc],
                                                mkCoHorn u $ F "==>" [desc,v]]
                              _             -> [mkHorn t desc]
 
--- congAxs is used by Ecom > applyInd.
+-- congAxs is used by Ecom > addCongAxioms.
 congAxs :: String -> [String] -> [TermS]
 congAxs equiv pars = map f pars where
                      f "refl" = x ~~ x

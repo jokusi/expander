@@ -79,6 +79,7 @@ data SolverState = SolverState
   , currRef_ :: IORef Int
   -- , curr1Ref_ :: IORef Int
   , matchingRef_ :: IORef Int
+  , noProcsRef_ :: IORef Int
   , proofPtrRef_ :: IORef Int
   , proofTPtrRef_ :: IORef Int
   , picNoRef_ :: IORef Int
@@ -96,7 +97,7 @@ data SolverState = SolverState
   , ruleStringRef_ :: IORef [()]
   , simplRulesRef_ :: IORef [(TermS, [TermS], TermS)]
   , simplTermRef_ :: IORef [()]
-  , solPositionsRef_ :: IORef [()]
+  , solPositionsRef_ :: IORef [Int]
   , specfilesRef_ :: IORef [String]
   , stratTermRef_ :: IORef [()]
   , termsRef_ :: IORef [TermS]
@@ -163,6 +164,7 @@ cornerRef = newAttr (\st -> readIORef (cornerRef_ st)) (\st -> writeIORef (corne
 currRef = newAttr (\st -> readIORef (currRef_ st)) (\st -> writeIORef (currRef_ st))
 -- curr1Ref = newAttr (\st -> readIORef (-- curr1Ref_ st)) (\st -> writeIORef (-- curr1Ref_ st))
 matchingRef = newAttr (\st -> readIORef (matchingRef_ st)) (\st -> writeIORef (matchingRef_ st))
+noProcsRef = newAttr (\st -> readIORef (noProcsRef_ st)) (\st -> writeIORef (noProcsRef_ st))
 proofPtrRef = newAttr (\st -> readIORef (proofPtrRef_ st)) (\st -> writeIORef (proofPtrRef_ st))
 proofTPtrRef = newAttr (\st -> readIORef (proofTPtrRef_ st)) (\st -> writeIORef (proofTPtrRef_ st))
 picNoRef = newAttr (\st -> readIORef (picNoRef_ st)) (\st -> writeIORef (picNoRef_ st))
@@ -250,6 +252,7 @@ initSolverState = SolverState
   <*> newIORef 0
   <*> newIORef 0
   <*> newIORef 0
+  <*> newIORef 0
   <*> newIORef PA
 
   <*> newIORef []
@@ -309,7 +312,8 @@ addAxioms t file sST = do
   sig <- getSignature sST
   let axs = if isConjunct t then subterms t else [t]
       cls = filter (not . isAxiom sig) axs
-  if null cls then do
+  if null cls
+    then do
       sST `Gtk.set`
         [ solPositionsRef := []
         , axiomsRef :~ \axioms -> axioms `join` axs
@@ -317,9 +321,10 @@ addAxioms t file sST = do
         , transRulesRef :~ \transRules -> transRules ++ trips ["->"] axs
         ]
       labGreen' $ newCls "axioms" file
-  else do
-      enterFormulas' cls
-      labRed' "The clauses in the text field are not axioms."
+    else do
+        enterFormulas' cls
+        labRed' "The clauses in the text field are not axioms."
+
 
       --   -- | Used by 'createClsMenu'.
       --   addClauses :: Int -> FilePath -> Action
@@ -423,8 +428,28 @@ addSpec' b file sST = do
                     else parseTerms sig file' ts sST
             if onlySpace sig then act1
             else do
-                parseSig file' sig sST
-                delay act1
+                  (ps,cps,cs,ds,fs,hs) <- sST `Gtk.get` symbolsRef
+                  let syms = ps++cps++cs++ds++fs++map fst hs
+                  case parseE (signature ([],ps,cps,cs,ds,fs,hs)) sig of
+                      Correct (specs,ps,cps,cs,ds,fs,hs)
+                        -> do
+                          sST `Gtk.set` [ symbolsRef := (ps,cps,cs,ds,fs,hs)]
+                          let finish = do
+                                sST `Gtk.set` [ varCounterRef := iniVC syms]
+                                labGreen' $ newSig file'
+                                delay act1
+                          specfiles <- sST `Gtk.get` specfilesRef
+                          mapM_ (flip (addSpec' False) sST)
+                            $ specs `minus` specfiles
+                          delay finish
+                      Partial (_,ps,cps,cs,ds,fs,hs) rest
+                        -> do
+                            enterText' $ showSignature (ps,cps,cs,ds,fs,hs)
+                                      $ check rest
+                            labRed' illformedSig
+                      _ -> do
+                            enterText' sig
+                            labRed' illformedSig
   where (file',get) = if null file then ("the text field",getTextHere sST)
                                   else (file,lookupLibs file)
         onlySpace = all (`elem` " \t\n")
@@ -432,7 +457,14 @@ addSpec' b file sST = do
 addSpecWithBase :: FilePath -> Action
 addSpecWithBase spec sST = do
   addSpec' True "base" sST
-  when (spec /= "base") $ addSpec' True spec sST
+  when (spec == "base") $ do addSpec' True spec sST
+                             mapM_ act w
+  where act x = do
+          simplRules <- sST `Gtk.get` simplRulesRef
+          when (nothing $ search ((== x) . root . pr1) simplRules)
+            $ sST `Gtk.set`
+            [ simplRulesRef :~ \simplRules -> (leaf x,[],mkList []):simplRules]
+        w = words "states labels atoms"
         
       --   -- | Adds substitutions. Called by menu item
       --   -- /add from text field/ from menu /substitution/.
@@ -2302,7 +2334,7 @@ enterText' _ = done
 getSignature :: Request Sig
 getSignature sST = do
     (ps,cps,cs,ds,fs,hs) <- sST `Gtk.get` symbolsRef
-    (sts,ats,labs,tr,trL,va,vaL) <- sST `Gtk.get` kripkeRef
+    (sts,labs,ats,tr,trL,va,vaL) <- sST `Gtk.get` kripkeRef
     simplRules <- sST `Gtk.get` simplRulesRef
     transRules <- sST `Gtk.get` transRulesRef
     (block,xs) <- sST `Gtk.get` constraintsRef
@@ -2324,10 +2356,10 @@ getSignature sST = do
               _ -> not $ isFovar' y
       blocked' x = if block then z `elem` xs else z `notElem` xs
                 where z = head $ words x
-      safeEqs' = safe; simpls' = simplRules
-      transitions' = transRules
-      states' = sts; atoms' = ats; labels' = labs; trans' = tr
-      transL' = trL; value' = va; valueL' = vaL
+      simpls' = simplRules; transitions' = transRules
+      states' = sts; atoms' = ats; labels' = labs;
+      trans' = tr; transL' = trL; value' = va; valueL' = vaL
+      safeEqs' = safe
       base = pr1 . splitVar
       in Sig
         { isPred      = isPred'
@@ -3179,28 +3211,6 @@ parseConjects sig file conjs sST =
             labGreen' $ newCls "conjectures" file
         p -> incorrect p conjs illformed
         
-parseSig :: FilePath -> String -> Action
-parseSig file str sST = do
-    (ps,cps,cs,ds,fs,hs) <- sST `Gtk.get` symbolsRef
-    let syms = ps++cps++cs++ds++fs++map fst hs
-    case parseE (signature ([],ps,cps,cs,ds,fs,hs)) str of
-        Correct (specs,ps,cps,cs,ds,fs,hs) -> do
-            sST `Gtk.set` [symbolsRef := (ps,cps,cs,ds,fs,hs)]
-            symbols <- sST `Gtk.get`  symbolsRef
-            specfiles <- sST `Gtk.get`  specfilesRef
-            
-            let finish = do
-                  sST `Gtk.set` [varCounterRef := iniVC syms]
-                  labGreen' $ newSig file
-            mapM_ (\spec -> addSpec' False spec sST) $ specs `minus` specfiles
-            delay finish
-        Partial (_,ps,cps,cs,ds,fs,hs) rest -> do
-            enterText' $ showSignature (ps,cps,cs,ds,fs,hs) $ check rest
-            labRed' illformedSig
-        _ -> do
-            enterText' str
-            labRed' illformedSig
-        
       --   -- | Used by 'addSigMap' and 'addSigMapT'.
       --   parseSigMap :: FilePath -> String -> Action
       --   parseSigMap file str = do
@@ -3585,7 +3595,10 @@ parseTerms sig file ts sST =  case parseE (term sig) ts of
       --           setProof False False "REMOVING EDGES" [] $ edgesRemoved b
       --           clearTreeposs; drawCurr'
       --       where f = if b then removeCyclePtrs else moreTree
-        
+
+        -- removeKripke = do writeIORef kripkeRef ([],[],[],[],[],[],[])
+        --                   labGreen' "The Kripke model has been removed."
+
       --   -- | Used by 'checkForward'. Called by menu item /remove node/ from menu
       --   -- /transform selection/.
       --   removeNode :: Action
