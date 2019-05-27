@@ -79,7 +79,9 @@ axioms:
 &       frac(2,z,F) == fun(x,hueT$x:concRepl(z)[T$45,SC$0.545,x])$abu2$F
 
 terms:	
-	red$pytree$6
+	scale(0.3)$grow(HE)$replicate(6)
+			   $((grow(HE).replicate(3))^^4)$HE	     -- hexas4
+<+>     red$pytree$6
 <+>     grow(baseR$poly(8,99))$replicate(8)$grow(base$tria$3)[]
 
 <+>     red$rainbow(12)$grav$smooth$four$abu2$id		     -- abu1S  

@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, November 2018
-                  Jos Kusiek, November 2018
+Copyright   : (c) Peter Padawitz, April 2019
+                  Jos Kusiek, April 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -2843,14 +2843,14 @@ iniConstructs :: [String]
 iniConstructs = words "() [] : 0 suc lin"
 
 iniDefuncts :: [String]
-iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch color" ++
-              words "concat count curry dnf eval filter flip foldl foldr" ++
-              words "height id index indices insert `join` labels lsec" ++
-              words "length list map `meet` min minimize `mod` nextperm" ++
-              words "noProcs obdd out outL parents parseLR permute preds" ++
-              words "procs prodE prodL product procs range reverse rsec set" ++
-              words "shuffle states succs sum trans transL tup uncurry upd" ++
-              words "value valueL zip zipWith"
+iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch" ++
+              words "color concat count curry dnf eval filter flip foldl" ++
+              words "foldr height id index indices insert `join` labels" ++
+              words "lsec length list map `meet` min minimize `mod`" ++
+              words "nextperm noProcs obdd out outL parents parseLR permute" ++
+              words "preds procs prodE prodL product procs range reverse" ++
+              words "rsec set shuffle states succs sum trans transL tup" ++
+              words "uncurry upd value valueL zip zipWith"
 
 iniPreds :: [String]
 iniPreds = words "_ () [] : ++ $ . == -> -/-> <= >= < > >> true false" ++

@@ -2438,7 +2438,8 @@ widgetTree sig sizes spread t = do t <- f [] t; return [WTree t] where
        f :: [Int] -> TermS -> MaybeT Cmd TermW
        f p (F "<+>" ts)        = do ts <- zipWithSucsM f p ts
                                     return $ F Skip ts
-       f p (F "widg" ts@(_:_)) = do let u = expand 0 t $ p++[length ts-1]
+       f p (F "widg" ts@(_:_)) = do let u = dropHeadFromPoss $ last ts
+                                         -- expand 0 t $ p++[length ts-1]
                                     [w] <- widgets sig black sizes spread u
                                     ts <- zipWithSucsM f p $ init ts
                                     return $ F w ts
@@ -2495,7 +2496,7 @@ widgets sig c sizes spread t = f c t' where
    f c (F "turt" [acts])  = do acts <- parseActs c acts
                                return [turtle0 c acts]
    f _ (F x [t]) | just c = f (get c) t where c = parse color x
-   f c t   = concat [do w <- lift' $ widgConst c sizes spread t; return [w],
+   f c t   = concat [do w    <- lift' $ widgConst c sizes spread t; return [w],
                      do pict <- lift' $ widgConsts sizes spread t; return pict]
    liftR   = lift' . parseReal
    fgrow c tr t u = do [w] <- fs c t; pict <- fs (next c) u

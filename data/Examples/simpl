@@ -61,8 +61,9 @@ terms:
 
     branch[3,(),4,5,(),7] 	--> 3 <+> 4 <+> 5 <+> 7
 <+> upd[1..9](6)(hhh)    	--> [1,2,3,4,5,6,hhh,8,9]
-<+> replicate(9)[1..4]  
+<+> replicateG(9)[1..4]  
                 --> [[1,2,3,4],pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0]
+<+> f$replicateG(5)$6
 <+> concRepl(3)[1..4]
 		--> [1,2,3,4,pos 0,pos 1,pos 2,pos 3,pos 0,pos 1,pos 2,pos 3]
 <+> take(4)$iter(+1)$0 		--> [0,1,2,3]
@@ -127,7 +128,6 @@ terms:
 <+> concat$map(fun(x,[x,suc(x)]))[1..6]	--> [1,2,2,3,3,4,4,5,5,6,6,7]
 <+> map(fun(x,insert(x,[1..5]++[8..10])))[6,7]
 
-<+> f$replicate(5)$6
 <+> concRepl(5)[1..5]
 <+> mapG(fun(F,F$frame(5)$black$text$ff hhhhh ff))[red,green,blue]
 

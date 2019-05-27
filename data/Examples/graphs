@@ -54,7 +54,12 @@ axioms:
 & graph$12 == 0(1(2,                  2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                      4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),                  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,                  2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                      4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),                  2))
 
 terms:   
-    hhh(gg,widg(kk,rainbow2(22,4,7)$red$oval(111,44)))
+
+widg(a,b,grav$turt[circ$22,M$111,circ$44]) <+>
+widg(f(g(h,widg(t,z,gif(goat,28,25))),
+       widg(widg(t,z,gif(nemo,63,49)),z,light green(oval(44,22)))),
+     gif(skater,98,105))
+<+> hhh(gg,widg(kk,rainbow2(22,4,7)$red$oval(111,44)))
 <+> f(g,f(g,h),f(5,f(g,f(g,h),f(g,h),f(g,h),5(g,h),f(g,h))),f(g,h),f(g,h),f(g,h))
 <+> f(widg$matrix[(3,4,c),(a,b,dd)],kkk,kkk)
 <+> fun(x,f(g(444,widg(444,bbb,x),widg(444,widg(444,bbb,x),x)),widg(444,bbb,x)))

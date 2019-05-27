@@ -9,7 +9,7 @@ hovars:		P
 
 axioms:
 
-  (anyP(P)$st <==> any(P.(st!!))$procs)	  -- procs = tickets = indices$st
+  (anyP(P)$st <==> any(P.(st!!))$procs)	  -- procs = indices$st, here: tickets
 
 & (allP(P)$st <==> all(P.(st!!))$procs)
 
@@ -43,4 +43,5 @@ conjects:
 			--		if length$procs = 2
 terms:
 
-  eval$AG$safe		--> states
+    eval$EX$true	--> states 
+<+> eval$AG$safe	--> states

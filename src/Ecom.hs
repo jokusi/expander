@@ -6158,7 +6158,7 @@ solver this solveRef enum paint = do
               solPositions <- readIORef solPositionsRef
               setTime
               let (u,n,cyclic) = simplifyLoop sig limit simplStrat t
-                  v = if collSimpls then collapse True u else u
+                  v = if collSimpls then collapse False u else u
                   msg0 = "The " ++ (if treeMode == "tree" then formString formula
                                     else "previous " ++ treeMode)
                                 ++ " is simplified."
@@ -6207,7 +6207,7 @@ solver this solveRef enum paint = do
           simplStrat <- readIORef simplStratRef
           let p = emptyOrLast treeposs
               (u,n,cyclic) = simplifyLoop sig limit strat $ getSubterm t p
-              v = if collSimpls then collapse True u else u
+              v = if collSimpls then collapse False u else u
               msg = appliedToSub "simplification" n ++
                     ("\nThe simplification became cyclical." `onlyif` cyclic)
           if n == 0 then labColorToPaint magback
@@ -6285,9 +6285,8 @@ solver this solveRef enum paint = do
                case pars of
                   ["ext",limit] | just k -> f $ get k where k = parse pnat limit
                   _ -> f 0
-          where f n = if ind then applyInduction n else applyCoinduction n
-
-        
+          where f = if ind then applyInduction else applyCoinduction
+ 
         stateEquiv :: Action
         stateEquiv = do
           sig <- getSignature

@@ -1791,28 +1791,29 @@ simplifyT (F "prodL" [F x ts]) | all collector (x:map root ts) =
                                 jList $ map mkTup $ mapM subterms ts
 
 simplifyT t | f == "curry" && notnull tss && length us == 1 =
-                              Just $ applyL (head us) $ concat uss
-                              where (f,tss) = unCurry t; us:uss = tss
+                           Just $ applyL (head us) $ concat uss
+                           where (f,tss) = unCurry t; us:uss = tss
 
 simplifyT (F "$" [F "uncurry" [f],F "()" (t:ts@(_:_))]) =
-                              Just $ F "$" [F "uncurry" [apply f t],F "()" ts]
+                           Just $ F "$" [F "uncurry" [apply f t],F "()" ts]
 
 simplifyT (F "$" [F "uncurry" [f],F "()" [t]]) = Just $ apply f t
 
 simplifyT (F "$" [F "$" [F "foldl" [f],a],F x ts]) | collector x = 
-                              Just $ foldl g a ts where g a t = applyL f [a,t]
+                           Just $ foldl g a ts where g a t = applyL f [a,t]
+                        -- Just $ foldl g a ts where g a t = apply (apply f a) t
 
 simplifyT (F "$" [F "foldl1" [f],F x ts]) | collector x =
-                              Just $ foldl1 g ts where g a t = applyL f [a,t]
+                           Just $ foldl1 g ts where g a t = applyL f [a,t]
 
 simplifyT (F "$" [F "$" [F "foldr" [f],a],F x ts]) | collector x = 
-                              Just $ foldr g a ts where g t a = applyL f [t,a]
+                           Just $ foldr g a ts where g t a = applyL f [t,a]
 
 simplifyT (F "$" [F "foldr1" [f],F x ts]) | collector x = 
-                              Just $ foldr1 g ts where g t u = applyL f [t,u]
+                           Just $ foldr1 g ts where g t u = applyL f [t,u]
                                       
 simplifyT (F "$" [F "zip" [F x ts],F y us]) | collectors x y = 
-            jList $ map g $ zip ts us where g (t,u) = mkPair t u
+                           jList $ map g $ zip ts us where g (t,u) = mkPair t u
 
 simplifyT (F "$" [F "$" [F "zipWith" _,F "[]" _],F ":" _]) = Just mkNil
 

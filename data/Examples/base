@@ -1,10 +1,12 @@
 -- base
 
-defuncts: head tail init last take drop <=< kfold
+defuncts: head tail init last take drop ^^ <=< kfold
 fovars:	  x y z s s' n
-hovars:   F G
+hovars:   F G H
 
 axioms:
+
+F^^n == foldl1(fun((G,H),G.H))$replicate(n)$F &
 
 G<=<F == concat.map(G).F &       		-- Kleisli composition for [ ]
 
