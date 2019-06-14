@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, March 2019
-                  Jos Kusiek, March 2019
+Copyright   : (c) Peter Padawitz, June 2019
+                  Jos Kusiek, June 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -2462,10 +2462,8 @@ widgets sig c sizes spread t = f c t' where
                                   where tr = widgTrans t
    f c (F "$" [t,u]) | just tr  = do pict <- fs c u; return $ (get tr) pict
                                   where tr = pictTrans c t
-   f c (F "base" [t])           = do [w] <- fs c t
-                                     w <- lift' $ mkBased False c w; return [w]
-   f c (F "baseR" [t])          = do [w] <- fs c t
-                                     w <- lift' $ mkBased True c w; return [w]
+   f c (F "base" [t])           = do [w] <- fs c t; w <- lift' $ mkBased c w
+                                     return [w]
                         -- Based widgets are polygons with a horizontal line
                         -- of 90 pixels starting in (90,0) and ending in (0,0).
                         -- mkBased and mkTrunk generate based widgets.
@@ -4030,8 +4028,8 @@ grow tr w branches = widg (tr w):concat (zipWith g branches $ getAllLines w)
                                                 where a = angle p q-90
                                                       d = distance p q
 
-growM :: Color -> Widget_ -> [Bool] -> WidgTrans -> Int -> TurtleActs
-growM c w bs tr n = f c n where f _ 0 = []
+growR :: Color -> Widget_ -> [Bool] -> WidgTrans -> Int -> TurtleActs
+growR c w bs tr n = f c n where f _ 0 = []
                                 f c i = grow tr (updCol c w) $ map g bs where
                                         g True = f (nextColor 0 n c) $ i-1
                                         g _    = []
@@ -4047,16 +4045,12 @@ growA c n acts bs = f c n where
                                else turn:Scale (d/90):b++Close:Jump d:h acts bs
              h _ _ = []
 
-mkBased :: Bool -> Color -> Widget_ -> Maybe Widget_
-mkBased rev c w = do guard $ length ps > 2 && p == last ps && d /= 0
-                     Just $ path0 c 4 rs  
-          where ps@(p:_) = getAllPoints w
-                (rs,d) = basedPts
-                basedPts = (map (apply2 (*(90/d)) . rotate p0 a . sub2 p) rs,d)
-                           where rs@(p:qs) = if rev then reverse ps else ps
-                                 q = last $ init qs
-                                 d = distance p q
-                                 a = -angle p q
+mkBased :: Color -> Widget_ -> Maybe Widget_
+mkBased c w = do guard $ length ps > 2 && p == last ps && d /= 0
+                 Just $ path0 c 4
+                      $ map (apply2 (*(90/d)) . rotate p0 a . sub2 p) ps
+              where ps@(p:qs) = getAllPoints w
+                    q = last $ init qs; d = distance p q; a = -angle p q
 
 flower :: Int -> Picture -> TurtleActs
 flower mode (w1:w2:w3:w4:w5:_) =
@@ -4225,15 +4219,15 @@ fractal "wide" c n = Open c 0:up:f c n++[Close]
 
 polygon :: String -> Color -> WidgTrans -> Int -> TurtleActs
 
-polygon "cactus" c = growM c (mkTrunk c "CA") [False,True,True,True]
+polygon "cactus" c = growR c (mkTrunk c "CA") [False,True,True,True]
 
-polygon "hexa" c   = growM c (mkTrunk c "HE") $ replicate 6 True
+polygon "hexa" c   = growR c (mkTrunk c "HE") $ replicate 6 True
 
-polygon "pytree" c = growM c (mkTrunk c "PY") [False,True,True]
+polygon "pytree" c = growR c (mkTrunk c "PY") [False,True,True]
 
-polygon "penta" c  = growM c (mkTrunk c "PE") $ replicate 5 True
+polygon "penta" c  = growR c (mkTrunk c "PE") $ replicate 5 True
 
-polygon "pentaS" c = growM c (mkTrunk c "PS") [False,True,True]
+polygon "pentaS" c = growR c (mkTrunk c "PS") [False,True,True]
 
 -- * bars and piles
 
