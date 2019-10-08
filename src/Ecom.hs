@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, April 2019
-                  Jos Kusiek, April 2019
+Copyright   : (c) Peter Padawitz, September 2019
+                  Jos Kusiek, September 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -1954,7 +1954,7 @@ solver this solveRef enum paint = do
           let (rs,rsL) = buildTrans sig atoms'              -- build value/L
               va  = pairsToInts (sig&states) rs atoms'
               vaL = tripsToInts (sig&states) (sig&labels) rsL atoms'
-              [l,m,n] = map length [(sig&states),atoms',(sig&labels)]
+              [l,m,n] = map length [sig&states,sig&labels,atoms']
           writeIORef kripkeRef
             ((sig&states),(sig&labels),atoms',(sig&trans),(sig&transL),va,vaL)
           noProcs <- readIORef noProcsRef

@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, April 2019
-                  Jos Kusiek, April 2019
+Copyright   : (c) Peter Padawitz, September 2019
+                  Jos Kusiek, September 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -928,10 +928,6 @@ minDNF bins = f bins' $ length bins'
                                where bins' = maxis leqBin $ mkSups [] bins
                                      n' = length bins'
 
-leqBin :: String -> String -> Bool
-leqBin bin bin' = and $ zipWith leq bin bin'
-                  where leq x y = x == y || y == '#'
-
 -- | @mkSups [] bins@ replaces elements of @bins@ by suprema of subsets of
 -- @bins@.
 mkSups
@@ -949,6 +945,10 @@ mkSups bins (bin:bins') = case search f $ indices_ bin of
                                              cbin = updList bin i $
                                                    if b == '0' then '1' else '0'
 mkSups bins _ = bins
+
+leqBin :: String -> String -> Bool
+leqBin bin bin' = and $ zipWith leq bin bin'
+                  where leq x y = x == y || y == '#'
 
 minterms :: String -> [String]
 minterms bin = if '#' `elem` bin then concatMap minterms [f '0',f '1']
@@ -968,10 +968,7 @@ funToBins (f,n) = minDNF $ filter f $ binRange n
 
 -- | @karnaugh n@ is the empty Karnaugh matrix that consists of all elements of
 -- {'0','1'}^n.
-karnaugh
-    :: (Integral a, Num b, Num c, Ix b, Ix c)
-    => a -- ^ n
-    -> (Array (b, c) String, b, c)
+karnaugh :: Int -> (Array (Int,Int) String,Int,Int)
 karnaugh 1          = (array ((1,1),(1,2)) [((1,1),"0"),((1,2),"1")],1,2)
 karnaugh n | even n = (mkArray ((1,1),(k,m)) f,k,m)
                        where (arr,mid,m) = karnaugh (n-1)
@@ -1319,19 +1316,16 @@ intRanges     = do is <- token intRangeOrInt
                    (do ks <- intRanges; return $ is++ks) ++ return is
 
 double :: Parser Double
-double        = doublePos ++ do char '-'; r <- doublePos; return $ -r
+double        = p ++ do char '-'; r <- p; return $ -r
+                where p = do n <- nat; char '.'; ds <- some digit
+                             let m = foldl1 (\n d -> 10*n+d) ds
+                                 r = fromInt n+fromInt m*0.1^length ds
+                             k <- expo; return $ r*10^k
+                      expo = concat [do string "e+"; nat,
+                                     do string "e-"; n <- nat; return $ -n,
+                                     do string "e"; nat,
+                                     return 0]
 
-doublePos :: Parser Double
-doublePos     = do n <- nat; char '.'; ds <- some digit
-                   let m = foldl1 f ds
-                       r = fromInt n+fromInt m*0.1^length ds
-                   i <- expo; return $ r*10^i
-                where f n d = 10*n+d
-                      expo = concat [ do string "e+"; nat
-                                    , do string "e-"; n <- nat; return $ -n
-                                    , do string "e"; nat
-                                    , return 0
-                                    ]
 
 real :: Parser Double
 real          = (do r <- double; return (realToFrac (fromDouble r::Float))) ++
@@ -1706,6 +1700,9 @@ showRE e@(Prod _ _) = case factors e of []  -> leaf "eps"
                                         es  -> F "*" $ map showRE es
 showRE (Star e)     = F "star" [showRE e]
 showRE (Var x)      = V x
+
+-- (<=), (<*), (<+) and (+<) are subrelations of regular language inclusion. 
+-- In their defining equations, = means reverse implication.
 
 instance Ord RegExp                                    -- used by summands
          where Eps <= Star _                   = True
@@ -2846,11 +2843,12 @@ iniDefuncts :: [String]
 iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch" ++
               words "color concat count curry dnf eval filter flip foldl" ++
               words "foldr height id index indices insert `join` labels" ++
-              words "lsec length list map `meet` min minimize `mod`" ++
-              words "nextperm noProcs obdd out outL parents parseLR permute" ++
-              words "preds procs prodE prodL product procs range reverse" ++
-              words "rsec set shuffle states succs sum trans transL tup" ++
-              words "uncurry upd value valueL zip zipWith"
+              words "lsec length list map `meet` min minimize minterms" ++
+              words "`mod` nextperm noProcs obdd out outL parents parseLR" ++
+              words "permute preds procs prodE prodL product procs range" ++
+              words "reverse rsec set shuffle states succs sum trans transL" ++
+              words "tup uncurry upd value valueL zip zipWith"
+
 
 iniPreds :: [String]
 iniPreds = words "_ () [] : ++ $ . == -> -/-> <= >= < > >> true false" ++
@@ -4341,12 +4339,14 @@ outGraphL sts labs ats out outL = f where
 extendNode :: [String] -> [String] -> [[Int]] -> String -> String
 extendNode _ _ [] x      = x
 extendNode sts ats out x = if isPos x || x == "<+>" then x
-                           else enterAtoms x $ map (ats!!) $ out!!getInd x sts
+                           else enterAtoms (filter (/= '\"') x)
+                                           $ map (ats!!) $ out!!getInd x sts
+
 
 enterAtoms :: String -> [String] -> String
 enterAtoms x []       = x
-enterAtoms x [at]     = x++':':at
-enterAtoms x (at:ats) = x++":["++at++concatMap (',':) ats++"]"
+enterAtoms x [at]     = x++" |= "++at
+enterAtoms x (at:ats) = x++" |= "++at++concatMap (',':) ats
 
 -- colorClasses{L} colors equivalent states of a transition graph with the same
 -- color and equivalent states with different colors unless they belong to 

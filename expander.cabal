@@ -351,6 +351,7 @@ data-files:          Examples/*.gif
                    , "Examples/kripke5"
                    , "Examples/kripke6"
                    , "Examples/kripke7"
+                   , "Examples/kripke9"
                    , "Examples/lazy"
                    , "Examples/leaves"
                    , "Examples/lift"
@@ -785,11 +786,13 @@ test-suite expander-test
                     , test-framework-quickcheck2
                     , HUnit
                     , QuickCheck
+                    , singletons
                     
   other-modules:      EcomTest
                     , EsolveTest
                     , EpaintTest
                     , EtermTest
+                    , EtermProof
                     , SpecificationTest
                     
   hs-source-dirs:     test

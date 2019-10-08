@@ -1,0 +1,31 @@
+-- kripke9 Murmelspiel
+
+-- specs: modal
+
+constructs: x_1 x_2 x_3
+
+defunct: draw
+
+axioms:
+
+states == ["001"] & atoms == [x_1,x_2,x_3] &
+
+"001" -> "100"<+>"010" &
+"010" -> "001"<+>"110" &
+"100" -> "110"<+>"010" &
+"110" -> "001"<+>"101" &
+"101" -> "010"<+>"110" &
+
+x_1 -> branch$minterms["1##"] &
+x_2 -> branch$minterms["#1#"] &
+x_3 -> branch$minterms["##1"] &
+
+draw == wtree $ fun(dark green$x,dark$green$text$x,x,text$x)
+
+conjects:
+
+(EX$EX$AX$Sat$x_3)$"001" --> True
+
+terms:
+
+eval$EX$EX$AX$x_3        --> ["001","100","110","101"]	

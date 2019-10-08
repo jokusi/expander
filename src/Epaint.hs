@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, June 2019
-                  Jos Kusiek, June 2019
+Copyright   : (c) Peter Padawitz, September 2019
+                  Jos Kusiek, September 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -1786,8 +1786,10 @@ close2 = [Close,Close]
 
 textWidget :: Color -> Sizes -> String -> Widget_
 textWidget c (n,width) x = Text_ (st0 c) n strs $ map width strs
-                           where strs = map (map h) $ words x
-                                 h x = if x == '\'' then ' ' else x
+                           where strs = map (map h) $ words $ map (g . f) x
+                                 f ' ' = '\"'; f c = c
+                                 g '\'' = ' '; g c = c
+                                 h '\"' = ' '; h c = c
 
 inRect :: (Double, Double) -> Widget_ -> Bool
 (x',y') `inRect` Rect ((x,y),_,_,_) b h = x-b <= x' && x' <= x+b &&
@@ -2483,17 +2485,18 @@ widgets sig c sizes spread t = f c t' where
                                         hue <- lift' $ search (== hue) huemodes
                                         return [turtle0 c $ mkHue hue 0 acts]
                                      where (z,hue) = splitAt 3 x
-   f c (F "load" [t])     = do w <- lift $ loadWidget c sizes t
-                               return [updCol c w]
-   f c (F "loadT" [t])    = do t <- lift $ loadTerm sig c sizes t; f c t
-   f _ (F "mat" [t])      = matrix sizes spread t
-   f _ (F "save" [t,u])   = do pict@[w] <- f black t; lift $ saveWidget w u
-                               return pict
-   f _ (F "saveT" [t,u])  = do pict@[w] <- f black t; lift $ saveTerm t u
-                               return pict
-   f c (F "turt" [acts])  = do acts <- parseActs c acts
-                               return [turtle0 c acts]
-   f _ (F x [t]) | just c = f (get c) t where c = parse color x
+   f c (F "load" [t])              = do w <- lift $ loadWidget c sizes t
+                                        return [updCol c w]
+   f c (F "loadT" [t])             = do t <- lift $ loadTerm sig c sizes t
+                                        fs c t
+   f _ (F "mat" [t])               = matrix sizes spread t
+   f _ (F "save" [t,u])            = do pict@[w] <- f black t
+                                        lift $ saveWidget w u; return pict
+   f _ (F "saveT" [t,u])           = do pict@[w] <- f black t
+                                        lift $ saveTerm  t u; return pict
+   f c (F "turt" [acts])           = do acts <- parseActs c acts
+                                        return [turtle0 c acts]
+   f _ (F x [t]) | just c          = f (get c) t where c = parse color x
    f c t   = concat [do w    <- lift' $ widgConst c sizes spread t; return [w],
                      do pict <- lift' $ widgConsts sizes spread t; return pict]
    liftR   = lift' . parseReal

@@ -1,8 +1,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, April 2019
-                  Jos Kusiek, April 2019
+Copyright   : (c) Peter Padawitz, September 2019
+                  Jos Kusiek, September 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -1583,8 +1583,10 @@ simplifyS sig (F "eval" [phi])  = do sts <- foldModal sig phi
                                      Just $ mkStates sig sts
 
 simplifyS sig (F "evalG" [phi]) = do sts <- foldModal sig phi
-                                     let f st = if st `elem` map (strs!!) sts 
-                                                then "dark green$"++st else st
+                                     let f st | isPos st = st
+                                              | st `elem` map (strs!!) sts
+                                                         = "dark green$"++st
+                                              | True     = "red$"++st
                                      Just $ mapT f $ eqsToGraph [] eqs
     where [strs,labs] = map (map showTerm0)[(sig&states),(sig&labels)]
           (eqs,_) = if null labs then relToEqs 0 $ mkPairs strs strs (sig&trans)
@@ -1702,7 +1704,7 @@ simplifyT (F "CASE" (F "->" [F "True" [],t]:_))   = Just t
 simplifyT (F "CASE" (F "->" [F "False" [],_]:ts)) = Just $ F "CASE" ts
 simplifyT (F "CASE" [])                            = Just $ F "undefined" []
 
-simplifyT (F "string" [t])       = Just $ leaf $ showTree False t
+simplifyT (F "string" [t])       = Just $ leaf $ showTree False t `minus1` '\"'
 
 simplifyT (F "stringNB" [t])     = Just $ leaf $ showTree False t `minus` "()"
 
@@ -1905,14 +1907,20 @@ simplifyT (F ">" [F "()" (t:ts),F "()" (u:us)]) =
 simplifyT (F "color" [i,n]) = do i <- parseNat i; n <- parseNat n
                                  jConst $ hue 0 red n i
 
-simplifyT (F "dnf" [t]) | isObdd t = jConsts $ funToBins $ obddToFun 
-                                               $ drop0FromPoss t
+simplifyT (F "dnf" [t]) | isObdd t =
+                          jConsts $ funToBins $ obddToFun $ drop0FromPoss t
+
+simplifyT (F "obdd" [t]) = do bins <- parseBins t; Just $ binsToObdd bins
 
 simplifyT (F "minimize" [t]) | just bins = jConsts $ minDNF $ get bins
                                             where bins = parseBins t
 
 simplifyT (F "minimize" [t]) | isObdd t = Just $ drop0FromPoss $ collapse True
                                                  $ removeVar t
+
+simplifyT (F "minterms" [t]) | just bins =
+                               jConsts $ concatMap minterms $ get bins
+                               where bins = parseBins t
 
 simplifyT (F "gauss" [t]) | just eqs =
                               Just $ F "bool" [mkLinEqs $ get $ gauss $ get eqs]
@@ -1924,8 +1932,6 @@ simplifyT (F x@"gaussI" [t]) | just eqs =
                                     _ -> do eqs <- gauss2 $ get eqs; f eqs
                                where eqs = parseLinEqs t
                                      f eqs = Just $ F x [mkLinEqs $ gauss3 eqs]
-
-simplifyT (F "obdd" [t])   = do bins <- parseBins t; Just $ binsToObdd bins
 
 simplifyT (F "pascal" [t]) = do n <- parseNat t; jConsts $ pascal n
 

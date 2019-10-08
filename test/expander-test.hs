@@ -10,6 +10,8 @@ import qualified EsolveTest
 import qualified EcomTest
 import qualified SpecificationTest
 
+import EtermProof ()
+
 tests = 
   [ EtermTest.tests
   , EpaintTest.tests
