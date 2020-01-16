@@ -1,8 +1,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, September 2019
-                  Jos Kusiek, September 2019
+Copyright   : (c) Peter Padawitz, December 2019
+                  Jos Kusiek, December 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -1585,8 +1585,8 @@ simplifyS sig (F "eval" [phi])  = do sts <- foldModal sig phi
 simplifyS sig (F "evalG" [phi]) = do sts <- foldModal sig phi
                                      let f st | isPos st = st
                                               | st `elem` map (strs!!) sts
-                                                         = "dark green$"++st
-                                              | True     = "red$"++st
+                                                         = "dark green_"++st 
+                                              | True     = "red_"++st
                                      Just $ mapT f $ eqsToGraph [] eqs
     where [strs,labs] = map (map showTerm0)[(sig&states),(sig&labels)]
           (eqs,_) = if null labs then relToEqs 0 $ mkPairs strs strs (sig&trans)
@@ -1598,8 +1598,7 @@ simplifyS sig (F "stateflow" [t]) | just u = u where u = initStates True sig t
 
 simplifyS sig (F "stateflow" [t]) = initStates True sig $ mkCycles [] t
 
-simplifyS sig (F "stateflowT" [t]) | just u = u
-                                              where u = initStates False sig t
+simplifyS sig (F "stateflowT" [t])| just u = u where u = initStates False sig t
 
 simplifyS sig (F "stateflowT" [t]) = initStates False sig $ mkCycles [] t
 

@@ -17,7 +17,7 @@ delta(t+u,x) == delta(t,x)+delta(u,x) &
 
 -- delta(t*u,x) == delta(t,x)*u+ite(beta$t=0,mt,delta(u,x)) &    
  
-(delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &	    -- for brzo1v (?), brzo2v, brzo3
+(delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &	-- for brzo1v (?), brzo2v, brzo3
 (delta(t*u,x) = delta(t,x)*u+delta(u,x) <=== beta$t=1) &
 
 delta(star$t,x) == delta(t,x)*star(t) &
@@ -67,7 +67,7 @@ step$B == b*S+a*B*B &
 						-- for brzo1v, brzo2v, brzo3
 theorems:
 
-(beta$t = 0 | beta$t = 1) &
+(beta$t = 0 | beta$t = 1) &			-- (6)
 (t+u)+(v+w) = (t+v)+(u+w) &			-- (3)
 t*(u+v) = t*u+t*v &
 (u+v)*t = u*t+v*t &
@@ -89,7 +89,8 @@ star(a)*b `~` a*star(a)*b+b &		-- brzo2 (Rosu, Example 3.6)
 star(t)*u `~` t*star(t)*u+u &		-- brzo2v	
 					-- 1 x coinduction + theorems
 t*(u+v) `~` t*u+t*v &			-- brzo3 (ELAS, Example SEQPAR)
-					-- 1 x coinduction + theorems + substitutions
+					-- 1 x coinduction + theorems (3),(6)
+					-- + substitutions
 (RegExp$t ==> beta$t = 0 | beta$t = 1)	-- brzo4
 					-- 1 x induction
 terms:

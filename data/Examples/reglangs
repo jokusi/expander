@@ -77,10 +77,10 @@ drawC == wtree $ fun(eps,gif(cat,16,14),x,text$x)
 
 conjects:
 
-Unfold(q)[] &			--> False	-- unify&narrow&
-Unfold(q)[b] &			--> True	-- derive&simplify&refute
+Unfold(q)[] &			--> False	-- unify & narrow
+Unfold(q)[b] &			--> True	-- derive & simplify & refute
 Unfold(q)[b,b] &		--> False
-Unfold(q)[a,b,a,b,a,b,a] &	--> True	-- reglangs1
+Unfold(q)[a,b,a,b,a,b,a] &	--> True		-- reglangs1
 Unfold(q)[a,b,a,b,b,a,b,a] &	--> False
 Unfold(q)[a,b,a,a,b,a] &	--> False
 Unfold(q)[a,b,a,a,b,a,b] 	--> True

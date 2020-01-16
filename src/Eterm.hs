@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, September 2019
-                  Jos Kusiek, September 2019
+Copyright   : (c) Peter Padawitz, December 2019
+                  Jos Kusiek, December 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -989,7 +989,7 @@ binsToBinMat
     -> a
     -> b
     -> String
-binsToBinMat bins arr i j = if any (e `leqBin`) bins then ("red$"++e) else e
+binsToBinMat bins arr i j = if any (e `leqBin`) bins then ("red_"++e) else e
                             where e = arr!(i,j)
 
 -- * Sorting and permuting
@@ -1361,10 +1361,7 @@ color         = concat [ do symbol "dark"; c <- color; return $ dark c
                        ]
 
 colPre :: Parser (Color, String)
-colPre        = do col <- color
-                   (do char '$'; x <- some item; return (col,x)) ++
-                    do char '('; x <- some $ nchar ')'; char ')'
-                       return (col,x)
+colPre        = do col <- color; char '_'; x <- some item; return (col,x)
 
 delCol :: String -> String
 delCol a      = case parse colPre a of Just (_,a) -> a; _ -> a
@@ -1666,26 +1663,30 @@ data RegExp = Mt | Eps | Const String | Sum_ RegExp RegExp | Int_ |
               Prod RegExp RegExp | Star RegExp | Var String deriving Eq
 
 parseRE :: Sig -> TermS -> Maybe (RegExp,[String])
-                                      -- list of labels of acceptors
-parseRE _ (F "mt" [])          = Just (Mt,[])
-parseRE _ (F "eps" [])         = Just (Eps,["eps"])
-parseRE _ (F "int" [])         = Just (Int_,["int"])
-parseRE sig (F a [])           = if (sig&isConstruct) a then Just (Const a,[a])
-                                 else do guard $ (sig&isDefunct) a
-                                         Just (Var a,[a]) -- a is a nonterminal
-parseRE sig (F "+" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
-                                    let (e:es,ass) = unzip pairs
-                                    Just (foldl Sum_ e es,joinM ass)
-parseRE sig (F "*" es@(_:_:_)) = do pairs <- mapM (parseRE sig) es
-                                    let (e:es,ass) = unzip pairs
-                                    Just (foldl Prod e es,joinM ass)
-parseRE sig (F "plus" [t])     = do (e,as) <- parseRE sig t
-                                    Just (Prod e $ Star e,as)
-parseRE sig (F "star" [t])     = do (e,as) <- parseRE sig t
-                                    Just (Star e,as `join1` "eps")
-parseRE sig (F "refl" [t])     = do (e,as) <- parseRE sig t
-                                    Just (Sum_ e Eps,as `join1` "eps")
-parseRE _ _                    = Nothing
+                                      -- list of acceptor labels
+parseRE _ (F "mt" [])      = Just (Mt,[])
+parseRE _ (F "eps" [])     = Just (Eps,["eps"])
+parseRE _ (F "int" [])     = Just (Int_,["int"])
+parseRE sig (F a [])       = if (sig&isDefunct) a then Just (Var a,[a])
+                                                else Just (Const a,[a])
+parseRE _ (F "+" [])       = Just (Mt,[])
+parseRE sig (F "+" [t])    = parseRE sig t
+parseRE sig (F "+" ts)     = do pairs <- mapM (parseRE sig) ts
+                                let (e:es,ass) = unzip pairs
+                                Just (foldl Sum_ e es,joinM ass)
+parseRE _ (F "*" [])       = Just (Eps,["eps"])
+parseRE sig (F "*" [t])    = parseRE sig t
+parseRE sig (F "*" ts)     = do pairs <- mapM (parseRE sig) ts
+                                let (e:es,ass) = unzip pairs
+                                Just (foldl Prod e es,joinM ass)
+parseRE sig (F "plus" [t]) = do (e,as) <- parseRE sig t
+                                Just (Prod e $ Star e,as)
+parseRE sig (F "star" [t]) = do (e,as) <- parseRE sig t
+                                Just (Star e,as `join1` "eps")
+parseRE sig (F "refl" [t]) = do (e,as) <- parseRE sig t
+                                Just (Sum_ e Eps,as `join1` "eps")
+parseRE _ (V x)            = Just (Var x,[x])
+parseRE _ _                = Nothing
 
 showRE :: RegExp -> TermS
 showRE Mt           = leaf "mt"
@@ -1701,8 +1702,8 @@ showRE e@(Prod _ _) = case factors e of []  -> leaf "eps"
 showRE (Star e)     = F "star" [showRE e]
 showRE (Var x)      = V x
 
--- (<=), (<*), (<+) and (+<) are subrelations of regular language inclusion. 
--- In their defining equations, = means reverse implication.
+-- The following binary RegExp-relations are subrelations of regular language
+-- inclusion. In their defining equations, = means reverse implication.
 
 instance Ord RegExp                                    -- used by summands
          where Eps <= Star _                   = True
@@ -1719,26 +1720,8 @@ instance Ord RegExp                                    -- used by summands
 Sum_ Eps e <* Star e' | e == e' = True
 e <* e' = False
 
-summands,factors :: RegExp -> [RegExp]
-summands (Sum_ e e') = joinMapR (<=) summands [e,e']   -- e <= e' ==> e+e' = e'
-summands Mt          = []                              -- mt+e = e
-summands e           = [e]                             -- e+mt = e
-factors (Prod e e')  = joinMapR (<*) factors [e,e']    -- e <* e' ==> e*e' = e'
-factors Eps          = []                              -- eps*e = e
-factors e            = [e]                             -- e*eps = e
-
-mkSumR,mkProdL,mkProdR :: [RegExp] -> RegExp
-mkSumR []  = Mt
-mkSumR es  = foldr1 Sum_ es
-mkProdL [] = Eps
-mkProdL es = foldl1 Prod es
-mkProdR [] = Eps
-mkProdR es = foldr1 Prod es
-
--- Eps <+ e, e1*e2 <+ e3*e4 iff e1 <+ e3 (products are ordered by left factors)
-
-(<+) :: RegExp -> RegExp -> Bool
-Eps <+ e                  = True
+(<+) :: RegExp -> RegExp -> Bool       -- Eps <+ e, e1*e2 <+ e3*e4 iff e1 <+ e3        
+Eps <+ e                  = True       -- products are ordered by left factors 
 Const a <+ Const b        = a <= b
 e@(Const _) <+ Prod e1 e2 = e <+ e1
 e@(Star _)  <+ Prod e1 e2 = e <+ e1
@@ -1747,10 +1730,8 @@ Prod e _ <+ e'@(Star _)   = e <+ e'
 Prod e _ <+ Prod e' _     = e <+ e'
 e <+ e'                   = e == e'
 
--- Eps +< e, e1*e2 <+ e3*e4 iff e2 <+ e4 (products are ordered by right factors)
-
-(+<) :: RegExp -> RegExp -> Bool
-Eps +< e                  = True
+(+<) :: RegExp -> RegExp -> Bool       -- Eps +< e, e1*e2 <+ e3*e4 iff e2 <+ e4 
+Eps +< e                  = True       -- products are ordered by right factors
 Const a +< Const b        = a <= b
 e@(Const _) +< Prod e1 e2 = e +< e2
 e@(Star _)  +< Prod e1 e2 = e +< e2
@@ -1758,6 +1739,18 @@ Prod _ e +< e'@(Const _)  = e +< e'
 Prod _ e +< e'@(Star _)   = e +< e'
 Prod _ e +< Prod _ e'     = e +< e'
 e +< e'                   = e == e'
+
+-- flattening sums and products
+
+summands,factors :: RegExp -> [RegExp]
+summands (Sum_ e e') = joinMapR (<=) summands [e,e']   -- e <= e' ==> e+e' = e'
+summands Mt          = []                              -- mt+e = e     
+summands e           = [e]                             -- e+mt = e
+factors (Prod e e')  = joinMapR (<*) factors [e,e']    -- e <* e' ==> e*e' = e'
+factors Eps          = []                              -- eps*e = e
+factors e            = [e]                             -- e*eps = e
+
+-- sorting summands
 
 sortRE :: (RegExp -> RegExp -> Bool) -> ([RegExp] -> RegExp) -> RegExp
                                                              -> RegExp
@@ -1767,11 +1760,19 @@ sortRE r prod e@(Prod _ _) = prod $ map (sortRE r prod) $ factors e
 sortRE r prod (Star e)     = Star $ sortRE r prod e
 sortRE _ _ e               = e
 
+mkSumR,mkProdL,mkProdR :: [RegExp] -> RegExp
+mkSumR []  = Mt
+mkSumR es  = foldr1 Sum_ es
+mkProdL [] = Eps
+mkProdL es = foldl1 Prod es
+mkProdR [] = Eps
+mkProdR es = foldr1 Prod es
+
+-- distributing products over sums
+
 -- e*(eps+e') = e+e*e', e*(e1+e2) = e*e1+e*e2
 -- (eps+e')*e = e+e'*e, (e1+e2)*e = e1*e+e2*e
 
--- distribute e distributes the products of e over their additive arguments.
- 
 distribute :: RegExp -> RegExp
 distribute = fixpt (==) f
   where f e = case e of Sum_ _ _   -> mkSumR $ map f $ concatMap g $ summands e
@@ -1785,7 +1786,7 @@ distribute = fixpt (==) f
                     g (Prod (Sum_ e1 e2) e)  = [Prod e1 e,Prod e2 e]
                     g e                      = [e]
 
--- reduceLeft/Right simplifies regular expressions iteratively.
+-- reducing regular expressions iteratively.
 
 reduceLeft,reduceRight,reduceRE :: RegExp -> RegExp
 reduceLeft  = fixpt (==) (reduceRE . sortRE (+<) mkProdL)
@@ -3809,9 +3810,9 @@ boolPositions _ _            = []
 -- positions with d.
 colorWith2 :: String -> String -> [[Int]] -> TermS -> TermS
 colorWith2 c d ps = f []
-                    where f p (F x ts) = F (e++'$':x) $ zipWithSucs f p ts
+                    where f p (F x ts) = F (e++'_':x) $ zipWithSucs f p ts
                                          where e = if p `elem` ps then c else d
-                          f p t@(V x)  = if isPos x then t else V $ e++'$':x
+                          f p t@(V x)  = if isPos x then t else V $ e++'_':x
                                          where e = if p `elem` ps then c else d
                           f _ t        = t
 
@@ -3976,7 +3977,7 @@ cutTree max t ps col qs = f [] $ fold2 replace (head $ cutTreeL [t] 0) qs
          h (ts,us,n) (x,isv) lg = (ts++[if isv then V y else F y subs],
                                    drop lg us,n+1)
                      where (y,subs) = (if n < max then x else '@':x,take lg us)
-         c p x = if p `elem` ps then col++'$':delCol x else x
+         c p x = if p `elem` ps then col++'_':delCol x else x
          hide t@(F ('@':_) _) = t
          hide (F x ts)        = F ('@':x) ts   
          hide t@(V ('@':_))   = t
@@ -4323,13 +4324,13 @@ outGraphL sts labs ats out outL = f where
       f (F x ts) | x == "<+>" = F x $ map f ts
       f (F x ts) = F (extendNode sts ats out x) $ map g ts ++ map h labs' where
             xoutL = outL!!getInd x sts
-            labs' = [lab | lab <- labs, all ((/= lab) . drop 4 . root) ts,
+            labs' = [lab | lab <- labs, all ((/= lab) . root) ts,
                                         notnull $ xoutL!!getInd lab labs]
-            g (F lab ts) = F (extendNodeL $ drop 4 lab) $ map f ts
-            g t = t                 -- drop4 lab removes "red$" (see relLToEqs)
+            g (F lab ts) = F (extendNodeL lab) $ map f ts
+            g t = t                 
             h = leaf . extendNodeL
-            extendNodeL lab = enterAtoms ("red$"++lab) $ map (ats!!)
-                                                       $ xoutL!!getInd lab labs
+            extendNodeL lab = enterAtoms lab $ map (ats!!) 
+                                             $ xoutL!!getInd lab labs
       f t = t
 
 -- mkAtGraph{L} ... out {outL} t adds out!!x to each state node x of t and 
@@ -4368,7 +4369,7 @@ colorClassesL sig = g where
 setColor :: [String] -> [[Int]] -> Int -> String -> String
 setColor sts part n x = if x `notElem` sts then x
                         else case searchGet (elem $ getInd x sts) part of
-                          Just (k,_) -> show (hue 0 red n k) ++ '$':x
+                          Just (k,_) -> show (hue 0 red n k) ++ '_':x
                           _          -> x
 
 -- concept ts posExas negExas computes the minimal concept wrt the feature trees
@@ -4500,14 +4501,15 @@ getIneqSides _                                   = Nothing
 
 autoEqsToRegEqs :: Sig -> [IterEq] -> [IterEq]
 autoEqsToRegEqs sig = map f
-     where f (Equal x t) = Equal x $ showRE $ distribute e
-                           where (e,_) = get $ parseRE sig $ g t
-           g (t@(V _))   = t
-           g (F qat ts)  = F "+" us
-                           where lg = length qat
-                                 us = if lg > 5 && drop (lg-5) qat == "final"
-                                      then map h ts++[F "eps" []] else map h ts
-           h (F lab [t]) = F "*" [F lab [],g t]
+       where f (Equal x t) = case parseRE sig $ g t of
+                                  Just (e,_) -> Equal x $ showRE $ distribute e
+                                  _ -> Equal x $ leaf "OOPS"
+             g (F q ts)    = F "+" $ if n >= 0 && drop n q == "final" 
+                                     then map h ts++[F "eps" []] else map h ts 
+                             where n = length q-5
+             g t           = t
+             h (F lab [t]) = F "*" [F lab [],g t]
+             h t           = t
 
 substituteVars :: TermS -> [IterEq] -> [[Int]] -> Maybe TermS
 substituteVars t eqs ps = do let ts = map (getSubterm1 t) ps
@@ -4518,23 +4520,26 @@ substituteVars t eqs ps = do let ts = map (getSubterm1 t) ps
                                           where t = lookup x $ eqPairs eqs
                                                 u = get t
 
--- solveRegEq sig t solves the regular equation x = t*x+u in x. If u = mt, then
--- the solution is mt, otherwise star(t)*u.
+-- solveRegEq sig eq solves eq in x if eq is a regular equation of the form
+-- x = t*x+u. If u = mt, then the solution is mt, otherwise star(t)*u.
 
-solveRegEq :: Sig -> String -> TermS -> Maybe (RegExp,[String])
-solveRegEq sig x t = parseRE sig $ f $ case t of F "+" ts -> ts; _ -> [t]
-         where f ts = case us of []  -> leaf "mt"
-                                 [u] -> F "*" [star,u]
-                                 _   -> F "*" [star,F "+" us]
-                      where us = ts `minus` recs
-                            recs = [t | t@(F "*" us) <- ts, last us == V x]
-                            star = case recs of
-                                        []    -> leaf "eps"
-                                        [rec] -> F "star" [g rec]
-                                        _     -> F "star" [F "+" $ map g recs]
-               g (F "*" [t,_]) = t
-               g (F "*" ts)    = F "*" $ init ts
-               g _             = leaf "OOPS"
+solveRegEq :: Sig -> IterEq -> Maybe TermS
+solveRegEq sig (Equal x t) = do (e,_) <- parseRE sig $ f 
+                                                     $ case t of F "+" ts -> ts
+                                                                 _ -> [t]
+                                Just $ mkEq (V x) $ showRE e
+          where f ts = case us of []  -> leaf "mt"
+                                  [u] -> F "*" [star,u]
+                                  _   -> F "*" [star,F "+" us]
+                       where us = ts `minus` recs                              
+                             recs = [t | t@(F "*" us) <- ts, last us == V x]
+                             star = case recs of 
+                                         []    -> leaf "eps"
+                                         [rec] -> F "star" [g rec]
+                                         _     -> F "star" [F "+" $ map g recs]
+                g (F "*" [t,_]) = t
+                g (F "*" ts)    = F "*" $ init ts
+                g _             = leaf "OOPS" 
 
 
 -- parseSol is used by parseEqs, isSol (see below), Epaint > solPict and
@@ -4632,7 +4637,7 @@ relLToEqs n rel = (map g $ indices_ ts,n+length ts)
                                  _ -> (a,[(b,cs)]):rel
            g i = Equal ('z':show (n+i)) $ F a $ map f bcs 
                             where (a,bcs) = ts!!i
-                                  f (b,cs) = F ("red$"++ b) $ map h cs
+                                  f (b,cs) = F b $ map h cs
                                   h c = case search ((== c) . fst) ts of
                                              Just i -> V $ 'z':show (n+i)
                                              _ -> F c []

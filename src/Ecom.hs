@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, September 2019
-                  Jos Kusiek, September 2019
+Copyright   : (c) Peter Padawitz, December 2019
+                  Jos Kusiek, December 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -3604,7 +3604,7 @@ solver this solveRef enum paint = do
                curr <- readIORef currRef
                treeposs <- readIORef treepossRef
                let t = trees!!curr
-                   p:ps = emptyOrAll treeposs
+                   ps@(p:qs) = emptyOrAll treeposs
                    u = getSubterm1 t p
                    act p u = do
                        writeIORef treesRef $ updList trees curr $ replace1 t p u
@@ -3612,8 +3612,8 @@ solver this solveRef enum paint = do
                        setProof False False "MODIFYING THE EQUATIONS" [p] $
                                             eqsModified
                        clearTreeposs; drawCurr'
-               case m of 0 -> case parseEqs u of
-                                   Just eqs -- from equations to equations
+               case m of 0 -> case parseEqs u of       -- connect equations
+                                   Just eqs
                                      -> do
                                         let t = connectEqs eqs
                                         firstClick <- readIORef firstClickRef
@@ -3630,19 +3630,24 @@ solver this solveRef enum paint = do
                                              writeIORef substitutionRef (V,[])
                                              writeIORef firstClickRef True
                                    _ -> labMag "Select iterative equations!"
-                         1 -> case parseEqs u of
+                         1 -> case parseEqs u of       -- regular equations
                                    Just eqs -> act p $ eqsTerm
                                                      $ autoEqsToRegEqs sig eqs
                                    _ -> labMag "Select iterative equations!"
-                         2 -> case parseEqs u of
-                                   Just eqs | just v -> act [] $ get v
-                                              where v = substituteVars t eqs ps
-                                   _ -> labMag instantiateVars
-                         _ -> case parseIterEq u of
-                                  Just (Equal x t) | just e
-                                    -> act p $ mkEq (V x) $ showRE $ fst $ get e
-                                       where e = solveRegEq sig x t
-                                  _ -> labMag "Select a regular equation!"
+                         2 -> if isV u then
+                               case parseEqs t of -- substitute variables in eqs
+                                    Just eqs | just v -> act [] $ get v
+                                               where v = substituteVars t eqs ps
+                                    _ -> labMag instantiateVars
+                              else
+                               case parseEqs u of -- substitute variables in eqs
+                                    Just eqs | just v -> act p $ get v
+                                               where v = substituteVars t eqs qs
+                                    _ -> labMag instantiateVars
+                         _ -> case parseIterEq u of    -- solve regular equation
+                                   Just eq | just t -> act p $ get t
+                                             where t = solveRegEq sig eq
+                                   _ -> labMag "Select a regular equation!"
 
         {- |
             Moves a node of a tree on the canvas. Click and hold the right
@@ -5000,10 +5005,14 @@ solver this solveRef enum paint = do
         saveGraphD :: Action
         saveGraphD = do
           trees <- readIORef treesRef
-          if null trees then labBlue' start else do
-            picNo <- readIORef picNoRef
-            saveGraphDP' True canv picNo
-        
+          if null trees then labBlue' start
+          else do
+               str <- ent `gtkGet` entryText
+               case parse nat str of Just n -> writeIORef picNoRef n
+                                     _ -> done
+               picNo <- readIORef picNoRef
+               saveGraphDP' True canv picNo
+
         saveGraphDP' b screen n = do
           picDir <- readIORef picDirRef
           when (notnull picDir) $ do
@@ -5379,7 +5388,6 @@ solver this solveRef enum paint = do
                       }
              modifyIORef proofRef
                $ \proof -> take proofPtr proof++[next]
-       -- else picNo := picNo-1
           writeIORef newTreesRef False
           writeIORef ruleStringRef ""
           labColorToPaint greenback $ show proofPtr ++ ". " ++ msg3

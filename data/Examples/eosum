@@ -8,9 +8,6 @@ hovars:		f
 
 axioms:
 
-delta(st,x) == head$transL(st)$x &		
-beta$st == ite(null$out$st,0,1) &
-
 -- acceptors of number sequences whose sum is even
 
 states == [esum] & labels == [elab,olab] & atoms == [final] &
@@ -21,6 +18,9 @@ states == [esum] & labels == [elab,olab] & atoms == [final] &
 (osum,elab) -> osum &
 
 final -> esum &
+
+delta(st,x) == head$transL(st)$x &		
+beta$st == ite(null$out$st,0,1) &
 
 parity$n == ite(even$n,elab,olab) &
 
