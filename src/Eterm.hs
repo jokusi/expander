@@ -1667,8 +1667,6 @@ parseRE :: Sig -> TermS -> Maybe (RegExp,[String])
 parseRE _ (F "mt" [])      = Just (Mt,[])
 parseRE _ (F "eps" [])     = Just (Eps,["eps"])
 parseRE _ (F "int" [])     = Just (Int_,["int"])
-parseRE sig (F a [])       = if (sig&isDefunct) a then Just (Var a,[a])
-                                                else Just (Const a,[a])
 parseRE _ (F "+" [])       = Just (Mt,[])
 parseRE sig (F "+" [t])    = parseRE sig t
 parseRE sig (F "+" ts)     = do pairs <- mapM (parseRE sig) ts
@@ -1679,6 +1677,8 @@ parseRE sig (F "*" [t])    = parseRE sig t
 parseRE sig (F "*" ts)     = do pairs <- mapM (parseRE sig) ts
                                 let (e:es,ass) = unzip pairs
                                 Just (foldl Prod e es,joinM ass)
+parseRE sig (F a [])       = if (sig&isDefunct) a then Just (Var a,[a])
+                                                else Just (Const a,[a])
 parseRE sig (F "plus" [t]) = do (e,as) <- parseRE sig t
                                 Just (Prod e $ Star e,as)
 parseRE sig (F "star" [t]) = do (e,as) <- parseRE sig t
@@ -1918,7 +1918,7 @@ autoToReg sig start = if null finals then Const "no final states"
                             where f' = f $ k-1
                delta :: Int -> Int -> RegExp
                delta i j = if null labs then Mt else foldl1 Sum_ labs
-                            where labs = [Const $ showTerm0 $ (sig&labels)!!k |
+                           where labs = [Const $ showTerm0 $ (sig&labels)!!k |
                                                      k <- indices_ (sig&labels),
                                                      (sig&transL)!!i!!k == [j]]
 
@@ -4346,8 +4346,8 @@ extendNode sts ats out x = if isPos x || x == "<+>" then x
 
 enterAtoms :: String -> [String] -> String
 enterAtoms x []       = x
-enterAtoms x [at]     = x++" |= "++at
-enterAtoms x (at:ats) = x++" |= "++at++concatMap (',':) ats
+enterAtoms x [at]     = x++" : "++at
+enterAtoms x (at:ats) = x++" : "++at++concatMap (',':) ats
 
 -- colorClasses{L} colors equivalent states of a transition graph with the same
 -- color and equivalent states with different colors unless they belong to 
@@ -4505,28 +4505,28 @@ autoEqsToRegEqs sig = map f
                                   Just (e,_) -> Equal x $ showRE $ distribute e
                                   _ -> Equal x $ leaf "OOPS"
              g (F q ts)    = F "+" $ if n >= 0 && drop n q == "final" 
-                                     then map h ts++[F "eps" []] else map h ts 
+                                     then leaf "eps":map h ts else map h ts
                              where n = length q-5
              g t           = t
              h (F lab [t]) = F "*" [F lab [],g t]
              h t           = t
 
 substituteVars :: TermS -> [IterEq] -> [[Int]] -> Maybe TermS
-substituteVars t eqs ps = do let ts = map (getSubterm1 t) ps
-                             guard $ all isV ts
+substituteVars t eqs ps = do guard $ all isV ts
                              Just $ fold2 replace1 t ps $ map (subst . root) ts
-                          where subst x = if nothing t || x `isin` u
+                          where ts = map (getSubterm1 t) ps
+                                subst x = if nothing t || x `isin` u
                                           then V x else u
                                           where t = lookup x $ eqPairs eqs
                                                 u = get t
 
--- solveRegEq sig eq solves eq in x if eq is a regular equation of the form
--- x = t*x+u. If u = mt, then the solution is mt, otherwise star(t)*u.
+-- solveRegEq turns a regular equation x = t1*x+...+tn*x+t into its least 
+-- solution star(t1+...+t2)*t, which is unique if eps =/= ti for all 1�i�n.
 
 solveRegEq :: Sig -> IterEq -> Maybe TermS
-solveRegEq sig (Equal x t) = do (e,_) <- parseRE sig $ f 
-                                                     $ case t of F "+" ts -> ts
-                                                                 _ -> [t]
+solveRegEq sig (Equal x t) = do (e,_) <- parseRE sig $ f $ case t of
+                                                                F "+" ts -> ts
+                                                                _ -> [t]
                                 Just $ mkEq (V x) $ showRE e
           where f ts = case us of []  -> leaf "mt"
                                   [u] -> F "*" [star,u]

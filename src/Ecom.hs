@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, December 2019
-                  Jos Kusiek, December 2019
+Copyright   : (c) Peter Padawitz, January 2019
+                  Jos Kusiek, January 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -5008,8 +5008,9 @@ solver this solveRef enum paint = do
           if null trees then labBlue' start
           else do
                str <- ent `gtkGet` entryText
-               case parse nat str of Just n -> writeIORef picNoRef n
-                                     _ -> done
+               case str of 'p':str | just n -> writeIORef picNoRef $ get n
+                                               where n = parse nat str
+                           _ -> done
                picNo <- readIORef picNoRef
                saveGraphDP' True canv picNo
 
