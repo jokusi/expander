@@ -1,115 +1,126 @@
--- lazy
+-- lazy 
 
 specs:      bool
-
 constructs: leaf #
-defuncts:   is_even mergesort1 split1 merge1 mergesort2 split2 merge2
-	    mergesort3 split3 merge3 repBy1 repBy2 rep0 rep1 rep2 rep3 pal1 pal2 	    pal3 reveq0 reveq1 reveq2 reveq3 sort1 sort2 represttips1 ||   
-            represttips2 f g foo goo nats nats' fibs fibs' client server   
-	    Server Client1 Requests1 Client2 Requests2 CSR
+defuncts:   is_even mergesortL splitL mergeL mergesort split merge
+	    mergesortF splitF mergeF replaceL replace foldRepL foldRep 
+            palL pal palF reveqL reveq reveqI reveqF sortTL sortT sortTI
+	    leavesRepL leavesRep leavesRepI foo goo nats nats' fibs fibs'  
+	    RequestsL ClientL Requests Client CSI
+	    || tree1 tree2 tree3
 preds:      even odd 
-fovars:     x y z s s' t u t1 t2 u1 u2 r s1 s2 ls ls1 ls2 ls3 ls4 n a b requests
-hovars:     f g client server
+fovars:     t u r a b requests acc t1 t2 u1 u2 s1 s2 ls ls1 ls2
+hovars:     f g client
 
 axioms:
 
-is_even == fun(x||bool$even$x,true,x||bool$odd$x,false) &
+(even$0 <==> True) &
+(even$suc$x <==> odd$x) &
+(odd$x <==> Not(even$x)) &
 
-(even(0) <==> True) &
-(even(suc(x)) <==> odd(x)) &
-
-(odd(x) <==> Not(even(x))) &
+is_even == fun(x||even$x,true,x||odd$x,false) &
 
 -- MERGESORT
 
-(mergesort1(x:y:s) = merge1(mergesort1$x:s1,mergesort1$y:s2) 
-   <=== split1(s) = (s1,s2)) & 
-mergesort1[x] = [x] &mergesort1[]  = [] &
+(mergesortL(x:y:s) = mergeL(mergesortL$x:s1)$mergesortL$y:s2
+   		     <=== splitL$s = (s1,s2)) & 
+mergesortL[x] = [x] &mergesortL[]  = [] &
    
-(split1(x:y:s) = (x:s1,y:s2) <=== split1(s) = (s1,s2)) &
-split1[x] = ([x],[]) &split1[]  = ([],[]) &
+(splitL$x:y:s = (x:s1,y:s2) <=== splitL$s = (s1,s2)) &
+splitL[x] = ([x],[]) &splitL[]  = ([],[]) &
 
-(merge1(x:s,y:s') = x:merge1(s,y:s') <=== x <= y) &
-(merge1(x:s,y:s') = y:merge1(x:s,s') <=== x > y) &
-merge1([],s) = s &
-merge1(s,[]) = s &
+(mergeL(x:s,y:s') = x:mergeL(s,y:s') <=== x <= y) &
+(mergeL(x:s,y:s') = y:mergeL(x:s,s') <=== x > y) &
+mergeL([],s) = s &
+mergeL(s,[]) = s &
 
-(split2(s) = (s1,s2) 
-   ==> mergesort2(x:y:s) == merge2(mergesort2$x:s1,mergesort2$y:s2)) &
-mergesort2(s) == s &
+(split$s = (s1,s2) 
+             ==> mergesort$x:y:s == merge(mergesort$x:s1,mergesort$y:s2)) &
+mergesort(s) == s &
 
-(split2(s) = (s1,s2) ==> split2(x:y:s) == (x:s1,y:s2)) &
-split2(s) == (s,[]) &
+(split$s = (s1,s2) ==> split$x:y:s == (x:s1,y:s2)) &
+split$s == (s,[]) &
 
-(x <= y ==> merge2(x:s,y:s') == x:merge2(s,y:s')) &
-merge2(x:s,y:s') == y:merge2(x:s,s') &
-merge2([],s)     == s &
-merge2(s,[])     == s &
+(x <= y ==> merge(x:s,y:s') == x:merge(s,y:s')) &
+merge(x:s,y:s') == y:merge(x:s,s') &
+merge([],s)     == s &
+merge(s,[])     == s &
 
-mergesort3(x:y:s) == fun((s1,s2),merge3(mergesort3$x:s1,mergesort3$y:s2))
-			$split3$s &
-mergesort3[x] == [x] &
-mergesort3[]  == [] &
+mergesortF(x:y:s) == fun((s1,s2),mergeF(mergesortF$x:s1)$mergesortF$y:s2)
+			$splitF$s &
+mergesortF[x] == [x] &
+mergesortF[]  == [] &
 
-split3(x:y:s) == fun((s1,s2),(x:s1,y:s2))$split3$s &
-(length(s) <= 1 ==> split3(s) == (s,[])) &
+splitF(x:y:s) == fun((s1,s2),(x:s1,y:s2))$splitF$s &
+(length(s) <= 1 ==> splitF(s) == (s,[])) &
 
-merge3(x:s,y:s') == ite(x<=y,x:merge3(s,y:s'),y:merge3(x:s,s')) &
-merge3([],s)     == s &
-merge3(s,[])     == s &
-
--- BINARY TREES
-
-(repBy1(g)(f)(t) = u <=== g(f)(t,x) = (x,u)) &
-
-repBy2(g)(f)(t) == get1(mu x u.g(f)(t,x)) &
-
-rep0(f)(leaf(x),y) = (x,leaf(y)) &
-(rep0(f)(t1#t2,x)  = (f(y,z),u1#u2) <=== rep0(f)(t1,x) = (y,u1) & 
-					 rep0(f)(t2,x) = (z,u2)) &
-
-rep1(f)(leaf(x),y) == (x,leaf(y)) &
-(rep1(f)(t1,x) = (y,u1) & 
- rep1(f)(t2,x) = (z,u2) ==> rep1(f)(t1#t2,x) == (f(y,z),u1#u2)) &
-
-rep2(f)(leaf(x),y) == (x,leaf(y)) &
-rep2(f)(t1#t2,x)   == fun((y,u1),fun((z,u2),(f(y,z),u1#u2))
-				    $rep2(f)(t2,x))
-                         $rep2(f)(t1,x) &
-
-rep3(f) == fun((leaf(x),y),(x,leaf(y)),
-               (t1#t2,x),fun((y,u1),fun((z,u2),(f(y,z),u1#u2))
-				       $rep3(f)(t2,x))
-                            $rep3(f)(t1,x)) &
+mergeF(x:s)$y:s' == ite(x<=y,x:mergeF(s)$y:s',y:mergeF(x:s)$s') &
+mergeF[]$s       == s &
+mergeF(s)[]      == s &
 
 -- PALINDROMES
 
-(pal1(s) = b <=== reveq1(s)(r) = (r,b)) & -- reveq1(s1)(s2) = (reverse s1,s1=s2)
+(palL$s = b <=== reveqL(s)$r = (r,b)) &  
+					
+reveqL[]$s        = ([],true) &         
+(reveqL(x:s)$y:s' = (r++[x],eq(x,y)`and`b) <=== reveqL(s)$s' = (r,b)) &
 
-reveq1[][]          = ([],true) &
-(reveq1(x:s1)(y:s2) = (r++[x],eq(x,y)`and`b) <=== reveq1(s1)(s2) = (r,b)) &
+pal$s == get1$mu r b.reveq(s)(r) &             -- reveq(s)$s' = (reverse$s,s=s')
 
-(reveq2(s) = (r,f) ==> pal2(s) == f(r)) &
+reveq[]$s  == ([],true) &
+(reveq(s)$tail$s' = (r,b) ==> reveq(x:s)$s' == (r++[x],eq(x,head$s')`and`b)) &
 
-reveq2[] == ([],fun(s,true)) &
-(reveq2(s1) = (r,f) ==> reveq2(x:s1) == (r++[x],fun(y:s2,eq(x,y)`and`f(s2)))) &
+palI$s == get1$mu r b.reveqI(s)(r)[] &
+			           -- revEqI(s)(s')$acc = (reverse(s)++acc,s=s')
+reveqI[](s)$acc == (acc,true) &
+(reveqI(s)(tail$s')$x:acc = (r,b) 
+	          ==> reveqI(x:s)(s')$acc == (r,eq(x,head$s')`and`b)) &
+
+(reveqF$s = (r,f) ==> palF$s == f$r) &
+
+reveqF[] == ([],fun(s,true)) &
+(reveqF$s = (r,f) ==> reveqF$x:s == (r++[x],fun(y:s',eq(x,y)`and`f$s'))) &
+
+-- BINARY TREES
+
+(replaceL(f)$t = u <=== foldRepL(f)(t)$x = (x,u)) &
+
+foldRepL(f)(leaf$x)$y  = (x,leaf$y) &
+(foldRepL(f)(t1#t2)$x  = (f(y,z),u1#u2) <=== foldRepL(f)(t1)$x = (y,u1) & 
+					     foldRepL(f)(t2)$x = (z,u2)) &
+
+replace(f)$t == get1$mu x u.foldRep(f)(t)(x) &
+
+foldRep(f)(leaf$x)$y == (x,leaf(y)) &
+(foldRep(f)(t1)$x = (y,u1) & foldRep(f)(t2)$x = (z,u2) 
+		     ==> foldRep(f)(t1#t2)$x == (f(y,z),u1#u2)) &
+
+tree1 == leaf(3)#(leaf(2)#leaf(6)) &
+
+tree2 == (leaf(9)#leaf(3))#leaf(2) &
+
+tree3 == (leaf(9)#leaf(3))#(leaf(2)#leaf(6)) &
 
 -- TREE SORTING
 
-(sort1(t) = u <=== represttips1(t,sort(ls)) = (ls,u,ls1)) &
+(sortTL$t = u <=== leavesRepL(t)(sort$ls) = (ls,u,s)) &
 
-sort2(t) == get1(mu ls u ls1.represttips2(t)(sort$ls)) &
+(leavesRepL(leaf$x)$ls = ([x],leaf$y,s) <=== ls = y:s) &
+(leavesRepL(t1#t2)$ls  = (ls1++ls2,u1#u2,s2) 
+      			 <=== leavesRepL(t1)$ls = (ls1,u1,s1) & 
+			      leavesRepL(t2)$s1 = (ls2,u2,s2)) &
 
-(represttips1(leaf(x),ls) = ([x],leaf(y),ls1) <=== ls = y:ls1) &
-(represttips1(t1#t2,ls)   = (ls1++ls3,u1#u2,ls4) 
-          		             <=== represttips1(t1,ls) = (ls1,u1,ls2) & 
-				          represttips1(t2,ls2) = (ls3,u2,ls4)) &
+sortT$t == get1$mu ls u s.leavesRep(t)(sort$ls) &
 
-represttips2(leaf(x))   == fun(~(y:ls),([x],leaf(y),ls)) &
-represttips2(t1#t2)(ls) == fun((ls1,u1,ls2),
-			       fun((ls3,u2,ls4),(ls1++ls3,u1#u2,ls4))
-			          (represttips2(t2)(ls2)))
-		              (represttips2(t1)(ls)) &
+leavesRep(leaf$x)$ls == ([x],leaf$head$ls,tail$ls) &
+(leavesRepL(t1)$ls = (ls1,u1,s1) & leavesRepL(t2)$s1 = (ls2,u2,s2)
+   		==> leavesRep(t1#t2)$ls == (ls1++ls2,u1#u2,s2)) &
+
+sortTI$t == get1$mu ls u s.leavesRepI(t)(sort$ls)[] &
+
+leavesRepI(leaf$x)(ls)$acc == (x:acc,leaf$head$ls,tail$ls) &
+(leavesRepI(t1)(ls)$acc = (ls1,u1,s1) & leavesRepI(t2)(s1)$ls1 = (ls2,u2,s2)
+                ==> leavesRepI(t1#t2)(ls)$acc == (ls2,u1#u2,s2)) &
 	     
 -- INFINITE OBJECTS
 
@@ -123,87 +134,76 @@ fibs  == 1:1:zipWith(+)(fibs)$tail$fibs &  -- simplify breadthfirst/parallel
 
 fibs' == mu s.(1:1:zipWith(+)(s)$tail$s) & -- simplify breadthfirst/parallel
 
-Server(a:s) == mkResponse(a):Server(s) &
-					
-Requests1 = Client1(0)$Server$Requests1 &
+-- CLIENT-SERVER INTERACTION
 
-(Client1(a)(s) = a:Client1(mkRequest$b)(s') <=== s = b:s') &
-			 
-Requests2 == Client2(0)$Server$Requests2 &
+RequestsL(f)(g)$a = ClientL(g)(0)$map(f)$RequestsL(f)(g)$a &
 
-Client2(a) == fun(~(b:s),a:Client2(mkRequest$b)(s)) &
+(ClientL(g)(a)$s = a:ClientL(g)(g$b)$s' <=== s = b:s') &
 
-CSR == mu client server requests.(fun(a,fun(~(b:s),a:client(mkRequest$b)(s))),
-	    			  fun(~(a:s),mkResponse(a):server(s)),
-				  client(0)$server$requests) &
+Requests(f)(g)$a == Client(g)(a)$map(f)$Requests(f)(g)$a &
 
-mkRequest == (*2) & mkResponse == (+1) &
+Client(g)(a)$s == a:Client(g)(g$head$s)$tail$s &
+
+CSI(f)(g)$a == get0$mu requests client.
+		       (client(a)$map(f)$requests,
+                        fun(a,fun(s,a:client(g$head$s)$tail$s))) &
 
 -- LAZY MULTIPLICATION
 
 foo(x) == ite(x=0,0,foo(x-1)*foo(x+1)) &
 goo(x) == ite(x=0,0,goo(x+1)*goo(x-1))
 
+
 conjects:
 
-mergesort1[3,2,1,4] = s &
+mergesortL[3,2,1,4] = s 			 & -- match and narrow
+replaceL(min)$tree1 = t  		         & -- match and narrow
+replaceL(+)$tree1 = t  		                 & -- match and narrow
 
-repBy1(rep0)(min)(leaf(3)#(leaf(2)#leaf(6))) = t & -- 6 match-nar&simpl steps, 
-						   -- 11 sec	       (30.5.09)
+palL[2,3,2] = b 				 & -- unify and narrow, simpl
+palL[2,3,1,2] = b				 & -- unify and narrow, simpl
 
-repBy1(rep1)(min)(leaf(3)#(leaf(2)#leaf(6))) = t & -- 1 nar step, 7 simpl steps
-					           -- 		       (30.5.09)
+sortTL$tree1 = t              	                 & -- match and narrow, simpl
 
-repBy1(rep2)(min)(leaf(3)#(leaf(2)#leaf(6))) = t & -- 1 nar step, 16 simpl steps
-						   -- 		       (30.5.09)
-
-repBy1(rep3)(min)(leaf(3)#(leaf(2)#leaf(6))) = t & -- 1 nar step, 23 simpl steps
-						   -- 		       (30.5.09)
-
-pal1[2,3,2] = b 				 & -- 5 unify-nar&simpl steps, 
-						   -- 14 sec           (30.5.09)
-
-pal1[2,3,1,2] = b				 & -- 6 unify-nar&simpl steps, 
-						   -- 20 sec           (30.5.09)
-
-sort1(leaf(3)#(leaf(2)#leaf(6))) = t		 & -- 6 match-nar&simpl steps, 
-						   -- 13 sec           (30.5.09)
-
-take(3) $ Requests1 = requests                     --> [0,2,6]=requests & ...
-					   	   -- 10 steps, 34 sec (23.7.11)
-						   -- 10 steps, 38 sec (random)
+take(3)$RequestsL(+1)(*2)(0) = s                   -- match and narrow, simpl
+					           -- 9 steps          (10.2.20)      
 terms: 
 
-mergesort2[3,2,1,4] <+>
+mergesort[3,2,1,4] 			       <+>
+mergesortF[3,2,1,4] 			       <+>
 
-mergesort3[3,2,1,4] <+>
+replace(min)$tree1   		               <+> 
+replace(+)$tree1   		               <+> 
 
-repBy2(rep1)(min)(leaf(3)#(leaf(2)#leaf(6)))   <+> -- 7 steps          (30.5.09)
-
-repBy2(rep2)(min)(leaf(3)#(leaf(2)#leaf(6)))   <+> -- 16 steps         (30.5.09)
-
-repBy2(rep3)(min)(leaf(3)#(leaf(2)#leaf(6)))   <+> -- 23 steps         (30.5.09)
-
-pal2[2,3,2] 			       	       <+> -- 12 steps         (1.11.17)
+pal[2,3,2] 			       	       <+> 
+               --> bool(3 = head[]) `and` bool(2 = head(tail(tail[])))  (4.2.20)
 						   
-pal2[2,3,1,2] 			       	       <+> -- 9 steps          (1.11.17)
+palI[2,3,2] 			       	       <+> -- 9 steps          (10.2.20)
+palI[2,3,1,2]                                  <+> -- 5 steps          (10.2.20)				
+palF[2,3,2] 			       	       <+> -- 10 steps         (10.2.20)
+palF[2,3,1,2] 			       	       <+> -- 9 steps          (10.2.20)
 						   
-sort2(leaf(3)#(leaf(2)#leaf(6)))	       <+> -- 28 steps         (30.5.09)
+sortT$tree1	       			       <+> -- wrong result      (4.2.20)
 						   
-take(3) $ nats			      	       <+> -- 21 steps         (1.11.17)
+sortTI$tree1/2	      			       <+> -- 11 steps          (4.2.20)
+sortTI$tree3	      			       <+> -- 12 steps          (5.2.20)
+						   
+take(3)$nats			      	       <+> -- 21 steps         (1.11.17)
 
-take(3) $ nats'  			       <+> -- 22 steps         (1.11.17)
+take(3)$nats'  			               <+> -- 22 steps         (1.11.17)
 
-take(3) $ Requests2			       <+> --> [0,2,6]
-						   -- 50 steps        (31.10.17)
-take(4) $ Requests2			       <+> --> [0,2,6,14]
-						   -- 95 steps        (31.10.17)
-take(5) $ Requests2			       <+> --> [0,2,6,14,30]
-						   -- 161 steps       (31.10.17)
-take(3) $ get2 $ CSR			       <+> --> [0,2,6]
-						   -- 66 steps 	       (23.7.11)
-foo(3)					       <+> --> 0
-						   -- 15 steps 	       (30.5.09)
-goo(3)					       --> ((..*goo(4))*goo(3))*goo(2)	       
-					       --> 0  48 steps (bf)    (30.5.09)
+take(3)$Requests(+1)(*2)$0		       <+> --> [0,2,6]	       (10.2.20)
+						   -- 30 steps          
+take(4)$Requests(+1)(*2)$0		       <+> --> [0,2,6,14]      (10.2.20)
+						   -- 47 steps          
+take(5)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30]   (10.2.20)
+						   -- 66 steps          
+take(6)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30,62](10.2.20)
+						   -- 89 steps          
+take(3)$CSI(+1)(*2)$0                          <+> --> [0,2,6]          (9.2.20)
+						   -- 42 steps          
+foo(3)					       <+> --> 0		(4.2.20)
+			    -- 15 depthfirst, 19 parallel, 27 breadthfirst steps
+goo(3)					           --> 0	        (4.2.20)
+	    -- depthfirst is non-terminating, 19 parallel, 48 breadthfirst steps
 

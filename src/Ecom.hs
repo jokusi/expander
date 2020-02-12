@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, January 2019
-                  Jos Kusiek, January 2019
+Copyright   : (c) Peter Padawitz, February 2019
+                  Jos Kusiek, February 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -174,7 +174,7 @@ linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (March 25, 2019)"
+start = "Welcome to Expander3 (February 4, 2020)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -1182,7 +1182,7 @@ solver this solveRef enum paint = do
         addAxioms t file = do
           sig <- getSignature
           let axs = if isConjunct t then subterms t else [t]
-              cls = filter (not . isAxiom sig) axs
+              cls = filter (not . (isAxiom sig ||| isSimpl)) axs
           if null cls
              then do
                   writeIORef solPositionsRef []

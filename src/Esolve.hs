@@ -1,8 +1,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, December 2019
-                  Jos Kusiek, December 2019
+Copyright   : (c) Peter Padawitz, February 2019
+                  Jos Kusiek, February 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -318,25 +318,25 @@ foldModal sig = f $ const Nothing where
 -- | partial evaluation
 evaluate :: Sig -> TermS -> TermS
 evaluate sig = eval
-   where eval (F "==>" [t,u])              = mkImpl (eval t) $ eval u
-         eval (F "<==>" [t,u])             = F "<==>" [eval t,eval u]
-         eval (F "===>" [t,u])             = mkImpl (eval t) $ eval u
-         eval (F "<===" [t,u])             = mkImpl (eval u) $ eval t
+   where eval (F "==>" [t,u])               = mkImpl (eval t) $ eval u
+         eval (F "<==>" [t,u])              = F "<==>" [eval t,eval u]
+         eval (F "===>" [t,u])              = mkImpl (eval t) $ eval u
+         eval (F "<===" [t,u])              = mkImpl (eval u) $ eval t
          eval (F "&" ts)                          = mkConjunct $ map eval ts
-         eval (F "|" ts)                   = mkDisjunct $ map eval ts
-         eval (F ('A':'n':'y':x) [t])      = mkAny (words x`meet`frees sig u) u
-                                             where u = eval t
-         eval (F ('A':'l':'l':x) [t])      = mkAll (words x`meet`frees sig u) u
-                                             where u = eval t
-         eval (F "Not" [t])                = mkNot sig $ eval t
+         eval (F "|" ts)                    = mkDisjunct $ map eval ts
+         eval (F ('A':'n':'y':x) [t])       = mkAny (words x`meet`frees sig t)
+                                                    $ eval t
+         eval (F ('A':'l':'l':x) [t])       = mkAll (words x`meet`frees sig t)
+                                                    $ eval t
+         eval (F "Not" [t])                 = mkNot sig $ eval t
          eval (F "id" [t])                  = eval t
-         eval (F "ite" [t,u,v]) | isTrue t = eval u
+         eval (F "ite" [t,u,v]) | isTrue t  = eval u
                                 | isFalse t = eval v
          eval (F x p@[_,_]) | arithmetical x && just ip = mkRel $ get ip
                             | arithmetical x && just rp = mkRel $ get rp
                             | arithmetical x && just fp = mkRel $ get fp
-                            | arithmetical x && just sp = mkRel $ get sp
-            where ip = mapM (parseA intAlg) p; rp = mapM (parseA realAlg) p
+                            | arithmetical x && just sp = mkRel $ get sp where
+                  ip = mapM (intAlg&parseA) p; rp = mapM (realAlg&parseA) p
                   fp = mapM (parseA linAlg) p; sp = mapM (parseA $ relAlg sig) p
                   mkRel [a,b] = mkConst $ case x of "="  -> a==b; "=/=" -> a/=b
                                                     "<=" -> a<=b; ">="  -> a>=b
@@ -865,9 +865,10 @@ simplifyLoop sig limit strat t = loop 0 limit [t] where
                              Just t -> loop' t
                              _ -> case f (expandFix sig) t of Just t -> loop' t
                                                               _ -> (t,k,False)
-                 where t = head ts
-                       loop' t = if just $ search (eqTerm t) ts then (t,k,True)
-                                 else loop (k+1) (limit-1) $ t:ts
+                   where t = head ts
+                         loop' t = if just $ search (eqTerm t) ts
+                                   then (t,k,True)
+                                   else loop (k+1) (limit-1) $ t:ts
 
  f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
  f g t = case strat of DF -> modifyDF [] t                     -- depthfirst
@@ -957,8 +958,6 @@ simplifyGraph _ (F "$" [F "**" [f@(F _ ts),t],u]) | just n =
                        m = get n
                        first = changePoss [0,0] [0] f
                        v = changePoss [1] (replicate m 1) u
-
-simplifyGraph sig (F "++" ts) = simplifyGraph sig $ F "concat" [mkList ts]
 
 simplifyGraph _ (F ":" [t,F "[]" ts]) = jList $ t:changeLPoss p q ts
                                         where p i = [1,i]; q i = [i+1]
@@ -1759,12 +1758,6 @@ simplifyT (F "!!" [F ":" [t,u],n]) | just i = Just $ if k == 0 then t
                                               else F "!!" [u,mkConst $ k-1]
                                            where i = parseNat n; k = get i
 
-simplifyT (F "$" [F "map" [f@(F _ ts)],F x us]) | collector x 
-                                             = Just $ F x $ map (apply f) us
-
-simplifyT (F "$" [F "map" [f],F ":" [t,ts]]) = Just $ F ":" [apply f t,
-                                                        F "$" [F "map" [f],ts]]
-
 simplifyT (F "$" [F "map" _,F "[]" _]) = Just mkNil
 
 simplifyT (F "$" [F "replicate" [t],u]) | just n = jList $ replicate (get n) u
@@ -2256,8 +2249,7 @@ applyAxsR cls axs preAxs rand redex at p sig vc uni =
         cl = cls!!n; cls' = removeTerm cls cl
         ax = axs!!n; axs' = removeTerm axs ax
 
--- | applyAxsToTerm is used by 'applyLoop', 'getRel', 'getRel2', 'getFun'
--- below) and Ecom > rewritePar.
+-- applyAxsToTerm is used by applyLoop (see above) and Ecom > rewritePar.
 applyAxsToTerm :: [a]
                   -> [TermS]
                   -> [TermS]
@@ -2454,10 +2446,9 @@ applyAx (F "==>" [guard,F "<===" [F "->" [left,right],prem]]) axs redex
                     where reducts' = map (addTo True $ context i reds) ts
                _ -> reduct
        
-applyAx (F "==>" [guard,F "<===" [F x [left,right],prem]]) axs redex at p sig
-     vc uni | x `elem` words "= == <==>" = 
-               partialUnify guard axs left right prem at (replace at p right) p
-                            sig vc uni redex
+applyAx (F "==>" [guard,F "<===" [F "=" [left,right],prem]]) axs redex at p sig
+     vc uni = partialUnify guard axs left right prem at (replace at p right) p
+                           sig vc uni redex
 
 applyAx (F "==>" [guard,F "<===" [at,prem]]) axs redex _ _ sig vc uni =
      case unify0 at redex redex [] sig xs of          
@@ -2583,8 +2574,8 @@ applyAxToTerm (F "==>" [guard,F "->" [left,right]]) axs redex sig vc =
                          where reducts' = map (addTo False $ context i reds) ts
                     _ -> reduct
             
-applyAxToTerm (F "==>" [guard,F x [left,right]]) axs redex sig vc 
-    | x `elem` words "= == <==>" = totalUnify guard axs left right sig vc redex
+applyAxToTerm (F "==>" [guard,F "=" [left,right]]) axs redex sig vc =
+    totalUnify guard axs left right sig vc redex
 
 applyAxToTerm t@(F _ [_,_]) axs redex sig vc =
     applyAxToTerm (F "==>" [mkTrue,t]) axs redex sig vc

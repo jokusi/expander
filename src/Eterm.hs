@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, December 2019
-                  Jos Kusiek, December 2019
+Copyright   : (c) Peter Padawitz, February 2019
+                  Jos Kusiek, February 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -2296,8 +2296,9 @@ eqTerm (F "<" [t,u]) (F ">" [v,w])   = eqTerm t w && eqTerm u v
 eqTerm (F ">" [t,u]) (F "<" [v,w])   = eqTerm t w && eqTerm u v
 eqTerm (F "<=" [t,u]) (F ">=" [v,w]) = eqTerm t w && eqTerm u v
 eqTerm (F ">=" [t,u]) (F "<=" [v,w]) = eqTerm t w && eqTerm u v
-eqTerm (F x [t]) (F y [u]) | binder x && binder y && opx == opy =
-                              eqTerm (renameFree (fold2 upd id xs ys) t) u
+eqTerm (F x [t]) (F y [u]) | binder x && binder y &&
+                             opx == opy && length xs == length ys =
+                             eqTerm (renameFree (fold2 upd id xs ys) t) u
                              where opx:xs = words x; opy:ys = words y
 eqTerm (F x ts) (F y us)   | x == y =
                               if idempotent x then eqSet eqTerm ts us
@@ -2414,10 +2415,10 @@ sigVars = allSyms . isVar
 allFrees :: (String -> Bool) -> TermS -> [String]
 allFrees b (F x [t]) | binder x = allFrees b t `minus` tail (words x)
 allFrees b (F x ts)  | lambda x = concat $ zipWith f (evens ts) $ odds ts
-                                   where f par t = g t `minus` g par
-                                         g = allFrees b
-allFrees b (F x ts)             = if b x then us `join1` x else us
-                                  where us = joinMap (allFrees b) ts
+                     | b x      = us `join1` x
+                     | True     = us where g = allFrees b
+                                           f par t = g t `minus` g par
+                                           us = joinMap g ts
 allFrees _ (V x)                = if null x || isPos x then [] else [x]
 allFrees _ _                    = []
 
@@ -2443,27 +2444,27 @@ removeAll :: String -> TermS -> TermS
 removeAll x (F ('A':'l':'l':z) [t]) = mkAll (words z `minus1` x) t
 removeAll _ t                       = t
 
-isAllQ :: TermS -> Bool
-isAllQ (F ('A':'l':'l':' ':_) _) = True
-isAllQ _                          = False
-
 isAnyQ :: TermS -> Bool
-isAnyQ (F ('A':'n':'y':' ':_) _) = True
-isAnyQ _                          = False
+isAnyQ (F ('A':'n':'y':_) _) = True
+isAnyQ _                     = False
+
+isAllQ :: TermS -> Bool
+isAllQ (F ('A':'l':'l':_) _) = True
+isAllQ _                     = False
 
 -- isAny/isAll t x p checks whether an occurrence of x at position p of t were
 -- existentially/universally quantified and, if so, returns the quantifier 
 -- position.
 isAny :: Term [Char] -> String -> [Int] -> Maybe [Int]
 isAny t x = f where f p = case getSubterm t p of
-                          F ('A':'n':'y':' ':z) _ | x `elem` words z -> Just p
-                          F ('A':'l':'l':' ':z) _ | x `elem` words z -> Nothing
+                          F ('A':'n':'y':z) _ | x `elem` words z -> Just p
+                          F ('A':'l':'l':z) _ | x `elem` words z -> Nothing
                           _ -> do guard $ notnull p; f $ init p
 
 isAll :: Term [Char] -> String -> [Int] -> Maybe [Int]
 isAll t x = f where f p = case getSubterm t p of
-                          F ('A':'l':'l':' ':z) _ | x `elem` words z -> Just p
-                          F ('A':'n':'y':' ':z) _ | x `elem` words z -> Nothing
+                          F ('A':'l':'l':z) _ | x `elem` words z -> Just p
+                          F ('A':'n':'y':z) _ | x `elem` words z -> Nothing
                           _ -> do guard $ notnull p; f $ init p
 
 isAnyOrFree :: TermS -> String -> [Int] -> Bool
@@ -2475,21 +2476,23 @@ isAllOrFree t x = just . isAll t x ||| isFree t x
 -- isFree t x p checks whether an occurrence of x at position p of t were free.
 isFree :: TermS -> String -> [Int] -> Bool
 isFree t x = f where f p = case getSubterm t p of
-                           F ('A':'l':'l':' ':z) _ | x `elem` words z -> False
-                           F ('A':'n':'y':' ':z) _ | x `elem` words z -> False
-                           _ -> null p || f (init p)
+                                F ('A':'l':'l':z) _ | x `elem` words z -> False
+                                F ('A':'n':'y':z) _ | x `elem` words z -> False
+                                _ -> null p || f (init p)
 
 -- universal sig t p u checks whether all occurrences of free variables of u
 -- below position p of t are (implicitly) universally quantified at position p.
 -- universal is used by applyCoinduction, applyInduction and createInvariant 
 -- (see Ecom).
 universal :: Sig -> TermS -> [Int] -> TermS -> Bool
-universal sig t p u = polarity True t p && all f (frees sig u)
- where f x = case isAny t x p of Just q  -> cond False q
+universal sig t p u = polarity True t p && all f (frees sig u) where
+                      f x = case isAny t x p of
+                                 Just q  -> cond False q
                                  _ -> case isAll t x p of Just q -> cond True q
                                                           _ -> True
-        where cond b q = polarity b t q && 
-                         all (p <<) [r | r <- filterPositions (== x) t, q << r]
+                            where cond b q = polarity b t q &&
+                                        (all (p <<) $ filter (q <<)
+                                                    $ filterPositions (== x) t)
 
 -- * Unparser
 -- ** Unparser of trees
@@ -3096,7 +3099,7 @@ isCoHorn sig (F "===>" [t,_]) = isCopred sig $ getOp t
 isCoHorn _ _                   = False
 
 isAxiom :: Sig -> TermS -> Bool
-isAxiom sig = isSimpl ||| isTrans ||| isHorn sig ||| isCoHorn sig
+isAxiom sig = isTrans ||| isHorn sig ||| isCoHorn sig
 
 isTheorem :: TermS -> Bool
 isTheorem = isHornT ||| isCoHornT ||| noQuantsOrConsts
@@ -3136,22 +3139,23 @@ isDisCon (F "|" _)              = True
 isDisCon (F "&" _)              = True
 isDisCon _                      = False
 
-mergeWithGuard :: TermS -> TermS
-mergeWithGuard (F "==>" [t,F "<===" [u,v]]) = mkHorn u $ mkConjunct [t,v]
-mergeWithGuard (F "==>" [t,F "===>" [u,v]]) = mkCoHorn u $ mkImpl t v
-mergeWithGuard t                            = t
+noOfComps (F "<===" [t,_]) = length $ subterms t
+noOfComps (F "===>" [t,_]) = length $ subterms t
+noOfComps t                = length $ subterms t
 
--- copyRedex is used by Ecom > applyTheorem.
 copyRedex :: TermS -> TermS
 copyRedex (F "==>" [guard,u]) = mkImpl guard $ copyRedex u
 copyRedex (F "===>" [t,u])    = mkCoHorn t $ mkConjunct [t,u]
 copyRedex (F "<===" [t,u])    = mkHorn t $ mkDisjunct [t,u]
 copyRedex t                        = mkHorn t t
 
-noOfComps :: TermS -> Int
-noOfComps (F "<===" [t,_]) = length $ subterms t
-noOfComps (F "===>" [t,_]) = length $ subterms t
-noOfComps t                = length $ subterms t
+-- noOfComps and copyRedex are used by Ecom > applyTheorem.
+
+mergeWithGuard (F "==>" [t,F "<===" [u,v]]) = mkHorn u $ mkConjunct [t,v]
+mergeWithGuard (F "==>" [t,F "===>" [u,v]]) = mkCoHorn u $ mkImpl t v
+mergeWithGuard t                            = t
+
+-- mergeWithGuard is used by Ecom > applyInd.
 
 makeLambda :: Sig -> TermS -> [Int] -> Maybe TermS
 makeLambda sig cl p = 
@@ -3200,20 +3204,20 @@ clausesFor xs = filter f where f (F "==>" [_,cl])  = f cl
                                f at                = any (`isin` at) xs
 
 -- filterClauses sig redex filters the axioms/theorems that may be applicable to
--- redex. filterClauses is used by applyLoop/Random, getRel, getFun
--- (see Esolve), narrowPar and rewritePar (see Ecom).
-filterClauses :: Sig -> TermS -> [TermS] -> [TermS]
-filterClauses sig redex = filter f 
-            where f ax = (isAxiom sig ||| isTheorem) ax &&
-                         any (flip any (anchors ax) . g) (anchors redex)
-                  g x = (x ==) ||| h x ||| flip h x
-                  h x y = isFovar sig x || hovarRel sig x y 
-                  anchors (F "==>" [_,cl]) = anchors cl
-                  anchors (F x [t,_]) | x `elem` words "===> <=== = == <==> ->"
-                                              = anchors t
-                  anchors (F "^" ts)       = concatMap anchors ts
-                  anchors t                     = [getOp t]
-                                                 
+-- redex. filterClauses is used by applyLoop/Random (see Esolve), narrowPar and
+-- rewritePar (see Ecom).
+
+filterClauses sig redex = filter f where
+                         f ax = (isAxiom sig ||| isTheorem) ax &&
+                                any (flip any (anchors ax) . g) (anchors redex)
+                         g x = (x ==) ||| h x ||| flip h x
+                         h x y = (sig&isFovar) x || (sig&hovarRel) x y
+                         anchors (F "==>" [_,cl]) = anchors cl
+                         anchors (F x [t,_]) | x `elem` words "===> <=== = ->"
+                                            = anchors t
+                         anchors (F "^" ts) = concatMap anchors ts
+                         anchors t          = [getOp t]
+
 -- turnIntoUndef recognizes a non-rewritable/narrowable first order term/atom u 
 -- and is used by Esolve > applyLoop.
 turnIntoUndef :: Sig -> TermS -> [Int] -> TermS -> Maybe TermS
@@ -5342,7 +5346,8 @@ match sig xs = h []
                  f = F x [] `for` y
                  h = map (>>>f)
                  ps = succsInd p ts
-          h p (F x [t]) (F y [u]) | binder x && binder y && opx == opy =
+          h p (F x [t]) (F y [u])
+              | binder x && binder y && opx == opy && length xs == length ys =
                                h (p++[0]) (renameFree (fold2 upd id xs ys) t) u
                                where opx:xs = words x; opy:ys = words y
           h p t (F "suc" [u]) | just n = h (p++[0]) (mkConst $ get n-1) u

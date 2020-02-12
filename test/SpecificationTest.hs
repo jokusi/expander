@@ -311,7 +311,7 @@ addAxioms :: TermS -> String -> Action
 addAxioms t file sST = do
   sig <- getSignature sST
   let axs = if isConjunct t then subterms t else [t]
-      cls = filter (not . isAxiom sig) axs
+      cls = filter (not . (isAxiom sig ||| isSimpl)) axs
   if null cls
     then do
       sST `Gtk.set`
