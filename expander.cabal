@@ -657,7 +657,6 @@ library
   
   other-modules:       Paths_expander
                      , Paths
-  ghc-options:       -fmax-pmcheck-iterations=20000000
                      
 executable expander
   -- .hs or .lhs file containing the Main module.

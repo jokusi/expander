@@ -1,8 +1,9 @@
+{-# OPTIONS_GHC -fmax-pmcheck-iterations=20000000 #-}
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, February 2019
-                  Jos Kusiek, February 2019
+Copyright   : (c) Peter Padawitz, March 2019
+                  Jos Kusiek, March 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -332,38 +333,31 @@ evaluate sig = eval
          eval (F "id" [t])                  = eval t
          eval (F "ite" [t,u,v]) | isTrue t  = eval u
                                 | isFalse t = eval v
-         eval (F x p@[_,_]) | arithmetical x && just ip = mkRel $ get ip
-                            | arithmetical x && just rp = mkRel $ get rp
-                            | arithmetical x && just fp = mkRel $ get fp
-                            | arithmetical x && just sp = mkRel $ get sp where
-                  ip = mapM (intAlg&parseA) p; rp = mapM (realAlg&parseA) p
-                  fp = mapM (parseA linAlg) p; sp = mapM (parseA $ relAlg sig) p
-                  mkRel [a,b] = mkConst $ case x of "="  -> a==b; "=/=" -> a/=b
-                                                    "<=" -> a<=b; ">="  -> a>=b
-                                                    "<"  -> a<b;  ">"   -> a>b
-         eval (F "=" [t,u])   = evalEq t u
-         eval (F "=/=" [t,u]) = evalNeq t u
-         eval (F "<+>" ts)    = mkSum $ map eval ts
-         eval (F x [F "()" ts]) | not $ collector x || binder x || projection x
-                         || x `elem` words "~ List Value sat string true false"
-                              = eval $ F x ts
-         eval (F "length" [F x ts]) | collector x 
-                              = mkConst $ length ts
-         eval (F "size" [F "{}" ts])
-                              = mkConst $ length $ mkSet ts
-         eval (F "$" [t,u])   = apply (eval t) $ eval u
-         eval t | just i      = mkConst $ get i
-                | just r      = mkConst $ get r
-                | just f      = mkLin $ get f
-                | just s      = mkList $ map pair $ sort (<) $ get s
-                                where i = foldArith intAlg t
-                                      r = foldArith realAlg t
-                                      f = foldArith linAlg t
-                                      s = foldArith (relAlg sig) t
-                                      pair (x,y) = F "()" [x,y]
-         eval (F x ts)        = F x $ map eval ts
-         eval t               = t
-         
+         eval (F x p@[_,_]) | arithmetical x && just ip = mkRel x $ get ip
+                            | arithmetical x && just rp = mkRel x $ get rp
+                            | arithmetical x && just fp = mkRel x $ get fp
+                            | arithmetical x && just sp = mkRel x $ get sp
+                                         where ip = mapM (intAlg&parseA) p
+                                               rp = mapM (realAlg&parseA) p
+                                               fp = mapM (linAlg&parseA) p
+                                               sp = mapM ((relAlg sig)&parseA) p
+         eval (F "=" [t,u])          = evalEq t u
+         eval (F "=/=" [t,u])        = evalNeq t u
+         eval (F "<+>" ts)           = mkSum $ map eval ts
+         eval (F "length" [F x ts])
+                | collector x        = mkConst $ length ts
+         eval (F "size" [F "{}" ts]) = mkConst $ length $ mkSet ts
+         eval t | just i = mkConst $ get i
+                | just r = mkConst $ get r
+                | just f = mkLin $ get f
+                | just s = mkList $ map (uncurry mkPair) $ sort (<) $ get s
+                           where i = foldArith intAlg t
+                                 r = foldArith realAlg t
+                                 f = foldArith linAlg t
+                                 s = foldArith (relAlg sig) t
+         eval (F x ts)   = F x $ map eval ts
+         eval t          = t
+
          evalEq t u | eqTerm t u = mkTrue
          evalEq (F "{}" ts) (F "{}" us)
                     | just qs && just rs
@@ -815,8 +809,10 @@ applyDrawFun :: Sig -> String -> String -> [TermS] -> [TermS]
 applyDrawFun _ "" _        = id
 applyDrawFun _ "title" ""  = id
 applyDrawFun _ "title" str = map $ F "<+>" . add . addToPoss [1]
-   where add t = [listF "widg blue $" [listF "frame 5" [],F "text" [leaf str]],
-                  t]
+    where add t = [path "widg blue $" [path "frame 5" [],F "text" [leaf str]],t]
+          path str ts = f $ words str where f [x]    = F x ts
+                                            f (x:xs) = F x [f xs]
+
 applyDrawFun sig draw _ | just t = map $ wtree . simplifyIter sig
                                                . apply (get t) . addToPoss [0]
      where t = parse (term sig) draw
@@ -855,9 +851,8 @@ applyDrawFun sig draw _ | just t = map $ wtree . simplifyIter sig
 
 -- simplifyLoop sig limit strat t applies simplification rules at most m times
 -- to the maximal subtrees of t and returns the simplified tree together with 
--- the number of actually applied steps. 
--- simplifyLoop is used by applyDrawFun, simplifyIter, simplifyA lambda 
--- (see here), simplify' and Ecom > simplifySubtree.
+-- the number of actually applied steps. simplifyLoop is used by simplifyIter, 
+-- Ecom > simplify' and Ecom > simplifySubtree.
 simplifyLoop :: Sig -> Int -> Strategy -> TermS -> (TermS,Int,Bool)
 simplifyLoop sig limit strat t = loop 0 limit [t] where
  loop k limit ts = if limit == 0 then (t,k,False)
@@ -871,71 +866,135 @@ simplifyLoop sig limit strat t = loop 0 limit [t] where
                                    else loop (k+1) (limit-1) $ t:ts
 
  f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
- f g t = case strat of DF -> modifyDF [] t                     -- depthfirst
-                       BF -> modifyBF [[]] [t]                 -- breadthfirst
-                       _  -> do let u = modifyPA t [] t        -- parallel
-                                guard $ t /= u; Just u
-        where modifyDF p u = concat $ g t p:zipWithSucs modifyDF p (subterms u)
-              modifyBF [] _  = Nothing
-              modifyBF ps us = concat (map (g t) ps) ++ modifyBF qs vs
+ f g t = do guard $ isF t
+            case strat of DF -> modifyDF [] t                  -- depthfirst
+                          BF -> modifyBF [[]] [t]              -- breadthfirst
+                          _  -> do let u = modifyPA t [] t     -- parallel
+                                   guard $ t /= u; Just u
+         where modifyDF p u   = concat $ g t p:zipWithSucs modifyDF p us
+                                where us = subterms u
+               modifyBF ps us = do guard $ notnull ps
+                                   concat (map (g t) ps) ++ modifyBF qs vs
                   where (qs,vs) = unzip $ concat $ zipWith (zipWithSucs (,)) ps
                                                  $ map subterms us
-              modifyPA t p u = case g t p of
-                                    Just t -> t
-                                    _ -> fold2 modifyPA t (succsInd p ts) ts
-                                         where ts = subterms u
+               modifyPA t p u = case g t p of
+                                     Just t -> t
+                                     _ -> fold2 modifyPA t (succsInd p us) us
+                                where us = subterms u
 
--- simplifyOne sig t p applies the first applicable simplification rule to the
--- subterm of t at position p.
--- expandFix sig t p expands a fixpoint abstraction at position p of t if there
--- is any.
+-- simplifyOne sig t p applies the first applicable simplification rule at
+-- position p of t.
+-- expandFix sig t p expands the fixpoint abstraction at position p of t.
+
 -- simplifyOne and expandFix are used by simplifyLoop (see above).
 -- simplifyOne is also used by Ecom > simplifyPar.
 
 simplifyOne,expandFix :: Sig -> TermS -> [Int] -> Maybe TermS
-simplifyOne sig t p = do guard $ isF redex1
-                         if reduct /= redex1 
-                         then Just $ replace1 t p $ mapT g reduct
-                         else concat [do reduct <- simplifyGraph sig redex1
-                                         Just $ replace1 t p $ mapT g reduct,
-                                      do reduct <- simplifyUser sig redex1
-                                         Just $ replace1 t p $ mapT g reduct,
-                                      do guard $ polarity True t p 
-                                         reduct <- simplCoInd sig redex2
-                                         Just $ replace1 t p $ mapT g reduct,
-                                      do reduct <- simplifyF sig redex2
-                                         Just $ replace1 t p $ mapT g reduct]
-                      where redex1 = mapT block $ getSubterm1 t p
-                            reduct = evaluate sig redex1
-                            redex2 = mapT block $ expand0 t p
-                            block x = if blocked sig x then "BLOCK"++x else x
-                            g ('B':'L':'O':'C':'K':x) = x
-                            g x                            = x
+simplifyOne sig t p = concat
+      [do guard $ null (subterms reduct0) && reduct0 /= redex0
+          f reduct0,
+       do guard $ reduct1 /= redex1
+          f $ chgTargets $ reduct1,
+       do guard $ polarity True t p; reduct <- simplCoInd sig redex1
+          f $ chgTargets $ reduct,
+       do reduct <- simplifyF sig redex0; guard $ null (subterms reduct)
+          f reduct,
+       do reduct <- simplifyF sig redex1
+          f $ chgTargets $ if null p then g reduct else reduct]
+      where redex0 = mapT block $ expand0 t p
+            redex1 = addTargets (mapT block) t p
+            reduct0 = evaluate sig redex0
+            reduct1 = evaluate sig redex1
+            f = Just . replace1 t p . mapT unblock
+            block x = if (sig&blocked) x then "BLOCK"++x else x
+            unblock ('B':'L':'O':'C':'K':x) = x
+            unblock x                       = x
+            g (V x) | isEPos x = getSubterm t $ getPos $ trace t $ getPos x
+            g t                = t
 
-expandFix sig t p = do guard $ not $ (sig&blocked) "fixes"
-                       F x [u] <- Just redex; guard $ isFix x
+expandFix sig t p = do F x [u] <- Just redex
+                       guard $ isFix x && not ((sig&blocked) "fixes")
                        let _:xs = words x
-                           f i = F ("get"++show i) [redex]
                            sub = case xs of [x] -> redex `for` x
-                                            _ -> map f (indices_ xs)`forL` xs
-                       Just $ replace1 t p $ u>>>sub
-                    where redex = expand0 t p
+                                            _ -> map f (indices_ xs) `forL` xs
+                       Just $ replace1 t p $ chgTargets
+                                           $ collapseVars sig u>>>sub
+                    where redex = addTargets id t p
+                          f i = F ("get"++show i) [redex]
 
-simplifyGraph,simplifyUser :: Sig -> TermS -> Maybe TermS
+simplCoInd,simplifyF,simplifyA,simplifyS :: Sig -> TermS -> Maybe TermS
 
-simplifyGraph _ (F "$" [F "mapG" [f@(F _ ts)],F x us]) | collector x =
-                               Just $ F x $ if null ts then map (apply f) us
-                                                       else map g $ indices_ us
-                               where g 0 = apply f $ vs!!0
-                                     g i = apply (mkPos [0,0]) $ vs!!i
-                                     vs = changeLPoss p q us
-                                     p i = [1,i]; q i = [i,1]
+-- remove in/equational summands or factors
 
-simplifyGraph _ (F "$" [F "replicateG" [t],u]) | just n =
-            jList $ changePoss [1] [0] u:replicate (get n-1) (mkPos [0])
+simplCoInd sig t | not (sig&safeEqs) && just u = u where u = removeEq sig True t
+
+-- fixpoint induction rules
+
+simplCoInd _ (F "<=" [F x [t],u])
+    | leader x "mu" = Just $ F "<=" [t>>>forL us xs,u]
+                           where _:xs = words x; us = mkGets xs u
+
+simplCoInd _ (F "<=" [F "$" [F x [t],arg],u])
+    | leader x "mu" && null (subterms arg) =
+                            Just $ mkAll [root arg]
+                                 $ F "<=" [apply (t>>>forL us xs) arg,u]
+                            where _:xs = words x
+                                  us = mkGets xs $ F "fun" [arg,u]
+
+simplCoInd sig (F "`then`" [F x [t],u])
+    | leader x "MU" && monotone sig xs t =
+                            Just $ F "`then`" [t>>>forL us xs,u]
+                            where _:xs = words x; us = mkGets xs u
+
+simplCoInd sig (F "==>" [F "$" [F x [t],arg],u])
+    | leader x "MU" && null (subterms arg) && monotone sig xs t =
+                            Just $ mkAll [root arg]
+                                 $ mkImpl (apply (t>>>forL us xs) arg) u
+                            where _:xs = words x
+                                  us = mkGets xs $ F "rel" [arg,u]
+
+-- fixpoint coinduction rules
+
+simplCoInd _ (F "<=" [u,F x [t]])
+    | leader x "nu" = Just $ F "<=" [t>>>forL us xs,u]
+                           where _:xs = words x; us = mkGets xs u
+
+simplCoInd _ (F "<=" [u,F "$" [F x [t],arg]])
+    | leader x "nu" && null (subterms arg) =
+                            Just $ mkAll [root arg]
+                                 $ F "<=" [u,apply (t>>>forL us xs) arg]
+                            where _:xs = words x
+                                  us = mkGets xs $ F "fun" [arg,u]
+
+simplCoInd sig (F "`then`" [u,F x [t]])
+    | leader x "NU" && monotone sig xs t =
+                            Just $ F "`then`" [u,t>>>forL us xs]
+                            where _:xs = words x; us = mkGets xs u
+
+simplCoInd sig (F "==>" [u,F "$" [F x [t],arg]])
+    | leader x "NU" && null (subterms arg) && monotone sig xs t =
+                            Just $ mkAll [root arg]
+                                 $ mkImpl u $ apply (t>>>forL us xs) arg
+                            where _:xs = words x
+                                  us = mkGets xs $ F "rel" [arg,u]
+
+simplCoInd _ _ = Nothing
+
+-- edge producing rules
+
+simplifyF _ (F "$" [F "mapG" [f@(F _ ts)],F x us]) | collector x =
+                                  Just $ F x $ if null ts then map (apply f) us
+                                               else map g $ indices_ us
+                                  where g 0 = apply f $ vs!!0
+                                        g i = apply (mkPos [0,0]) $ vs!!i
+                                        vs = changeLPoss p q us
+                                        p i = [1,i]; q i = [i,1]
+
+simplifyF _ (F "$" [F "replicateG" [t],u]) | just n =
+                   jList $ changePoss [1] [0] u:replicate (get n-1) (mkPos [0])
                    where n = parsePnat t
 
-simplifyGraph _ (F "concat" [F "[]" ts]) | all isList ts =
+simplifyF _ (F "concat" [F "[]" ts]) | all isList ts =
                           jList $ concatMap (subterms . f) ts
                               where subs i = subterms $ ts!!i
                                     f t = foldl g t $ indices_ ts
@@ -944,14 +1003,14 @@ simplifyGraph _ (F "concat" [F "[]" ts]) | all isList ts =
                                     lg (-1) = 0
                                     lg i    = lg (i-1) + length (subs i)
 
-simplifyGraph sig (F "$" [F "concRepl" [t],u@(F "[]" us)]) | just n =
-                   simplifyGraph sig $ F "concat" [addToPoss [0] $ mkList vs]
+simplifyF sig (F "$" [F "concRepl" [t],u@(F "[]" us)]) | just n =
+                   simplifyF sig $ F "concat" [addToPoss [0] $ mkList vs]
                    where n = parsePnat t
                          vs = changePoss [1] [0] u:replicate (get n-1)
                                                  (mkList $ map f $ indices_ us)
                          f i = mkPos [0,i]
 
-simplifyGraph _ (F "$" [F "**" [f@(F _ ts),t],u]) | just n =
+simplifyF _ (F "$" [F "**" [f@(F _ ts),t],u]) | just n =
                  Just $ if null ts then iterate (apply f) v!!m
                         else apply first $ iterate (apply $ mkPos [0]) v!!(m-1)
                  where n = parsePnat t
@@ -959,10 +1018,10 @@ simplifyGraph _ (F "$" [F "**" [f@(F _ ts),t],u]) | just n =
                        first = changePoss [0,0] [0] f
                        v = changePoss [1] (replicate m 1) u
 
-simplifyGraph _ (F ":" [t,F "[]" ts]) = jList $ t:changeLPoss p q ts
+simplifyF _ (F ":" [t,F "[]" ts]) = jList $ t:changeLPoss p q ts
                                         where p i = [1,i]; q i = [i+1]
 
-simplifyGraph _ (F "$" [F x [n],F "[]" ts])
+simplifyF _ (F "$" [F x [n],F "[]" ts])
            | x `elem` words "cantor hilbert mirror snake transpose" && just k
                          = jList $ f (get k) $ changeLPoss p single ts
                            where k = parsePnat n
@@ -973,12 +1032,12 @@ simplifyGraph _ (F "$" [F x [n],F "[]" ts])
                                                     _ -> transpose
                                  p i = [1,i]
 
-simplifyGraph _ (F x [F "bool" [t],F "bool" [u]]) | isEq x
+simplifyF _ (F x [F "bool" [t],F "bool" [u]]) | isEq x
                          = Just $ if x == "=/=" then F "Not" [v] else v
                            where v = F "<==>" [changePoss [0,0] [0] t,
                                                changePoss [1,0] [1] u]
 
-simplifyGraph _ (F "permute" (t:ts)) | isObdd t =
+simplifyF _ (F "permute" (t:ts)) | isObdd t =
                 if n == 0 then Just t
                 else if null ts
                      then perm [t,changePoss [0] [1] t,mkConsts [0..n-1]]
@@ -991,88 +1050,20 @@ simplifyGraph _ (F "permute" (t:ts)) | isObdd t =
                 where fn@(_,n) = obddToFun $ drop0FromPoss t
                       perm = Just . F "permute"
 
-simplifyGraph _ _ = Nothing
+-- user-defined rules
 
--- | apply user-defined simplification rules
-simplifyUser sig t | notnull ts = Just $ mkSum ts
-                                  where ts = simplReducts sig False t
+simplifyF sig t | notnull ts = Just $ mkSum ts
+                               where ts = simplReducts sig False t
 
-simplifyUser sig (F x ts@(_:_)) | notnull us =
+simplifyF sig (F x ts@(_:_)) | notnull us =
                                Just $ applyL (mkSum us) $ map (mapT f) ts
                                where us = simplReducts sig False $ F x []
-                                     f x = if isPos x && notnull p 
+                                     f x = if isPos x && notnull p
                                            then mkPos0 $ head p+1:tail p else x
                                            where p = getPos x
 
-simplifyUser sig (F "$" [t,u]) | notnull ts = Just $ apply (mkSum ts) u
-                                            where ts = simplReducts sig False t
-
-simplifyUser _ _ = Nothing
-
-simplCoInd,simplifyF,simplifyA,simplifyS :: Sig -> TermS -> Maybe TermS
-
--- remove in/equational summands or factors
-
-simplCoInd sig t | not (sig&safeEqs) && just u = u where u = removeEq sig True t
-
--- apply fixpoint induction to an inequation or an implication
-
-simplCoInd _ (F "<=" [F x [t],u])
-    | leader x "mu" = Just $ F "<=" [t>>>forL us xs,u]
-                           where _:xs = words x; us = mkGets xs u
-
-simplCoInd _ (F "<=" [F "$" [F x [t],arg],u])
-    | leader x "mu" && null (subterms arg) =
-                             Just $ mkAll [root arg] 
-                                  $ F "<=" [apply (t>>>forL us xs) arg,u]
-                            where _:xs = words x
-                                  us = mkGets xs $ F "fun" [arg,u]
-
-simplCoInd sig (F "`then`" [F x [t],u])
-    | leader x "MU" && monotone sig xs t =
-                               Just $ F "`then`" [t>>>forL us xs,u]
-                            where _:xs = words x; us = mkGets xs u
-
-simplCoInd sig (F "==>" [F "$" [F x [t],arg],u])
-    | leader x "MU" && null (subterms arg) && monotone sig xs t =
-                             Just $ mkAll [root arg] 
-                                 $ mkImpl (apply (t>>>forL us xs) arg) u
-                            where _:xs = words x
-                                  us = mkGets xs $ F "rel" [arg,u]
-
--- apply fixpoint coinduction to an inequation or an implication
-
-simplCoInd _ (F "<=" [u,F x [t]])
-    | leader x "nu" = Just $ F "<=" [t>>>forL us xs,u]
-                           where _:xs = words x; us = mkGets xs u
-
-simplCoInd _ (F "<=" [u,F "$" [F x [t],arg]])
-    | leader x "nu" && null (subterms arg) =
-                             Just $ mkAll [root arg] 
-                                  $ F "<=" [u,apply (t>>>forL us xs) arg]
-                            where _:xs = words x
-                                  us = mkGets xs $ F "fun" [arg,u]
-
-simplCoInd sig (F "`then`" [u,F x [t]])
-    | leader x "NU" && monotone sig xs t =
-                                 Just $ F "`then`" [u,t>>>forL us xs]
-                            where _:xs = words x; us = mkGets xs u
-
-simplCoInd sig (F "==>" [u,F "$" [F x [t],arg]])
-    | leader x "NU" && null (subterms arg) && monotone sig xs t = 
-                             Just $ mkAll [root arg] 
-                                 $ mkImpl u $ apply (t>>>forL us xs) arg
-                            where _:xs = words x
-                                  us = mkGets xs $ F "rel" [arg,u]
-
-simplCoInd _ _ = Nothing
-
-simplifyF sig (F "tree" [F x []]) = parse (term sig) x
-
-simplifyF sig (F "subst" [t,u,v]) | isVar sig x = Just $ v>>>for t x
-                                                   where x = root u
-                           
-simplifyF sig (F "mergeV" [t]) = Just $ collapseVars sig t
+simplifyF sig (F "$" [t,u]) | notnull ts = Just $ apply (mkSum ts) u
+                                           where ts = simplReducts sig False t
 
 -- reduce equivalences
 
@@ -1105,13 +1096,13 @@ simplifyF sig c@(F "==>" [t,u]) | b = Just result
                          moveAll (zs++map f xs) (renameAll f t) u True
                          where xs = words x
                                ys = sigVars sig u
-                               f = getSubAwayFrom xs ys c
+                               f = getSubAwayFrom c xs ys
                  moveAny zs t u b = moveAll zs t u b
                  moveAll zs t (F ('A':'l':'l':x) [u]) _ = 
                          (mkAll (zs++map f xs) $ mkImpl t $ renameAll f u,True)
                          where xs = words x
                                ys = sigVars sig t
-                               f = getSubAwayFrom xs ys c
+                               f = getSubAwayFrom c xs ys
                  moveAll zs t u b = (mkAll zs $ mkImpl t u,b)
 
 -- move universal quantifiers out of a disjunction
@@ -1122,7 +1113,7 @@ simplifyF sig c@(F "|" ts) | b = Just result
                        move (zs++map f xs) ts (renameAll f t:us) True
                        where xs = words x
                              ys = joinMap (sigVars sig) $ ts++us
-                             f = getSubAwayFrom xs ys c
+                             f = getSubAwayFrom c xs ys
                move zs (t:ts) us b = move zs ts (t:us) b
                move zs _ us b      = (mkAll zs $ mkDisjunct us,b)
 
@@ -1155,7 +1146,7 @@ simplifyF sig c@(F "&" ts) | b = Just result
                            move (zs++map f xs) ts (renameAll f t:us) True
                        where xs = words x
                              ys = joinMap (sigVars sig) $ ts++us
-                             f = getSubAwayFrom xs ys c
+                             f = getSubAwayFrom c xs ys
                move zs (t:ts) us b = move zs ts (t:us) b
                move zs _ us b      = (mkAny zs $ mkConjunct us,b)
 
@@ -1184,20 +1175,20 @@ simplifyF _ (F "$" [F "/\\" [t,u],v]) = Just $ F "&" [apply t v,apply u v]
 simplifyF _ (F "$" [F "\\/" [t,u],v]) = Just $ F "|" [apply t v,apply u v]
 
 {-
-simplifyF _ (F "$" [F "&" (t:ts),u])  = Just $ F "&" $ apply t u:ts
-
-simplifyF _ (F "$" [F "|" ts,t])      = Just $ F "|" $ map (flip apply t) ts
-
-simplifyF (F x ts) _ | x `elem` words "\\/ /\\" && notnull is =
-                          Just $ F x $ foldl f [] $ indices_ ts
-                         where is = searchAll ((x==) . root) ts
-                               f us i = if i `elem` is 
-                                        then subterms (ts!!i)++us else ts!!i:us
-                          
 simplifyF _ (F "$" [F "\\/" ts,u]) = Just $ mkDisjunct $ map (flip apply u) ts
 
 simplifyF _ (F "$" [F "/\\" ts,u]) = Just $ mkConjunct $ map (flip apply u) ts
--}                           
+
+simplifyF (F x ts) _ | x `elem` words "\\/ /\\" && notnull is =
+                         Just $ F x $ foldl f [] $ indices_ ts
+                         where is = searchAll ((x==) . root) ts
+                               f us i = if i `elem` is
+                                        then subterms (ts!!i)++us else ts!!i:us
+
+simplifyF _ (F "$" [F "&" (t:ts),u]) = Just $ F "&" $ apply t u:ts
+
+simplifyF _ (F "$" [F "|" ts,t])     = Just $ F "|" $ map (flip apply t) ts
+-}
 
 -- remove in/equational summands or factors with a quantified variable on one 
 -- side.
@@ -1317,34 +1308,30 @@ subsumeConj _ _ _           = Nothing
 -- LAMBDA APPLICATIONS
 -- see: https://fldit-www.cs.uni-dortmund.de/~peter/CTL.pdf, page 119 ff.
 
+
 simplifyA sig (F "$" [F x [p,t],u])
-  | lambda x && just sub = Just $ renameAll f t>>>get sub
-                           where ys = frees sig p
-                                 sub = match sig ys u p
-                                 zs = sigVars sig u
-                                 f = getSubAwayFrom (frees sig u) zs t
+ | lambda x && just sub = Just $ renameAll f t>>>get sub
+                       where f = getSubAwayFrom t (bounded sig t) $ frees sig u
+                             sub = match sig (sigVars sig p) u p
 
 simplifyA sig (F "$" [F x [F "~" [p],t],u])
-  | lambda x = Just $ renameAll f t>>>sub'
-               where ys = frees sig p
-                     sub = match sig ys u p
-                     zs = sigVars sig u
-                     f = getSubAwayFrom (frees sig u) zs t
-                     g y = apply (F x [p,mkVar sig y]) u
-                     sub' = if just sub then get sub else forL (map g ys) ys
+ | lambda x = Just $ renameAll f t>>>sub'
+              where f = getSubAwayFrom t (bounded sig t) $ frees sig u
+                    xs = sigVars sig p
+                    sub = match sig xs u p
+                    sub' = if just sub then get sub else forL (map g xs) xs
+                    g x = apply (F x [p,mkVar sig x]) u
 
 simplifyA sig (F "$" [F x ts,u])
-  | lambda x && lg > 2 && even lg = Just $ F "CASE" cases where
-                   lg = length ts
-                   cases = [get t | t <- zipWith f (evens ts) $ odds ts, just t]
-                   f p t =   do let xs = sigVars sig u
-                                    g = getSubAwayFrom (frees sig u) xs t
-                                    v = renameAll g t
-                                concat [do F "||" [p,b] <- Just p
-                                           sub <- match sig (frees sig p) u p
-                                           Just $ F "->" [b>>>sub,v>>>sub],
-                                        do sub <- match sig (frees sig p) u p
-                                           Just $ F "->" [mkTrue,v>>>sub]]
+ | lambda x && lg > 2 && even lg = Just $ F "CASE" cases
+        where lg = length ts
+              cases = [get t | t <- zipWith g (evens ts) $ odds ts, just t]
+              g p t = do let f = getSubAwayFrom t (bounded sig t) $ frees sig u
+                             v = renameAll f t
+                         concat [do F "||" [p,b] <- Just p; sub <- h p
+                                    Just $ F "->" [b>>>sub,v>>>sub],
+                                 do sub <- h p; Just $ F "->" [mkTrue,v>>>sub]]
+              h p = match sig (sigVars sig p) u p
 
 -- distribute a relation over a sum
 
@@ -1453,6 +1440,12 @@ simplifyS sig (F "$" [F "$" [F "sfold" [f],a],F x (t:ts)]) | collector x =
        Just $ apply (apply (F "sfold" [f]) $ simplifyIter sig $ applyL f [a,t])
             $ F x ts
 
+-- special rules
+
+simplifyS sig (F "tree" [F x []]) = parse (term sig) x
+
+simplifyS sig (F "subst" [t,u,v]) | isVar sig x = Just $ v>>>for t x
+                                                  where x = root u
 
 -- LR parsing
 
@@ -1692,15 +1685,88 @@ getRHS sig x = do [rhs] <- Just $ simplReducts sig False $ F "step" [leaf x]
 
 simplifyT :: TermS -> Maybe TermS
 
-simplifyT (F x [F "skip" []])             = Just $ F "skip" []
+simplifyT (F x [F "()" ts]) | just i && k < length ts = Just $ ts!!k
+                            | not $ collector x || binder x || x `elem` words
+                                           "~ List Value sat string true false"
+                                                      = Just $ F x ts
+                              where i = parse (strNat "get") x; k = get i
 
-simplifyT (F "$" [F "lsec" [t,F x []],u]) = Just $ F x [t,u]
+simplifyT (F x [F "skip" []])        = Just $ F "skip" []
 
-simplifyT (F "$" [F "rsec" [F x [],t],u]) = Just $ F x [u,t]
- 
+simplifyT (F "$" [F x [],F "()" ts]) = Just $ F x ts
+
+simplifyT (F "$" [F x [],t])         = Just $ F x [t]
+
+simplifyT (F "$" [F "lsec" [t,F x []],u])  = Just $ F x [t,u]
+
+simplifyT (F "$" [F "rsec" [F x [],t],u])  = Just $ F x [u,t]
+
+simplifyT (F "$" [F "get" [n],t]) | just i = Just $ F ("get"++show (get i)) [t]
+                                             where i = parseNat n
+
+simplifyT (F "$" [F "." [g,f],t])          = Just $ apply g $ apply f t
+
+simplifyT (F "$" [F "$" [F "flip" [f],t],u]) = Just $ apply (apply f u) t
+
+simplifyT (F "$" [F "map" [f@(F _ ts)],F x us]) | collector x
+                                             = Just $ F x $ map (apply f) us
+
+simplifyT (F "$" [F "replicate" [t],u]) | just n = jList $ replicate (get n) u
+                                                   where n = parsePnat t
+
+simplifyT (F "$" [F "$" [F "upd" [F x ts],n],u])
+        | just i && collector x && k < length ts = Just $ F x $ updList ts k u
+                                              where i = parseNat n; k = get i
+
+simplifyT (F "$" [F "$" [F "upd" [F ":" [t,v]],n],u]) | just i =
+              Just $ if k == 0 then F ":" [u,v]
+                     else F ":" [t,F "$" [F "$" [F "upd" [v],mkConst $ k-1],u]]
+                                              where i = parseNat n; k = get i
+
+simplifyT (F "$" [F "insert" [t],F x ts])
+        | collector x && just rs = jConsts $ insert (<) q qs
+                                              where rs = mapM parseInt $ t:ts
+                                                    q:qs = get rs
+
+simplifyT (F "$" [F "$" [F "insertL" [t],F "[]" ts],F "[]" all])
+        | (t:ts) `subset` all = jList $ insert less t ts
+                                where t `less` u = getInd t all < getInd u all
+
+simplifyT (F "$" [F "uncurry" [f],F "()" (t:ts@(_:_))]) =
+                          Just $ F "$" [F "uncurry" [apply f t],F "()" ts]
+
+simplifyT (F "$" [F "uncurry" [f],F "()" [t]]) = Just $ apply f t
+
+simplifyT (F "$" [F "$" [F "foldl" [f],a],F x ts]) | collector x =
+                          Just $ foldl g a ts where g a t = applyL f [a,t]
+
+simplifyT (F "$" [F "foldl1" [f],F x ts]) | collector x =
+                          Just $ foldl1 g ts where g a t = applyL f [a,t]
+
+simplifyT (F "$" [F "$" [F "foldr" [f],a],F x ts]) | collector x =
+                          Just $ foldr g a ts where g t a = applyL f [t,a]
+
+simplifyT (F "$" [F "foldr1" [f],F x ts]) | collector x =
+                          Just $ foldr1 g ts where g t u = applyL f [t,u]
+
+simplifyT (F "$" [F "zip" [F x ts],F y us]) | collectors x y =
+                          jList $ map g $ zip ts us where g (t,u) = mkPair t u
+
+simplifyT (F "$" [F "$" [F "zipWith" _,F "[]" _],F ":" _]) = Just mkNil
+
+simplifyT (F "$" [F "$" [F "zipWith" _,F ":" _],F "[]" _]) = Just mkNil
+
+simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
+            Just $ F ":" [applyL f [t,u],apply (apply (F "zipWith" [f]) ts) us]
+
+simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y =
+                           jList $ zipWith g ts us where g t u = applyL f [t,u]
+
 simplifyT (F "CASE" (F "->" [F "True" [],t]:_))   = Just t
+
 simplifyT (F "CASE" (F "->" [F "False" [],_]:ts)) = Just $ F "CASE" ts
-simplifyT (F "CASE" [])                            = Just $ F "undefined" []
+
+simplifyT (F "CASE" [])                           = Just $ F "undefined" []
 
 simplifyT (F "string" [t])       = Just $ leaf $ showTree False t `minus1` '\"'
 
@@ -1713,114 +1779,46 @@ simplifyT (F "getCols" [F x ts]) = Just $ if null z then F x $ map f ts
                                    where (col,z) = span (/= '$') x
                                          f t = F "erect" [t]
 
--- projection
+simplifyT (F "height" [t])       = jConst $ height t
 
-simplifyT (F "$" [F "get" [n],t])
-    | just i = Just $ F ("get"++show (get i)) [t]
-                                              where i = parseNat n
+simplifyT (F "suc" [t])       | just i = jConst $ get i+1 where i = parseInt t
 
-simplifyT (F x [F "()" ts]) | just i && k < length ts = Just $ ts!!k
-                                              where i = parse (strNat "get") x
-                                                    k = get i
-                                             
-simplifyT (F "height" [t])        = jConst $ height t
+simplifyT (F "range" [t,u])   | just i && just k =
+                                           jList $ map mkConst [get i..get k]
+                                           where i = parseInt t; k = parseInt u
 
-simplifyT (F "$" [F "." [g,f],t]) = Just $ apply g $ apply f t 
+simplifyT (F "list" [F x ts]) | collector x = Just $ drop0FromPoss $ mkList ts
 
-simplifyT (F "$" [F "$" [F "flip" [f],t],u]) = Just $ apply (apply f u) t
+simplifyT (F "set" [F x ts])  | collector x = Just $ F "{}" $ joinTerms [] ts
 
-simplifyT (F "suc" [t])        | just i = jConst $ get i+1 where i = parseInt t
+simplifyT (F "bag" [F x ts])  | collector x = Just $ drop0FromPoss $ mkBag ts
 
-simplifyT (F "range" [t,u])    | just i && just k = 
-         jList $ map mkConst [get i..get k]
-         where i = parseInt t; k = parseInt u
-
-simplifyT (F "list" [F x ts])  | collector x = Just $ drop0FromPoss $ mkList ts
-
-simplifyT (F "set" [F x ts])   | collector x = Just $ F "{}" $ joinTerms [] ts
-
-simplifyT (F "bag" [F x ts])   | collector x = Just $ drop0FromPoss $ mkBag ts
-
-simplifyT (F "tup" [F x ts])   | collector x = Just $ drop0FromPoss $ mkTup ts
+simplifyT (F "tup" [F x ts])  | collector x = Just $ drop0FromPoss $ mkTup ts
 
 simplifyT (F "branch" [F x ts]) | collector x = Just $ drop0FromPoss $ mkSum ts
 
-simplifyT (F "null" [F x ts])      | collector x = jConst $ null ts
+simplifyT (F "null" [F x ts])   | collector x = jConst $ null ts
 
 simplifyT (F "NOTnull" [F x ts])   | collector x = jConst $ not $ null ts
 
 simplifyT (F "single" [F x ts])    | collector x = jConst $ length ts == 1
 
-simplifyT (F "!!" [F x ts,n])      | just i && collector x && k < length ts = 
-                                                Just $ ts!!k
-                                            where i = parseNat n; k = get i
-simplifyT (F "!!" [F ":" [t,u],n]) | just i = Just $ if k == 0 then t
-                                              else F "!!" [u,mkConst $ k-1]
-                                           where i = parseNat n; k = get i
+simplifyT (F "!!" [F x ts,n])      | just i && collector x && k < length ts =
+                                               Just $ ts!!k
+                                               where i = parseNat n; k = get i
+simplifyT (F "!!" [F ":" [t,u],n]) | just i  = Just $ if k == 0 then t else
+                                                      F "!!" [u,mkConst $ k-1]
+                                               where i = parseNat n; k = get i
 
-simplifyT (F "$" [F "map" _,F "[]" _]) = Just mkNil
-
-simplifyT (F "$" [F "replicate" [t],u]) | just n = jList $ replicate (get n) u
-                                                   where n = parsePnat t
-
-simplifyT (F "$" [F "$" [F "upd" [F x ts],n],u]) 
-        | just i && collector x && k < length ts = Just $ F x $ updList ts k u 
-                                          where i = parseNat n; k = get i
-                                    
-simplifyT (F "$" [F "$" [F "upd" [F ":" [t,v]],n],u]) | just i =
-              Just $ if k == 0 then F ":" [u,v] 
-                      else F ":" [t,F "$" [F "$" [F "upd" [v],mkConst $ k-1],u]]
-                                          where i = parseNat n; k = get i
-
-simplifyT (F "$" [F "insert" [t],F x ts]) 
-        | collector x && just rs = jConsts $ insert (<) q qs
-                                              where rs = mapM parseInt $ t:ts
-                                                    q:qs = get rs
-
-simplifyT (F "$" [F "$" [F "insertL" [t],F "[]" ts],F "[]" all]) 
-        | (t:ts) `subset` all = jList $ insert less t ts
-                                 where t `less` u = getInd t all < getInd u all
-
-simplifyT (F "prodL" [F x ts]) | all collector (x:map root ts) = 
-                                jList $ map mkTup $ mapM subterms ts
+simplifyT (F "prodL" [F x ts]) | all collector (x:map root ts) =
+                          jList $ map mkTup $ mapM subterms ts
 
 simplifyT t | f == "curry" && notnull tss && length us == 1 =
-                           Just $ applyL (head us) $ concat uss
-                           where (f,tss) = unCurry t; us:uss = tss
+                          Just $ applyL (head us) $ concat uss
+                          where (f,tss) = unCurry t; us:uss = tss
 
-simplifyT (F "$" [F "uncurry" [f],F "()" (t:ts@(_:_))]) =
-                           Just $ F "$" [F "uncurry" [apply f t],F "()" ts]
-
-simplifyT (F "$" [F "uncurry" [f],F "()" [t]]) = Just $ apply f t
-
-simplifyT (F "$" [F "$" [F "foldl" [f],a],F x ts]) | collector x = 
-                           Just $ foldl g a ts where g a t = applyL f [a,t]
-                        -- Just $ foldl g a ts where g a t = apply (apply f a) t
-
-simplifyT (F "$" [F "foldl1" [f],F x ts]) | collector x =
-                           Just $ foldl1 g ts where g a t = applyL f [a,t]
-
-simplifyT (F "$" [F "$" [F "foldr" [f],a],F x ts]) | collector x = 
-                           Just $ foldr g a ts where g t a = applyL f [t,a]
-
-simplifyT (F "$" [F "foldr1" [f],F x ts]) | collector x = 
-                           Just $ foldr1 g ts where g t u = applyL f [t,u]
-                                      
-simplifyT (F "$" [F "zip" [F x ts],F y us]) | collectors x y = 
-                           jList $ map g $ zip ts us where g (t,u) = mkPair t u
-
-simplifyT (F "$" [F "$" [F "zipWith" _,F "[]" _],F ":" _]) = Just mkNil
-
-simplifyT (F "$" [F "$" [F "zipWith" _,F ":" _],F "[]" _]) = Just mkNil
-
-simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
-            Just $ F ":" [applyL f [t,u],apply (apply (F "zipWith" [f]) ts) us]
-
-simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y =
-            jList $ zipWith g ts us where g t u = applyL f [t,u]
-
-simplifyT (F "index" [t,F x ts])
-                         | collector x = do i <- search (eqTerm t) ts; jConst i
+simplifyT (F "index" [t,F x ts]) | collector x = do i <- search (eqTerm t) ts
+                                                    jConst i
 
 simplifyT (F "indices" [F x ts])
                          | collector x = jList $ map mkConst [0..length ts-1]
@@ -1832,75 +1830,71 @@ simplifyT (F "subsets" [F x ts]) | collector x = jList $ map (F x) subs
                        where subs = [map (ts!!) ns | ns <- subsetsB lg lg]
                              lg = length ts
 
-simplifyT (F "subsetsB" [F x ts,t]) | collector x && just i = 
-                        jList $ map (F x) subs
-                   where lg = length ts; i = parseInt t
-                         subs = [map (ts!!) ns | ns <- subsetsB lg $ get i]
+simplifyT (F "subsetsB" [F x ts,t]) | collector x && just i =
+                       jList $ map (F x) subs
+                       where lg = length ts; i = parseInt t
+                             subs = [map (ts!!) ns | ns <- subsetsB lg $ get i]
 
 simplifyT (F "perms" [F "[]" ts])   = jList $ map mkList $ perms ts
 
 simplifyT (F "reverse" [F "[]" ts]) = jList $ reverse ts
 
 simplifyT (F "shuffle" [F x ts])
-           | all ((== "[]") . root) ts  = jList $ shuffle $ map subterms ts
+        | all ((== "[]") . root) ts = jList $ shuffle $ map subterms ts
 
 simplifyT (F "sort" [F "[]" ts])
-           | all just is = jConsts $ qsort (<=) $ map get is
-           | all just rs = jConsts $ qsort (<=) $ map get rs
-           | True        = jList $ sort (<) ts
-                           where is = map (foldArith intAlg) ts
-                                 rs = map (foldArith realAlg) ts
+        | all just is = jConsts $ qsort (<=) $ map get is
+        | all just rs = jConsts $ qsort (<=) $ map get rs
+        | True        = jList $ sort (<) ts
+                        where is = map (foldArith intAlg) ts
+                              rs = map (foldArith realAlg) ts
 
--- begin functions with pattern match checker problems
 simplifyT (F "subperms" [F "[]" ts]) = jList $ map mkList $ subperms ts
 
-simplifyT (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) = 
+simplifyT (F "=" [F "^" ts@(t:ts'),F "^" us@(u:us')]) =
                   case search (eqTerm t) us of
                        Just n -> Just $ mkEq (mkBag ts') $ mkBag $ context n us
                        _ -> do n <- search (eqTerm u) ts
                                Just $ mkEq (mkBag $ context n ts) $ mkBag us'
--- end functions with pattern match checker problems
 
-simplifyT (F "`mod`" [t,u]) | just i && just j && k /= 0 = 
-                                      Just $ mkConst $ mod (get i) k
-                            where i = parseInt t; j = parseInt u; k = get j
-                                                
-simplifyT (F x [F "+" [t,u],n])
-    | arithmetical x && just i && just j =
-        Just $ F x [u,mkConst $ get i-get j] 
-    | arithmetical x && just i && just k =
-        Just $ F x [u,mkConst $ get i-get k] 
-    where i = parseInt n; j = parseInt t; k = parseInt u
-                                                
-simplifyT (F x [n,F "+" [t,u]])
-    | arithmetical x && just i && just j =
-        Just $ F x [mkConst $ get i-get j,u] 
-    | arithmetical x && just i && just k =
-        Just $ F x [mkConst $ get i-get k,t] 
-    where i = parseInt n; j = parseInt t; k = parseInt u
-                                                
-simplifyT (F "+" [n,F "+" [t,u]])
-    | just i && just j =
-        Just $ F "+" [mkConst $ get i+get j,u] 
-    | just i && just k =
-        Just $ F "+" [mkConst $ get i+get k,t] 
-    where i = parseInt n; j = parseInt t; k = parseInt u
-                                                
-simplifyT (F "+" [F "+" [t,u],n])
-    | just i && just j =
-        Just $ F "+" [mkConst $ get i+get j,u] 
-    | just i && just k =
-        Just $ F "+" [mkConst $ get i+get k,t] 
-    where i = parseInt n; j = parseInt t; k = parseInt u
-                                                           
+--- end of functions with pattern match checker problems
+
+simplifyT (F "`mod`" [t,u])       | just i && just j && k /= 0 =
+                                     Just $ mkConst $ mod (get i) k
+                           where i = parseInt t; j = parseInt u; k = get j
+
+simplifyT (F x [F "+" [t,u],n])   | arithmetical x && just i && just j =
+                                     Just $ F x [u,mkConst $ get i-get j]
+                                   | arithmetical x && just i && just k =
+                                     Just $ F x [u,mkConst $ get i-get k]
+                           where i = parseInt n; j = parseInt t; k = parseInt u
+
+simplifyT (F x [n,F "+" [t,u]])   | arithmetical x && just i && just j =
+                                     Just $ F x [mkConst $ get i-get j,u]
+                                   | arithmetical x && just i && just k =
+                                     Just $ F x [mkConst $ get i-get k,t]
+                           where i = parseInt n; j = parseInt t; k = parseInt u
+
+simplifyT (F "+" [n,F "+" [t,u]]) | just i && just j =
+                                     Just $ F "+" [mkConst $ get i+get j,u]
+                                   | just i && just k =
+                                     Just $ F "+" [mkConst $ get i+get k,t]
+                           where i = parseInt n; j = parseInt t; k = parseInt u
+
+simplifyT (F "+" [F "+" [t,u],n]) | just i && just j =
+                                     Just $ F "+" [mkConst $ get i+get j,u]
+                                   | just i && just k =
+                                     Just $ F "+" [mkConst $ get i+get k,t]
+                           where i = parseInt n; j = parseInt t; k = parseInt u
+
 simplifyT (F ">" [F "()" (t:ts),F "()" (u:us)]) =
-             Just $ F "|" [mkGr t u,F "&" [mkEq t u,mkGr (mkTup ts) $ mkTup us]]
-                              
+            Just $ F "|" [mkGr t u,F "&" [mkEq t u,mkGr (mkTup ts) $ mkTup us]]
+
 simplifyT (F "color" [i,n]) = do i <- parseNat i; n <- parseNat n
                                  jConst $ hue 0 red n i
 
 simplifyT (F "dnf" [t]) | isObdd t =
-                          jConsts $ funToBins $ obddToFun $ drop0FromPoss t
+                           jConsts $ funToBins $ obddToFun $ drop0FromPoss t
 
 simplifyT (F "obdd" [t]) = do bins <- parseBins t; Just $ binsToObdd bins
 
@@ -1908,15 +1902,15 @@ simplifyT (F "minimize" [t]) | just bins = jConsts $ minDNF $ get bins
                                             where bins = parseBins t
 
 simplifyT (F "minimize" [t]) | isObdd t = Just $ drop0FromPoss $ collapse True
-                                                 $ removeVar t
+                                                $ removeVar t
 
 simplifyT (F "minterms" [t]) | just bins =
-                               jConsts $ concatMap minterms $ get bins
-                               where bins = parseBins t
+                                jConsts $ concatMap minterms $ get bins
+                                where bins = parseBins t
 
 simplifyT (F "gauss" [t]) | just eqs =
-                              Just $ F "bool" [mkLinEqs $ get $ gauss $ get eqs]
-                              where eqs = parseLinEqs t
+                             Just $ F "bool" [mkLinEqs $ get $ gauss $ get eqs]
+                             where eqs = parseLinEqs t
 
 simplifyT (F x@"gaussI" [t]) | just eqs =
                                case gauss1 $ get eqs of
@@ -1928,18 +1922,18 @@ simplifyT (F x@"gaussI" [t]) | just eqs =
 simplifyT (F "pascal" [t]) = do n <- parseNat t; jConsts $ pascal n
 
 simplifyT (F "concept" [F "[]" ts,F "[]" us,F "[]" vs]) | f us && f vs =
-                               Just $ h $ concept ts (g us) $ g vs
-                               where f = all $ (== "()") . root
-                                     g = map $ map root . subterms
-                                     h = mkSum . map (mkTup . map leaf)
+                              Just $ h $ concept ts (g us) $ g vs
+                              where f = all $ (== "()") . root
+                                    g = map $ map root . subterms
+                                    h = mkSum . map (mkTup . map leaf)
 
-simplifyT (F x ts) | (x == "[]" || x == "{}") && length us < length ts = 
-                  Just $ F x us where us = if head x == '[' then mergeActs ts
-                                                            else joinTerms [] ts
-                                                             
+simplifyT (F x ts) | (x == "[]" || x == "{}") && length us < length ts =
+                 Just $ F x us where us = if head x == '[' then mergeActs ts
+                                                           else joinTerms [] ts
+
 -- change the variable ordering of a DNF or an OBDD
 
-simplifyT (F "nextperm" [F x ns]) | collector x 
+simplifyT (F "nextperm" [F x ns]) | collector x
                                     = do ns <- mapM parseInt ns
                                          Just $ F x $ map mkConst $ nextPerm ns
 
@@ -1949,7 +1943,7 @@ simplifyT (F "permute" (t:ts)) | just bins =
                           else do [_,ns] <- Just ts; ns <- parseNats ns
                                   let permute s = map (s!!) ns
                                   perm [t,mkConsts $ map permute s,
-                                            mkConsts $ nextPerm ns]
+                                        mkConsts $ nextPerm ns]
                      where bins = parseBins t; s = get bins
                            first = indices_ $ head s; perm = Just . F "permute"
 
@@ -1963,10 +1957,10 @@ simplifyT (F x@('p':'a':'t':'h':_) [F "[]" ts])
                                  where ps = map parseRealReal ts
                                        qs = reducePath $ map get ps
 
-simplifyT (F "reduce" [F "[]" ts,F "[]" us]) 
-             | all isTup us = Just $ g $ reduceExas ts $ f us
-                      where f = map $ map root . subterms
-                            g = mkSum . map (mkTup . map leaf)
+simplifyT (F "reduce" [F "[]" ts,F "[]" us])
+                               | all isTup us = Just $ g $ reduceExas ts $ f us
+                                 where f = map $ map root . subterms
+                                       g = mkSum . map (mkTup . map leaf)
 
 simplifyT _ = Nothing
 
@@ -2071,8 +2065,10 @@ tripsToInts us vs ps = map f
 
 -- * __Rewriting and narrowing__
 
-data Reducts = Sum [TermS] (String -> Int) | Backward [TermS] (String -> Int) |
-                Forward [TermS] (String -> Int) | MatchFailure String | Stop
+data Reducts = Sum [TermS] (String -> Int) |
+               Backward [TermS] (String -> Int) |
+               Forward [TermS] (String -> Int) |
+               MatchFailure String | Stop
                -- MatchFailure is only generated by genMatchFailure.
 
 -- | solveGuard guard axs applies axs by narrowing at most 100 times to guard. 
@@ -2113,15 +2109,15 @@ applyLoop t m vc axs preAxs sig nar match refute simplify = f t 0 m vc
                                  Just u -> Just (simpl $ replace t p u,vc')
                                  _ -> concat $ map (modify t vc) 
                                                $ succsInd p $ subterms redex
-                   where redex = getSubterm t p
-                         filtered = filterClauses sig redex axs
-                         rules
-                            | isVarRoot sig redex = []
-                            | nar = filtered
-                            | otherwise = filter unconditional filtered
-                         (axs',vc') = renameApply rules sig t vc
-                         f = if nar then modifyForm $ applyAxs axs' axs' preAxs
-                             else modifyTerm $ applyAxsToTerm axs' axs' preAxs
+             where redex = getSubterm t p
+                   filtered = filterClauses sig redex axs
+                   rules
+                      | isVarRoot sig redex = []
+                      | nar = filtered
+                      | otherwise = filter unconditional filtered
+                   (axs',vc') = renameApply rules sig t vc
+                   f = if nar then modifyForm $ applyAxs axs' axs' preAxs
+                       else modifyTerm $ applyAxsToTerm axs' axs' preAxs
        modifyForm f redex t p vc 
         | isDefunct sig sym = do (q,at,r) <- atomPosition sig t p
                                  Backward reds vc <- g at r
@@ -2196,7 +2192,7 @@ applyLoopRandom rand t m vc axs preAxs sig nar match simplify = f t 0 m vc rand
 -- non-extended and non-renamed version of axs. 
 -- uni = True  --> The redex is unified against axs.
 -- uni = False --> The redex is matched against axs.
--- applyAxs is used by applyLoop (see above), applyPar (see below) and 
+-- applyAxs is used by applyLoop (see above), applyToHeadOrBody (see below) and 
 -- Ecom > narrowPar. 
 applyAxs :: [a]
             -> [TermS]
@@ -2285,12 +2281,11 @@ applyAxsToTermR cls axs preAxs rand redex sig vc =
 
 -- * __Narrowing of formulas__
 
--- | quantify sig add ts t quantifies the free variables xs of ts that and 
--- quantifies t with xs.
+-- quantify sig add ts t quantifies the free variables xs of ts.
 quantify :: Sig -> ([String] -> TermS -> TermS) -> [TermS] -> TermS -> TermS
 quantify sig add ts reduct = add (filter (noExcl &&& (`elem` ys)) xs) reduct
-                                 where xs = freesL sig ts
-                                       ys = sigVars sig reduct
+                             where xs = joinMap (frees sig) ts
+                                   ys = sigVars sig reduct
 
 -- | addTo is used by searchReds, applyAx, applyAxToTerm and applySingle.
 addTo :: Bool -> [TermS] -> TermS -> TermS
@@ -2406,6 +2401,7 @@ checkGuard f sig xs vc (guard,_,left,_,_,uni) =
 -- | applyAx ax axs redex at p sig vc applies the axiom ax to the redex at
 -- position p of at. vc is the variable counter that is needed for renaming the
 -- variables of ax that are introduced into t.
+-- applyAx is used by applyAxs and applyAxsR (see above).
 applyAx :: TermS
            -> [TermS]
            -> TermS
@@ -2671,7 +2667,7 @@ applyMany forward different left right redices t ps pred qs sig vc =
              vs = [ts!!i | i <- indices_ ts, i `notElem` newIndices]
              reduct3 = if different then mk2 $ mk1 us:vs else mk1 $ us++vs
          Just (replace t pred reduct3,vc)
-      where xs = freesL sig redices
+      where xs = joinMap (frees sig) redices
 
 -- applyToHeadOrBody is used by Ecom > applyInd.
 applyToHeadOrBody :: Sig
@@ -2690,10 +2686,10 @@ applyToHeadOrBody sig g head axs = f
                               (redb,clsb,vcb) = redvc b
                    _ -> (redt:clst,vct) where (redt,clst,vct) = redvc t
          where redvc t = (reduct,cls',vc3)
-                  where (axs',vc1) = renameApply axs sig t vc
-                        (reduct,vc2) = applyPar axs' ps t vc1
-                        (cls',vc3) = f cls vc2
-                        ps = filter (g t) $ positions t
+                         where (axs',vc1) = renameApply axs sig t vc
+                               (reduct,vc2) = applyPar axs' ps t vc1
+                               (cls',vc3) = f cls vc2
+                               ps = filter (g t) $ positions t
                -- applyPar axs t ps sig applies axs in parallel at all 
                -- positions of t that are in ps.
                applyPar axs (p : ps) t vc
@@ -3129,7 +3125,7 @@ moveUp sig vc x us is   = (joinMap snd ps',joinMap snd qs',F x ts',vc')
              split (ps,qs) i = if isAllQ t then ((i,alls t):ps,qs) 
                                            else (ps,(i,anys t):qs)
                                where t = us!!i
-             free = freesL sig $ contextM is ts
+             free = joinMap (frees sig) $ contextM is ts
              ts = zipWith h us $ indices_ us
                   where h u i = if i `elem` is then head $ subterms u else u
              (ts',vc',ps',qs') = loop1 (ts,vc,ps,qs) ps

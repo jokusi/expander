@@ -14,10 +14,9 @@
 
 specs:		modal
 constructs:  	idle wait crit
-defuncts:	procs
 preds:   	safe live nonBlock noSeq Safe Live NonBlock NoSeq 
 		crit' crits Idle Wait Crit Crit' Crits check
-defuncts:   	procs start pairs diffpairs pair drawN drawI drawL drawK drawO 
+defuncts:       start pairs diffpairs pair drawN drawI drawL drawK drawO 
 		drawS drawC
 fovars:		st i c is ws cs k n
 
@@ -40,9 +39,9 @@ pairs == prodL[[idle,wait,crit],procs] &
 -- 6 processes yield 3913 states
 -- 7 processes yield 27399 states
 
-idle$i -> branch$filter(Idle$i)$states &
-wait$i -> branch$filter(Wait$i)$states &
-crit$i -> branch$filter(Crit$i)$states &
+idle$i -> valid$Idle$i &
+wait$i -> valid$Wait$i &
+crit$i -> valid$Crit$i &
 
 (Idle(i)(is,ws,cs) <==> i `in` is) &
 (Wait(i)(is,ws,cs) <==> i `in` ws) &
@@ -146,9 +145,9 @@ eval(and$map(nonBlock)$procs) <+>				--> states
 eval(and$map(noSeq)$procs) <+>					--> states
 eval(and$map($)$prodL[[live,nonBlock,noSeq],procs]) <+>		--> states
 
-eval((idle$1)`EU`wait$1) <+>	--> [([0],[1],[]),([],[1,0],[]),([],[0,1],[]),
+eval(idle(1)`EU`wait$1) <+>	--> [([0],[1],[]),([],[1,0],[]),([],[0,1],[]),
 				--   ([],[1],[0]),([0,1],[],[]),([1],[0],[]),
 				--   ([1],[],[0])]
-eval((idle$1)`EU`((wait$1)`EU`crit$1)) <+>			--> states
-eval(((idle$1)`EU`(wait$1))`EU`crit$1)				--> states
+eval(idle(1)`EU`(wait(1)`EU`crit$1)) <+>			--> states
+eval((idle(1)`EU`wait(1))`EU`crit$1)				--> states
 

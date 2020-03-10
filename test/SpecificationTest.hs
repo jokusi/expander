@@ -1372,94 +1372,95 @@ addTheorems t file sST = do
       --                      changeState proofPtr $ peTreePoss (proof!!proofPtr)
       --         enterRef
         
-      --   -- | Used by 'forwProof'' and 'runChecker'.
-      --   checkForward :: Action
-      --   checkForward = do
-      --       proofTPtr <- readIORef proofTPtrRef
-      --       proofTerm <- readIORef proofTermRef
-      --       if proofTPtr >= length proofTerm
-      --         then do labMag endOfProof; (paint&labSolver) endOfProof; enterRef
-      --       else do
-      --           proofPtr <- readIORef proofPtrRef
-      --           let step = proofTerm!!proofTPtr
-      --               k = proofPtr+1
-      --           proof <- readIORef proofRef
-      --           when (deriveStep step && k < length proof)
-      --               $ writeIORef proofPtrRef k
-      --           case step of
-      --               AddAxioms axs -> addNamedAxioms' axs
-      --               ApplySubst -> applySubst
-      --               ApplySubstTo x t -> applySubstTo' x t
-      --               ApplyTransitivity -> applyTransitivity
-      --               BuildKripke m -> buildKripke m
-      --               BuildRE -> buildRegExp
-      --               CollapseStep b -> collapseStep b
-      --               ComposePointers -> composePointers
-      --               CopySubtrees -> copySubtrees
-      --               CreateIndHyp -> createIndHyp
-      --               CreateInvariant b -> createInvariant b
-      --               DecomposeAtom -> decomposeAtom
-      --               EvaluateTrees -> evaluateTrees
-      --               ExpandTree b n -> expandTree' b n
-      --               FlattenImpl -> flattenImpl
-      --               Generalize cls -> generalize' cls
-      --               Induction True n -> applyInduction n
-      --               Induction _ n -> applyCoinduction n
-      --               Mark ps -> do
-      --                   writeIORef treepossRef ps
-      --                   drawCurr'
-      --               Matching n -> do
-      --                 writeIORef matchingRef n
-      --                 modifyIORef matchTermRef $ \matchTerm -> n:matchTerm
-      --               Minimize -> minimize
-      --               ModifyEqs m -> modifyEqs m
-      --               Narrow limit sub -> narrow'' limit sub
-      --               NegateAxioms ps cps -> negateAxioms' ps cps
-      --               PermuteSubtrees -> permuteSubtrees
-      --               RandomLabels -> randomLabels
-      --               RandomTree -> randomTree
-      --               ReduceRE m -> reduceRegExp m
-      --               Refuting b -> do
-      --                 writeIORef refutingRef b
-      --                 modifyIORef refuteTermRef $ \refuteTerm -> b:refuteTerm
-      --               ReleaseNode -> releaseNode
-      --               ReleaseSubtree -> releaseSubtree
-      --               ReleaseTree -> releaseTree
-      --               RemoveCopies -> removeCopies
-      --               RemoveEdges b -> removeEdges b
-      --               RemoveNode -> removeNode
-      --               RemoveOthers -> removeOthers
-      --               RemovePath -> removePath
-      --               RemoveSubtrees -> removeSubtrees
-      --               RenameVar x -> renameVar' x
-      --               ReplaceNodes x -> replaceNodes' x
-      --               ReplaceOther -> replaceOther
-      --               ReplaceSubtrees ps ts -> replaceSubtrees' ps ts
-      --               ReplaceText x -> replaceText' x
-      --               ReplaceVar x u p -> replaceVar x u p
-      --               ReverseSubtrees -> reverseSubtrees
-      --               SafeEqs -> switchSafe
-      --               SetAdmitted block xs -> setAdmitted' block xs
-      --               SetCurr msg n -> setCurr msg n
-      --               SetStrat s -> do
-      --                 writeIORef simplStratRef s
-      --                 modifyIORef stratTermRef $ \stratTerm -> s:stratTerm
-      --               Simplify limit sub -> simplify'' limit sub
-      --               Simplifying b -> do
-      --                 writeIORef simplifyingRef b
-      --                 modifyIORef simplTermRef $ \simplTerm -> b:simplTerm
-      --               ShiftPattern -> shiftPattern
-      --               ShiftQuants -> shiftQuants
-      --               ShiftSubs ps -> shiftSubs' ps
-      --               SplitTree -> splitTree
-      --               StretchConclusion -> stretch False
-      --               StretchPremise -> stretch True
-      --               SubsumeSubtrees -> subsumeSubtrees
-      --               Theorem b th -> applyTheorem b Nothing th
-      --               Transform m -> transformGraph m
-      --               UnifySubtrees -> unifySubtrees
-      --           modifyIORef proofTPtrRef succ
-      --           enterRef
+        -- -- | Used by 'forwProof'' and 'runChecker'.
+        -- checkForward :: Action
+        -- checkForward = do
+        --     proofTPtr <- readIORef proofTPtrRef
+        --     proofTerm <- readIORef proofTermRef
+        --     if proofTPtr >= length proofTerm
+        --       then do labMag endOfProof; (paint&labSolver) endOfProof; enterRef
+        --     else do
+        --         proofPtr <- readIORef proofPtrRef
+        --         let step = proofTerm!!proofTPtr
+        --             k = proofPtr+1
+        --         proof <- readIORef proofRef
+        --         when (deriveStep step && k < length proof)
+        --             $ writeIORef proofPtrRef k
+        --         case step of
+        --             AddAxioms axs -> addCongAxioms' axs
+        --             ApplySubst -> applySubst
+        --             ApplySubstTo x t -> applySubstTo' x t
+        --             ApplyTransitivity -> applyTransitivity
+        --             BuildKripke m -> buildKripke m
+        --             BuildRE -> buildRegExp
+        --             CollapseStep b -> collapseStep b
+        --             CollapseVars -> collapseVarsCom
+        --             ComposePointers -> composePointers
+        --             CopySubtrees -> copySubtrees
+        --             CreateIndHyp -> createIndHyp
+        --             CreateInvariant b -> createInvariant b
+        --             DecomposeAtom -> decomposeAtom
+        --             EvaluateTrees -> evaluateTrees
+        --             ExpandTree b n -> expandTree' b n
+        --             FlattenImpl -> flattenImpl
+        --             Generalize cls -> generalize' cls
+        --             Induction True n -> applyInduction n
+        --             Induction _ n -> applyCoinduction n
+        --             Mark ps -> do
+        --                 writeIORef treepossRef ps
+        --                 drawCurr'
+        --             Matching n -> do
+        --               writeIORef matchingRef n
+        --               modifyIORef matchTermRef $ \matchTerm -> n:matchTerm
+        --             Minimize -> minimize
+        --             ModifyEqs m -> modifyEqs m
+        --             Narrow limit sub -> narrow'' limit sub
+        --             NegateAxioms ps cps -> negateAxioms' ps cps
+        --             PermuteSubtrees -> permuteSubtrees
+        --             RandomLabels -> randomLabels
+        --             RandomTree -> randomTree
+        --             ReduceRE m -> reduceRegExp m
+        --             Refuting b -> do
+        --               writeIORef refutingRef b
+        --               modifyIORef refuteTermRef $ \refuteTerm -> b:refuteTerm
+        --             ReleaseNode -> releaseNode
+        --             ReleaseSubtree -> releaseSubtree
+        --             ReleaseTree -> releaseTree
+        --             RemoveCopies -> removeCopies
+        --             RemoveEdges b -> removeEdges b
+        --             RemoveNode -> removeNode
+        --             RemoveOthers -> removeOthers
+        --             RemovePath -> removePath
+        --             RemoveSubtrees -> removeSubtrees
+        --             RenameVar x -> renameVar' x
+        --             ReplaceNodes x -> replaceNodes' x
+        --             ReplaceOther -> replaceOther
+        --             ReplaceSubtrees ps ts -> replaceSubtrees' ps ts
+        --             ReplaceText x -> replaceText' x
+        --             ReplaceVar x u p -> replaceVar x u p
+        --             ReverseSubtrees -> reverseSubtrees
+        --             SafeEqs -> switchSafe
+        --             SetAdmitted block xs -> setAdmitted' block xs
+        --             SetCurr msg n -> setCurr msg n
+        --             SetStrat s -> do
+        --               writeIORef simplStratRef s
+        --               modifyIORef stratTermRef $ \stratTerm -> s:stratTerm
+        --             Simplify limit sub -> simplify'' limit sub
+        --             Simplifying b -> do
+        --               writeIORef simplifyingRef b
+        --               modifyIORef simplTermRef $ \simplTerm -> b:simplTerm
+        --             ShiftPattern -> shiftPattern
+        --             ShiftQuants -> shiftQuants
+        --             ShiftSubs ps -> shiftSubs' ps
+        --             SplitTree -> splitTree
+        --             StretchConclusion -> stretch False
+        --             StretchPremise -> stretch True
+        --             SubsumeSubtrees -> subsumeSubtrees
+        --             Theorem b th -> applyTheorem b Nothing th
+        --             Transform m -> transformGraph m
+        --             UnifySubtrees -> unifySubtrees
+        --         modifyIORef proofTPtrRef succ
+        --         enterRef
         
       --   -- | Exported by public 'Epaint.Solver' method 'Epaint.checkInSolver'.
       --   checkInSolver' :: Action
@@ -1561,7 +1562,24 @@ addTheorems t file sST = do
       --               drawCurr'
       --               modifyIORef counterRef $ \counter -> incr counter 'c'
       --               writeIORef partRef part'
-        
+
+        -- collapseVarsCom :: Action
+        -- collapseVarsCom = do
+        --   trees <- readIORef treesRef
+        --   if null trees then labBlue' start
+        --   else do
+        --        sig <- getSignature
+        --        trees <- readIORef treesRef
+        --        curr <- readIORef currRef
+        --        treeposs <- readIORef treepossRef
+        --        let t = trees!!curr
+        --            ps = emptyOrAll treeposs
+        --            ts = map (collapseVars sig . getSubterm1 t) ps
+        --        modifyIORef treesRef $ \trees -> updList trees curr $ fold2 replace1 t ps ts
+        --        extendPT False False False False CollapseVars
+        --        setProof True False "COLLAPSING THE VARIABLES" ps collapsedVars
+        --        drawCurr'
+
       --   -- | Used by 'checkForward'. Called by menu item /compose pointers/
       --   -- from /graph/ menu. 
       --   composePointers :: Action
@@ -1777,32 +1795,31 @@ addTheorems t file sST = do
       --                                           _ -> labBlue' $ startOther other
       --     return ()
 
-      --   -- | Used by 'checkForward'. Called by /decompose atom/ menu item
-      --   -- from /transform selection/ menu.
-      --   decomposeAtom :: Action
-      --   decomposeAtom = do
-      --       trees <- readIORef treesRef
-      --       if null trees then labBlue' start
-      --       else do
-      --           curr <- readIORef currRef
-      --           treeposs <- readIORef treepossRef
-      --           let t = trees!!curr
-      --               p = emptyOrLast treeposs
-      --               b = polarity True t p
-      --               F x [l,r] = getSubterm1 t p
-      --               finish u = do
-      --                   curr <- readIORef currRef
-      --                   modifyIORef treesRef $ \trees ->
-      --                       updList trees curr $ replace1 t p u
-      --                   extendPT False False False False DecomposeAtom
-      --                   setProof True False "DECOMPOSING THE ATOM" [p]
-      --                       atomDecomposed
-      --                   clearTreeposs; drawCurr'
-      --           sig <- getSignature
-      --           case x of
-      --               "=" | b -> finish $ splitEq sig l r
-      --               "=/=" | not b -> finish $ splitNeq sig l r
-      --               _ -> labRed' atomNotDecomposed
+        -- -- | Used by 'checkForward'. Called by /decompose atom/ menu item
+        -- -- from /transform selection/ menu.
+        -- decomposeAtom :: Action
+        -- decomposeAtom = do
+        --     trees <- readIORef treesRef
+        --     if null trees then labBlue' start
+        --     else do
+        --         curr <- readIORef currRef
+        --         treeposs <- readIORef treepossRef
+        --         let t = trees!!curr
+        --             p = emptyOrLast treeposs
+        --             b = polarity True t p
+        --             F x [l,r] = getSubterm1 t p
+        --             finish u = do
+        --                 curr <- readIORef currRef
+        --                 modifyIORef treesRef $ \trees ->
+        --                     updList trees curr $ replace1 t p u
+        --                 extendPT False False False False DecomposeAtom
+        --                 setProof True False "DECOMPOSING THE ATOM" [p]
+        --                     atomDecomposed
+        --                 clearTreeposs; drawCurr'
+        --         sig <- getSignature
+        --         case x of "=" | b -> finish $ splitEq sig True l r
+        --                   "=/=" | not b -> finish $ splitEq sig False l r
+        --                   _ -> labRed' atomNotDecomposed
         
 delay :: a -> a
 delay = id
@@ -2645,7 +2662,7 @@ labRed' = assertFailure . ("Expander error message: "++)
       --                              else actMore ts treeMode
       --                   where ts = mkTerms $ F "<+>" trees
 
-      --    where split = actMore . map dropHeadFromPoss
+      --    where split = actMore . map (dropnFromPoss 1)
       --          actMore ts mode = do
       --               newTrees <- readIORef newTreesRef
       --               curr <- readIORef currRef
@@ -2956,7 +2973,7 @@ labRed' = assertFailure . ("Expander error message: "++)
       --               modifyIORef treesRef $ \trees -> updList trees curr t
       --               narrowLoop sig cls k' (limit-n)
       --               where k' = k+n
-      --          split = actMore . map dropHeadFromPoss
+      --          split = actMore . map (dropnFromPoss 1)
       --          actMore ts mode = do
       --               trees <- readIORef treesRef
       --               curr <- readIORef currRef
@@ -3229,29 +3246,29 @@ parseConjects sig file conjs sST =
       --               labRed' illformedSM
         
         
-      --   -- | Parses the text from text area and show it as a graph on the
-      --   -- canvas. Called by button /parse up/ ('upBut') or by pressing the
-      --   -- @Up@ on active text area ('tedit').
-      --   parseText :: Action
-      --   parseText = do
-      --       numberedExps <- readIORef numberedExpsRef
+        -- -- | Parses the text from text area and show it as a graph on the
+        -- -- canvas. Called by button /parse up/ ('upBut') or by pressing the
+        -- -- @Up@ on active text area ('tedit').
+        -- parseText :: Action
+        -- parseText = do
+        --     numberedExps <- readIORef numberedExpsRef
 
-      --       str <- ent `gtkGet` entryText
-      --       let (exps, b) = numberedExps
-      --       case parse intRanges str of
-      --           Just ns | all (< length exps) ns -> do
-      --               ent `gtkSet` [ entryText := "" ]
-      --               let exps' = map (exps !!) ns
-      --               if b then enterTree' True $ mkConjunct exps'
-      --                    else enterTree' False $ mkSum exps'
-      --           _ -> do
-      --               str <- getTextHere
-      --               sig <- getSignature
-      --               case parseE (term sig) str of
-      --                   Correct t -> enterTree' False t
-      --                   _ -> case parseE (implication sig) str of
-      --                       Correct cl -> enterTree' True cl
-      --                       p -> incorrect p str illformed
+        --     str <- ent `gtkGet` entryText
+        --     let (exps, b) = numberedExps
+        --     case parse intRanges str of
+        --         Just ns | all (< length exps) ns -> do
+        --             ent `gtkSet` [ entryText := "" ]
+        --             let exps' = map (exps !!) ns
+        --             if b then enterTree' True $ mkConjunct exps'
+        --                  else enterTree' False $ mkSum exps'
+        --         _ -> do
+        --             str <- getTextHere
+        --             sig <- getSignature
+        --             case parseE (implication sig) str of
+        --                 Correct t -> enterTree' True t
+        --                 _ -> case parseE (term sig) str of
+        --                     Correct cl -> enterTree' False cl
+        --                     p -> incorrect p str illformed
         
 parseTerms :: Sig -> FilePath -> String -> Action
 parseTerms sig file ts sST =  case parseE (term sig) ts of
@@ -3886,29 +3903,27 @@ parseTerms sig file ts sST =  case parseE (term sig) ts of
       --           str <- getTextHere
       --           replaceText' str
         
-      --   -- | Used by 'checkForward' and 'replaceText'.
-      --   replaceText' :: String -> Action
-      --   replaceText' str = do
-      --       sig <- getSignature
-      --       treeposs <- readIORef treepossRef
-      --       let ps = emptyOrAll treeposs
-      --       case parseE (term sig) str of
-      --           Correct u -> finish u ps
-      --           _ -> case parseE (implication sig) str of
-      --                   Correct u -> finish u ps
-      --                   p -> incorrect p str illformed
-      --       where finish u ps@(p:_) = do
-      --               trees <- readIORef treesRef
-      --               curr <- readIORef currRef
-      --               case changeTerm (trees!!curr) u ps of
-      --                   Wellformed t -> do
-      --                       if null p then changeMode t
-      --                       else writeIORef treesRef $ updList trees curr t
-      --                       extendPT False False False False $ ReplaceText str
-      --                       setProof False False "REPLACING THE SUBTREES" ps
-      --                                textInserted
-      --                       clearTreeposs; drawCurr'
-      --                   Bad str -> labMag str
+        -- -- | Used by 'checkForward' and 'replaceText'.
+        -- replaceText' :: String -> Action
+        -- replaceText' str = do
+        --     sig <- getSignature
+        --     treeposs <- readIORef treepossRef
+        --     let ps = emptyOrAll treeposs
+        --     case parseE (implication sig ++ term sig) str of
+        --          Correct u -> finish u ps
+        --          p -> incorrect p str illformed
+        --     where finish u ps@(p:_) = do
+        --             trees <- readIORef treesRef
+        --             curr <- readIORef currRef
+        --             case changeTerm (trees!!curr) u ps of
+        --                 Wellformed t -> do
+        --                     if null p then changeMode t
+        --                     else writeIORef treesRef $ updList trees curr t
+        --                     extendPT False False False False $ ReplaceText str
+        --                     setProof False False "REPLACING THE SUBTREES" ps
+        --                              textInserted
+        --                     clearTreeposs; drawCurr'
+        --                 Bad str -> labMag str
         
       --   -- | Used by 'checkForward'.
       --   replaceVar :: String -> TermS -> [Int] -> Action
@@ -4895,7 +4910,7 @@ parseTerms sig file ts sST =  case parseE (term sig) ts of
       --           writeIORef restoreRef True
       --           curr <- readIORef currRef
       --           let t = trees!!curr
-      --           drawThis (mapT f $ posTree [] t) (pointers t) "red"
+      --           drawThis (mapT f $ posTree [] t) (cPositions isPos t) "red"
       --       where f = unwords . map show
         
       --   -- | Called by menu item /predecessors/ from menu /nodes/.

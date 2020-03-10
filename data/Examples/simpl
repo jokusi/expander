@@ -4,7 +4,7 @@ constructs:     a b c
 defuncts: 	plus times take iterate iter
 preds:		P Q R odd
 fovars:		x' y' z' i j
-hovars: 	H I
+hovars: 	I P Q R
 
 axioms: 
 
@@ -17,6 +17,7 @@ axioms:
 & (odd(n) <=== odd(n-1))
 
 & iter == mu I.fun(H,fun(x,x:I(H)$H$x))
+
 & iterate(H)$x == x:iterate(H)$H$x 
 
 & (i `mod` j = 0 ==> i^j -> j)
@@ -25,7 +26,7 @@ conjects:
 
   (P(x,y) & Q(z) & (P(x,y) ==> R(x,y,z)))
 & (P(x,y) ==> (Q(y) ==> R(x,y,z)) | P(y,z))
-& zipWith(=)([1,x,3,4])([1,2,y,4])
+& zipWith(=)[1,x,3,4][1,2,y,5,6]
 & (Any x y z:(x = f(y) & Q(z)) ==> Any x' y' z':(Q(z') & f(y') = x'))
 & (All x y z:(x = f(y) & Q(z)) ==> All x' y' z':(Q(z') & f(y') = x'))
 & [2,3]++[5`mod`2,1] <+> 78 <+> []^{9,5,5}^{9,9,5} = x
@@ -47,7 +48,7 @@ conjects:
 & (x = [] ==> ((x =/= [] ==> Q(x)) | (x = [] ==> R(x))))
 
 & plus(4,suc(5)) = x
-& all(=) $ zip[1,2,3,4,5] $ [1,2,3,4,5]
+& all(=)$zip[1,2,3,4,5][1,2,3,4,5]
 & f(fun(suc(x),x+x,x,x*x),z) = f(fun(suc(y),y+y,z,z*z),z)
 
 & (pos 1 0 =/= 4 & 5 =/= 2)
@@ -57,43 +58,50 @@ conjects:
 & any((=5))[6,7,5,4]
 & set[5,5,6]=set[6,5]
 
+& fun((x,y),x+z+y)=fun((y,x),y+z+x) --> True
+
 terms: 
 
-    branch[3,(),4,5,(),7] 	--> 3 <+> 4 <+> 5 <+> 7
-<+> upd[1..9](6)(hhh)    	--> [1,2,3,4,5,6,hhh,8,9]
-<+> replicateG(9)[1..4]  
-                --> [[1,2,3,4],pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0]
-<+> f$replicateG(5)$6
-<+> concRepl(3)[1..4]
-		--> [1,2,3,4,pos 0,pos 1,pos 2,pos 3,pos 0,pos 1,pos 2,pos 3]
-<+> take(4)$iter(+1)$0 		--> [0,1,2,3]
-<+> take(4)$iterate(+1)$0 	--> [0,1,2,3]
-<+> take(4)$iter(+3*2)$0 	--> [0,6,12,18]
-<+> take(4)$iter(f.g)$0		
-	        --> [0,f(g(0)),f(g(f(g(0)))),f(g(f(g(f(g(0))))))]
-<+> take(4)$mu s.(idle:s)	--> [idle,idle,idle,idle]
+    branch[3,(),4,5,(),7]     --> 3 <+> 4 <+> 5 <+> 7
+<+> upd[1..9](6)(hhh)         --> [1,2,3,4,5,6,hhh,8,9]
+<+> take(4)$iter(+1)$0 	      --> [0,1,2,3]
+<+> take(4)$iterate(+1)$0     --> [0,1,2,3]
+<+> take(4)$iter(+3*2)$0      --> [0,6,12,18]
+<+> take(4)$iter(f.g)$0	      --> [0,f(g(0)),f(g(f(g(0)))),f(g(f(g(f(g(0))))))]
+<+> take(4)$mu s.(idle:s)     --> [idle,idle,idle,idle]
+
 <+> f$(hh(uuu)**5)$888	
-		--> f(hh(uuu)$(pos 0 0$(pos 0 0$(pos 0 0$(pos 0 0$888)))))
+		     --> f(hh(uuu)$(pos 0 0$(pos 0 0$(pos 0 0$(pos 0 0$888)))))
+<+> f(g(pos 1 0 0 0),h(g((3+5)+(3+5)))) 
+ 	             --> f(g(8),h(g(16)))
+<+> ((0+g(f(pos 1 1 0,0),0))+0)+(x,g(h(x)),pos 0 0 1 0)
+                     --> g(f(pos 1 1 0,0),0)+(x,g(h(x)),f(pos 1 1 0,0))
+ 
+<+> 0+F(x,g$x,88)+F(x,g$x,88)+0		        -- simplify after collapse vars
+<+> 0+F(x,g$x,88)+F(x,g$h$x,88)+0
+<+> 0+F(g$x)+F(x,g$h$x,88)+0
 
-<+> g(s,g(s,sd,g(s,sd,r)),r)
-<+> g(s,sd,r)
-<+> g(s,sd,g(s,sd,r))
-<+> g(g(s,sd,r),sd,r)
-
-<+> 2^3^4^5^6^7^8^9^10^11^12^13^14^15		--rewrite-> 3^2^11^13^5^7
+<+> 2^3^4^5^6^7^8^9^10^11^12^13^14^15		--> 3^2^11^13^5^7 (8 rewrites)
 
 <+> fun(x,ite(x>0&x=/=6,x-1,88))(7-1)		--> 88
 
-<+> fun(suc(x)||x>4,x+x,z,x*x)$5		--> 25
-<+> fun(suc(x)||x>4,x+x,z,x*x)$6		--> 10
+<+> fun(suc(x)||x>4,x+x,z,z*z)$5		--> 25
+<+> fun(suc(x)||x>4,x+x,z,z*z)$6		--> 10
 
 <+> fun((x,x),x,x,not_equal)(8,8)		--> 8
 <+> fun((x,x),x,x,not_equal)(8,9)		--> not_equal
 
+<+> fun(f(x),g(h(x)),r(x),h(g(x))) $ f(5)
+<+> fun(f(x),g(h(x)),r(x),h(g(x))) $ r(5)
+<+> fun(f(x),g(x,x))$suc$f$5
+<+> fun(c(x),f(x,x),b(x),g(g(x,x),g(x,x)))$b$c$suc$5
+
 <+> (fun(x,[x,x])<=<fun(x,[x,x,x]))$5 		--> [5,5,5,5,5,5]
-<+> length(fun(x,[x,x])<=<fun(x,[x,x,x])<=<fun(x,[x,x]))$5 
-						--> 12
-<+> fun(x,fun(y,5+x))$3+y   			--> fun(y0,8+y)
+<+> length$(fun(x,[x,x])<=<
+            fun(x,[x,x,x])<=<
+            fun(x,[x,x]))$5                     --> 12
+
+<+> fun(x,fun(y,z+5+x+y))$3+y+z   		--> fun(y0,(z+5)+((3+y)+z)+y0)
 
 <+> (suc.length)$get0$([1..5],99)      		--> 6
 <+> get5$tup[1..11]				--> 6
@@ -110,12 +118,9 @@ terms:
 <+> f[1,f[1..5],3,4,5]
 <+> 11*2-6*7*8*9*0+9/5+8*8*8^66+6^9*9-3*5
 <+> plus(4,suc$5) 
-<+> suc(x)-suc(f(x,x))
 
-<+> times(3,5)
-<+> times(pos 1,5)
-<+> times(3,times(2,pos 1 1)+5)
-<+> (times(1,pos 0 1)+(times(2,pos 0 1 1)+5))+(((times(0,pos 1 0 0 1)+5)+5)+5)
+<+> times(3,5) 					     --> 15
+<+> times(3,times(times(2,pos 1 0 0 1)+5,pos 1 1)+5) --> 240
 
 <+> map(suc)[1..4]
 <+> map(fun(x,x+1))[1..5]
@@ -125,16 +130,17 @@ terms:
 <+> map(+3)[1..5] 
 <+> map(fun(x,x+1))[1..5] 
 <+> map(f(t).(+1))[1..5] 
-<+> concat$map(fun(x,[x,suc(x)]))[1..6]	--> [1,2,2,3,3,4,4,5,5,6,6,7]
-<+> map(fun(x,insert(x,[1..5]++[8..10])))[6,7]
+<+> map(fun(x,insert(x)([1..5]++[8..10])))[6,7]
 
-<+> concRepl(5)[1..5]
-<+> mapG(fun(F,F$frame(5)$black$text$ff hhhhh ff))[red,green,blue]
-
-<+> fun(f(x),g(h(x)),r(x),h(g(x))) $ f(5)
-<+> fun(f(x),g(h(x)),r(x),h(g(x))) $ r(5)
-<+> fun(f(x),g(x,x))$suc$f$5
-<+> fun(c(x),f(x,x),b(x),g(g(x,x),g(x,x)))$b$c$suc$5
+<+> concat$mapG(fun(x,[x,suc(x)]))[1..6]	--> [1,2,2,3,3,4,4,5,5,6,6,7]
+<+> f$mapG(fun(x,x+1))[5..8]
+<+> mapG(fun(F,F$frame(5)$black$text$fff hhhhh fff))[red,green,blue]
+<+> replicateG(9)[1..4]  
+                --> [[1,2,3,4],pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0]
+<+> f$replicateG(5)$6
+                --> f[6,pos 0 0,pos 0 0,pos 0 0,pos 0 0]
+<+> concRepl(3)[1..4]
+		--> [1,2,3,4,pos 0,pos 1,pos 2,pos 3,pos 0,pos 1,pos 2,pos 3]
 
 <+> g(pos 1 0 1,g(g(pos 1 0 1,g(pos 1 1,pos 1 1)),x))
 <+> g(g(x,pos 1 0),g(g(g(pos 0,x),g(x,x)),x))
@@ -195,6 +201,7 @@ terms:
      (2,c,[4,uuuuuuuuuuuuuuuuuuuuuuu,5]),(4,b,[3]),		-- interpreter
      (2,d,[1,3,3,3,3,3,3,3,3,3,39,3,3,3,3,3,3])]
 <+> f(a,f(a,a,f(a,a,a,f(a,a,a,a,a,a,a,a,a),a,a,a),a,a),a)	-- hill term
+
 {- <+> f(f(a,f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,a)))),a) 
 <+> aaaa(ddd,
      aaaa(ddd,

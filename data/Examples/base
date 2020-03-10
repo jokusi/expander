@@ -1,6 +1,6 @@
 -- base
 
-defuncts: head tail init last take drop length map ^^ <=< kfold
+defuncts: head tail init last take drop ^^ <=< kfold
 fovars:	  x y z s s' n
 hovars:   F G H
 

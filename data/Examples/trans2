@@ -12,7 +12,7 @@ hovars:		X Y
 
 axioms:
 
-states == [1] & labels == [a] & atoms == [A,B] &
+states == [1] & labels == [a,b] & atoms == [A,B] &
 
 (1,a) -> 1<+>2 & (2,a) -> 3 & (3,a) -> 1<+>4 & (4,a) -> 4 &
 

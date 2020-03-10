@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, February 2019
-                  Jos Kusiek, February 2019
+Copyright   : (c) Peter Padawitz, March 2019
+                  Jos Kusiek, March 2019
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -83,98 +83,87 @@ deriveStep (SetStrat _)    = False
 deriveStep _               = True
 
 command :: Parser Step
-command = concat [do symbol "AddAxioms"; axs <- list linearTerm
-                     return $ AddAxioms axs,
-                  do symbol "ApplySubst"; return ApplySubst,
-                  do symbol "ApplySubstTo"; x <- token quoted
-                     t <- enclosed linearTerm; return $ ApplySubstTo x t,
-                  do symbol "ApplyTransitivity"; return ApplyTransitivity,
-                  do symbol "BuildKripke"; m <- token int
-                     return $ BuildKripke m,
-                  do symbol "BuildRE"; return BuildRE,
-                  do symbol "CollapseStep"; b <- token bool
-                     return $ CollapseStep b,
-                  do symbol "ComposePointers"; return ComposePointers,
-                  do symbol "CopySubtrees"; return CopySubtrees,
-                  do symbol "CreateIndHyp"; return CreateIndHyp,
-                  do symbol "CreateInvariant"; b <- token bool
-                     return $ CreateInvariant b,
-                  do symbol "DecomposeAtom"; return DecomposeAtom,
-                  do symbol "EvaluateTrees"; return EvaluateTrees,
-                  do symbol "ExpandTree"; b <- token bool; n <- token int
-                     return $ ExpandTree b n,
-                  do symbol "FlattenImpl"; return FlattenImpl,
-                  do symbol "Generalize"; cls <- list linearTerm
-                     return $ Generalize cls,
-                  do symbol "Induction"; b <- token bool; n <- token int
-                     return $ Induction b n,
-                  do symbol "Mark"; ps <- list $ list int; return $ Mark ps,
-                  do symbol "Matching"; n <- token int; return $ Matching n,
-                  do symbol "Minimize"; return Minimize,
-                  do symbol "ModifyEqs"; m <- token int; return $ ModifyEqs m,
-                  do symbol "Narrow"; limit <- token int; sub <- token bool
-                     return $ Narrow limit sub,
-                  do symbol "NegateAxioms"; ps <- list quoted
-                     cps <- list quoted; return $ NegateAxioms ps cps,
-                  do symbol "PermuteSubtrees"; return PermuteSubtrees,
-                  do symbol "RandomLabels"; return RandomLabels,
-                  do symbol "RandomTree"; return RandomTree,
-                  do symbol "ReduceRE"; m <- token int; return $ ReduceRE m,
-                  do symbol "Refuting"; b <- token bool; return $ Refuting b,
-                  do symbol "ReleaseNode"; return ReleaseNode,
-                  do symbol "ReleaseSubtree"; return ReleaseSubtree,
-                  do symbol "ReleaseTree"; return ReleaseTree,
-                  do symbol "RemoveCopies"; return RemoveCopies,
-                  do symbol "RemoveEdges"; b <- token bool
-                     return $ RemoveEdges b,
-                  do symbol "RemoveNode"; return RemoveNode,
-                  do symbol "RemoveOthers"; return RemoveOthers,
-                  do symbol "RemovePath"; return RemovePath,
-                  do symbol "RemoveSubtrees"; return RemoveSubtrees,
-                  do symbol "RenameVar"; x <- token quoted
-                     return $ RenameVar x,
-                  do symbol "ReplaceNodes"; x <- token quoted
-                     return $ ReplaceNodes x,
-                  do symbol "ReplaceOther"; return ReplaceOther,
-                  do symbol "ReplaceSubtrees"; ps <- list $ list int
-                     ts <- list linearTerm; return $ ReplaceSubtrees ps ts,
-                  do symbol "ReplaceText"; x <- token quoted
-                     return $ ReplaceText x,
-                  do symbol "ReplaceVar"; x <- token quoted
-                     u <- enclosed linearTerm; p <- list int
-                     return $ ReplaceVar x u p,
-                  do symbol "ReverseSubtrees"; return ReverseSubtrees,
-                  do symbol "SafeEqs"; return SafeEqs,
-                  do symbol "SetAdmitted"; block <- token bool
-                     xs <- list quoted; return $ SetAdmitted block xs,
-                  do symbol "SetCurr"; msg <- token quoted; n <- token int
-                     return $ SetCurr msg n,
-                  do symbol "SetStrat"; strat <- token strategy
-                     return $ SetStrat strat,
-                  do symbol "ShiftPattern"; return ShiftPattern,
-                  do symbol "ShiftQuants"; return ShiftQuants,
-                  do symbol "ShiftSubs"; ps <- list $ list int
-                     return $ ShiftSubs ps,
-                  do symbol "Simplify"; limit <- token int; sub <- token bool
-                     return $ Simplify limit sub,
-                  do symbol "Simplifying"; b <- token bool
-                     return $ Simplifying b,
-                  do symbol "SplitTree"; return SplitTree,
-                  do symbol "SubsumeSubtrees"; return SubsumeSubtrees,
-                  do symbol "Theorem"; b <- token bool
-                     th <- enclosed linearTerm; return $ Theorem b th,
-                  do symbol "Transform"; m <- token int; return $ Transform m,
-                  do symbol "UnifySubtrees"; return UnifySubtrees]
+command = concat
+          [symbol "AddAxioms" >> list linearTerm >>= return . AddAxioms,
+           symbol "ApplySubst" >> return ApplySubst,
+           do symbol "ApplySubstTo"; x <- token quoted
+              enclosed linearTerm >>= return . ApplySubstTo x,
+           symbol "ApplyTransitivity" >> return ApplyTransitivity,
+           symbol "BuildKripke" >> token int >>= return . BuildKripke,
+           symbol "BuildRE" >> return BuildRE,
+           symbol "CollapseStep" >> token bool >>= return . CollapseStep,
+           symbol "CollapseVars" >> return CollapseVars,
+           symbol "ComposePointers" >> return ComposePointers,
+           symbol "CopySubtrees" >> return CopySubtrees,
+           symbol "CreateIndHyp" >> return CreateIndHyp,
+           symbol "CreateInvariant" >> token bool >>= return . CreateInvariant,
+           symbol "DecomposeAtom" >> return DecomposeAtom,
+           symbol "EvaluateTrees" >> return EvaluateTrees,
+           do symbol "ExpandTree"; b <- token bool
+              token int >>= return . ExpandTree b,
+           symbol "FlattenImpl" >> return FlattenImpl,
+           symbol "Generalize" >> list linearTerm >>= return . Generalize,
+           do symbol "Induction"; b <- token bool
+              token int >>= return . Induction b,
+           symbol "Mark" >> list (list int) >>= return . Mark,
+           symbol "Matching" >> token int >>= return . Matching,
+           symbol "Minimize" >> return Minimize,
+           symbol "ModifyEqs" >> token int >>= return . ModifyEqs,
+           do symbol "Narrow"; limit <- token int
+              token bool >>= return . Narrow limit,
+           do symbol "NegateAxioms"; ps <- list quoted
+              list quoted >>= return . NegateAxioms ps,
+           symbol "PermuteSubtrees" >> return PermuteSubtrees,
+           symbol "RandomLabels" >> return RandomLabels,
+           symbol "RandomTree" >> return RandomTree,
+           symbol "ReduceRE" >> token int >>= return . ReduceRE,
+           symbol "Refuting" >> token bool >>= return . Refuting,
+           symbol "ReleaseNode" >> return ReleaseNode,
+           symbol "ReleaseSubtree" >> return ReleaseSubtree,
+           symbol "ReleaseTree" >> return ReleaseTree,
+           symbol "RemoveCopies" >> return RemoveCopies,
+           symbol "RemoveEdges" >> token bool >>= return . RemoveEdges,
+           symbol "RemoveNode" >> return RemoveNode,
+           symbol "RemoveOthers" >> return RemoveOthers,
+           symbol "RemovePath" >> return RemovePath,
+           symbol "RemoveSubtrees" >> return RemoveSubtrees,
+           symbol "RenameVar" >> token quoted >>= return . RenameVar,
+           symbol "ReplaceNodes" >> token quoted >>= return . ReplaceNodes,
+           symbol "ReplaceOther" >> return ReplaceOther,
+           do symbol "ReplaceSubtrees"; ps <- list $ list int
+              list linearTerm >>= return . ReplaceSubtrees ps,
+           symbol "ReplaceText" >> token quoted >>= return . ReplaceText,
+           do symbol "ReplaceVar"; x <- token quoted; u <- enclosed linearTerm
+              list int >>= return . ReplaceVar x u,
+           symbol "ReverseSubtrees" >> return ReverseSubtrees,
+           symbol "SafeEqs" >> return SafeEqs,
+           do symbol "SetAdmitted"; block <- token bool
+              list quoted >>= return . SetAdmitted block,
+           do symbol "SetCurr"; msg <- token quoted
+              token int >>= return . SetCurr msg,
+           symbol "SetStrat" >> token strategy >>= return . SetStrat,
+           symbol "ShiftPattern" >> return ShiftPattern,
+           symbol "ShiftQuants" >> return ShiftQuants,
+           symbol "ShiftSubs" >> list (list int) >>= return . ShiftSubs,
+           do symbol "Simplify"; limit <- token int
+              token bool >>= return . Simplify limit,
+           symbol "Simplifying" >> token bool >>= return . Simplifying,
+           symbol "SplitTree" >> return SplitTree,
+           symbol "SubsumeSubtrees" >> return SubsumeSubtrees,
+           do symbol "Theorem"; b <- token bool
+              enclosed linearTerm >>= return . Theorem b,
+           symbol "Transform" >> token int >>= return . Transform,
+           symbol "UnifySubtrees" >> return UnifySubtrees]
 
 linearTerm :: Parser (Term String)
-linearTerm =   concat [do symbol "F"; x <- token quoted; ts <- list linearTerm
-                          return $ F x ts,
-                       do symbol "V"; x <- token quoted; return $ V x]
+linearTerm = concat [do symbol "F"; x <- token quoted
+                        list linearTerm >>= return . F x,
+                     symbol "V" >> token quoted >>= return . V]
 
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (February 4, 2020)"
+start = "Welcome to Expander3 (March 9, 2020)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -228,6 +217,9 @@ copiesRemoved = "Copies of the selected tree have been removed."
 
 collapsed :: String
 collapsed = "The selected tree has been collapsed."
+
+collapsedVars :: String
+collapsedVars = "The variables of the selected tree have been collapsed."
 
 complsAdded :: Show t => [t] -> String
 complsAdded xs = "Axioms for the complement" ++ str ++ showStrList xs ++
@@ -958,7 +950,7 @@ solver this solveRef enum paint = do
           mkBut graphMenu "split cycles" $ removeEdges True
           mkBut graphMenu "more tree arcs" $ removeEdges False
           mkBut graphMenu "compose pointers" composePointers
-          mkBut graphMenu "collapse after simplify" setCollapse
+          mkBut graphMenu "collapse variables" collapseVarsCom
           mkBut graphMenu "collapse -->" $ transformGraph 0
           mkBut graphMenu "collapse level --> " $ collapseStep True
           mkBut graphMenu "reset level" resetLevel
@@ -1043,6 +1035,7 @@ solver this solveRef enum paint = do
           mkBut sigMenu "admit all simplifications" $ setAdmitted' True []
           mkBut sigMenu ".. except for symbols" $ setAdmitted True
           mkBut sigMenu ".. for symbols" $ setAdmitted False
+          mkBut sigMenu "collapse after simplify" setCollapse
           but <- mkBut sigMenu (eqsButMsg False) switchSafe
           writeIORef safeButRef but
           mkBut sigMenu "show sig" showSig
@@ -2256,6 +2249,7 @@ solver this solveRef enum paint = do
                     BuildKripke m -> buildKripke m
                     BuildRE -> buildRegExp
                     CollapseStep b -> collapseStep b
+                    CollapseVars -> collapseVarsCom
                     ComposePointers -> composePointers
                     CopySubtrees -> copySubtrees
                     CreateIndHyp -> createIndHyp
@@ -2423,7 +2417,24 @@ solver this solveRef enum paint = do
                     drawCurr'
                     modifyIORef counterRef $ \counter -> incr counter 'c'
                     writeIORef partRef part'
-        
+
+        collapseVarsCom :: Action
+        collapseVarsCom = do
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               sig <- getSignature
+               trees <- readIORef treesRef
+               curr <- readIORef currRef
+               treeposs <- readIORef treepossRef
+               let t = trees!!curr
+                   ps = emptyOrAll treeposs
+                   ts = map (collapseVars sig . getSubterm1 t) ps
+               modifyIORef treesRef $ \trees -> updList trees curr $ fold2 replace1 t ps ts
+               extendPT False False False False CollapseVars
+               setProof True False "COLLAPSING THE VARIABLES" ps collapsedVars
+               drawCurr'
+
         -- | Used by 'checkForward'. Called by menu item /compose pointers/
         -- from /graph/ menu. 
         composePointers :: Action
@@ -2661,10 +2672,9 @@ solver this solveRef enum paint = do
                             atomDecomposed
                         clearTreeposs; drawCurr'
                 sig <- getSignature
-                case x of
-                    "=" | b -> finish $ splitEq sig l r
-                    "=/=" | not b -> finish $ splitNeq sig l r
-                    _ -> labRed' atomNotDecomposed
+                case x of "=" | b -> finish $ splitEq sig True l r
+                          "=/=" | not b -> finish $ splitEq sig False l r
+                          _ -> labRed' atomNotDecomposed
         
         delay :: Action -> Action
         delay = gtkDelay 100
@@ -2890,6 +2900,21 @@ solver this solveRef enum paint = do
                 clearText
                 addText $ lines $ showFactors fs
                 writeIORef numberedExpsRef (fs,True)
+        
+        {- | 
+            Show pointer in textfield. Used by 'checkBackward', 'checkForward',
+            'checkProof', 'setDeriveMode' and 'showProofTerm'. Exported by
+            public 'Epaint.Solver' method 'Epaint.enterRef'.
+        -}
+        enterRef :: Action
+        enterRef = do clearText
+                      proofTPtr <- readIORef proofTPtrRef
+                      proofTerm <- readIORef proofTermRef
+                      addText $ lines $ show
+                              $ addPtr proofTPtr proofTerm
+            where addPtr 0 (step:pt) = POINTER step:pt
+                  addPtr n (step:pt) = step:addPtr (n-1) pt
+                  addPtr _ pt        = pt
 
         -- Show terms in textfield. Used by 'showTerms'.
         enterTerms :: [TermS] -> Action
@@ -2913,23 +2938,7 @@ solver this solveRef enum paint = do
                 clearText
                 addText $ lines str
                 writeIORef numberedExpsRef ([],True)
-        
-        
-        {- | 
-            Show pointer in textfield. Used by 'checkBackward', 'checkForward',
-            'checkProof', 'setDeriveMode' and 'showProofTerm'. Exported by
-            public 'Epaint.Solver' method 'Epaint.enterRef'.
-        -}
-        enterRef :: Action
-        enterRef = do clearText
-                      proofTPtr <- readIORef proofTPtrRef
-                      proofTerm <- readIORef proofTermRef
-                      addText $ lines $ show
-                              $ addPtr proofTPtr proofTerm
-            where addPtr 0 (step:pt) = POINTER step:pt
-                  addPtr n (step:pt) = step:addPtr (n-1) pt
-                  addPtr _ pt        = pt
-        
+                
         {- |
             Show tree in canvas. Used by 'initCanvas', 'parseText',
             'randomTree', 'showEqsOrGraph' and 'showRelation'. Exported by
@@ -3551,7 +3560,7 @@ solver this solveRef enum paint = do
                                    else actMore ts treeMode
                         where ts = mkTerms $ F "<+>" trees
 
-         where split = actMore . map dropHeadFromPoss
+         where split = actMore . map (dropnFromPoss 1)
                actMore ts mode = do
                     newTrees <- readIORef newTreesRef
                     curr <- readIORef currRef
@@ -3867,7 +3876,7 @@ solver this solveRef enum paint = do
                     modifyIORef treesRef $ \trees -> updList trees curr t
                     narrowLoop sig cls k' (limit-n)
                     where k' = k+n
-               split = actMore . map dropHeadFromPoss
+               split = actMore . map (dropnFromPoss 1)
                actMore ts mode = do
                     trees <- readIORef treesRef
                     curr <- readIORef currRef
@@ -4159,10 +4168,10 @@ solver this solveRef enum paint = do
                 _ -> do
                     str <- getTextHere
                     sig <- getSignature
-                    case parseE (term sig) str of
-                        Correct t -> enterTree' False t
-                        _ -> case parseE (implication sig) str of
-                            Correct cl -> enterTree' True cl
+                    case parseE (implication sig) str of
+                        Correct t -> enterTree' True t
+                        _ -> case parseE (term sig) str of
+                            Correct cl -> enterTree' False cl
                             p -> incorrect p str illformed
         
         -- | Used by 'addSpec''.
@@ -4805,11 +4814,9 @@ solver this solveRef enum paint = do
             sig <- getSignature
             treeposs <- readIORef treepossRef
             let ps = emptyOrAll treeposs
-            case parseE (term sig) str of
-                Correct u -> finish u ps
-                _ -> case parseE (implication sig) str of
-                        Correct u -> finish u ps
-                        p -> incorrect p str illformed
+            case parseE (implication sig ++ term sig) str of
+                 Correct u -> finish u ps
+                 p -> incorrect p str illformed
             where finish u ps@(p:_) = do
                     trees <- readIORef treesRef
                     curr <- readIORef currRef
@@ -5824,7 +5831,7 @@ solver this solveRef enum paint = do
                 writeIORef restoreRef True
                 curr <- readIORef currRef
                 let t = trees!!curr
-                drawThis (mapT f $ posTree [] t) (pointers t) "red"
+                drawThis (mapT f $ posTree [] t) (cPositions isPos t) "red"
             where f = unwords . map show
         
         -- | Called by menu item /predecessors/ from menu /nodes/.

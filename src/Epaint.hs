@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, September 2019
-                  Jos Kusiek, September 2019
+Copyright   : (c) Peter Padawitz, March 2019
+                  Jos Kusiek, March 2019
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -87,7 +87,7 @@ data Solver = Solver
   
 data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep Bool |
-            ComposePointers | CopySubtrees | CreateIndHyp |
+            CollapseVars | ComposePointers | CopySubtrees | CreateIndHyp |
             CreateInvariant Bool | DecomposeAtom | EvaluateTrees |
             ExpandTree Bool Int | FlattenImpl | Generalize [TermS] |
             Induction Bool Int | Mark [[Int]] | Matching Int | Minimize |
@@ -2440,7 +2440,7 @@ widgetTree sig sizes spread t = do t <- f [] t; return [WTree t] where
        f :: [Int] -> TermS -> MaybeT Cmd TermW
        f p (F "<+>" ts)        = do ts <- zipWithSucsM f p ts
                                     return $ F Skip ts
-       f p (F "widg" ts@(_:_)) = do let u = dropHeadFromPoss $ last ts
+       f p (F "widg" ts@(_:_)) = do let u = dropnFromPoss 1 $ last ts
                                          -- expand 0 t $ p++[length ts-1]
                                     [w] <- widgets sig black sizes spread u
                                     ts <- zipWithSucsM f p $ init ts
@@ -4366,62 +4366,60 @@ graphString = do symbol "("; pict <- list widgString; symbol ","
 
 -- widgString is used by loadWidget.
 widgString :: Parser Widget_
-widgString   = concat [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
-                          r <- enclosed double; b <- enclosed double
-                          let [x',y',r',a',b'] = map fromDouble [x,y,r,a,b]
-                          return $ Arc ((x',y'),a',c,i) t r' b',
-                       do symbol "Bunch"; w <- enclosed widgString
-                          is <- list int; return $ Bunch w is,
-                       do symbol "Dot"; c <- token hexcolor; (x,y) <- pair
-                          let [x',y'] = map fromDouble [x,y]
-                          return $ Dot c (x',y'),
-                       do symbol "Fast"; w <- enclosed widgString
-                          return $ Fast w,
-                       do symbol "Gif"; p <- enclosed nat; b <- enclosed bool
-                          file <- token quoted; hull <- enclosed widgString
-                          return $ Gif p b file hull,
-                       do symbol "New"; return New,
-                       do symbol "Oval"; ((x,y),a,c,i) <- state
-                          rx <- enclosed double; ry <- enclosed double
-                          let [x',y',a',rx',ry'] = map fromDouble [x,y,a,rx,ry]
-                          return $ Oval ((x',y'),a',c,i) rx' ry',
-                       do symbol "Path"; ((x,y),a,c,i) <- state
-                          n <- enclosed nat; ps <- list pair
-                          let [x',y',a'] = map fromDouble [x,y,a]
-                          return $ Path ((x',y'),a',c,i) n $ map fromDouble2 ps,
-                       do symbol "Poly"; ((x,y),a,c,i) <- state
-                          n <- enclosed nat; rs <- list (enclosed double)
-                          b <- enclosed double
-                          let [x',y',a',b'] = map fromDouble [x,y,a,b]
-                          return $ Poly ((x',y'),a',c,i) n 
-                                         (map fromDouble rs) b',
-                       do symbol "Rect"; ((x,y),a,c,i) <- state
-                          b <- enclosed double; h <- enclosed double
-                          let [x',y',a',b',h'] = map fromDouble [x,y,a,b,h]
-                          return $ Rect ((x',y'),a',c,i) b' h',
-                       do symbol "Repeat"; w <- enclosed widgString
-                          return $ Repeat w,
-                       do symbol "Skip"; return Skip,
-                       do symbol "Text_"; ((x,y),a,c,i) <- state 
-                          n <- enclosed nat; strs <- list (token quoted)
-                          lgs <- list int
-                          let [x',y',a'] = map fromDouble [x,y,a]
-                          return $ Text_ ((x',y'),a',c,i) n strs lgs,
-                       do symbol "Tree"; ((x,y),a,c,i) <- state
-                          n <- enclosed nat; c' <- token hexcolor; ct <- ctree
-                          let [x',y',a'] = map fromDouble [x,y,a]
-                          return $ Tree ((x',y'),a',c,i) n c' ct,
-                       do symbol "Tria"; ((x,y),a,c,i) <- state
-                          r <- enclosed double
-                          let [x',y',a',r'] = map fromDouble [x,y,a,r]
-                          return $ Tria ((x',y'),a',c,i) r',
-                       do symbol "Turtle"; ((x,y),a,c,i) <- state
-                          sc <- enclosed double; acts <- list turtleAct
-                          let [x',y',a',sc'] = map fromDouble [x,y,a,sc]
-                          return $ Turtle ((x',y'),a',c,i) sc' acts]
-             where arcType   = concat [do symbol "chord"; return Chord,
-                                       do symbol "arc"; return Perimeter,
-                                       do symbol "pieslice"; return Pie]
+widgString = concat [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
+                        r <- enclosed double; b <- enclosed double
+                        let [x',y',r',a',b'] = map fromDouble [x,y,r,a,b]
+                        return $ Arc ((x',y'),a',c,i) t r' b',
+                     do symbol "Bunch"; w <- enclosed widgString
+                        list int >>= return . Bunch w,
+                     do symbol "Dot"; c <- token hexcolor; (x,y) <- pair
+                        let [x',y'] = map fromDouble [x,y]
+                        return $ Dot c (x',y'),
+                     symbol "Fast" >> enclosed widgString >>= return . Fast,
+                     do symbol "Gif"; p <- enclosed nat; b <- enclosed bool
+                        file <- token quoted; hull <- enclosed widgString
+                        return $ Gif p b file hull,
+                     symbol "New" >> return New,
+                     do symbol "Oval"; ((x,y),a,c,i) <- state
+                        rx <- enclosed double; ry <- enclosed double
+                        let [x',y',a',rx',ry'] = map fromDouble [x,y,a,rx,ry]
+                        return $ Oval ((x',y'),a',c,i) rx' ry',
+                     do symbol "Path"; ((x,y),a,c,i) <- state
+                        n <- enclosed nat; ps <- list pair
+                        let [x',y',a'] = map fromDouble [x,y,a]
+                        return $ Path ((x',y'),a',c,i) n $ map fromDouble2 ps,
+                     do symbol "Poly"; ((x,y),a,c,i) <- state
+                        n <- enclosed nat; rs <- list (enclosed double)
+                        b <- enclosed double
+                        let [x',y',a',b'] = map fromDouble [x,y,a,b]
+                        return $ Poly ((x',y'),a',c,i) n 
+                                       (map fromDouble rs) b',
+                     do symbol "Rect"; ((x,y),a,c,i) <- state
+                        b <- enclosed double; h <- enclosed double
+                        let [x',y',a',b',h'] = map fromDouble [x,y,a,b,h]
+                        return $ Rect ((x',y'),a',c,i) b' h',
+                     symbol "Repeat" >> enclosed widgString
+                        >>= return . Repeat,
+                     symbol "Skip" >> return Skip,
+                     do symbol "Text_"; ((x,y),a,c,i) <- state
+                        n <- enclosed nat; strs <- list (token quoted)
+                        let [x',y',a'] = map fromDouble [x,y,a]
+                        list int >>= return . Text_ ((x',y'),a',c,i) n strs,
+                     do symbol "Tree"; ((x,y),a,c,i) <- state
+                        n <- enclosed nat; c' <- token hexcolor
+                        let [x',y',a'] = map fromDouble [x,y,a]
+                        ctree >>= return . Tree ((x',y'),a',c,i) n c',
+                     do symbol "Tria"; ((x,y),a,c,i) <- state
+                        r <- enclosed double
+                        let [x',y',a',r'] = map fromDouble [x,y,a,r]
+                        return $ Tria ((x',y'),a',c,i) r',
+                     do symbol "Turtle"; ((x,y),a,c,i) <- state
+                        sc <- enclosed double; acts <- list turtleAct
+                        let [x',y',a',sc'] = map fromDouble [x,y,a,sc]
+                        return $ Turtle ((x',y'),a',c,i) sc' acts]
+             where arcType = concat [symbol "chord" >> return Chord,
+                                     symbol "arc" >> return Perimeter,
+                                     symbol "pieslice" >> return Pie]
                    pair = do symbol "("; x <- token double; symbol ","
                              y <- token double; symbol ")"; return (x,y)
                    {- unused
@@ -4439,25 +4437,25 @@ widgString   = concat [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
                    node = do symbol "("; b <- token quoted; symbol ","
                              (x,y) <- pair; symbol ","; lg <- enclosed int
                              symbol ")"; return (b,(x,y),lg)
-                   turtleAct =   concat [do symbol "Close"; return Close,
-                                         do symbol "Draw"; return Draw,
-                                         do symbol "Jump"; d <- enclosed double
-                                            return $ Jump (fromDouble d),
-                                         do symbol "JumpA"; d <- enclosed double
-                                            return $ JumpA (fromDouble d),
-                                         do symbol "Move"; d <- enclosed double
-                                            return $ Move (fromDouble d),
-                                         do symbol "MoveA"; d <- enclosed double
-                                            return $ MoveA (fromDouble d),
-                                         do symbol "Open"; c <- token hexcolor
-                                            m <- token nat; return $ Open c m,
-                                         do symbol "Turn"; a <- enclosed double
-                                            return $ Turn (fromDouble a),
-                                         do symbol "Scale"; a <- enclosed double
-                                            return $ Scale (fromDouble a),
-                                         do symbol "Widg"; b <- enclosed bool
-                                            w <- enclosed widgString
-                                            return $ Widg b w]
+                   turtleAct = concat [symbol "Close" >> return Close,
+                                       symbol "Draw" >> return Draw,
+                                       symbol "Jump" >> enclosed double
+                                              >>= return . Jump . fromDouble,
+                                       symbol "JumpA" >> enclosed double
+                                              >>=  return . JumpA . fromDouble,
+                                       symbol "Move" >> enclosed double
+                                              >>=  return . Move . fromDouble,
+                                       symbol "MoveA" >> enclosed double
+                                              >>=  return . MoveA . fromDouble,
+                                       do symbol "Open"; c <- token hexcolor
+                                          m <- token nat; return $ Open c m,
+                                       symbol "Turn" >> enclosed double
+                                              >>=  return . Turn . fromDouble,
+                                       symbol "Scale" >> enclosed double
+                                              >>=  return . Scale . fromDouble,
+                                       do symbol "Widg"; b <- enclosed bool
+                                          w <- enclosed widgString
+                                          return $ Widg b w]
                    ctree =   concat [do symbol "V"; (b,(x,y),lg) <- node
                                         let [x',y'] = map fromDouble [x,y]
                                         return $ V (b,(x',y'),lg),
