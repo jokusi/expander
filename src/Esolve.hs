@@ -286,7 +286,8 @@ foldModal sig = f $ const Nothing where
            f g (F "/\\" [t,u])         = do a <- f g t; b <- f g u
                                             Just $ (alg&modalAnd) a b
            f g (F "`then`" [t,u])      = do a <- f g t; b <- f g u
-                                            Just $ (alg&modalOr) ((alg&modalNeg) a) b
+                                            Just $ (alg&modalOr)
+                                                   ((alg&modalNeg) a) b
            f g (F "EX" [t])            = do a <- f g t; Just $ (alg&ex) a
            f g (F "AX" [t])            = do a <- f g t; Just $ (alg&ax) a
            f g (F "XE" [t])            = do a <- f g t; Just $ (alg&xe) a
@@ -325,28 +326,23 @@ evaluate sig = eval
          eval (F "<===" [t,u])              = mkImpl (eval u) $ eval t
          eval (F "&" ts)                          = mkConjunct $ map eval ts
          eval (F "|" ts)                    = mkDisjunct $ map eval ts
-         eval (F ('A':'n':'y':x) [t])       = mkAny (words x`meet`frees sig t)
-                                                    $ eval t
-         eval (F ('A':'l':'l':x) [t])       = mkAll (words x`meet`frees sig t)
-                                                    $ eval t
+         eval (F ('A':'n':'y':x) [t])       = evalQ mkAny x t
+         eval (F ('A':'l':'l':x) [t])       = evalQ mkAll x t 
          eval (F "Not" [t])                 = mkNot sig $ eval t
          eval (F "id" [t])                  = eval t
          eval (F "ite" [t,u,v]) | isTrue t  = eval u
                                 | isFalse t = eval v
-         eval (F x p@[_,_]) | arithmetical x && just ip = mkRel x $ get ip
-                            | arithmetical x && just rp = mkRel x $ get rp
-                            | arithmetical x && just fp = mkRel x $ get fp
-                            | arithmetical x && just sp = mkRel x $ get sp
+         eval (F x p@[_,_])     | isOrd x && just ip = mkRel x $ get ip
+                                | isOrd x && just rp = mkRel x $ get rp
+                                | isOrd x && just fp = mkRel x $ get fp
+                                | isOrd x && just sp = mkRel x $ get sp
                                          where ip = mapM (intAlg&parseA) p
                                                rp = mapM (realAlg&parseA) p
                                                fp = mapM (linAlg&parseA) p
                                                sp = mapM ((relAlg sig)&parseA) p
-         eval (F "=" [t,u])          = evalEq t u
-         eval (F "=/=" [t,u])        = evalNeq t u
-         eval (F "<+>" ts)           = mkSum $ map eval ts
-         eval (F "length" [F x ts])
-                | collector x        = mkConst $ length ts
-         eval (F "size" [F "{}" ts]) = mkConst $ length $ mkSet ts
+         eval (F "=" [t,u])                       = evalEq t u
+         eval (F "=/=" [t,u])                     = evalNeq t u
+         eval (F "<+>" ts)                        = mkSum $ map eval ts
          eval t | just i = mkConst $ get i
                 | just r = mkConst $ get r
                 | just f = mkLin $ get f
@@ -357,6 +353,8 @@ evaluate sig = eval
                                  s = foldArith (relAlg sig) t
          eval (F x ts)   = F x $ map eval ts
          eval t          = t
+
+         evalQ f x t = f (words x `meet` frees sig t) $ eval t
 
          evalEq t u | eqTerm t u = mkTrue
          evalEq (F "{}" ts) (F "{}" us)
@@ -471,10 +469,10 @@ parseFlow _ sig t parseVal = f t where
                                         Just $ Mop True (leaf "") g val
      f (F "AX" [lab,u,val])        = do g <- f u; val <- parseVal val
                                         Just $ Mop False (leaf "") g val
-     f (F "<>" [lab,u,val])        = do g <- f u; guard $ lab `elem` (sig&labels)
+     f (F "<>" [lab,u,val])        = do g <- f u; guard $ lab `elem`(sig&labels)
                                         val <- parseVal val
                                         Just $ Mop True lab g val
-     f (F "#" [lab,u,val])         = do g <- f u; guard $ lab `elem` (sig&labels)
+     f (F "#" [lab,u,val])         = do g <- f u; guard $ lab `elem`(sig&labels)
                                         val <- parseVal val
                                         Just $ Mop False lab g val
      f (F "MU" [u,val])            = do g <- f u; val <- parseVal val
@@ -486,7 +484,7 @@ parseFlow _ sig t parseVal = f t where
      f val                         = do val <- parseVal val; Just $ Atom val
 
 parseVal sig (t@(F "()" [])) = Just t
-parseVal sig t = do F "[]" ts <- Just t; guard $ ts `subset` (sig&states); Just t
+parseVal sig t = do F "[]" ts <- Just t; guard $ ts `subset` (sig&states);Just t
 
 -- mkFlow computes the term representation of a flow graph
 
@@ -591,7 +589,7 @@ evalStates sig t flow = up [] flow
                                 else (Neg g1 val2, b || val /= val2)
                          where q = p++[0]; (g1,b) = up q g
                                val1 = fst $ getVal flow q
-                               val2 = mkList $ minus (sig&states) $ subterms val1
+                               val2 = mkList $ minus(sig&states) $ subterms val1
        up p (Comb c gs val)
             | any (== unit) vals || any (p<<) ps = (Comb c gs1 val, or bs)
             | True = if null ps then (Atom val1, True)
@@ -630,12 +628,13 @@ evalStates sig t flow = up [] flow
 
 -- mkCycles replaces the bounded variables of fixpoint subformulas by back
 -- pointers to their bodies. Alternating fixpoints may lead to wrong results.
--- mkCycles is used by simplifyS "stateflow" (see below).
 
 mkCycles :: [Int] -> TermS -> TermS
 mkCycles p t@(F x _) | isFixF x = addToPoss p $ eqsToGraph [0] eqs
                                   where (_,eqs,_) = fixToEqs t 0
 mkCycles p (F x ts)             = F x $ zipWithSucs mkCycles p ts
+
+-- used by Esolve > simplifyS stateflow
 
 fixToEqs :: TermS -> Int -> (TermS,[IterEq],Int)
 fixToEqs (F x [t]) n | isFixF x = (F z [],Equal z (F mu [u]):eqs,k)
@@ -753,8 +752,6 @@ evalSubs simplify flow xs = down flow False [] flow
 
 -- * __Subsumption__
 
--- subsumes is used by simplifyF, implToConc (see below) and 
--- Ecom > subsumeSubtrees.
 subsumes :: Sig -> TermS -> TermS -> Bool
 subsumes sig = h
   where h t u             | eqTerm t u        = True
@@ -772,7 +769,7 @@ subsumes sig = h
         h t (F ('A':'l':'l':x) [u]) | noFrees (words x) t && h t u = True
         h t (F ('A':'n':'y':x) [u]) | g x u t = True
         h (F ('A':'l':'l':x) [t]) u | g x t u = True
-        h (F "&" ts) (F ('A':'n':'y':x) [u])  | any (g x u) $ sub mkConjunct ts  
+        h (F "&" ts) (F ('A':'n':'y':x) [u])  | any (g x u) $ sub mkConjunct ts
                                                = True
         h (F ('A':'l':'l':x) [t]) (F "|" us)  = any (g x t) $ sub mkDisjunct us
         h _ _                                 = False
@@ -782,7 +779,9 @@ subsumes sig = h
                             where zs' = nextPerm zs
         sub f ts = [f $ map (ts!!) ns | ns <- subsets $ length ts]
         noFrees xs = disjoint xs . frees sig
-        
+
+-- used by Esolve > simplifyF, implToConc and Ecom > subsumeSubtrees
+
 -- * __Simplification__
 
 simplifyIter :: Sig -> TermS -> TermS
@@ -801,9 +800,6 @@ simplifytoList sig x = case simplifyIter sig $ leaf x of F "[]" ts -> ts
 reduceString :: Sig -> String -> Maybe String
 reduceString sig t = do t <- parse (term sig) t
                         Just $ showTerm0 $ simplifyIter sig t
-
--- applyDrawFun is used by showSubtreePicts, showTreePicts and showTransOrKripke
--- (see Ecom).
 
 applyDrawFun :: Sig -> String -> String -> [TermS] -> [TermS]
 applyDrawFun _ "" _        = id
@@ -838,6 +834,8 @@ applyDrawFun sig draw _ | just t = map $ wtree . simplifyIter sig
                    g t = t
            wtree t = simplifyIter sig t
 
+-- used by Ecom > showSubtreePicts,showTreePicts,showTransOrKripke
+
 -- wtree(f)(t) replaces each subgraph x(t1,..,tn) of t by the subgraph 
 -- widg(t1,...,tn,f(x)).
 
@@ -851,22 +849,26 @@ applyDrawFun sig draw _ | just t = map $ wtree . simplifyIter sig
 
 -- simplifyLoop sig limit strat t applies simplification rules at most m times
 -- to the maximal subtrees of t and returns the simplified tree together with 
--- the number of actually applied steps. simplifyLoop is used by simplifyIter, 
--- Ecom > simplify' and Ecom > simplifySubtree.
+-- the number of actually applied steps.
+
 simplifyLoop :: Sig -> Int -> Strategy -> TermS -> (TermS,Int,Bool)
 simplifyLoop sig limit strat t = loop 0 limit [t] where
  loop k limit ts = if limit == 0 then (t,k,False)
-                   else case f (simplifyOne sig) t of
+                   else case step strat (simplifyOne sig) t of
                              Just t -> loop' t
-                             _ -> case f (expandFix sig) t of Just t -> loop' t
-                                                              _ -> (t,k,False)
+                             _ -> case step DF (expandFix sig) t of
+                                       Just t -> loop' t
+                                       _ -> (t,k,False)
                    where t = head ts
                          loop' t = if just $ search (eqTerm t) ts
                                    then (t,k,True)
                                    else loop (k+1) (limit-1) $ t:ts
 
- f :: (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
- f g t = do guard $ isF t
+-- used by Esolve > simplifyIter and Ecom > simplify',simplifySubtree
+
+ step :: Strategy -> (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
+ step strat g t = 
+         do guard $ isF t
             case strat of DF -> modifyDF [] t                  -- depthfirst
                           BF -> modifyBF [[]] [t]              -- breadthfirst
                           _  -> do let u = modifyPA t [] t     -- parallel
@@ -882,45 +884,57 @@ simplifyLoop sig limit strat t = loop 0 limit [t] where
                                      _ -> fold2 modifyPA t (succsInd p us) us
                                 where us = subterms u
 
--- simplifyOne sig t p applies the first applicable simplification rule at
+-- simplifyOne sig t p applies the first applicable simplification rule at 
 -- position p of t.
+
 -- expandFix sig t p expands the fixpoint abstraction at position p of t.
 
--- simplifyOne and expandFix are used by simplifyLoop (see above).
--- simplifyOne is also used by Ecom > simplifyPar.
-
 simplifyOne,expandFix :: Sig -> TermS -> [Int] -> Maybe TermS
-simplifyOne sig t p = concat
-      [do guard $ null (subterms reduct0) && reduct0 /= redex0
-          f reduct0,
-       do guard $ reduct1 /= redex1
-          f $ chgTargets $ reduct1,
-       do guard $ polarity True t p; reduct <- simplCoInd sig redex1
-          f $ chgTargets $ reduct,
-       do reduct <- simplifyF sig redex0; guard $ null (subterms reduct)
-          f reduct,
-       do reduct <- simplifyF sig redex1
-          f $ chgTargets $ if null p then g reduct else reduct]
-      where redex0 = mapT block $ expand0 t p
-            redex1 = addTargets (mapT block) t p
-            reduct0 = evaluate sig redex0
-            reduct1 = evaluate sig redex1
-            f = Just . replace1 t p . mapT unblock
-            block x = if (sig&blocked) x then "BLOCK"++x else x
-            unblock ('B':'L':'O':'C':'K':x) = x
-            unblock x                       = x
-            g (V x) | isEPos x = getSubterm t $ getPos $ trace t $ getPos x
-            g t                = t
 
-expandFix sig t p = do F x [u] <- Just redex
-                       guard $ isFix x && not ((sig&blocked) "fixes")
-                       let _:xs = words x
-                           sub = case xs of [x] -> redex `for` x
-                                            _ -> map f (indices_ xs) `forL` xs
-                       Just $ replace1 t p $ chgTargets
-                                           $ collapseVars sig u>>>sub
-                    where redex = addTargets id t p
-                          f i = F ("get"++show i) [redex]
+simplifyOne sig t p = concat
+             [do guard $ null (subterms reduct0) && reduct0 /= redex0
+                 f reduct0,
+              do guard $ reduct1 /= redex1
+                 f $ chgTargets $ reduct1,
+              do guard $ polarity True t p; reduct <- simplCoInd sig redex1
+                 f $ chgTargets $ reduct,
+              do F "$" [V x,u] <- Just $ getSubterm t p
+                 guard $ isPos x && root u /= "$"
+                 Just $ replace t p $ apply (dereference t [getPos x]) u,
+              do reduct <- simplifyF sig redex0; guard $ null $ subterms reduct
+                 f reduct,
+              do reduct <- simplifyF sig redex1
+                 f $ chgTargets $ if null p then g reduct else reduct]
+             where redex0 = mapT block $ expand0 t p
+                   redex1 = addTargets (mapT block) t p
+                   reduct0 = evaluate sig redex0
+                   reduct1 = evaluate sig redex1
+                   f = Just . replace1 t p . mapT unblock
+                   block x = if (sig&blocked) x then "BLOCK"++x else x
+                   unblock ('B':'L':'O':'C':'K':x) = x
+                   unblock x                       = x
+                   g (V x) | isEPos x = dereference t [getPos x]
+                   g t                = t
+
+-- used by Esolve > simplifyLoop and Ecom > simplifyPar
+
+expandFix sig t p = concat
+                [do F x [mu@(F y [F "()" ts])] <- Just redex
+                    let i = parse (strNat "get") x; _:xs = words y; k = get i
+                    guard $ just i && k < length ts && isFix y &&
+                            not ((sig&blocked) "fixes")
+                    g (`elem` xs) (ts!!k) $ h mu xs,
+                 do F x [u] <- Just redex
+                    guard $ isFix x && not ((sig&blocked) "fixes")
+                    case tail $ words x of [x] -> g (== x) u $ redex `for` x
+                                           xs  -> g (`elem` xs) u $ h redex xs]
+                where redex = addTargets id t p
+                      g b u sub = Just $ replace1 t p $ chgTargets
+                                       $ collapseVars b u>>>sub
+                      h t xs = map f (indices_ xs) `forL` xs
+                               where f i = F ("get"++show i) [t]
+
+-- used by Esolve > simplifyLoop
 
 simplCoInd,simplifyF,simplifyA,simplifyS :: Sig -> TermS -> Maybe TermS
 
@@ -982,7 +996,7 @@ simplCoInd _ _ = Nothing
 
 -- edge producing rules
 
-simplifyF _ (F "$" [F "mapG" [f@(F _ ts)],F x us]) | collector x =
+simplifyF _ (F "$" [F "mapG" [f@(F _ ts)],F x us@(_:_)]) | collector x =
                                   Just $ F x $ if null ts then map (apply f) us
                                                else map g $ indices_ us
                                   where g 0 = apply f $ vs!!0
@@ -995,7 +1009,7 @@ simplifyF _ (F "$" [F "replicateG" [t],u]) | just n =
                    where n = parsePnat t
 
 simplifyF _ (F "concat" [F "[]" ts]) | all isList ts =
-                          jList $ concatMap (subterms . f) ts
+                              jList $ concatMap (subterms . f) ts
                               where subs i = subterms $ ts!!i
                                     f t = foldl g t $ indices_ ts
                                     g t i = foldl (h i) t $ indices_ $ subs i
@@ -1010,27 +1024,29 @@ simplifyF sig (F "$" [F "concRepl" [t],u@(F "[]" us)]) | just n =
                                                  (mkList $ map f $ indices_ us)
                          f i = mkPos [0,i]
 
-simplifyF _ (F "$" [F "**" [f@(F _ ts),t],u]) | just n =
-                 Just $ if null ts then iterate (apply f) v!!m
-                        else apply first $ iterate (apply $ mkPos [0]) v!!(m-1)
-                 where n = parsePnat t
-                       m = get n
-                       first = changePoss [0,0] [0] f
-                       v = changePoss [1] (replicate m 1) u
+simplifyF _ (F "$" [F "**" [f,t],u]) | just n =
+               Just $ if null $ subterms f then iterate (apply f) v!!m
+                      else apply first $ iterate (apply $ mkPos [0]) v!!(m-1)
+               where n = parsePnat t; m = get n
+                     first = changePoss [0,0] [0] f        -- collapse above
+                     v = changePoss [1] (replicate m 1) u
+            {-    ... else iterate (apply $ mkPos funpos) (apply last v)!!(m-1)
+               where funpos = replicate (m-1) 1++[0]
+                     last = changePoss [0,0] funpos f      -- collapse below -}
 
 simplifyF _ (F ":" [t,F "[]" ts]) = jList $ t:changeLPoss p q ts
-                                        where p i = [1,i]; q i = [i+1]
+                                    where p i = [1,i]; q i = [i+1]
 
 simplifyF _ (F "$" [F x [n],F "[]" ts])
-           | x `elem` words "cantor hilbert mirror snake transpose" && just k
-                         = jList $ f (get k) $ changeLPoss p single ts
-                           where k = parsePnat n
-                                 f = case head x of 'c' -> cantorshelf
-                                                    'h' -> hilbshelf
-                                                    'm' -> mirror
-                                                    's' -> snake
-                                                    _ -> transpose
-                                 p i = [1,i]
+           | x `elem` words "cantor hilbert mirror snake transpose" && just k =
+                                    jList $ f (get k) $ changeLPoss p single ts
+                                    where k = parsePnat n
+                                          f = case head x of 'c' -> cantorshelf
+                                                             'h' -> hilbshelf
+                                                             'm' -> mirror
+                                                             's' -> snake
+                                                             _ -> transpose
+                                          p i = [1,i]
 
 simplifyF _ (F x [F "bool" [t],F "bool" [u]]) | isEq x
                          = Just $ if x == "=/=" then F "Not" [v] else v
@@ -1049,6 +1065,16 @@ simplifyF _ (F "permute" (t:ts)) | isObdd t =
                                    mkConsts $ nextPerm ns]
                 where fn@(_,n) = obddToFun $ drop0FromPoss t
                       perm = Just . F "permute"
+
+-- rules preferred to user-defined rules
+
+simplifyF _ (F "++" [F x ts,F y us]) | collectors x y = Just $ F x $ ts++us
+
+simplifyF _ (F "++" [F "++" [t,F x ts],F y us])
+                              | collectors x y = Just $ F "++" [t,F x $ ts++us]
+
+simplifyF _ (F "++" [F x ts,F "++" [F y us,t]])
+                              | collectors x y = Just $ F "++" [F x $ ts++us,t]
 
 -- user-defined rules
 
@@ -1691,11 +1717,11 @@ simplifyT (F x [F "()" ts]) | just i && k < length ts = Just $ ts!!k
                                                       = Just $ F x ts
                               where i = parse (strNat "get") x; k = get i
 
-simplifyT (F x [F "skip" []])        = Just $ F "skip" []
+simplifyT (F x [F "skip" []])              = Just $ leaf "skip"
 
-simplifyT (F "$" [F x [],F "()" ts]) = Just $ F x ts
+simplifyT (F "$" [F x [],F "()" ts])       = Just $ F x ts
 
-simplifyT (F "$" [F x [],t])         = Just $ F x [t]
+simplifyT (F "$" [F x [],t])               = Just $ F x [t]
 
 simplifyT (F "$" [F "lsec" [t,F x []],u])  = Just $ F x [t,u]
 
@@ -1704,7 +1730,7 @@ simplifyT (F "$" [F "rsec" [F x [],t],u])  = Just $ F x [u,t]
 simplifyT (F "$" [F "get" [n],t]) | just i = Just $ F ("get"++show (get i)) [t]
                                              where i = parseNat n
 
-simplifyT (F "$" [F "." [g,f],t])          = Just $ apply g $ apply f t
+simplifyT (F "$" [F "." [g,f],t])            = Just $ apply g $ apply f t
 
 simplifyT (F "$" [F "$" [F "flip" [f],t],u]) = Just $ apply (apply f u) t
 
@@ -1752,9 +1778,11 @@ simplifyT (F "$" [F "foldr1" [f],F x ts]) | collector x =
 simplifyT (F "$" [F "zip" [F x ts],F y us]) | collectors x y =
                           jList $ map g $ zip ts us where g (t,u) = mkPair t u
 
-simplifyT (F "$" [F "$" [F "zipWith" _,F "[]" _],F ":" _]) = Just mkNil
+simplifyT (F "$" [F "$" [F "zipWith" _,F x _],F ":" _])
+                          | collector x = Just mkNil
 
-simplifyT (F "$" [F "$" [F "zipWith" _,F ":" _],F "[]" _]) = Just mkNil
+simplifyT (F "$" [F "$" [F "zipWith" _,F ":" _],F x _])
+                          | collector x = Just mkNil
 
 simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
             Just $ F ":" [applyL f [t,u],apply (apply (F "zipWith" [f]) ts) us]
@@ -1762,11 +1790,17 @@ simplifyT (F "$" [F "$" [F "zipWith" [f],F ":" [t,ts]],F ":" [u,us]]) =
 simplifyT (F "$" [F "$" [F "zipWith" [f],F x ts],F y us]) | collectors x y =
                            jList $ zipWith g ts us where g t u = applyL f [t,u]
 
-simplifyT (F "CASE" (F "->" [F "True" [],t]:_))   = Just t
+simplifyT (F "CASE" (F "->" [t,u]:_))  | isTrue t  = Just u
 
-simplifyT (F "CASE" (F "->" [F "False" [],_]:ts)) = Just $ F "CASE" ts
+simplifyT (F "CASE" (F "->" [t,_]:ts)) | isFalse t = Just $ F "CASE" ts
 
-simplifyT (F "CASE" [])                           = Just $ F "undefined" []
+simplifyT (F "CASE" [])          = Just $ leaf "undefined"
+
+simplifyT (F "length" [F x ts]) | collector x = jConst $ length ts
+
+simplifyT (F "size" [F "{}" ts]) = jConst $ length $ mkSet ts
+
+simplifyT (F "height" [t])       = jConst $ height t
 
 simplifyT (F "string" [t])       = Just $ leaf $ showTree False t `minus1` '\"'
 
@@ -1778,8 +1812,6 @@ simplifyT (F "getCols" [F x ts]) = Just $ if null z then F x $ map f ts
                                           else F col [F (tail z) $ map f ts]
                                    where (col,z) = span (/= '$') x
                                          f t = F "erect" [t]
-
-simplifyT (F "height" [t])       = jConst $ height t
 
 simplifyT (F "suc" [t])       | just i = jConst $ get i+1 where i = parseInt t
 
@@ -1863,15 +1895,15 @@ simplifyT (F "`mod`" [t,u])       | just i && just j && k /= 0 =
                                      Just $ mkConst $ mod (get i) k
                            where i = parseInt t; j = parseInt u; k = get j
 
-simplifyT (F x [F "+" [t,u],n])   | arithmetical x && just i && just j =
+simplifyT (F x [F "+" [t,u],n])    | isOrd x && just i && just j =
                                      Just $ F x [u,mkConst $ get i-get j]
-                                   | arithmetical x && just i && just k =
+                                   | isOrd x && just i && just k =
                                      Just $ F x [u,mkConst $ get i-get k]
                            where i = parseInt n; j = parseInt t; k = parseInt u
 
-simplifyT (F x [n,F "+" [t,u]])   | arithmetical x && just i && just j =
+simplifyT (F x [n,F "+" [t,u]])   | isOrd x && just i && just j =
                                      Just $ F x [mkConst $ get i-get j,u]
-                                   | arithmetical x && just i && just k =
+                                   | isOrd x && just i && just k =
                                      Just $ F x [mkConst $ get i-get k,t]
                            where i = parseInt n; j = parseInt t; k = parseInt u
 
@@ -1977,11 +2009,11 @@ mergeActs ts                         = ts
 
 -- * __Aciom-base simplification__
 
--- simplReducts sig True t returns the reducts of all axioms of (sig&transitions)
--- that are applicable to t and is used by rewriteSig/States (see below).
+-- simplReducts sig True t returns the reducts of all axioms of sig.transitions
+-- that are applicable to t.
+-- simplReducts sig False t returns the reduct of the first axiom of sig.simpls
+-- that is applicable to t.
 
--- simplReducts sig False t returns the reduct of the first axiom of (sig&simpls) 
--- that is applicable to t and is used by simplifyUser (see above).
 simplReducts :: Sig -> Bool -> TermS -> [TermS]
 simplReducts sig isTrans t = if isTrans then concatMap f (sig&transitions)
                              else if null reds then [] else [head reds]
@@ -2009,9 +2041,10 @@ simplReducts sig isTrans t = if isTrans then concatMap f (sig&transitions)
        g sub [] _ = Just sub
        g _ _ _    = Nothing
 
+-- used by Esolve > rewriteSig/States 
+
 -- buildTrans sig ts constructs the binary and ternary relations generated by ts
 -- and the simplification and transition axioms of sig.
--- buildTrans is used by Ecom > buildKripke.
 
 buildTrans :: Sig -> [TermS] -> (Pairs TermS,Triples TermS TermS)
 buildTrans sig ts = (zip ts $ reduce ts,
@@ -2019,9 +2052,10 @@ buildTrans sig ts = (zip ts $ reduce ts,
                     where reduce = map $ simplReducts sig True
                           pairs = prod2 ts (sig&labels)
 
--- buildTransLoop sig mode constructs the transition system generated by
--- (sig&states) and the simplification and transition axioms of sig.
--- buildTransLoop is used by Ecom > buildKripke 0/1/2.
+-- used by Ecom > buildKripke >=3
+
+-- buildTransLoop sig mode constructs the transition system generated by 
+-- sig.states and the simplification and transition axioms of sig.
 
 buildTransLoop :: Sig -> Int -> ([TermS],Pairs TermS,Triples TermS TermS)
 buildTransLoop sig mode = loop (sig&states) (sig&states) [] [] where
@@ -2053,6 +2087,8 @@ buildTransLoop sig mode = loop (sig&states) (sig&states) [] [] where
                                    where f lab = case lookupL st lab psL of
                                                       Just sts -> sts; _ -> []
 
+-- used by Ecom > buildKripke 0/1/2
+
 pairsToInts :: [TermS] -> Pairs TermS -> [TermS] -> [[Int]]
 pairsToInts us ps = map f where
   f t = searchAll (`elem` (get $ lookup t ps)) us
@@ -2071,21 +2107,23 @@ data Reducts = Sum [TermS] (String -> Int) |
                MatchFailure String | Stop
                -- MatchFailure is only generated by genMatchFailure.
 
--- | solveGuard guard axs applies axs by narrowing at most 100 times to guard. 
+-- solveGuard guard axs applies axs by narrowing at most 100 times to guard.
 -- axs are also the axioms applied to the guards of axs. Reducts are simplified,
 -- but irreducible subtrees are not removed.
--- solveGuard is used by applyAx, rewrite and rewriteTerm (see below).
+
 solveGuard :: Sig -> TermS -> [TermS] -> (String -> Int) -> Maybe [[IterEq]]
 solveGuard sig cond axs vc = do guard $ notnull sols; Just sols
                   where sols = Haskell.mapMaybe f (mkSummands $ pr1 t)
                         f = parseSol $ solEq sig
                         t = applyLoop cond 100 vc axs axs sig True 2 False True
 
--- applyLoop t 0 m ... axs preAxs sig nar match refute simplify applies axioms 
--- at most m times to the maximal subtrees of t and returns the modified tree 
+-- used by Esolve > applyAx,rewrite,rewriteTerm
+
+-- applyLoop t 0 m ... axs preAxs sig nar match refute simplify applies axioms
+-- at most m times to the maximal subtrees of t and returns the modified tree
 -- together with the number of actually applied steps. 
--- preAxs are applied to the guards of axs. 
--- nar = True            --> narrowing          
+-- preAxs are applied to the guards of axs.
+-- nar = True            --> narrowing
 -- nar = False     --> rewriting
 -- match = 0            --> match t against axs
 -- match = 1            --> match t against the first applicable axiom of axs
@@ -2093,7 +2131,7 @@ solveGuard sig cond axs vc = do guard $ notnull sols; Just sols
 -- match = 3       --> unify t against the first applicable axiom of axs
 -- simplify = True --> simplifyIter
 -- refute = True   --> turnIntoUndef
--- applyLoop is used by solveGuard (see above) and Ecom > narrowStep.
+
 applyLoop :: TermS -> Int -> (String -> Int) -> [TermS] -> [TermS] -> Sig 
                     -> Bool -> Int -> Bool -> Bool -> (TermS,Int,String -> Int)
 applyLoop t m vc axs preAxs sig nar match refute simplify = f t 0 m vc
@@ -2137,8 +2175,9 @@ applyLoop t m vc axs preAxs sig nar match refute simplify = f t 0 m vc
        modifyTerm f redex t p vc
                             = do Sum reds vc <- Just $ fst $ f redex sig vc
                                  Just (replace t p $ mkSum reds,vc)
-                       
--- applyLoopRandom is used by Ecom > narrowStep.
+
+-- used by Esolve > solveGuard and Ecom > narrowStep
+
 applyLoopRandom :: Int -> TermS -> Int -> (String -> Int) -> [TermS] -> [TermS]
                         -> Sig -> Bool -> Int -> Bool 
                        -> (TermS,Int,String -> Int,Int)
@@ -2186,14 +2225,16 @@ applyLoopRandom rand t m vc axs preAxs sig nar match simplify = f t 0 m vc rand
                     where sym = getOp redex; q = init p
                           g at r = Just $ (pr1***pr3) $ f redex at r sig vc uni
 
--- | applyAxs cls axs preAxs redex u r computes all narrowing/rewriting reducts 
--- of the redex at position r of u that result from unifying/matching redex 
--- against axs. The guards of axs are narrowed by preAxs. cls is the original, 
--- non-extended and non-renamed version of axs. 
+-- used by Ecom > narrowStep
+
+
+-- applyAxs cls axs preAxs redex u r computes all narrowing/rewriting reducts
+-- of the redex at position r of u that result from unifying/matching redex
+-- against axs. The guards of axs are narrowed by preAxs. cls is the original,
+-- non-extended and non-renamed version of axs.
 -- uni = True  --> The redex is unified against axs.
 -- uni = False --> The redex is matched against axs.
--- applyAxs is used by applyLoop (see above), applyToHeadOrBody (see below) and 
--- Ecom > narrowPar. 
+
 applyAxs :: [a]
             -> [TermS]
             -> [TermS]
@@ -2220,11 +2261,13 @@ applyAxs (cl:cls) (ax:axs) preAxs redex at p sig vc uni =
        _ -> applyAxs cls axs preAxs redex at p sig vc uni
 applyAxs _ _ _ _ _ _ _ _ _ = (Stop,[])
 
--- | applyAxsR axs preAxs rand redex t p computes the narrowing/rewriting 
+-- used by Esolve > applyLoop,applyToHeadOrBody and Ecom > narrowPar
+
+-- applyAxsR axs preAxs rand redex t p computes the narrowing/rewriting 
 -- reducts of the redex at position p of t that result from unifying/matching 
 -- redex against a random element of axs. The guards of axs are narrowed by 
--- preAxs. 
--- applyAxsR is used by applyLoopRandom (see above) and Ecom > narrowPar.
+-- preAxs.
+
 applyAxsR :: [TermS]
              -> [TermS]
              -> [TermS]
@@ -2245,7 +2288,8 @@ applyAxsR cls axs preAxs rand redex at p sig vc uni =
         cl = cls!!n; cls' = removeTerm cls cl
         ax = axs!!n; axs' = removeTerm axs ax
 
--- applyAxsToTerm is used by applyLoop (see above) and Ecom > rewritePar.
+-- used by Esolve > applyLoopRandom and Ecom > narrowPar
+
 applyAxsToTerm :: [a]
                   -> [TermS]
                   -> [TermS]
@@ -2261,7 +2305,8 @@ applyAxsToTerm (cl:cls) (ax:axs) preAxs redex sig vc =
   _ -> applyAxsToTerm cls axs preAxs redex sig vc
 applyAxsToTerm _ _ _ _ _ _ = (Stop,[])
 
--- applyAxsToTermR is used by applyLoopRandom (see above) and Ecom > rewritePar.
+-- used by Esolve > applyLoop and Ecom > rewritePar
+
 applyAxsToTermR :: [TermS]
                    -> [TermS]
                    -> [TermS]
@@ -2279,6 +2324,8 @@ applyAxsToTermR cls axs preAxs rand redex sig vc =
         cl = cls!!n; cls' = removeTerm cls cl
         ax = axs!!n; axs' = removeTerm axs ax
 
+-- used by Esolve > applyLoopRandom and Ecom > rewritePar
+
 -- * __Narrowing of formulas__
 
 -- quantify sig add ts t quantifies the free variables xs of ts.
@@ -2287,17 +2334,18 @@ quantify sig add ts reduct = add (filter (noExcl &&& (`elem` ys)) xs) reduct
                              where xs = joinMap (frees sig) ts
                                    ys = sigVars sig reduct
 
--- | addTo is used by searchReds, applyAx, applyAxToTerm and applySingle.
 addTo :: Bool -> [TermS] -> TermS -> TermS
 addTo _ [] t                  = t 
 addTo True rest (F "=" [t,u]) = mkEq (mkBag $ t:rest) u
 addTo True _ t                = t
 addTo _ rest t                = mkBag $ t:rest
 
--- | searchReds .. ts reds .. pars tries to unify ts with a subset of reds such
+-- used by Esolve > searchReds,applyAx{ToTerm},applySingle
+
+-- searchReds .. ts reds .. pars tries to unify ts with a subset of reds such
 -- that the instance of a given guard by the unifier is solvable by applying 
 -- given axioms. The guard and the axioms are part of pars. 
--- searchReds is used by applyAx and applyAxToTerm (see below).
+
 searchReds :: ((String -> TermS) -> Sig -> [String] -> t -> t1 -> Reducts)
               -> (TermS
                   -> (String -> TermS)
@@ -2333,6 +2381,8 @@ searchReds check rewrite vc ts reds b t sig xs pars = sr Stop ts [] reds []
                  ps = replicate lg' []; lg' = length ts
                  checkOrRewrite = if lg == lg' then rewrite $ addTo b rest t
                                                else check
+
+-- used by Esolve > applyAx{ToTerm}
 
 addAnys :: [String] -> TermS -> TermS
 addAnys xs reduct = mkAny (filter (`isin` reduct) xs) reduct
@@ -2398,10 +2448,10 @@ checkGuard f sig xs vc (guard,_,left,_,_,uni) =
    genMatchFailure sig uni (domSub xs f) left $
         if isFalse $ simplifyIter sig $ guard>>>f then Stop else Backward [] vc
 
--- | applyAx ax axs redex at p sig vc applies the axiom ax to the redex at
+-- applyAx ax axs redex at p sig vc applies the axiom ax to the redex at
 -- position p of at. vc is the variable counter that is needed for renaming the
 -- variables of ax that are introduced into t.
--- applyAx is used by applyAxs and applyAxsR (see above).
+
 applyAx :: TermS
            -> [TermS]
            -> TermS
@@ -2492,54 +2542,13 @@ applyAx (F "<===" [conc,prem]) axs redex at p sig vc uni =
 applyAx at axs redex t p sig vc uni =
      applyAx (mkHorn at mkTrue) axs redex t p sig vc uni
 
+-- used by Esolve > applyAxs{R}
+
 -- * __Rewriting of terms__
-                                           
--- * auxiliary functions for applyAxToTerm (see below):
-totalUnify :: TermS
-              -> [TermS]
-              -> TermS
-              -> TermS
-              -> Sig
-              -> (String -> Int)
-              -> TermS
-              -> Reducts
-totalUnify guard axs left right sig vc redex =
-     case unify0 left redex redex [] sig xs of
-          TotUni f -> rewriteTerm right f sig xs vc (guard,axs,left)
-          _ -> Stop
-     where xs = frees sig redex
 
-rewriteTerm :: TermS
-               -> (String -> TermS)
-               -> Sig
-               -> [String]
-               -> (String -> Int)
-               -> (TermS, [TermS], t)
-               -> Reducts
-rewriteTerm right f sig xs vc (guard,axs,_) =
-     if notnull dom then Stop
-     else case u of F "True" _ -> Sum [mkRed []] vc
-                    F "False" _ -> Stop
-                    _ -> case solveGuard sig u axs vc of
-                              Just sols -> Sum (map mkRed sols) vc
-                              _ -> Stop
-     where dom = domSub xs f
-           u = simplifyIter sig $ guard>>>f
-           mkRed sol = right>>>(f `andThen` mkSubst sol)
-
-checkGuardT :: (String -> TermS)
-               -> Sig
-               -> [String]
-               -> (String -> Int)
-               -> (TermS, t, t1)
-               -> Reducts
-checkGuardT f sig xs vc (guard, _, _)
-    | notnull $ domSub xs f = Stop
-    | isFalse $ simplifyIter sig $ guard >>> f = Stop
-    | otherwise = Sum [] vc
-
--- | applyAxToTerm ax is applied only within a TERM. Hence ax must be a
+-- applyAxToTerm ax is applied only within a TERM. Hence ax must be a
 -- (guarded or unguarded) equation without a premise.
+
 applyAxToTerm :: TermS
                  -> [TermS] -> TermS -> Sig -> (String -> Int) -> Reducts
 applyAxToTerm (F "==>" [guard,F "->" [left,right]]) axs redex sig vc =
@@ -2578,13 +2587,51 @@ applyAxToTerm t@(F _ [_,_]) axs redex sig vc =
 
 applyAxToTerm _ _ _ _ _ = Stop
 
+totalUnify :: TermS
+           -> [TermS]
+           -> TermS
+           -> TermS
+           -> Sig
+           -> (String -> Int)
+           -> TermS
+           -> Reducts
+totalUnify guard axs left right sig vc redex =
+     case unify0 left redex redex [] sig xs of
+          TotUni f -> rewriteTerm right f sig xs vc (guard,axs,left)
+          _ -> Stop
+     where xs = frees sig redex
+
+rewriteTerm :: TermS
+            -> (String -> TermS)
+            -> Sig
+            -> [String]
+            -> (String -> Int)
+            -> (TermS, [TermS], t)
+            -> Reducts
+rewriteTerm right f sig xs vc (guard,axs,left) =
+     if notnull dom then Stop
+     else case u of F "True" _ -> Sum [mkRed []] vc
+                    F "False" _ -> Stop
+                    _ -> case solveGuard sig u axs vc of
+                              Just sols -> Sum (map mkRed sols) vc
+                              _ -> Stop
+     where dom = domSub xs f
+           u = simplifyIter sig $ guard>>>f
+           mkRed sol = right>>>(f `andThen` mkSubst sol)
+
+checkGuardT :: (String -> Term String)
+            -> Sig -> [String] -> (String -> Int) -> (TermS, a, b)
+            -> Reducts
+checkGuardT f sig xs vc (guard,_,left) =
+     if notnull $ domSub xs f then Stop
+     else if isFalse $ simplifyIter sig $ guard>>>f then Stop else Sum [] vc
+
 -- * __Application of theorems__
 
 -- applySingle and applyMany work similarly to applyAxs, but apply only single
 -- non-guarded clauses. In the case of applyMany, the redex splits into several
 -- factors or summands of a conjunction resp. disjunction. 
--- applySingle is used by Ecom > applyTheorem.
--- applyMany is used by Ecom > finishDisCon.
+
 applySingle :: TermS
                -> TermS
                -> TermS
@@ -2624,8 +2671,8 @@ applySingle th@(F "<===" [at,prem]) redex t p sig vc =
                  let dom = domSub xs f
                      ts = prem>>>f:substToEqs f dom
                      bind = quantify sig addAnys [left,right,prem] . mkConjunct
-                 do (q,at,r) <- atomPosition sig t p
-                    Just (replace t q $ bind $ replace at r right>>>f:ts,vc)
+                 (q,at,r) <- atomPosition sig t p
+                 Just (replace t q $ bind $ replace at r right>>>f:ts,vc)
     where xs = frees sig redex
 
 applySingle (F "===>" [at,conc]) redex t p sig vc =
@@ -2638,6 +2685,8 @@ applySingle (F "===>" [at,conc]) redex t p sig vc =
 
 applySingle at redex t p sig vc = 
       applySingle (mkHorn at mkTrue) redex t p sig vc
+
+-- used by Ecom > applyTheorem
 
 applyMany :: Bool
              -> Bool
@@ -2669,7 +2718,8 @@ applyMany forward different left right redices t ps pred qs sig vc =
          Just (replace t pred reduct3,vc)
       where xs = joinMap (frees sig) redices
 
--- applyToHeadOrBody is used by Ecom > applyInd.
+-- used by Ecom > finishDisCon
+
 applyToHeadOrBody :: Sig
                      -> (TermS -> [Int] -> Bool)
                      -> Bool
@@ -2720,8 +2770,10 @@ applyToHeadOrBody sig g head axs = f
                applyPar _ _ t vc = (t,vc)
        f _ vc = ([],vc)
 
+-- used by Ecom > applyInd
+
 -- mkComplAxiom sig ax transforms an axiom ax for p into an axiom for NOTp. 
--- mkComplAxiom is used by Ecom > negateAxioms.
+
 mkComplAxiom :: Sig -> TermS -> TermS
 mkComplAxiom sig t =
         case t of F "==>" [guard,t]        -> mkImpl guard $ mkComplAxiom sig t
@@ -2732,9 +2784,12 @@ mkComplAxiom sig t =
         where neg = mkNot sig
               f = simplifyIter sig
 
--- | flatten k xs cl turns cl into an equivalent clause cl' such that all
--- equations t=u of cl' are flat wrt xs, (e i). either root(t) is in xs and all
+-- used by Ecom > negateAxioms
+
+-- flatten k xs cl turns cl into an equivalent clause cl' such that all
+-- equations t=u of cl' are flat wrt xs, i.e. either root(t) is in xs and all
 -- other symbols of t or u are not in xs or u=t is flat wrt xs.
+
 flatten :: (Num t, Show t) =>
            t -> [String] -> TermS -> (TermS, t)
 flatten k [] cl                     = (cl,k)
@@ -2923,22 +2978,28 @@ replaceByApprox i x = f
                                            else F x $ map f ts
                          f t             = t
 
+-- used by Esolve > mk{Co}HornLoop
+
 updArgsA :: TermS -> TermS -> [TermS] -> TermS
 updArgsA (F "$" [t,_]) i ts = applyL (F "$" [addLoop t,i]) ts
 updArgsA (F x _) i ts       = F (x++"Loop") $ i:ts
 updArgsA t _ _              = t
+
+-- used by Esolve > mk{Co}HornLoop
 
 addLoop :: TermS -> TermS
 addLoop (F "$" [t,u]) = F "$" [addLoop t,u]
 addLoop (F x ts)      = F (x++"Loop") ts
 addLoop t             = t
 
--- | mkEqsWithArgs is used by mk(Co)HornLoop and compressAll (see below).
 mkEqsWithArgs :: t -> [TermS] -> [Int] -> TermS -> [TermS]
 mkEqsWithArgs _ zs is = zipWith mkEq zs . contextM is . getArgs
 
+-- used by Esolve > mk{Co}HornLoop,compressAll
+
 -- mkHornLoop sig x transforms the co-Horn axioms for x into an equivalent set
--- of three Horn axioms and is used by Ecom > kleeneAxioms.
+-- of three Horn axioms.
+
 mkHornLoop :: Sig -> t -> [TermS] -> TermS -> Int -> ([TermS], Int)
 mkHornLoop sig _ axs i k = f axs
   where f axs = ([mkHorn (updArgs t zs) $ mkAll [root i] $ updArgsA t i zs,
@@ -2962,8 +3023,11 @@ mkHornLoop sig _ axs i k = f axs
         g (F "===>" [at,_]) = at
         g t                     = t
 
--- | mkCoHornLoop sig x transforms the Horn axioms for x into an equivalent set
--- of three co-Horn axioms and is used by Ecom > kleeneAxioms.
+-- used by Ecom > kleeneAxioms
+
+-- mkCoHornLoop sig x transforms the Horn axioms for x into an equivalent set
+-- of three co-Horn axioms.
+
 mkCoHornLoop :: Sig
                 -> t -> [TermS] -> TermS -> Int -> ([TermS], Int)
 mkCoHornLoop sig _ axs i k = f axs
@@ -2988,10 +3052,12 @@ mkCoHornLoop sig _ axs i k = f axs
         g (F "==>" [_,cl])  = g cl
         g (F "<===" [at,_]) = at
         g t                 = t
-        
--- | compressAll sig k axs transforms the axioms of axs into a single axiom
--- (if b = True) and inverts it (if b = False). 
--- compressAll is used by Ecom > compressAxioms.
+
+-- used by Ecom > kleeneAxioms
+
+-- compressAll sig k axs transforms the axioms of axs into a single axiom
+-- (if b = True) and inverts it (if b = False).
+
 compressAll :: (Enum t, Num t, Show t) =>
                Bool -> Sig -> t -> [TermS] -> (TermS, t)
 compressAll b sig i axs = compressOne b sig i [] axs $ h $ head axs
@@ -3000,6 +3066,8 @@ compressAll b sig i axs = compressOne b sig i [] axs $ h $ head axs
                                 h (F "<===" [at,_]) = h at
                                 h (F "=" [t,_])     = t
                                 h t                     = t
+
+-- used by Ecom > compressAxioms
 
 combineOne :: (Enum a, Num a, Show a) => Sig
            -> a -> [Int] -> TermS -> [TermS] -> (TermS, a)
@@ -3036,8 +3104,9 @@ compressOne b sig i ks cls t
            f i (us,k) = if i `elem` ks then (ts!!i:us,k) else (newVar k:us,k+1)
            (g,h) = if b then (mkHorn,mkCoHorn) else (mkCoHorn,mkHorn)
 
--- | compressHorn sig eqs transforms Horn axioms for a predicate into the
--- premise of an equivalent single Horn axiom. 
+-- compressHorn sig eqs transforms Horn axioms for a predicate into the premise
+-- of an equivalent single Horn axiom.
+
 compressHorn :: Sig
              -> (TermS -> [TermS]) -> [TermS] -> TermS
 compressHorn sig eqs = mkDisjunct . map mkPrem
@@ -3066,7 +3135,7 @@ compressHornEq sig eqs = mkDisjunct . map mkPrem
                                          xs = frees sig cl `minus` getOpSyms t
             mkPrem t = t
 
--- | compressCoHorn sig eqs transforms co-Horn axioms for a copredicate into the 
+-- | compressCoHorn sig eqs transforms co-Horn axioms for a copredicate into the
 -- conclusion of an equivalent single co-Horn axiom.
 compressCoHorn :: Sig
                -> (TermS
@@ -3081,9 +3150,10 @@ compressCoHorn sig eqs = mkConjunct . map mkConc
                                 xs = frees sig cl `minus` getOpSyms t
             mkConc t = t
 
--- | moveUp sig vc x us is moves the quantifiers from positions 
+-- moveUp sig vc x us is moves the quantifiers from positions 
 -- q++[is!!0],...,q++[is!!length is-1] of t to position q. F x us is the
--- original term at position q. moveUp is used by Ecom > shiftQuants.
+-- original term at position q. 
+
 moveUp :: Sig
           -> VarCounter
           -> String
@@ -3146,6 +3216,8 @@ moveUp sig vc x us is   = (joinMap snd ps',joinMap snd qs',F x ts',vc')
                                    qs' = (i,map f xs):rest
              loop2 state _ = state
 
+-- used by Ecom > shiftQuants
+
 shiftSubformulas :: Sig -> TermS -> [[Int]] -> Maybe TermS
 shiftSubformulas sig t ps =
   case search (isImpl . getSubterm1 t) qs of
@@ -3205,11 +3277,12 @@ shiftSubformulas sig t ps =
   where qs = map init ps
         impl t p u v = Just $ replace1 t p $ mkImpl u v
 
--- | getOtherSides t p ts ps looks for in/equations eq in the
--- premises/conclusions
+-- used by Ecom > shiftSubs'
+
+-- getOtherSides t p ts ps looks for in/equations eq in the premises/conclusions
 -- of t such that one side of eq agrees with some u in ts. If so, u is replaced
 -- by the other side of q. p and ps are the positions of t and ts, respectively.
--- getOtherSides is used by Ecom > replaceSubtrees.
+
 getOtherSides :: TermS -> [Int] -> [TermS] -> [[Int]] -> Maybe [TermS]
 getOtherSides t p ts ps =
     case t of F "==>" [F "&" prems,
@@ -3245,3 +3318,4 @@ getOtherSides t p ts ps =
                       g2 ts rest1 (t:rest2) i = g2 ts (rest1++[t]) rest2 (i+1)
                       g2 ts _ _ _             = ts
 
+-- used by Ecom > replaceSubtrees

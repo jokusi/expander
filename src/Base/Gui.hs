@@ -79,6 +79,7 @@ module Base.Gui
   , menuOpt
   , cascade
   , spline
+  , smooth'
   ) where
 
 import Prelude ()

@@ -42,7 +42,7 @@ data Solver = Solver
     -- ^ Adds a specification from file.
     , backProof       :: Action
     , backWin         :: Action -- ^ Minimize solver window.
-    , bigWin          :: Action -- ^ Bring solver window to front, even if minimized.
+    , bigWin          :: Action
     , checkInSolver   :: Action
     , drawCurr        :: Action -- ^ Draw current tree.
     , forwProof       :: Action
@@ -88,14 +88,14 @@ data Solver = Solver
 data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep Bool |
             CollapseVars | ComposePointers | CopySubtrees | CreateIndHyp |
-            CreateInvariant Bool | DecomposeAtom | EvaluateTrees |
+            CreateInvariant Bool | DecomposeAtom | DerefNodes | EvaluateTrees |
             ExpandTree Bool Int | FlattenImpl | Generalize [TermS] |
             Induction Bool Int | Mark [[Int]] | Matching Int | Minimize |
             ModifyEqs Int | Narrow Int Bool | NegateAxioms [String] [String] |
-            PermuteSubtrees | RandomLabels | RandomTree | ReduceRE Int |
-            Refuting Bool | ReleaseNode | ReleaseSubtree | ReleaseTree |
-            RemoveCopies | RemoveEdges Bool | RemoveNode | RemoveOthers |
-            RemovePath | RemoveSubtrees | RenameVar String |
+            RefNodes | PermuteSubtrees | RandomLabels | RandomTree |
+            ReduceRE Int | Refuting Bool | ReleaseNode | ReleaseSubtree |
+            ReleaseTree | RemoveCopies | RemoveEdges Bool | RemoveNode |
+            RemoveOthers | RemovePath | RemoveSubtrees | RenameVar String |
             ReplaceNodes String | ReplaceOther |
             ReplaceSubtrees [[Int]] [TermS] | ReplaceText String |
             ReplaceVar String TermS [Int] | ReverseSubtrees | SafeEqs |
@@ -168,8 +168,8 @@ switcher actUp actDown = do
 
 oscillator :: (Int -> Action) -> (Int -> Action) -> Int -> Int -> Int
               -> Template Runner
-oscillator actUp actDown lwb width upb = do -- used by labRed and
-    runRef <- newIORef undefined            -- Ecom > labRed
+oscillator actUp actDown lwb width upb = do -- used by
+    runRef <- newIORef undefined            -- Epaint,Ecom > labRed
     valRef <- newIORef (lwb - 1)
     upRef  <- newIORef True
     
@@ -199,7 +199,7 @@ data Scanner = Scanner
     }
 
 scanner :: (Widget_ -> Action) -> Template Scanner
-scanner act = do                  -- used by drawPict and scaleAndDraw
+scanner act = do                  -- used by Epaint > drawPict,scaleAndDraw
     runRef     <- newIORef undefined
     runningRef <- newIORef False
     asRef      <- newIORef []
@@ -1544,7 +1544,7 @@ painter pheight solveRef solve2Ref = do
             writeIORef fastRef b
             isNew <- readIORef isNewRef
             when (not isNew)
-                $ fastBut `gtkSet` [ buttonLabel := if b then "slow" else "fast"]
+               $ fastBut `gtkSet` [ buttonLabel := if b then "slow" else "fast"]
         
         setNewCheck' = writeIORef isNewCheckRef True
 
@@ -1878,10 +1878,10 @@ addFrame d c mode w = turtle0 (getCol w) $ jumpTo (neg2 p) ++
                           x1d = x1-d; y1d = y1-d; x2d = x2+d; y2d = y2+d
 
            
--- | nodeLevels b graph!!n returns the length of a shortest path from a root of 
--- graph to n. 
--- nodeLevels True counts in control points and is used by shelf.
--- nodeLevels False disregards control points and is used by colorLevels.
+-- nodeLevels b graph!!n returns the length of a shortest path from a root of 
+-- graph to n. nodeLevels True counts in control points. nodeLevels False 
+-- disregards control points.
+
 nodeLevels :: Bool -> Graph -> [Int]
 nodeLevels b (pict,arcs) = iter (replicate (length nodes) 0) nodes
  where nodes = indices_ pict
@@ -1896,8 +1896,12 @@ nodeLevels b (pict,arcs) = iter (replicate (length nodes) 0) nodes
                      else let k = if b && isRedDot (pict!!j) then 0 else 1
                           in f (updList levels j (levels!!i+k),free`minus1`j) j
 
--- | colorLevels b pict arcs colors all nodes of pict on the same level with the
+
+-- used by Epaint > shelf,colorLevels
+
+-- colorLevels b pict arcs colors all nodes of pict on the same level with the
 -- same color.
+
 colorLevels :: Bool -> Picture -> Arcs -> Picture
 colorLevels alternate pict arcs = map f nodes
       where nodes = indices_ pict
@@ -2024,13 +2028,16 @@ unTurt pict b = (pr2***pr3) $ foldr f (length pict-1,[],0) pict
                           where ws = mkPict w
 
 -- getRectIndices pict sc rect returns the indices of all widgets of pict within
--- rect. getRectIndices is used by addOrRemove and releaseButton and undo. 
+-- rect.
+
 getRectIndices :: Picture -> Double -> Widget_ -> [Int]
 getRectIndices pict sc rect = [i | i <- indices_ scpict, 
                                     let w = scpict!!i, -- propNode w,
                                    f (coords w) || any f (getFramePts True w)]
                               where scpict = scalePict sc pict
                                     f = (`inRect` rect)
+
+-- used by Epaint > addOrRemove,releaseButton,undo
 
 splitPath :: [a] -> [[a]]
 splitPath ps = if null rs then [qs] else qs:splitPath (last qs:rs)
@@ -2121,8 +2128,8 @@ updState _ w                     = w
 -- Each widget is turned into a picture consisting of Arcs, Dots, Gifs, 
 -- horizontal or vertical Ovals, Path0s, Text_s and Trees before being drawn.
 
--- | mkWidg (w (p,a,c,i) ...) rotates widget w around p by a.
--- mkWidg is used by drawWidget and hulls.
+-- mkWidg (w (p,a,c,i) ...) rotates widget w around p by a.
+
 mkWidg :: WidgTrans
 mkWidg (Dot c p)                   = Oval (p,0,c,0) 5 5
 mkWidg (Oval (p,a,c,i) rx ry)     = Path0 c i (filled c) $ map f [0,5..360]
@@ -2141,21 +2148,18 @@ mkWidg (Tria (p@(x,y),a,c,i) r)   = Path0 c i (filled c) $ last qs:qs
                                           z = y+lg*0.57735    -- y+lg*sqrt 3/3
                                           qs = map (rotate p a) ps
 
+-- used by Epaint > drawWidget,hulls
+
 circlePts :: Point -> Double -> Double -> [Double] -> Path
 circlePts p a inc = fst . foldl f ([],a)
                     where f (ps,a) 0 = (ps,a+inc)
                           f (ps,a) r = (successor p r a:ps,a+inc)
 
--- | mkPict is used by convexPath, hulls and drawWidget.
-
--- mkPict (Poly (p,a,c,i) mode rs b) with mode > 5 computes triangles or chords 
--- of a rainbow polygon with center p, orientation a, inner color c, lightness 
--- value i, radia rs and increment angle b.
-
--- mkPict (Turtle (p,a,c,i) sc acts) translates acts into the picture drawn by
--- a turtle that executes acts, starting out from point p with scale factor sc,
--- orientation a, color c and lightness value i.
 mkPict :: Widget_ -> Picture
+
+-- mkPict (Poly (p,a,c,i) mode rs b) with mode > 5 computes triangles or chords
+-- of a rainbow polygon with center p, orientation a, inner color c, lightness
+-- value i, radia rs and increment angle b.
 
 mkPict (Poly (p,a,c,i) m (r:rs) b) = pict
   where (pict,_,_,_,_,_) = foldl f ([],successor p r a,a+b,c,1,False) $ rs++[r]
@@ -2180,6 +2184,9 @@ mkPict (Poly (p,a,c,i) m (r:rs) b) = pict
                 w c' = Turtle (p,0,c,i) 1 $ Turn (a-b*(n-1)/2):leafC h d c c'
                        where h = r/2; d = n*distance (h,0) (successor p0 h b)/2
 
+-- mkPict (Turtle (p,a,c,i) sc acts) translates acts into the picture drawn by a
+-- turtle that executes acts, starting out from point p with scale factor sc,
+-- orientation a, color c and lightness value i.
 
 mkPict (Turtle (p,a,c,i) sc acts) = 
            case foldl f iniState acts of (pict,(_,c,m,_,ps):_) -> g pict c m ps
@@ -2209,47 +2216,50 @@ mkPict (Turtle (p,a,c,i) sc acts) =
 
 mkPict w = [w]
 
--- inFrame is used by crossing, inWidget and strands.
+-- used by Epaint > convexPath,hulls,drawWidget
 
 inFrame :: Point -> Point -> Point -> Bool
 inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 `le` x && x `le` max x1 x2 &&
                                 min y1 y2 `le` y && y `le` max y1 y2
                                 where le a b = a < b || abs (a-b) < 0.5
 
+-- used by Epaint > crossing,inWidget,strands
+
 -- interior p lines returns True iff p is located within lines.
--- interior is used by strands and joinPict 13/14.
 
 interior :: Point -> Lines -> Bool
 interior p@(_,y) = odd . length . filter (just . crossing ((p,q),q)) . addSuc
                    where q = (2000,y)
 
--- inWidget is used by getWidget and joinPict 6.
+-- used by Epaint > strands,joinPict 13/14
+
+-- inWidget p@(x,y) = (== p) . coords ||| any (interior p) . getFrameLns 
 
 inWidget :: Point -> Widget_ -> Bool
 inWidget p w = inFrame (x1,y1) p (x2,y2) where (x1,y1,x2,y2) = widgFrame w
 
--- inWidget p@(x,y) = (== p) . coords ||| any (interior p) . getFrameLns
+-- used by Epaint > getWidget,joinPict 6
 
 -- getWidget p scale pict returns a widget of pict close to p and scales it.
--- getWidget is used by moveButton and pressButton.
 
 getWidget :: Point -> Double -> Picture -> Maybe (Int,Widget_)
 getWidget p sc = searchGetR (not . isSkip &&& inWidget p) .
                  map (transXY (5,5) . scaleWidg sc)
 
--- getFramePts is used by getRectIndices, gravity, mkSnow, morphPict,
--- turtleFrame and widgFrame.
+-- used by Epaint > moveButton,pressButton
 
 getFramePts :: Bool -> Widget_ -> Path
 getFramePts edgy = concatMap getPoints . hulls edgy
 
--- getFrameLns is used by hullCross.
+-- used by Epaint > getRectIndices,gravity,mkSnow,morphPict,turtleFrame,
+-- widgFrame
 
 getFrameLns :: Widget_ -> [Lines]
 getFrameLns = map getLines . hulls False
 
--- hulls edgy w computes frame paths of w and is used by dots, getFrameLns,
--- getFramePts, joinPict, outline, splinePict and strands.
+-- used by hullCross
+
+-- hulls edgy w computes frame paths of w.
 
 hulls :: Bool -> Widget_ -> Picture
 hulls edgy = f
@@ -2281,10 +2291,13 @@ hulls edgy = f
        f (Repeat w)   = f w
        f _            = []
 
--- stringsInPict is used by Ecom > showMatrix, Ecom > showSubtreePicts,
--- Ecom > showTransOrKripke and Ecom > showTreePicts.
+-- used by Epaint > dots,getFrameLns,getFramePts,joinPict,outline,splinePict,
+-- strands
+
 stringsInPict :: [Widget_] -> [String]
 stringsInPict = concatMap stringsInWidg
+
+-- used by Ecom > showMatrix,showSubtreePicts,showTransOrKripke,showTreePicts
 
 stringsInWidg :: Widget_ -> [String]
 stringsInWidg (Bunch w _)        = stringsInWidg w
@@ -2372,6 +2385,7 @@ searchPic eval sizes spread t = g [] t where
                   where h = concatJust . zipWithSucs g p . changeLPoss q r
                         q i = [i]; r i = []
 
+-- used by Ecom > getInterpreter
 
 -- solPic sig eval ... t recognizes the terms of a solution t that are
 -- interpretable by eval and combines the resulting pictures into a single one.
@@ -2382,7 +2396,7 @@ solPic sig eval sizes spread t = case parseSol (solAtom sig) t of
                                       _ -> zero
                                  where f = eval sizes spread . getTerm
 
--- searchPic and solPic are used by Ecom > getInterpreter.
+-- used by Ecom > getInterpreter
 
 partition :: Int -> Interpreter
 partition mode sizes _ t = do guard $ not $ isSum t
@@ -2577,11 +2591,11 @@ widgConst c sizes@(n,width) spread = f where
                                    -- b = breadth/2, h = height/2
                                       Just $ Gif 1 True file $ Rect st0B b h
    f (F "gif" [F file [],p,b,h]) = do p <- parsePnat p
-                                      (b,h) <- parseReals b h                                      
+                                      (b,h) <- parseReals b h
                                       Just $ Gif p True file $ Rect st0B b h
    f (F "gif" [F file [],p,b,h,a])
                                  = do p <- parsePnat p
-                                      (b,h) <- parseReals b h                                      
+                                      (b,h) <- parseReals b h
                                       a <- parseBool a
                                       Just $ Gif p a file $ Rect st0B b h
    f (F x [n]) | z == "hilbP"    = do mode <- search (== mode) pathmodes
@@ -2822,7 +2836,6 @@ pictTrans c = f where
      f _                 = Nothing
      mkWidg tr = Just $ single . mkTurt p0 1 . tr
 
--- wTreeToBunches is used by arrangeGraph, concatGraphs and newPaint.
 wTreeToBunches :: String -> Point -> Double -> TermW -> Picture
 wTreeToBunches mode (hor,ver) grade t = w:ws2
   where w:ws = bunches (if head mode == 'a' then chgY 0 ct else ct) pt
@@ -2889,6 +2902,8 @@ wTreeToBunches mode (hor,ver) grade t = w:ws2
         grad2 v y = 360*fromInt (getInd v vs)/fromInt (length vs)
                     where vs = sort rel [w | w <- ws, y == ycoord w]
                           rel v w = xcoord v > xcoord w
+
+-- used by Epaint > arrangeGraph,concatGraphs,newPaint
 
 shiftW :: Num a => ((t, t) -> (a, a)) -> a -> [(t, a)] -> [a]
 shiftW maxmin d (x:xs) = fst $ foldl f ([0],x) xs
@@ -2965,12 +2980,12 @@ transWLeaves hor ts t = loop hor
                                [x1,x2] = map (fst . snd . root) [last us,t]
                                [w1,w2] = map (midx . fst . root) [last us,t]
 
-
--- graphToTree is used by arrangeGraph and showInSolver.
 graphToTree :: Graph -> TermS
 graphToTree graph = eqsToGraph [] eqs
    where (eqs,_) = relToEqs 0 $ map f $ propNodes $ fst graph
          f i = (show i,[show $ last path | k:path <- buildPaths graph, k == i])
+
+-- used by Epaint > arrangeGraph,showInSolver
 
 -- * __Morphing__, __scaling__ and __framing__
 
@@ -3029,12 +3044,14 @@ pictFrame :: Picture -> (Double, Double, Double, Double)
 pictFrame pict = foldl f (0,0,0,0) $ indices_ pict
                  where f bds = minmax4 bds . widgFrame . (pict!!)
 
--- | widgFrame w returns the leftmost-uppermost and rightmost-lowermost
--- coordinates of the smallest rectangle that encloses w. widgFrame is used by
--- scaleAndDraw, addFrame and shelf.
+-- widgFrame w returns the leftmost-uppermost and rightmost-lowermost
+-- coordinates of the smallest rectangle that encloses w.
+
 widgFrame :: Widget_ -> (Double, Double, Double, Double)
 widgFrame (Turtle st sc acts) = turtleFrame st sc acts
 widgFrame w                   = minmax $ coords w:getFramePts True w
+
+-- used by Epaint > scaleAndDraw,addFrame,shelf
 
 turtleFrame ::State -> Double -> TurtleActs -> (Double,Double,Double,Double)
 turtleFrame (p,a,_,_) sc acts = minmax $ fst $ foldl f ([p],[(p,a,sc)]) acts
@@ -3056,6 +3073,8 @@ turtleFrame (p,a,_,_) sc acts = minmax $ fst $ foldl f ([p],[(p,a,sc)]) acts
                         where (l,r) = ((x1,y1),(x2,y2))
                               (x1,y1,x2,y2) = minmax $ getFramePts True 
                                                       $ moveTurnScale b p a sc w
+
+-- used by Epaint > actsCenter,widgFrame
 
 -- * __Picture__ operators
 
@@ -3080,9 +3099,10 @@ moveTurn :: Bool -> Point -> Double -> WidgTrans
 moveTurn True p a = turnWidg a . moveWidg p 
 moveTurn _ p a    = updState f where f (_,_,c,i) = (p,a,c,i)
 
--- moveTurnScale is used by mkPict and widgFrame.
 moveTurnScale :: Bool -> Point -> Double -> Double -> Widget_ -> Widget_
 moveTurnScale b p a sc = scaleWidg sc . moveTurn b p a
+
+-- used by Epaint > mkPict,widgFrame
 
 updCol,updCol0 :: Color -> WidgTrans
 updCol (RGB 0 0 0)  = id
@@ -3475,15 +3495,16 @@ shelf graph@(pict,_) cols (dh,dv) align centered scaled mode =
                       g _ (_,y,_,y')    = (y,y')
               widg = Widg True
 
--- | getSupport graph s t returns the red dots on a path from s to t. 
--- getSupport is used by releaseButton.
+-- getSupport graph s t returns the red dots on a path from s to t. 
+
 getSupport :: Graph -> Int -> Int -> Maybe [Int]
 getSupport graph s t = 
       do (_,_:path@(_:_:_)) <- searchGet f $ buildPaths graph; Just $ init path
       where f path = s `elem` path && t `elem` path && g s <= g t
                      where g s = getInd s path
 
--- pictToWTree is used by newPaint and concatGraphs.
+-- used by Epaint > releaseButton
+
 pictToWTree :: Picture -> TermW
 pictToWTree pict = case map f pict of [t] -> t
                                       ts -> F Skip $ zipWith g [0..] ts
@@ -3495,7 +3516,8 @@ pictToWTree pict = case map f pict of [t] -> t
                                      where p = i:getPos x
                       g _ t        = t
 
--- concatGraphs is used by addOrRemove and arrangeOrCopy.
+-- used by Epaint > newPaint,concatGraphs
+
 concatGraphs :: Point -> Double -> String -> [Graph] -> Graph 
 concatGraphs _ _ _ []                 = nil2
 concatGraphs _ _ _ [graph]            = graph
@@ -3506,9 +3528,11 @@ concatGraphs spread grade mode graphs = (concat pictures,foldl g [] edges)
        g arcs = (arcs++) . map (map (+ length arcs))
        m = if isTree mode then mode else "t1"
 
+-- used by Epaint > addOrRemove,arrangeOrCopy
+
 -- bunchesToArcs (pict,arcs) removes the bunches of pict and adds their edges to
--- arcs. bunchesToArcs is used by arrangeGraph, concatGraphs, scaleAndDraw and 
--- showInSolver.
+-- arcs.
+
 bunchesToArcs :: Graph -> Graph
 bunchesToArcs graph@(pict,_) = (pict2,foldl removeCycles arcs1 cycles)
   where addArcs (pict,arcs) (m,Bunch w is) = (updList pict m w,
@@ -3531,9 +3555,12 @@ bunchesToArcs graph@(pict,_) = (pict2,foldl removeCycles arcs1 cycles)
                                                   | n == t = arcs!!n`minus1`s
                                                   | otherwise = arcs!!n
 
--- addSmoothArc graph (s,t,..) adds a smooth line from s to t together with the 
--- control points of the line. 
--- addSmoothArc is used by releaseButton False False and bunchesToArcs.
+
+-- used by Epaint > arrangeGraph,concatGraphs,scaleAndDraw,showInSolver
+
+-- addSmoothArc graph (s,t,..) adds a smooth line from s to t together with the
+-- control points of the line.
+
 addSmoothArc :: Graph -> (Int,Int,Widget_,Widget_,[Int]) -> Graph
 addSmoothArc (pict,arcs) (s,t,v,w,ts)
                          | s == t = (f [(xp,y),mid,(x,yp)],
@@ -3550,16 +3577,18 @@ addSmoothArc (pict,arcs) (s,t,v,w,ts)
                                (i,j) = (lg+1,lg+2)
                                targets = lg:ts `minus1` t
                                setArcs n = fold2 updList $ arcs++replicate n []
-                    
+
+-- used by Epaint > releaseButton,bunchesToArcs
+
 arcsToBunches :: Graph -> Picture
 arcsToBunches (Bunch w is:pict,ks:arcs) 
                                 = Bunch w (is`join`ks):arcsToBunches (pict,arcs)
 arcsToBunches (w:pict,is:arcs) = Bunch w is:arcsToBunches (pict,arcs)
 arcsToBunches _                = []
 
--- | buildAndDrawPaths graph transforms the arcs of graph into paths that do not
--- cross the borders of the widgets of pict. buildAndDrawPaths is used by 
--- scaleAndDraw.
+-- buildAndDrawPaths graph transforms the arcs of graph into paths that do not
+-- cross the borders of the widgets of pict. 
+
 buildAndDrawPaths :: Graph -> [Path]
 buildAndDrawPaths graph@(pict,_) = map f $ buildPaths graph
                      where f (n:ns) = p':ps++[q']
@@ -3571,19 +3600,21 @@ buildAndDrawPaths graph@(pict,_) = map f $ buildPaths graph
                                          p' = hullCross (head $ ps++[q],p) v
                                          q' = hullCross (last $ p:ps,q) w
 
-{- |
-exchgWidgets pict s t exchanges the positions of nodes s and t in the graph 
-and in the plane. exchgWidgets is used by releaseButton and arrangeButton.
--}
+-- used by Epaint > scaleAndDraw
+
+-- exchgWidgets pict s t exchanges the positions of nodes s and t in the graph
+-- and in the plane.
+
 exchgWidgets :: Picture -> Int -> Int -> Picture
 exchgWidgets pict s t = updList (updList pict s $ moveWidg (coords v) w) t
                                                 $ moveWidg (coords w) v
                         where (v,w) = (pict!!s,pict!!t)
 
-{- |
-exchgPositions graph s t exchanges the positions of nodes s and t of graph in
-the plane. exchgPositions is used by releaseButton and permutePositions.
--}
+-- used by Epaint > arrangeButton,releaseButton
+
+-- exchgPositions graph s t exchanges the positions of nodes s and t of graph in
+-- the plane. 
+
 exchgPositions :: Graph -> Int -> Int -> Graph
 exchgPositions graph@(pict,arcs) s t = (exchgWidgets pict s t,
                                          foldl paths2arcs arcs0 paths7)
@@ -3603,10 +3634,12 @@ exchgPositions graph@(pict,arcs) s t = (exchgWidgets pict s t,
                                  where arcs' = updList arcs m (arcs!!m`join1`n)
             paths2arcs arcs _ = arcs
 
+-- used by Epaint > permutePositions,releaseButton
+
 -- buildPaths graph regards the nodes of each maximal path p of graph consisting
 -- of red dots as control points of smooth lines that connect a direct
--- predecessor of p with a direct successor of p. buildPaths is used by
--- graphToTree, subgraph, releaseButton, buildAndDrawPaths and exchgPositions.
+-- predecessor of p with a direct successor of p. 
+
 buildPaths :: Graph -> Arcs
 buildPaths (pict,arcs) = connect $ concatMap f $ indices_ pict
   where f i = if isSkip (pict!!i) then [] else [[i,j] | j <- arcs!!i]
@@ -3615,11 +3648,12 @@ buildPaths (pict,arcs) = connect $ concatMap f $ indices_ pict
         connect2 path paths 
            | hpath == lpath     = path:connect paths
            | lastdot || headdot = case search2 f1 f2 paths of 
-                                  Just (i,True) -> connectC (ipath++paths!!i) i
-                                  Just (i,_) -> connectC (paths!!i++tpath) i
+                                  Just (i,b) -> connectC (new i b) i
                                   _ -> connect paths
            | otherwise          = path:connect paths
-                        where hpath:tpath = path
+                        where new i True = ipath++paths!!i
+                              new i _    = paths!!i++tpath
+                              hpath:tpath = path
                               (ipath,lpath) = (init path,last path)
                               lastdot = isRedDot (pict!!lpath)
                               headdot = isRedDot (pict!!hpath)
@@ -3627,12 +3661,13 @@ buildPaths (pict,arcs) = connect $ concatMap f $ indices_ pict
                               f2 path = last path == hpath && headdot
                               connectC path i = connect2 path $ context i paths
 
+-- used by Epaint > buildAndDrawPaths,exchgPositions,graphToTree,releaseButton,
+-- subgraph
 
 -- CROSSINGS and PICTURE EXTENSIONS
 
--- hullCross (p1,p2) w computes the crossing of (p1,p2) with w such that p2 
--- agrees with the coordinates of w. 
--- hullCross is used by buildAndDrawPaths, convexPath and drawTrees.
+-- hullCross (p1,p2) w computes the crossing of (p1,p2) with w such that p2
+-- agrees with the coordinates of w.
 
 hullCross :: Line_ -> Widget_ -> Point
 hullCross line@(p1@(x1,y1),p2@(x2,y2)) w = 
@@ -3654,8 +3689,10 @@ hullCross line@(p1@(x1,y1),p2@(x2,y2)) w =
            f ls = if null ps then [p2] else map get ps
                 where ps = filter just $ map (crossing (line,p2)) $ addSuc ls
 
--- | crossing line1 line2 returns the crossing point of line1 with line2.
--- crossing is used by crossings, hullCross and interior.
+-- used by Epaint > buildAndDrawPaths,convexPath,drawTrees
+
+-- crossing line1 line2 returns the crossing point of line1 with line2.
+
 crossing :: (Line_,Point) -> (Line_,Point) -> Maybe Point
 crossing ((p1@(x1, y1), p2@(x2, _)), p5)
   ((p3@(x3, y3), p4@(x4, _)), p6)
@@ -3685,15 +3722,19 @@ crossing ((p1@(x1, y1), p2@(x2, _)), p5)
                                  (p /= p4 || inFrame p3 p p6)
                         Just p
 
+-- used by Epaint > crossings,hullCross,interior
+
+-- crossings lines1 lines2 returns all triples (p,line1,line2) with line1 in
+-- lines1, line2 in lines2 and crossing point p of line1 and line2.
+
 type Crossing = (Point,(Line_,Line_))
 
--- | crossings lines1 lines2 returns all triples (p,line1,line2) with line1 in
--- lines1, line2 in lines2 and crossing point p of line1 and line2.
--- crossings is used by strands.
 crossings :: Lines -> Lines -> [Crossing]
 crossings lines1 lines2 = [(get p,(fst line1,fst line2)) | 
                             line1 <- addSuc lines1, line2 <- addSuc lines2,
                            let p = crossing line1 line2, just p]
+
+-- used by Epaint > strands
 
 addSuc :: Lines -> [(Line_,Point)]
 addSuc [] = []
@@ -3703,7 +3744,6 @@ addSuc ls = zip ls (map snd $ tail ls) ++
 
 -- strands pict computes the subpaths of the hulls hs of pict that enclose the
 -- intersection resp. union of the elements of hs and connects them.
--- strands is used by dots, joinPict, outline, planarWidg and widgArea.
 
 strands :: Picture -> ([(Widget_,Widget_,[Crossing])],[Path],[Color],
                                                       [Path],[Color])
@@ -3729,12 +3769,12 @@ strands pict = (hcs,map pr3 inner,innerCols,outer,map col outer)
                             c = interior (head ps2) $ getLines h1
                             strands b ps = add qs pss
                                 where (qs,pss,_) = foldl next ([],[],b) ps
-                                      next (ps, pss, b) p
-                                          | p `elem` map fst cs =
-                                            if b then ([], (p : ps) : pss, False)
-                                            else ([p], pss, True)
-                                          | b = (p : ps, pss, b)
-                                          | otherwise = ([], pss, b)
+                                      next (ps,pss,b) p =
+                                           if p `elem` map fst cs
+                                           then if b then ([],(p:ps):pss,False)
+                                                     else ([p],pss,True)
+                                           else if b then (p:ps,pss,b)
+                                                     else ([],pss,b)
            outer = connect $ concatMap threadsO hs
            col ps = case searchGet (shares ps . getPoints) hs of
                          Just (_,h) -> getColor h; _ -> black
@@ -3767,7 +3807,7 @@ strands pict = (hcs,map pr3 inner,innerCols,outer,map col outer)
                               where g i = connect . updList pss i
            connect _ = []
 
--- joinPict is used by widgets and scaleAndDraw.
+-- used by Epaint > dots,joinPict,outline,planarWidg,widgArea
 
 joinPict :: Int -> PictTrans
 joinPict m pict = case m of
@@ -3799,6 +3839,8 @@ joinPict m pict = case m of
                      hole ps = any f $ minus1 outer ps
                                where f qs = all g ps
                                             where g p = interior p $ mkLines qs
+
+-- used by Epaint > scaleAndDraw,widgets
 
 {- |
 convexHull ps computes the convex hull of ps by splitting ps into halves and 
@@ -3856,13 +3898,14 @@ lowerTangent ps@(p1:_) (q1:qs@(q2:_))
                                | slope p1 q1 <= slope q1 q2 = lowerTangent ps qs
 lowerTangent (p1:_) (q1:_)                                     = (p1,q1)
 
--- convexPath is used by scaleAndDraw.
 convexPath :: Path -> [Widget_] -> ([Widget_], Path)
 convexPath ps pict = if straight ps then (h ps,ps) else (h $ last qs:qs,qs)
   where qs = convexHull $ sort (<) ps
         f p q = Path0 blue 0 0 [g q p,g p q]
         g p q = hullCross (p,q) $ pict!!get (search ((== q) . coords) pict)
         h ps = zipWith f ps $ tail ps
+
+-- used by Epaint > scaleAndDraw
 
 -- * __Turtle actions__
 
@@ -4288,7 +4331,7 @@ boolMatrix :: Sizes -> [String] -> [String] -> [(String,String)] -> TurtleActs
 boolMatrix sizes@(n,width) dom1 dom2 ps =
                       rectMatrix sizes entry dom1 dom2 btf $ const ht
                       where entry i j = if (i,j) `elem` ps 
-                                        then [widg $ Oval (st0 red) m m] else [] 
+                                        then [widg $ Oval (st0 red) m m] else []
                             m = minimum (ht:map btf dom2)-1
                             btf j = halfmax width [j]+3
                             ht = fromInt n/2+3
@@ -4359,12 +4402,12 @@ drawPartition sizes mode = f $ case mode of 0 -> levelTerm
 
 -- * __String parser__ into widgets
 
--- graphString is used by loadGraph.
 graphString :: Parser ([Widget_], [[Int]])
 graphString = do symbol "("; pict <- list widgString; symbol ","
                  arcs <- list (list int); symbol ")"; return (pict,arcs)
 
--- widgString is used by loadWidget.
+-- used by Epaint > loadGraph
+
 widgString :: Parser Widget_
 widgString = concat [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
                         r <- enclosed double; b <- enclosed double
@@ -4481,3 +4524,5 @@ replaceCommandMenu connectIdRef menuItem act = do
     signalDisconnect id
     id <- menuItem `on` menuItemActivated $ act
     writeIORef connectIdRef id
+
+-- used by Epaint > loadWidget

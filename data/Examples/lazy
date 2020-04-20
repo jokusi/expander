@@ -131,7 +131,7 @@ leavesRepI(leaf$x)(ls)$acc == (x:acc,leaf$head$ls,tail$ls) &
 	     
 -- INFINITE OBJECTS
 
-nats == 0:map(+1)$nats &
+nats  == 0:map(+1)$nats &
 
 nats' == mu s.(0:map(+1)$s) &
 	     
@@ -145,9 +145,9 @@ fibs' == mu s.(1:1:zipWith(+)(s)$tail$s) & -- simplify breadthfirst/parallel
 
 RequestsL(f)(g)$a = ClientL(g)(0)$map(f)$RequestsL(f)(g)$a &
 
-(ClientL(g)(a)$s = a:ClientL(g)(g$b)$s' <=== s = b:s') &
+-- (ClientL(g)(a)$s = a:ClientL(g)(g$b)$s' <=== s = b:s') &	-- (1)
 
--- ClientL(g)(a)$s = a:ClientL(g)(g$head$s)$tail$s &
+ClientL(g)(a)$s = a:ClientL(g)(g$head$s)$tail$s &		-- (2)
 
 Requests(f)(g)$a == Client(g)(a)$map(f)$Requests(f)(g)$a &
 
@@ -165,21 +165,22 @@ goo(x) == ite(x=0,0,goo(x+1)*goo(x-1))
 
 conjects:
 
-mergesortL[3,2,1,4] = s 			 & -- match and narrow
-replaceL(min)$tree1 = t  		         & -- match and narrow
-replaceL(+)$tree1 = t  		                 & -- match and narrow
+mergesortL[3,2,1,4] = s 		   &   -- match and narrow
+replaceL(min)$tree1 = t  		   &   -- match and narrow
+replaceL(+)$tree1 = t  		           &   -- match and narrow
 
-palL[1,1] = b 				         & -- unify and narrow, simpl
+palL[1,1] = b 				   &   -- unify and narrow, simpl
 				                   -- 4 steps           (9.3.20)      
-palL[1,2] = b 				         & -- unify and narrow, simpl
+palL[1,2] = b 				   &   -- unify and narrow, simpl
 				                   -- 4 steps           (9.3.20)      
-palL[2,3,2] = b 				 & -- unify and narrow, simpl
-palL[2,3,1,2] = b				 & -- unify and narrow, simpl
+palL[2,3,2] = b 			   &   -- unify and narrow, simpl
+palL[2,3,1,2] = b			   &   -- unify and narrow, simpl
 
-sortTL$tree1 = t              	                 & -- match and narrow, simpl
+sortTL$tree1 = t              	           &   -- match and narrow, simpl
 
-take(3)$RequestsL(+1)(*2)(0) = s                   -- match and narrow, simpl
-					           -- 9 steps          (10.2.20)      
+take(3)$RequestsL(+1)(*2)(0) = s               -- match and narrow, simpl
+					       -- 9 steps with (1)     (11.3.20)      
+					       -- 11 steps with (2)    (11.3.20)      
 terms: 
 
 mergesort[3,2,1,4] 			       <+>
@@ -188,7 +189,7 @@ mergesortF[3,2,1,4] 			       <+>
 replace(min)$tree1   		               <+> 
 replace(+)$tree1   		               <+> 
 
-pal[1,1] 			       	       <+> -- 15 steps          (9.3.20)
+pal[1,1] 			       	       <+> -- 15 steps         (11.3.20)
 pal[1,2] 			       	       <+> -- 14 steps          (9.3.20)
 pal[2,3,2] 			       	       <+> -- 19 steps          (9.3.20)
 pal[2,3,1]                                     <+> -- 15 steps          (9.3.20)
@@ -212,18 +213,18 @@ take(3)$nats			      	       <+> -- 21 steps         (1.11.17)
 
 take(3)$nats'  			               <+> -- 22 steps         (1.11.17)
 
-take(3)$Requests(+1)(*2)$0		       <+> --> [0,2,6]	       (10.2.20)
-						   -- 30 steps          
-take(4)$Requests(+1)(*2)$0		       <+> --> [0,2,6,14]      (10.2.20)
-						   -- 47 steps          
-take(5)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30]   (10.2.20)
-						   -- 66 steps          
-take(6)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30,62](10.2.20)
-						   -- 89 steps          
-take(3)$CSI(+1)(*2)$0                          <+> --> [0,2,6]          (9.2.20)
-						   -- 42 steps          
-foo(3)					       <+> --> 0		(4.2.20)
-			    -- 15 depthfirst, 19 parallel, 27 breadthfirst steps
-goo(3)					           --> 0	        (4.2.20)
-	    -- depthfirst is non-terminating, 19 parallel, 48 breadthfirst steps
+take(3)$Requests(+1)(*2)$0		       <+> --> [0,2,6]	      
+						   -- 30 steps         (11.3.20)
+take(4)$Requests(+1)(*2)$0		       <+> --> [0,2,6,14]      						   		   -- 47 steps         (11.3.20)
+take(5)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30]   
+						   -- 66 steps         (10.2.20)
+take(6)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30,62]
+						   -- 89 steps         (10.2.20)
+take(3)$CSI(+1)(*2)$0                          <+> --> [0,2,6]
+ 						   -- 42 steps         (11.3.20)
+
+foo(3)					       <+> --> 0		
+                  -- 15 depthfirst, 19 parallel, 27 breadthfirst steps  (4.2.20)
+goo(3)					           --> 0	       
+  -- depthfirst is non-terminating, 19 parallel, 48 breadthfirst steps  (4.2.20)
 

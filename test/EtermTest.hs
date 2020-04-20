@@ -32,8 +32,7 @@ deriving instance Generic Test.C
 -- * Result
 
 instance (i ~ (Int,Int), Test.Arbitrary e) => Test.Arbitrary (Array i e) where
-  arbitrary = do
-    n <- Test.getSize
+  arbitrary = Test.sized $ \n ->
     listArray ((0,0), (n,n)) <$> repeat <$> Test.arbitrary
 
 instance Eq SubstS where

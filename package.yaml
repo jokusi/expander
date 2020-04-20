@@ -1,0 +1,223 @@
+# The name of the package.
+name:                expander
+
+# The package version.  See the Haskell package versioning policy (PVP) 
+# for standards guiding when and how versions should be incremented.
+# http://www.haskell.org/haskellwiki/Package_versioning_policy
+# PVP summary:       +-+------- breaking API changes
+#                    | | +----- non-breaking API additions
+#                    | | | +--- code changes with no API change
+version:             3.0.0.0
+
+# A short (one-line) description of the package.
+synopsis:            Expander - a formal methods presenter
+
+# A longer description of the package.
+description:         Expander3 is a flexible multi-purpose workbench for interactive term rewriting, graph transformation, theorem proving, constraint solving, flow graph analysis and other procedures that build up proofs or other rewrite sequences. Moreover, tailor-made interpreters display terms as two-dimensional structures ranging from trees and rooted graphs to a variety of pictorial representations that include tables, matrices, alignments, partitions, fractals and various tree-like or rectangular graph layouts. 
+
+github:              "jokusi/expander"
+
+# URL for the project homepage or repository.
+homepage:            "http://fldit-www.cs.uni-dortmund.de/~peter/ExpNeu/Welcome.html"
+
+# The package author(s).
+author:              
+- "Peter Padawitz"
+- "Jos Kusiek"
+
+# An email address to which users can send suggestions, bug reports, and 
+# patches.
+maintainer:          "jos.kusiek@tu-dortmund.de"
+
+# A copyright notice
+# copyright:           ""
+
+# List of categories: http://hackage.haskell.org/packages/
+category:            "Math"
+
+data-dir:            "data"
+
+data-files:
+- Examples/**/*
+- Pix/*
+- style/*
+
+# Extra files to be distributed with the package, such as examples or a 
+#-- README.
+extra-source-files:
+- win/*
+- mac/*
+- srcpath/**/*
+- README.md
+
+flags:
+  hilbs:
+    description: "Build with hilbs executable."
+    manual: false
+    default: false
+  bundle:
+    description: "Make data path relative for Win32 or OSX bundles."
+    manual: false
+    default: false
+  more-warnings:
+    description: "More warnings for code cleanup."
+    manual: false
+    default: false
+
+dependencies:
+- gtk3
+
+library:
+  source-dirs:      src
+  when:
+  - condition: flag(bundle)
+    then:
+      when:
+      - condition: os(osx)
+        then:
+          source-dirs: srcpath/bundle/osx
+        else:
+          source-dirs: srcpath/bundle/win32
+    else:
+      source-dirs: srcpath/unbundled
+  dependencies:
+  - transformers
+  - mtl
+  - array
+  - base >= 4.8 && < 5.0
+  - cairo
+  - glib
+  - filepath
+  - directory
+  - text
+  - deepseq
+  - JuicyPixels
+  other-extensions:
+  - ForeignFunctionInterface
+  - GeneralizedNewtypeDeriving
+
+executables:
+  expander:
+    source-dirs:      app
+    main:             expander.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts=none
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - expander
+    when:
+    - condition: os(windows)
+      ld-options:
+      - -mwindows
+      - win/icon.o
+    - condition: flag(more-warnings)
+      ghc-options:
+      - -Wall
+      - -fno-warn-name-shadowing
+      - -fno-warn-type-defaults
+      - -fno-warn-unused-do-bind
+      - -fno-warn-type-defaults
+  hilbs:
+    source-dirs:      app
+    main:             hilbs.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts=none
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - expander
+    - transformers
+    other-extensions:
+    - BangPatterns
+    when:
+    - condition: os(windows)
+      ld-options:
+      - -mwindows
+      - win/icon.o
+    - condition: flag(more-warnings)
+      ghc-options:
+      - -Wall
+      - -fno-warn-name-shadowing
+      - -fno-warn-type-defaults
+      - -fno-warn-unused-do-bind
+      - -fno-warn-type-defaults
+    - condition: "!flag(hilbs)"
+      buildable: false
+
+
+benchmarks:
+  expander-bench:
+    source-dirs:
+    - src
+    - bench
+    main: expander-bench.hs
+    dependencies:
+    - base
+    - expander
+    - transformers
+    - mtl
+    - array
+    - cairo
+    - directory
+    - filepath
+    - deepseq
+    - criterion
+    - text
+    - JuicyPixels
+    - glib
+    ghc-options:
+    - -threaded
+    - -rtsopts=all
+    - -with-rtsopts=-N
+    when:
+    - condition: flag(bundle)
+      then:
+        when:
+        - condition: os(osx)
+          then:
+            source-dirs: srcpath/bundle/osx
+          else:
+            source-dirs: srcpath/bundle/win32
+      else:
+        source-dirs: srcpath/unbundled
+
+tests:
+  expander-test:
+    source-dirs:
+    - test
+    main:             expander-test.hs
+    dependencies:
+    - base
+    - expander
+    - transformers
+    - mtl
+    - array
+    - cairo
+    - filepath
+    - directory
+    - text
+    - deepseq
+    - test-framework
+    - test-framework-hunit
+    - test-framework-quickcheck2
+    - HUnit
+    - QuickCheck
+    - singletons
+    ghc-options:
+    - -threaded
+    - -rtsopts=all
+    - -with-rtsopts=-N
+    when:
+    - condition: flag(bundle)
+      then:
+        when:
+        - condition: os(osx)
+          then:
+            source-dirs: srcpath/bundle/osx
+          else:
+            source-dirs: srcpath/bundle/win32
+      else:
+        source-dirs: srcpath/unbundled

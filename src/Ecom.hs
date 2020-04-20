@@ -98,6 +98,7 @@ command = concat
            symbol "CreateIndHyp" >> return CreateIndHyp,
            symbol "CreateInvariant" >> token bool >>= return . CreateInvariant,
            symbol "DecomposeAtom" >> return DecomposeAtom,
+           symbol "DerefNodes" >> return DerefNodes,
            symbol "EvaluateTrees" >> return EvaluateTrees,
            do symbol "ExpandTree"; b <- token bool
               token int >>= return . ExpandTree b,
@@ -117,6 +118,7 @@ command = concat
            symbol "RandomLabels" >> return RandomLabels,
            symbol "RandomTree" >> return RandomTree,
            symbol "ReduceRE" >> token int >>= return . ReduceRE,
+           symbol "RefNodes" >> return RefNodes,
            symbol "Refuting" >> token bool >>= return . Refuting,
            symbol "ReleaseNode" >> return ReleaseNode,
            symbol "ReleaseSubtree" >> return ReleaseSubtree,
@@ -163,7 +165,7 @@ linearTerm = concat [do symbol "F"; x <- token quoted
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (March 9, 2020)"
+start = "Welcome to Expander3 (March 14, 2020)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -233,6 +235,9 @@ concCallsPrem
 creatingInvariant :: String -> Term String -> String
 creatingInvariant str ax
        = str ++ " for the iterative program\n\n" ++ showTree False ax ++ "\n\n"
+
+dereferenced :: String
+dereferenced = "The selected pointers have been dereferenced."
 
 edgesRemoved :: Bool -> String
 edgesRemoved True = "Cycles have been removed."
@@ -462,6 +467,9 @@ posInSubst = "There is a pointer in a substitution."
 
 proofLoaded :: String -> String
 proofLoaded file = "The proof term has been loaded from " ++ file ++ "."
+
+referenced :: String
+referenced = "Selected nodes have been turned into pointers."
 
 regBuilt :: String
 regBuilt = "A regular expression has been built from the Kripke model."
@@ -1011,6 +1019,9 @@ solver this solveRef enum paint = do
                                                               $ loadText False
           
           nodesMenu <- getMenu "nodesMenu"
+          mkBut nodesMenu "label roots with entry (l)" replaceNodes
+          mkBut nodesMenu "reference" refNodes
+          mkBut nodesMenu "dereference" derefNodes
           mkBut nodesMenu "greatest lower bound" showGlb
           mkBut nodesMenu "predecessors" showPreds
           mkBut nodesMenu "successors" showSucs
@@ -1018,7 +1029,6 @@ solver this solveRef enum paint = do
           mkBut nodesMenu "values" showVals
           mkBut nodesMenu "variables" $ showSyms varPositions
           mkBut nodesMenu "free variables" $ showSyms freePositions
-          mkBut nodesMenu "label roots with entry (l)" replaceNodes
           mkBut nodesMenu "polarities" showPolarities
           mkBut nodesMenu "positions" showPositions
           mkBut nodesMenu "level numbers" $ showNumbers 1
@@ -1748,12 +1758,13 @@ solver this solveRef enum paint = do
                             n = varCounter "z"
                             z = 'z':show n
                             n' = n+1
-                        if transitive x && null qs && polarity True t p then do
-                            let u = anyConj [z] [F x [l,V z],F x [V z,r]]
-                            curr <- readIORef currRef
-                            modifyIORef treesRef $ \trees ->
-                                updList trees curr $ replace1 t p u
-                            setZcounter n'
+                        if isOrd x && null qs && polarity True t p
+                           then do
+                                let u = anyConj [z] [F x [l,V z],F x [V z,r]]
+                                curr <- readIORef currRef
+                                modifyIORef treesRef $ \trees ->
+                                    updList trees curr $ replace1 t p u
+                                setZcounter n'
                         else do
                             let z' = 'z':show n'
                                 u | qs == [p ++ [0]]
@@ -2429,7 +2440,7 @@ solver this solveRef enum paint = do
                treeposs <- readIORef treepossRef
                let t = trees!!curr
                    ps = emptyOrAll treeposs
-                   ts = map (collapseVars sig . getSubterm1 t) ps
+                   ts = map (collapseVars (isVar sig) . getSubterm1 t) ps
                modifyIORef treesRef $ \trees -> updList trees curr $ fold2 replace1 t ps ts
                extendPT False False False False CollapseVars
                setProof True False "COLLAPSING THE VARIABLES" ps collapsedVars
@@ -2678,7 +2689,23 @@ solver this solveRef enum paint = do
         
         delay :: Action -> Action
         delay = gtkDelay 100
-        
+
+        derefNodes = do
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               curr <- readIORef currRef
+               treeposs <- readIORef treepossRef
+               let t = trees!!curr
+                   ps = emptyOrAll treeposs
+               if all (isPos . root) $ map (getSubterm t) ps then do
+                  modifyIORef treesRef $ \trees -> updList trees curr 
+                    $ dereference t ps
+                  extendPT False False False False DerefNodes
+                  setProof True False "DEREFERENCING THE NODES" ps dereferenced
+                  clearTreeposs; drawCurr'
+               else labMag "Select pointers!"
+
         -- | Used by 'drawPointer', 'drawShrinked', 'drawThis', 'moveTree' and
         -- 'setInterpreter'.
         draw :: TermSP -> Action
@@ -3902,7 +3929,6 @@ solver this solveRef enum paint = do
                     searchRedex $ ks `minus` solPositions
                     where lg = length ts; is = indices_ ts
 
-        -- used by applyTheorem and narrow' 
         narrowOrRewritePar :: TermS -> Sig -> Maybe Int -> [TermS] -> Bool
                            -> [[Int]] -> Action
         narrowOrRewritePar t sig k cls saveRedex ps = do
@@ -3912,8 +3938,8 @@ solver this solveRef enum paint = do
             let f g = g t sig k cls saveRedex [] ps [] varCounter
             if formula || ps `subset` boolPositions sig t then f narrowPar
                                                           else f rewritePar
-        
-        -- | Used by 'rewritePar'.
+                -- used by Ecom > applyTheorem,narrow' 
+
         narrowPar :: TermS
                   -> Sig
                   -> Maybe Int
@@ -4317,6 +4343,22 @@ solver this solveRef enum paint = do
                     setProof False False "REDUCING THE REGULAR EXPRESSIONS"
                                          ps regReduced
                     clearTreeposs; drawCurr'
+
+        refNodes = do
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               curr <- readIORef currRef
+               treeposs <- readIORef treepossRef
+               let t = trees!!curr
+                   p:ps = emptyOrAll treeposs
+               if all (eqTerm $ expand0 t p) $ map (expand0 t) ps then do
+                  modifyIORef treesRef $ \trees -> updList trees curr
+                    $ reference t p ps
+                  extendPT False False False False RefNodes
+                  setProof True False "REFERENCING THE NODES" ps referenced
+                  clearTreeposs; drawCurr'
+               else labMag "Select roots of equal subterms!"
 
         -- | Finishes the 'moveNode' action. Called on right mouse button
         -- release on active canvas.

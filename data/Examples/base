@@ -1,15 +1,15 @@
 -- base
 
-defuncts: head tail init last take drop ^^ <=< kfold
+defuncts: head tail init last take drop <=< kfold 
 fovars:	  x y z s s' n
-hovars:   F G H
+hovars:   F
 
 axioms:
 
-[]++s == s &
 [x]++s == x:s &
-((x:s)++s') == x:s++s' &
+[]++s == s &
 s++[] == s &
+(x:s)++s' == x:s++s' &
 
 head$x:s == x &
 tail$x:s == s &
@@ -28,11 +28,9 @@ drop(0)$s == s &
 drop(n)$x:s == drop(n-1)$s &
 
 length$x:s == length(s)+1 &
-length$init$x:s == length(s) &
+length$init$x:s == length$s &
 
 map(F)$x:s == F(x):map(F)$s &
-
-F^^n == foldl1(fun((G,H),G.H))$replicate(n)$F &
 
 G<=<F == concat.map(G).F &       		-- Kleisli composition for [ ]
 

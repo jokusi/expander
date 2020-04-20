@@ -11,7 +11,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE PolyKinds #-}
-{-# OPTIONS_GHC -Werror=incomplete-patterns #-}
+{-# OPTIONS_GHC -Wincomplete-patterns #-}
 module EtermProof where
 
 import Eterm

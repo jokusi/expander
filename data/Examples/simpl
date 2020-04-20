@@ -1,10 +1,10 @@
 -- simpl
 
 constructs:     a b c
-defuncts: 	plus times take iterate iter
+defuncts: 	plus times iter iterate ^^ `mod` 
 preds:		P Q R odd
-fovars:		x' y' z' i j
-hovars: 	I P Q R
+fovars:		x' y' z' i j n
+hovars: 	F G H I P Q R
 
 axioms: 
 
@@ -20,7 +20,9 @@ axioms:
 
 & iterate(H)$x == x:iterate(H)$H$x 
 
-& (i `mod` j = 0 ==> i^j -> j)
+& F^^n == foldl1(fun((G,H),G.H))$replicate(n)$F
+
+& (i `mod` j = 0 ==> i -> j)
 
 conjects:
 

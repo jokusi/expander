@@ -1,6 +1,6 @@
 module GuiBench (benchs) where
 
-import Gui
+import Base.Gui
 import Criterion.Main
 
 sinus, logarithm, square :: [(Double, Double)]
