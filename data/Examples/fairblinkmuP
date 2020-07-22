@@ -1,82 +1,169 @@
--- fairblinkmu
+-- /Users/Padawitz/ExpanderLib/fairblinkmuP
 
+0. Derivation of
 
-Derivation of
+GF((=0).head)(mu s.(0:(1:s)))
 
-G(F((=0).head))$mu s
+All simplifications are admitted.
+Equation removal is safe.
 
-Adding
+1. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
 
-  (G0(z0)$z1 <=== z0 = F((=0).head) & z1 = mu s)
+Gpath(Fpath((=0).head))(mu s.(0:(1:s)))
 
-to the axioms and applying COINDUCTION wrt
+2. Adding
 
-  (G(P)$s ===> P(s) & G(P)$tail(s))
-
-at position [] of the preceding formula leads to 
-
-F((=0).head)$mu s0 & G0(F((=0).head))$tail(mu s0)
-
-The reducts have been simplified.
-
-NARROWING the preceding formula (1 step) leads to 
-
-head(mu s0) = 0 & G0(F((=0).head))$tail(mu s0) | 
-F((=0).head)$tail(mu s0) & G0(F((=0).head))$tail(mu s0)
-
-The axioms were MATCHED against their redices.
-The reducts have been simplified.
-
-SIMPLIFYING the preceding formula (4 steps) leads to 
-
-G0(F((=0).head))$(1:mu s0)
-
-Adding
-
-  (G0(z2)$z3 <=== z2 = F((=0).head) & z3 = (1:mu s0))
+  (Gpath0(z0)(z1) <=== z0 = Fpath((=0).head) & z1 = mu s.(0:(1:s)))
 
 to the axioms and applying COINDUCTION wrt
 
-  (G(P)$s ===> P(s) & G(P)$tail(s))
+  (Gpath(P)(s) ===> P(s) & Gpath(P)(tail(s)))
 
-at position [] of the preceding formula leads to 
+at positions
+[]
+of the preceding trees leads to 
 
-F((=0).head)$(1:mu s0) & G0(F((=0).head))$mu s0
+All P s:((P = Fpath((=0).head) & s = mu s0.(0:(1:s0)) ===> 
+          P(s) & Gpath0(P)(tail(s))))
 
-The reducts have been simplified.
+3. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
 
-NARROWING the preceding formula (1 step) leads to 
+All P s:((s = mu s0.(0:(1:s0)) ==> 
+          Fpath((=0).head)(s) & Gpath0(Fpath((=0).head))(tail(s))))
 
-F((=0).head)$mu s0 & G0(F((=0).head))$mu s0
+4. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
 
-The axioms were MATCHED against their redices.
-The reducts have been simplified.
+All s:(Fpath((=0).head)(mu s0.(0:(1:s0)))) & 
+All s:(Gpath0(Fpath((=0).head))(tail(mu s0.(0:(1:s0)))))
 
-NARROWING the preceding formula (1 step) leads to 
+5. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
 
-head(mu s0) = 0 & G0(F((=0).head))$mu s0 | 
-F((=0).head)$tail(mu s0) & G0(F((=0).head))$mu s0
+Fpath((=0).head)(0:(1:mu s0.(0:(1:s0)))) & 
+Gpath0(Fpath((=0).head))(tail(mu s0.(0:(1:s0))))
 
-The axioms were MATCHED against their redices.
-The reducts have been simplified.
+6. NARROWING at positions
+[0]
+of the preceding trees (2 steps) leads to 
 
-SIMPLIFYING the preceding formula (4 steps) leads to 
+((=0).head(0:(1:mu s0.(0:(1:s0)))) | 
+ ((=0).head(tail(0:(1:mu s0.(0:(1:s0))))) | 
+  Fpath((=0).head)(tail(tail(0:(1:mu s0.(0:(1:s0)))))))) & 
+Gpath0(Fpath((=0).head))(tail(mu s0.(0:(1:s0))))
 
-G0(F((=0).head))$(0:(1:mu s0))
+The axioms have been MATCHED against their redices.
 
-NARROWING the preceding formula (1 step) leads to 
+7. SIMPLIFYING parallel at positions
+[0,0]
+of the preceding trees (4 steps) leads to 
 
-(0:(1:mu s0)) = mu s
+(True | 
+ ((=0).head(tail(0:(1:mu s0.(0:(1:s0))))) | 
+  Fpath((=0).head)(tail(tail(0:(1:mu s0.(0:(1:s0)))))))) & 
+Gpath0(Fpath((=0).head))(tail(mu s0.(0:(1:s0))))
 
-The axioms were MATCHED against their redices.
-The reducts have been simplified.
+8. REMOVING SUBTREES at positions
+[0,1,0]
+of the preceding trees leads to 
 
-SIMPLIFYING the preceding formula (1 step) leads to 
+(True | (Fpath((=0).head)(tail(tail(0:(1:mu s0.(0:(1:s0)))))))) & 
+Gpath0(Fpath((=0).head))(tail(mu s0.(0:(1:s0))))
 
-(0:(1:mu s0)) = (0:(1:mu s))
+9. SIMPLIFYING parallel at positions
+[0]
+of the preceding trees (one step) leads to 
 
-SIMPLIFYING the preceding formula (1 step) leads to 
+True & Gpath0(Fpath((=0).head))(tail(mu s0.(0:(1:s0))))
+
+10. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+Gpath0(Fpath((=0).head))(tail(0:(1:mu s0.(0:(1:s0)))))
+
+11. SIMPLIFYING parallel at positions
+[1]
+of the preceding trees (one step) leads to 
+
+Gpath0(Fpath((=0).head))(1:mu s0.(0:(1:s0)))
+
+12. Adding
+
+  (Gpath0(z2)(z3) <=== z2 = Fpath((=0).head) & z3 = 1:mu s0.(0:(1:s0)))
+
+to the axioms and applying COINDUCTION wrt
+
+  (Gpath(P)(s) ===> P(s) & Gpath(P)(tail(s)))
+
+at positions
+[]
+of the preceding trees leads to 
+
+All P s:((P = Fpath((=0).head) & s = 1:mu s0.(0:(1:s0)) ===> 
+          P(s) & Gpath0(P)(tail(s))))
+
+13. SIMPLIFYING parallel the preceding trees (5 steps) leads to 
+
+Fpath((=0).head)(1:mu s0.(0:(1:s0))) & 
+Gpath0(Fpath((=0).head))(tail(1:mu s0.(0:(1:s0))))
+
+14. NARROWING at positions
+[1]
+of the preceding trees (one step) leads to 
+
+Fpath((=0).head)(1:mu s0.(0:(1:s0))) & 
+(Fpath((=0).head) = Fpath((=0).head) & tail(1:mu s0.(0:(1:s0))) = mu s.(0:(1:s)) | 
+ Fpath((=0).head) = Fpath((=0).head) & 
+ tail(1:mu s0.(0:(1:s0))) = 1:mu s1.(0:(1:s1)))
+
+The axioms have been MATCHED against their redices.
+The formula coincides with no. 14
+
+15. SIMPLIFYING parallel at positions
+[1,0]
+of the preceding trees (3 steps) leads to 
+
+Fpath((=0).head)(1:mu s0.(0:(1:s0))) & 
+(True | 
+ Fpath((=0).head) = Fpath((=0).head) & 
+ tail(1:mu s0.(0:(1:s0))) = 1:mu s1.(0:(1:s1)))
+
+16. SIMPLIFYING parallel at positions
+[1]
+of the preceding trees (one step) leads to 
+
+Fpath((=0).head)(1:mu s0.(0:(1:s0))) & True
+
+17. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+Fpath((=0).head)(1:mu s0.(0:(1:s0)))
+
+18. NARROWING the preceding trees (one step) leads to 
+
+(=0).head(1:mu s0.(0:(1:s0))) | Fpath((=0).head)(tail(1:mu s0.(0:(1:s0))))
+
+The axioms have been MATCHED against their redices.
+
+19. REMOVING SUBTREES at positions
+[0]
+of the preceding trees leads to 
+
+Fpath((=0).head)(tail(1:mu s0.(0:(1:s0))))
+
+20. SIMPLIFYING parallel at positions
+[0,1]
+of the preceding trees (one step) leads to 
+
+Fpath((=0).head)(mu s0.(0:(1:s0)))
+
+21. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+Fpath((=0).head)(mu s0.(0:(1:s0)))
+
+22. NARROWING the preceding trees (one step) leads to 
+
+(=0).head(mu s0.(0:(1:s0))) | Fpath((=0).head)(tail(mu s0.(0:(1:s0))))
+
+The axioms have been MATCHED against their redices.
+
+23. SIMPLIFYING parallel the preceding trees (5 steps) leads to 
 
 True
 
-Number of proof steps: 10

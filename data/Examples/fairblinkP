@@ -1,99 +1,98 @@
--- /Users/Padawitz/ExpanderLib/fairblink5P
+-- /Users/Padawitz/ExpanderLib/fairblinkP
 
 0. Derivation of
 
-(G(F(((=0).head)))$blink)
+GF((=0).head)(blink)
 
 All simplifications are admitted.
 Equation removal is safe.
 
-1. Adding
+1. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
 
-  (G0(z0)$z1 <=== z0 = F((=0).head) & z1 = blink)
+Gpath(Fpath((=0).head))(blink)
+
+2. Adding
+
+  (Gpath0(z0)(z1) <=== z0 = Fpath((=0).head) & z1 = blink)
 
 to the axioms and applying COINDUCTION wrt
 
-  (G(P)$s ===> P(s) & G(P)$tail(s))
+  (Gpath(P)(s) ===> P(s) & Gpath(P)(tail(s)))
 
 at positions
 []
-of the preceding formulas leads to 
+of the preceding trees leads to 
 
-All P s:((((P=F(((=0).head)))&(s=blink))===>(P(s)&(G0(P)$tail(s)))))
+All P s:((P = Fpath((=0).head) & s = blink ===> P(s) & Gpath0(P)(tail(s))))
+The formula coincides with no. 2
 
-2. SIMPLIFYING the preceding formulas (6 steps) leads to 
+3. SIMPLIFYING parallel the preceding trees (6 steps) leads to 
 
-((F(((=0).head))$blink)&(G0(F(((=0).head)))$(1:blink)))
+Fpath((=0).head)(blink) & Gpath0(Fpath((=0).head))(1:blink)
 
-3. Applying the theorem
+4. Applying the theorem
 
-  (F(P)$s <=== P(s) | F(P)$tail(s))
+  (Fpath(P)(s) <=== P(s) | Fpath(P)(tail(s)))
 
 at positions
 [0]
-of the preceding formulas leads to 
+of the preceding trees leads to 
 
-(((((=0).head)$blink)|(F(((=0).head))$tail(blink)))&(G0(F(((=0).head)))$(1:blink)))
+((=0).head(blink) | Fpath((=0).head)(tail(blink))) & 
+Gpath0(Fpath((=0).head))(1:blink)
 
 The axioms have been MATCHED against their redices.
 
-4. SIMPLIFYING the preceding formulas (6 steps) leads to 
+5. SIMPLIFYING parallel the preceding trees (6 steps) leads to 
 
-(G0(F(((=0).head)))$(1:blink))
+Gpath0(Fpath((=0).head))(1:blink)
 
-5. Adding
+6. Adding
 
-  (G0(z2)$z3 <=== z2 = F((=0).head) & z3 = (1:blink))
+  (Gpath0(z2)(z3) <=== z2 = Fpath((=0).head) & z3 = 1:blink)
 
 to the axioms and applying COINDUCTION wrt
 
-  (G(P)$s ===> P(s) & G(P)$tail(s))
+  (Gpath(P)(s) ===> P(s) & Gpath(P)(tail(s)))
 
 at positions
 []
-of the preceding formulas leads to 
+of the preceding trees leads to 
 
-All P s:((((P=F(((=0).head)))&(s=(1:blink)))===>(P(s)&(G0(P)$tail(s)))))
+All P s:((P = Fpath((=0).head) & s = 1:blink ===> P(s) & Gpath0(P)(tail(s))))
 
-6. SIMPLIFYING the preceding formulas (6 steps) leads to 
+7. SIMPLIFYING parallel the preceding trees (6 steps) leads to 
 
-((F(((=0).head))$(1:blink))&(G0(F(((=0).head)))$blink))
+Fpath((=0).head)(1:blink) & Gpath0(Fpath((=0).head))(blink)
 
-7. Applying the axioms
+8. Applying the axioms
 
-  (G0(z0)$z1 <=== z0 = F((=0).head) & z1 = blink)
-& (G0(z2)$z3 <=== z2 = F((=0).head) & z3 = (1:blink))
+  (Fpath(P)(s) <=== P(s) | Fpath(P)(tail(s)))
+& (Gpath0(z0)(z1) <=== z0 = Fpath((=0).head) & z1 = blink)
+& (Gpath0(z2)(z3) <=== z2 = Fpath((=0).head) & z3 = 1:blink)
 
 at positions
 [1]
-of the preceding formulas leads to 
+[0]
+of the preceding trees leads to 
 
-((F(((=0).head))$(1:blink))&(((F(((=0).head))=F(((=0).head)))&(blink=blink))|((F(((=0).head))=F(((=0).head)))&(blink=(1:blink)))))
-
-The axioms have been MATCHED against their redices.
-
-8. SIMPLIFYING the preceding formulas (one step) leads to 
-
-(F(((=0).head))$(1:blink))
-THIS GOAL COINCIDES WITH GOAL NO. 8
-
-9. NARROWING the preceding formulas (one step) leads to 
-
-((((=0).head)$(1:blink))|(F(((=0).head))$tail((1:blink))))
+((=0).head(1:blink) | Fpath((=0).head)(tail(1:blink))) & 
+(Fpath((=0).head) = Fpath((=0).head) & blink = blink | 
+ Fpath((=0).head) = Fpath((=0).head) & blink = 1:blink)
 
 The axioms have been MATCHED against their redices.
 
-10. SIMPLIFYING the preceding formulas (5 steps) leads to 
+9. SIMPLIFYING parallel the preceding trees (5 steps) leads to 
 
-(F(((=0).head))$blink)
+Fpath((=0).head)(blink)
 
-11. NARROWING the preceding formulas (one step) leads to 
+10. NARROWING the preceding trees (one step) leads to 
 
-((((=0).head)$blink)|(F(((=0).head))$tail(blink)))
+(=0).head(blink) | Fpath((=0).head)(tail(blink))
 
 The axioms have been MATCHED against their redices.
 
-12. SIMPLIFYING the preceding formulas (4 steps) leads to 
+11. SIMPLIFYING parallel the preceding trees (4 steps) leads to 
 
 True
 

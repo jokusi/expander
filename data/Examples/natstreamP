@@ -1,0 +1,181 @@
+-- /Users/Padawitz/ExpanderLib/natstreamP
+
+0. Derivation of
+
+NatStream(mu s.(1:(2:(3:s))))
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Adding
+
+  (NatStream0(z0) <=== z0 = mu s.(1:(2:(3:s))))
+
+to the axioms and applying COINDUCTION wrt
+
+  (NatStream(x:s) ===> Nat(x) & NatStream(s))
+
+at positions
+[]
+of the preceding trees leads to 
+
+All x s:((x:s = mu s0.(1:(2:(3:s0))) ===> Nat(x) & NatStream0(s)))
+
+2. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((x:s = mu s0.(1:(2:(3:s0))) ==> Nat(x) & NatStream0(s)))
+
+3. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((x:s = mu s0.(1:(2:(3:s0))) ==> (Int(x) & x >= 0) & NatStream0(s)))
+
+4. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((x:s = mu s0.(1:(2:(3:s0))) ==> Int(x) & x >= 0 & NatStream0(s)))
+
+5. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((x:s = 1:(2:(3:mu s0.(1:(2:(3:s0))))) ==> 
+          Int(x) & x >= 0 & NatStream0(s)))
+
+6. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((x = 1 & s = 2:(3:mu s0.(1:(2:(3:s0)))) ==> 
+          Int(x) & x >= 0 & NatStream0(s)))
+
+7. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((s = 2:(3:mu s0.(1:(2:(3:s0)))) ==> Int(1) & 1 >= 0 & NatStream0(s)))
+
+8. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All s:((s = 2:(3:mu s0.(1:(2:(3:s0)))) ==> Int(1) & NatStream0(s)))
+
+9. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All s:Int(1) & All s:NatStream0(2:(3:mu s0.(1:(2:(3:s0)))))
+
+10. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+Int(1) & NatStream0(2:(3:mu s0.(1:(2:(3:s0)))))
+
+11. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+True & NatStream0(2:(3:mu s0.(1:(2:(3:s0)))))
+
+12. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+NatStream0(2:(3:mu s0.(1:(2:(3:s0)))))
+
+13. Adding
+
+  (NatStream0(z1) <=== z1 = 2:(3:mu s0.(1:(2:(3:s0)))))
+
+to the axioms and applying COINDUCTION wrt
+
+  (NatStream(x:s) ===> Nat(x) & NatStream(s))
+
+at positions
+[]
+of the preceding trees leads to 
+
+All x s:((x:s = 2:(3:mu s0.(1:(2:(3:s0)))) ===> Nat(x) & NatStream0(s)))
+
+14. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((x = 2 & s = 3:mu s0.(1:(2:(3:s0))) ==> Nat(x) & NatStream0(s)))
+
+15. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((s = 3:mu s0.(1:(2:(3:s0))) ==> Nat(2) & NatStream0(s)))
+
+16. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All s:((s = 3:mu s0.(1:(2:(3:s0))) ==> Nat(2) & NatStream0(s)))
+
+17. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All s:Nat(2) & All s:NatStream0(3:mu s0.(1:(2:(3:s0))))
+
+18. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+Nat(2) & NatStream0(3:mu s0.(1:(2:(3:s0))))
+
+19. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+(Int(2) & 2 >= 0) & NatStream0(3:mu s0.(1:(2:(3:s0))))
+
+20. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+Int(2) & NatStream0(3:mu s0.(1:(2:(3:s0))))
+
+21. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+True & NatStream0(3:mu s0.(1:(2:(3:s0))))
+
+22. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+NatStream0(3:mu s0.(1:(2:(3:s0))))
+
+23. Adding
+
+  (NatStream0(z2) <=== z2 = 3:mu s0.(1:(2:(3:s0))))
+
+to the axioms and applying COINDUCTION wrt
+
+  (NatStream(x:s) ===> Nat(x) & NatStream(s))
+
+at positions
+[]
+of the preceding trees leads to 
+
+All x s:((x:s = 3:mu s0.(1:(2:(3:s0))) ===> Nat(x) & NatStream0(s)))
+
+24. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((x = 3 & s = mu s0.(1:(2:(3:s0))) ==> Nat(x) & NatStream0(s)))
+
+25. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x s:((s = mu s0.(1:(2:(3:s0))) ==> Nat(3) & NatStream0(s)))
+
+26. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All s:((s = mu s0.(1:(2:(3:s0))) ==> Nat(3) & NatStream0(s)))
+
+27. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All s:Nat(3) & All s:NatStream0(mu s0.(1:(2:(3:s0))))
+
+28. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+Nat(3) & NatStream0(mu s0.(1:(2:(3:s0))))
+
+29. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+(Int(3) & 3 >= 0) & NatStream0(mu s0.(1:(2:(3:s0))))
+
+30. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+Int(3) & NatStream0(mu s0.(1:(2:(3:s0))))
+
+31. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+True & NatStream0(mu s0.(1:(2:(3:s0))))
+
+32. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+NatStream0(mu s0.(1:(2:(3:s0))))
+
+33. NARROWING the preceding trees (one step) leads to 
+
+mu s0.(1:(2:(3:s0))) = mu s.(1:(2:(3:s))) | 
+mu s0.(1:(2:(3:s0))) = 2:(3:mu s1.(1:(2:(3:s1)))) | 
+mu s0.(1:(2:(3:s0))) = 3:mu s1.(1:(2:(3:s1)))
+
+The axioms have been MATCHED against their redices.
+
+34. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+True
+

@@ -43,9 +43,7 @@ negatives ==
 terms: 
    concept(map(baum)[1..10],positives,negatives) <+>
 
-   concept(map(baum)[1..10],
-           [(hoch,zuschlag,ja,schlecht,ja,top,action,inter,ja,freunde)],
-           [(mittel,normal,nein,mittel,ja,mittel,drama,inter,nein,freunde)]) <+>
+   concept(map(baum)[1..10],           [(hoch,zuschlag,ja,schlecht,ja,top,action,inter,ja,freunde)],           [(mittel,normal,nein,mittel,ja,mittel,drama,inter,nein,freunde)]) <+>
 
    reduce(map(baum)[1..10],
            [(hoch,zuschlag,ja,schlecht,ja,top,action,inter,ja,freunde),

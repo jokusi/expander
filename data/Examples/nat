@@ -61,12 +61,13 @@ theorems:
 & 0+x = x
 & suc(x) + y = suc(x+y)
 & (suc(x) < y+y <=== suc(x) < suc(y))
-& (suc(x-suc(y)) = x-y <=== x > y)
-& (x*suc(y))+(z-x) = (x*y)+z
+& (suc(x)-suc(y) = x-y <=== x > y)
+& x*suc(y)+z-x = (x*y)+z
 & (x >= suc(y) ===> x > y)
 & (x > y ===> x >= y)
 & 2*x = x+x
 & (a+x = b <=== x = b-a)
+& suc(suc(2*x)) = 2*suc(x)
 
 --& (p+x = b & q+x = c     <=== p+x = b & q-p = c-b)
 --& (p+x = b & q+(a*x) = c <=== p+x = b & q-(a*p) = c-(a*b))
@@ -75,17 +76,17 @@ theorems:
 
 conjects:
 
-  (sum(x) = y ==> x*(x+1) = 2*y)				-- sum1
-& (div(x,y) = (q,r) ==> x = (y*q)+r & r < y)			-- div
-& (x = (y*q)+r ==> loop(y,q,r) = div(x,y))			-- divloop
-& fibL(x) = fib(x)						-- fib
-& (Nat(x) ==> x+y = y+x)					-- comm
-& (Nat(x) ==> x+(y+z) = (x+y)+z)				-- assoc
-& (Nat(x) ==> x < 2**x)						-- exp
-& (Nat(x) ==> even(x) | odd(x))					-- evenodd
-& (Nat(x) ==> suc(x)*x = x**2+x)				-- pot
-& (Nat(n) ==> loop2(f)(n)$f$x = f$loop2(f)(n)(x))		-- natloop
-& (even(x) ==> x = 0 | Any y z:(x = y+z & odd(y) & odd(z)))	-- evenany
+  (sum(x) = y ==> x*(x+1) = 2*y)			-- sum1
+& (div(x,y) = (q,r) ==> x = (y*q)+r & r < y)		-- div
+& (x = (y*q)+r ==> loop(y,q,r) = div(x,y))		-- divloop
+& fibL(x) = fib(x)					-- fib
+& (Nat(x) ==> x+y = y+x)				-- comm
+& (Nat(x) ==> x+(y+z) = (x+y)+z)			-- assoc
+& (Nat(x) ==> x < 2**x)					-- exp
+& (Nat(x) ==> even(x) | odd(x))				-- evenodd
+& (Nat(x) ==> suc(x)*x = x**2+x)			-- pot
+& (Nat(n) ==> loop2(f)(n)$f$x = f$loop2(f)(n)(x))	-- natloop
+& (even(x) ==> Any y:x=2*y)				-- evenany
 
 & div(5,4) = x					
 & div(5,x) = (1,1)				

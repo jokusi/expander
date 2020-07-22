@@ -373,7 +373,7 @@ addAxioms t file = do
           labGreen' $ newCls "axioms" file
       else do
           enterFormulas' cls
-          labRed' "The clauses in the text field are not axioms."
+          labRed' $ "The clauses in " ++ tfield ++ " are not axioms."
 
 addSpec' :: Bool -> FilePath -> Action
 addSpec' b file = do
@@ -391,14 +391,14 @@ addSpec' b file = do
                           Correct t -> do
                               addAxioms t file'
                               delay $ act2 sig
-                          p -> incorrect p axs illformedF
+                          p -> incorrect p axs $ illformed "formula"
               act2 sig =
                   if onlySpace ths then act3 sig
                   else case parseE (implication sig) ths of
                       Correct t -> do
                           addTheorems t file'
                           delay $ act3 sig
-                      p -> incorrect p ths illformedF
+                      p -> incorrect p ths $ illformed "formula"
               act3 sig =
                   if onlySpace conjs then act4 sig
                   else do
@@ -426,11 +426,11 @@ addSpec' b file = do
                       -> do
                           enterText' $ showSignature (ps,cps,cs,ds,fs,hs)
                                     $ check rest
-                          labRed' illformedSig
+                          labRed' $ illformed "signature"
                     _ -> do
                           enterText' sig
-                          labRed' illformedSig
-  where (file',get) = if null file then ("the text field",getTextHere)
+                          labRed' $ illformed "signature"
+  where (file',get) = if null file then (tfield,getTextHere)
                                   else (file,lookupLibs file)
         onlySpace = all (`elem` " \t\n")
 
@@ -481,7 +481,7 @@ getSignature = do
       simpls' = simplRules; transitions' = transRules
       states' = sts; atoms' = ats; labels' = labs;
       trans' = tr; transL' = trL; value' = va; valueL' = vaL
-      safeEqs' = safe
+      safeEqs' = safe; redexPos' = []
       base = pr1 . splitVar
       in Sig
         { isPred      = isPred'
@@ -502,6 +502,7 @@ getSignature = do
         , transL      = transL'
         , valueL      = valueL'
         , safeEqs     = safeEqs'
+        , redexPos    = redexPos'
         }
 
 parseConjects :: Sig -> FilePath -> String -> Action
@@ -511,7 +512,7 @@ parseConjects sig file conjs =
             let ts = if isConjunct t then subterms t else [t]
             modifyIORef conjectsRef $ \conjects -> conjects `join` ts
             labGreen' $ newCls "conjectures" file
-        p -> incorrect p conjs illformed
+        p -> incorrect p conjs $ illformed "formula"
 
 parseTerms :: Sig -> FilePath -> String -> Action
 parseTerms sig file ts =  case parseE (term sig) ts of
@@ -519,178 +520,7 @@ parseTerms sig file ts =  case parseE (term sig) ts of
         let ts = if isSum t then subterms t else [t]
         modifyIORef termsRef $ \terms -> ts `join` terms
         labGreen' $ newCls "terms" file
-    p -> incorrect p ts illformed
-
-
--- old
--- addAxioms :: TermS -> String -> Action
--- addAxioms t file sST = do
---   sig <- getSignature sST
---   let axs = if isConjunct t then subterms t else [t]
---       cls = filter (not . (isAxiom sig ||| isSimpl)) axs
---   if null cls
---     then do
---       sST `Gtk.set`
---         [ solPositionsRef := []
---         , axiomsRef :~ \axioms -> axioms `join` axs
---         , simplRulesRef :~ \simplRules -> simplRules ++ trips ["==","<==>"] axs
---         , transRulesRef :~ \transRules -> transRules ++ trips ["->"] axs
---         ]
---       labGreen' $ newCls "axioms" file
---     else do
---         enterFormulas' cls
---         labRed' "The clauses in the text field are not axioms."
-
--- addSpec' :: Bool -> FilePath -> Action
--- addSpec' b file sST = do
---     checking <- sST `Gtk.get` checkingRef
---     when (not checking) $ do
---         when b $ sST `Gtk.set` [ specfilesRef :~ \specfiles -> file:specfiles]
---         str <- get
---         if null str then labRed' $ file ++ " is not a file name."
---         else do
---             let (sig,axs,ths,conjs,ts) = splitSpec $ removeComment 0 str
---                 act1 :: Base.Action
---                 act2,act3,act4 :: Sig -> Base.Action
---                 act1 = do
---                     sig <- getSignature sST
---                     if onlySpace axs then act2 sig
---                     else case parseE (implication sig) axs of
---                             Correct t -> do
---                                 addAxioms t file' sST
---                                 delay $ act2 sig
---                             p -> incorrect p axs illformedF
---                 act2 sig =
---                     if onlySpace ths then act3 sig
---                     else case parseE (implication sig) ths of
---                         Correct t -> do
---                             addTheorems t file' sST
---                             delay $ act3 sig
---                         p -> incorrect p ths illformedF
---                 act3 sig =
---                     if onlySpace conjs then act4 sig
---                     else do
---                         parseConjects sig file' conjs sST
---                         delay $ act4 sig
---                 act4 sig =
---                     if onlySpace ts then delay $ return ()
---                     else parseTerms sig file' ts sST
---             if onlySpace sig then act1
---             else do
---                   (ps,cps,cs,ds,fs,hs) <- sST `Gtk.get` symbolsRef
---                   let syms = ps++cps++cs++ds++fs++map fst hs
---                   case parseE (signature ([],ps,cps,cs,ds,fs,hs)) sig of
---                       Correct (specs,ps,cps,cs,ds,fs,hs)
---                         -> do
---                           sST `Gtk.set` [ symbolsRef := (ps,cps,cs,ds,fs,hs)]
---                           let finish = do
---                                 sST `Gtk.set` [ varCounterRef := iniVC syms]
---                                 labGreen' $ newSig file'
---                                 delay act1
---                           specfiles <- sST `Gtk.get` specfilesRef
---                           mapM_ (flip (addSpec' False) sST)
---                             $ specs `minus` specfiles
---                           delay finish
---                       Partial (_,ps,cps,cs,ds,fs,hs) rest
---                         -> do
---                             enterText' $ showSignature (ps,cps,cs,ds,fs,hs)
---                                       $ check rest
---                             labRed' illformedSig
---                       _ -> do
---                             enterText' sig
---                             labRed' illformedSig
---   where (file',get) = if null file then ("the text field",getTextHere sST)
---                                   else (file,lookupLibs file)
---         onlySpace = all (`elem` " \t\n")
-        
--- addSpecWithBase :: FilePath -> Action
--- addSpecWithBase spec sST = do
---   addSpec' True "base" sST
---   when (spec == "base") $ do addSpec' True spec sST
---                              mapM_ act w
---   where act x = do
---           simplRules <- sST `Gtk.get` simplRulesRef
---           when (nothing $ search ((== x) . root . pr1) simplRules)
---             $ sST `Gtk.set`
---             [ simplRulesRef :~ \simplRules -> (leaf x,[],mkList []):simplRules]
---         w = words "states labels atoms"
-
--- addTheorems :: TermS -> FilePath -> Action
--- addTheorems t file sST = do
---     -- sig <- getSignature
---     sST `Gtk.set`
---       [ theoremsRef :~
---           \theorems -> theorems `join` if isConjunct t then subterms t else [t]
---       ]
---     labGreen' $ newCls "theorems" file
-
--- getSignature :: Request Sig
--- getSignature sST = do
---     (ps,cps,cs,ds,fs,hs) <- sST `Gtk.get` symbolsRef
---     (sts,labs,ats,tr,trL,va,vaL) <- sST `Gtk.get` kripkeRef
---     simplRules <- sST `Gtk.get` simplRulesRef
---     transRules <- sST `Gtk.get` transRulesRef
---     (block,xs) <- sST `Gtk.get` constraintsRef
---     safe <- sST `Gtk.get` safeRef
-
---     return $ let
---       isPred'       = (`elem` ps)  ||| projection
---       isCopred'     = (`elem` cps) ||| projection
---       isConstruct'  = (`elem` cs)  ||| just . parse int
---                       ||| just . parse real
---                       ||| just . parse quoted
---                       ||| just . parse (strNat "inj")
---       isDefunct'    = (`elem` ds) ||| projection
---       isFovar'      = (`elem` fs) . base
---       isHovar'      = (`elem` (map fst hs)) . base
---       hovarRel' x y = isHovar' x &&
---           case lookup (base x) hs of
---               Just es@(_:_) -> isHovar' y || y `elem` es
---               _ -> not $ isFovar' y
---       blocked' x = if block then z `elem` xs else z `notElem` xs
---                 where z = head $ words x
---       simpls' = simplRules; transitions' = transRules
---       states' = sts; atoms' = ats; labels' = labs;
---       trans' = tr; transL' = trL; value' = va; valueL' = vaL
---       safeEqs' = safe
---       base = pr1 . splitVar
---       in Sig
---         { isPred      = isPred'
---         , isCopred    = isCopred'
---         , isConstruct = isConstruct'
---         , isDefunct   = isDefunct'
---         , isFovar     = isFovar'
---         , isHovar     = isHovar'
---         , blocked     = blocked'
---         , hovarRel    = hovarRel'
---         , simpls      = simpls'
---         , transitions = transitions'
---         , states      = states'
---         , atoms       = atoms'
---         , labels      = labels'
---         , trans       = trans'
---         , value       = value'
---         , transL      = transL'
---         , valueL      = valueL'
---         , safeEqs     = safeEqs'
---         }
-
--- parseConjects :: Sig -> FilePath -> String -> Action
--- parseConjects sig file conjs sST =
---     case parseE (implication sig) conjs of
---         Correct t -> do
---             let ts = if isConjunct t then subterms t else [t]
---             sST `Gtk.set` [conjectsRef :~ \conjects -> conjects `join` ts]
---             labGreen' $ newCls "conjectures" file
---         p -> incorrect p conjs illformed
-
--- parseTerms :: Sig -> FilePath -> String -> Action
--- parseTerms sig file ts sST =  case parseE (term sig) ts of
---     Correct t -> do
---         let ts = if isSum t then subterms t else [t]
---         sST `Gtk.set` [termsRef :~ \terms -> ts `join` terms]
---         labGreen' $ newCls "terms" file
---     p -> incorrect p ts illformed
+    p -> incorrect p ts $ illformed "term"
 
 
 

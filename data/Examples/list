@@ -1,10 +1,9 @@
--- LIST
+-- list
 
-specs:      nat
-preds:      P any zipAny sorted part NOTsorted >>
-copreds:    all zipAll ~
-defuncts:   F bag map foldl flatten ext scan zip zipWith 
-	    evens odds mergesort split merge isort insert splitAt
+preds:      P any zipAny sorted NOTsorted part >> ~
+copreds:    all zipAll
+defuncts:   F bag map flatten ext scan zip zipWith evens odds mergesort split 	
+	    merge isort insert splitAt
 fovars:     x y z xs ys s s' s1 s2 z1 z2 p
 hovars:     F P
 
@@ -13,16 +12,13 @@ axioms:
   x:s >> s
 & (s >> s' <=== s >> s1 & s1 >> s')
 
-& bag(x:s) = x^bag(s)
-& bag(s++s') = bag(s)^bag(s')
+& (s ~ s' <=== bag(s) = bag(s'))
+
+-- & bag(x:s) = x^bag(s)
+-- & bag(s++s') = bag(s)^bag(s')
 
 & map(F)[] = []
 & map(F)(x:s) = F(x):map(F)(s)
-
-& foldl(F)(x)[] = x
-& foldl(F)(x)(y:s) = foldl(F)(F(x,y))(s)
---& sum(s) = foldl(+)(0)(s)
---& product(s) = foldl(*)(1)(s)
 
 & flatten[] == []
 & flatten(s:p) == s++flatten(p)
@@ -77,8 +73,6 @@ axioms:
 & sorted([x])
 & (sorted(x:y:s) <=== x <= y & sorted(y:s))
 
-& (s ~ s' ===> bag(s) = bag(s'))
-
 & splitAt(0)(s)         = ([],s)
 & splitAt(suc(n))[]     = ([],[])
 & (splitAt(suc(n))(x:s) = (x:s1,s2) <=== splitAt(n)(s) = (s1,s2))
@@ -88,34 +82,41 @@ axioms:
 
 theorems:
 
-  NOTsorted(s) <=== Not(sorted(s))
-& (sorted(s) & sorted(s') ===> sorted(merge(s,s')))
-& (sorted(s) ===> sorted(insert(x,s)))
+  (sorted(s) & sorted(s') ===> sorted(merge(s,s')))
+& (s ~ s1++s2 ===> s ~ merge(s1,s2))
 & (split(s) = (s1,s2) ===> s ~ s1++s2)
-& (s ~ merge(s1,s2) <=== s ~ s1++s2)
-& (s ~ insert(x,s') <=== s ~ x:s')
+
+& (s ~ s1++s2 & x:s1 ~ z3 & y:s2 ~ z4 ===> x:y:s ~ z3++z4)
+& (sorted(s) ===> sorted(insert(x,s)))
+& (s ~ x:s' ===> s ~ insert(x,s'))
+
+& s++s' ~ merge(s,s')
+& (NOTsorted(s) <=== Not(sorted$s))
+
 & (sorted(x:s) ===> sorted(s))
 & (sorted(x:s) & sorted(y:s') & x <= y & sorted(s1) & s1~(s++y:s') 
                ===> sorted(x:s1))
+
 & (x > y ===> y <= x)
 & y:x:s++s' ~ x:s++y:s'
 & s'++x:s ~ x:s++s'
 
 conjects:
 
-(part(s,p) ==> flatten(p) = s)		        &  -- partflatten
-(mergesort(s) = s' ==> sorted(s'))		&
-(mergesort(s) = s' ==> s ~ s')			&
+(part(s,p) ==> flatten(p) = s)		        &  -- pafl1/2
+(mergesort(s) = s' ==> sorted(s') & s ~ s')     &  -- mergesort
+(merge(s1,s2) = s & sorted(s1) & sorted(s2)
+               ==> sorted(s) & s ~ s1++s2)      &
 (isort(s) = s' ==> sorted(s'))			&
 (isort(s) = s' ==> s ~ s')			&
-(merge(s1,s2) = s & sorted(s1) & sorted(s2)
-   ==> sorted(s) & s ~ s1++s2)			&
 (map(F)(s) = s' ==> lg(s) = lg(s'))		&
 zip(evens(s),odds(s)) = s			&
+
 -- prem subsumes conc:
 All x s z:
  (sorted(x:s) & All s': (NOTsorted(s') | x:s = s')
    ==> NOTsorted(z++[x]) | x:s = z++[x])	&
+
 splitAt(3)[5..12] = s
 
 terms: 

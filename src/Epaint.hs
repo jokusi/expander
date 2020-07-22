@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, March 2019
-                  Jos Kusiek, March 2019
+Copyright   : (c) Peter Padawitz, March 2020
+                  Jos Kusiek, March 2020
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -87,11 +87,12 @@ data Solver = Solver
   
 data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep Bool |
-            CollapseVars | ComposePointers | CopySubtrees | CreateIndHyp |
-            CreateInvariant Bool | DecomposeAtom | DerefNodes | EvaluateTrees |
-            ExpandTree Bool Int | FlattenImpl | Generalize [TermS] |
-            Induction Bool Int | Mark [[Int]] | Matching Int | Minimize |
-            ModifyEqs Int | Narrow Int Bool | NegateAxioms [String] [String] |
+            CollapseVars [String] | ComposePointers | CopySubtrees |
+            CreateIndHyp | CreateInvariant Bool | DecomposeAtom | DerefNodes |
+            EvaluateTrees | ExpandTree Bool Int | FlattenImpl |
+            Generalize [TermS] | Induction Bool Int | Mark [[Int]] |
+            Matching Int | Minimize | ModifyEqs Int |
+            Narrow Int Bool | NegateAxioms [String] [String] |
             RefNodes | PermuteSubtrees | RandomLabels | RandomTree |
             ReduceRE Int | Refuting Bool | ReleaseNode | ReleaseSubtree |
             ReleaseTree | RemoveCopies | RemoveEdges Bool | RemoveNode |

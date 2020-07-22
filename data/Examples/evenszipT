@@ -1,2 +1,2 @@
--- evenszipT
-[DeriveMode True False, Match 0, Mark [], Induction False 0, Mark [], Narrow 1 True, Mark []]
+-- /Users/Padawitz/ExpanderLib/evenszipT
+[Induction False 0, Simplify 100 False, Mark [[0]], Narrow 0 False, Simplify 100 False, Mark [[0, 0, 0, 0, 1]], ReplaceVar "s'" (F "tail" [V "s'0"]) [0], Simplify 100 False]

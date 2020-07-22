@@ -1,33 +1,59 @@
--- evenszip
+-- /Users/Padawitz/ExpanderLib/evenszipP
 
-
-Derivation of
+0. Derivation of
 
 evens(zip(s,s')) ~ s
 
-Adding
+All simplifications are admitted.
+Equation removal is safe.
 
-  (x ~0 y <=== x = y)
-& (x ~0 y <=== y ~0 x)
-& (x ~0 z <=== x ~0 y & y ~0 z)
-& (z0 ~0 z1 <=== z0 = evens(zip(s,s')) & z1 = s)
+1. Adding
+
+  (~0(z0,z1) <=== z0 = evens(zip(s,s')) & z1 = s)
 
 to the axioms and applying COINDUCTION wrt
 
   (s ~ s' ===> head(s) = head(s') & tail(s) ~ tail(s'))
 
-at position [] of the preceding formula leads to 
+at positions
+[]
+of the preceding trees leads to 
 
-All s'0 s0:
- (evens(zip(tail(s0),tail(s'0))) ~0 tail(s0))
+All s s':((Any s0 s'0:
+            ((s = evens(zip(s0,s'0)) & s' = s0)) ===> 
+           head(s) = head(s') & ~0(tail(s),tail(s'))))
 
-The reducts have been simplified.
+2. SIMPLIFYING parallel the preceding trees (11 steps) leads to 
 
-NARROWING the preceding formula (1 step) leads to 
+All s0 s'0:
+ ~0(evens(zip(tail(s0),tail(s'0))),tail(s0))
+
+3. Applying the theorem
+
+  (~0(z0,z1) <=== z0 = evens(zip(s,s')) & z1 = s)
+
+at positions
+[0]
+of the preceding trees leads to 
+
+All s0 s'0:
+ Any s s':((evens(zip(tail(s0),tail(s'0))) = evens(zip(s,s')) & tail(s0) = s))
+
+The axioms have been MATCHED against their redices.
+
+4. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+All s0 s'0:
+ Any s':(evens(zip(tail(s0),tail(s'0))) = evens(zip(tail(s0),s')))
+
+5. SUBSTITUTING tail(s'0) FOR s' at positions
+[0]
+of the preceding trees leads to 
+
+All s0 s'0:
+ Any s':(evens(zip(tail(s0),tail(s'0))) = evens(zip(tail(s0),tail(s'0))))
+
+6. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
 
 True
 
-The axioms were MATCHED against their redices.
-The reducts have been simplified.
-
-Number of proof steps: 2

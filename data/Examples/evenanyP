@@ -1,0 +1,97 @@
+-- /Users/Padawitz/ExpanderLib/evenanyP
+
+0. Derivation of
+
+even(x) ==> Any y:(x = 2*y)
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Adding
+
+  (even0(x) ===> Any y:(x = 2*y))
+
+to the axioms and applying FIXPOINT INDUCTION wrt
+
+  even(0)
+& (even(suc(x)) <=== odd(x))
+
+at positions
+[]
+of the preceding trees leads to 
+
+All x:Any y:(0 = 2*y) & All x:((Any y:(suc(x) = 2*y) <=== odd(x)))
+
+2. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+Any y0:((All x:((odd(x) ==> Any y:(suc(x) = 2*y))) & 0 = 2*y0))
+
+3. Adding
+
+  (odd0(x) ===> Any y:(suc(x) = 2*y))
+
+to the axioms and applying FIXPOINT INDUCTION wrt
+
+  (odd(suc(x)) <=== even(x))
+
+at positions
+[0,0,0]
+of the preceding trees leads to 
+
+Any y0:((All x:All x:((Any y:(suc(suc(x)) = 2*y) <=== even0(x))) & 0 = 2*y0))
+
+4. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+Any y0:((All x:((even0(x) ==> Any y:(suc(suc(x)) = 2*y))) & 0 = 2*y0))
+
+5. Applying the theorem
+
+  (even0(x) ===> Any y:(x = 2*y))
+
+at positions
+[0,0,0,0]
+of the preceding trees leads to 
+
+Any y0:((All x:((Any y0:(x = 2*y0) ==> Any y:(suc(suc(x)) = 2*y))) & 0 = 2*y0))
+
+The axioms have been MATCHED against their redices.
+
+6. SIMPLIFYING parallel the preceding trees (8 steps) leads to 
+
+Any y0 y:((2 = 2*y & 2*y0 = 0))
+The formula coincides with no. 6
+
+7. SUBSTITUTING 0 FOR y0 at positions
+[]
+of the preceding trees leads to 
+
+Any y0 y:((2 = 2*y & 2*0 = 0))
+
+8. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+Any y:(2 = 2*y)
+
+9. Applying the theorem
+
+  2*suc(x) = suc(suc(2*x))
+
+at positions
+[0,1]
+of the preceding trees leads to 
+
+Any y:Any x:((2 = suc(suc(2*x)) & y = suc(x)))
+
+10. SIMPLIFYING parallel the preceding trees (3 steps) leads to 
+
+Any x:(0 = 2*x)
+
+11. SUBSTITUTING 0 FOR x at positions
+[]
+of the preceding trees leads to 
+
+Any x:(0 = 2*0)
+
+12. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+True
+

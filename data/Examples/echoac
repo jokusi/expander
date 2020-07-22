@@ -1,6 +1,6 @@
 -- ECHOAC
 
--- see M.-O. Stehr, J. Meseguer, P.C. Ã–lveczky, Rewriting Logic as a Unifying 
+-- see M.-O. Stehr, J. Meseguer, P.C. Ölveczky, Rewriting Logic as a Unifying 
 -- Framework for Petri Nets, in: H. Ehrig et al., eds., Unifying Petri Nets, 
 -- Springer LNCS 2128 (2001) 250-303
 
@@ -11,13 +11,13 @@ fovars:     x y ms
 
 axioms:
 
-msgsout(a) = {(a,b),(a,c)}      &
-msgsout(b) = {(b,a)}            &
-msgsout(c) = {(c,a)}            &
+msgsout(a) = {(a,b),(a,c)}		&
+msgsout(b) = {(b,a)}			&
+msgsout(c) = {(c,a)}			&
 
-msgsin(a) = {(b,a),(c,a)}       &
-msgsin(b) = {(a,b)}             &
-msgsin(c) = {(a,c)}             &
+msgsin(a) = {(b,a),(c,a)}		&
+msgsin(b) = {(a,b)}			&
+msgsin(c) = {(a,c)}			&
 
 --WAITING:    
   quiet(x) -> waiting(x)^mailbox(msgsout(x))
@@ -34,5 +34,5 @@ msgsin(c) = {(a,c)}             &
 
 conjects:
 
-(quiet{a}^waiting{}^mailbox{}^uninformed{b,c}^pending{}^terminated{}^accepted{})    
+(quiet{a}^waiting{}^mailbox{}^uninformed{b,c}^pending{}^terminated{}^accepted{})	
 

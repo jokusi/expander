@@ -6,8 +6,7 @@ defuncts:   is_even mergesortL splitL mergeL mergesort split merge
 	    mergesortF splitF mergeF replaceL replace foldRepL foldRep 
             palL pal palF reveqL reveq reveqI reveqF sortTL sortT sortTI
 	    leavesRepL leavesRep leavesRepI foo goo nats nats' fibs fibs'  
-	    RequestsL ClientL Requests Client CSI
-	    || tree1 tree2 tree3
+	    RequestsL ClientL Requests Client CSI || tree1 tree2 tree3
 preds:      even odd 
 fovars:     t u r a b requests acc t1 t2 u1 u2 s1 s2 ls ls1 ls2 pair
 hovars:     f g client
@@ -65,28 +64,33 @@ mergeF(s)[]      == s &
 reveqL[]$s        = ([],true) &         
 (reveqL(x:s)$y:s' = (r++[x],eq(x,y)`and`b) <=== reveqL(s)$s' = (r,b)) &
 
-pal$s == get1$mu r b.reveq(s)(r) &             -- reveq(s)$s' = (reverse$s,s=s')
+pal$s == get1$mu r b.reveq(s)(r) &           -- reveq(s)$s' = (reverse$s,s=s')
 
 reveq[]$s == ([],true) &
--- reveq(x:s)$s' == fun(pair,(get0(pair)++[x],eq(x,head$s')`and`get1$pair))    	
---	            $reveq(s)$tail$s' &
-(reveq(s)$tail$s' = pair 
-         ==> reveq(x:s)$s' == (get0(pair)++[x],eq(x,head$s')`and`get1$pair)) & 
+reveq(x:s)$s' 
+ == fun(pair,(get0(pair)++[x],eq(x,head$s')`and`get1$pair))$reveq(s)$tail$s' &
+
+-- (reveq(s)$tail$s' = pair 
+--       ==> reveq(x:s)$s' == (get0(pair)++[x],eq(x,head$s')`and`get1$pair)) &
+-- slow
+
 -- reveq(x:s)$s' == fun((r,b),(r++[x],eq(x,head$s')`and`b))$reveq(s)$tail$s' &
+-- terminates incorrectly
 
 palI$s == get1$mu r b.reveqI(s)(r)[] & 
-			           -- revEqI(s)(s')$acc = (reverse(s)++acc,s=s')
+			         -- revEqI(s)(s')$acc = (reverse(s)++acc,s=s')
 
 reveqI[](s)$acc == (acc,true) &
 reveqI(x:s)(s')$acc == fun((r,b),(r,eq(x,head$s')`and`b))
                        $reveqI(s)(tail$s')$x:acc &
 -- (reveqI(s)(tail$s')$x:acc = (r,b) 
 --	            ==> reveqI(x:s)(s')$acc == (r,eq(x,head$s')`and`b)) &
+-- slow
 
 (reveqF$s = (r,f) ==> palF$s == f$r) &
 
 reveqF[] == ([],fun(s,true)) &
-(reveqF$s = (r,f) ==> reveqF$x:s == (r++[x],fun(y:s',eq(x,y)`and`f$s'))) &
+reveqF$x:s == (get0(reveqF$s)++[x],fun(y:s',eq(x,y)`and`get1(reveqF$s)$s')) &
 
 -- BINARY TREES
 
@@ -145,9 +149,7 @@ fibs' == mu s.(1:1:zipWith(+)(s)$tail$s) & -- simplify breadthfirst/parallel
 
 RequestsL(f)(g)$a = ClientL(g)(0)$map(f)$RequestsL(f)(g)$a &
 
--- (ClientL(g)(a)$s = a:ClientL(g)(g$b)$s' <=== s = b:s') &	-- (1)
-
-ClientL(g)(a)$s = a:ClientL(g)(g$head$s)$tail$s &		-- (2)
+ClientL(g)(a)$s = a:ClientL(g)(g$head$s)$tail$s &
 
 Requests(f)(g)$a == Client(g)(a)$map(f)$Requests(f)(g)$a &
 
@@ -161,7 +163,6 @@ CSI(f)(g)$a == get0$mu requests client.
 
 foo(x) == ite(x=0,0,foo(x-1)*foo(x+1)) &
 goo(x) == ite(x=0,0,goo(x+1)*goo(x-1))
-
 
 conjects:
 
@@ -179,8 +180,7 @@ palL[2,3,1,2] = b			   &   -- unify and narrow, simpl
 sortTL$tree1 = t              	           &   -- match and narrow, simpl
 
 take(3)$RequestsL(+1)(*2)(0) = s               -- match and narrow, simpl
-					       -- 9 steps with (1)     (11.3.20)      
-					       -- 11 steps with (2)    (11.3.20)      
+				  	       -- 11 steps             (18.3.20)      
 terms: 
 
 mergesort[3,2,1,4] 			       <+>
@@ -189,17 +189,18 @@ mergesortF[3,2,1,4] 			       <+>
 replace(min)$tree1   		               <+> 
 replace(+)$tree1   		               <+> 
 
-pal[1,1] 			       	       <+> -- 15 steps         (11.3.20)
-pal[1,2] 			       	       <+> -- 14 steps          (9.3.20)
-pal[2,3,2] 			       	       <+> -- 19 steps          (9.3.20)
-pal[2,3,1]                                     <+> -- 15 steps          (9.3.20)
-pal[2,3,1,2]                                   <+> -- 23 steps          (9.3.20)
+pal[1,1] 			       	       <+> -- 18 steps         (18.3.20)
+pal[1,2] 			       	       <+> -- 17 steps         (18.3.20)
+pal[2,3,2] 			       	       <+> -- 24 steps         (18.3.20)
+pal[2,3,3]                                     <+> -- 20 steps         (18.3.20)
+pal[2,3,1,2]                                   <+> -- 29 steps         (18.3.20)
+pal[2,3,3,2]                                   <+> -- 31 steps         (18.3.20)
 
-palI[2,3,2] 			       	       <+> -- 9 steps          (10.2.20)
-palI[2,3,1,2]                                  <+> -- 5 steps          (10.2.20)
-palI[1,2,3,2,1]                                <+> -- 9 steps          (14.2.20)				
-palF[2,3,2] 			       	       <+> -- 10 steps         (10.2.20)
-palF[2,3,1,2] 			       	       <+> -- 9 steps          (10.2.20)
+palI[2,3,2] 			       	       <+> -- 19 steps         (18.3.20)
+palI[2,3,1,2]                                  <+> -- 19 steps         (18.3.20)
+palI[1,2,3,2,1]                                <+> -- 29 steps         (18.3.20)				
+palF[2,3,2] 			       	       <+> -- 10 steps         (18.3.20)
+palF[2,3,1,2] 			       	       <+> -- 9 steps          (18.3.20)
 						   
 sortT$tree1	       			       <+> -- 13 steps         (16.2.20)
 sortT$tree2	       			       <+> -- 15 steps         (16.2.20)
@@ -214,17 +215,15 @@ take(3)$nats			      	       <+> -- 21 steps         (1.11.17)
 take(3)$nats'  			               <+> -- 22 steps         (1.11.17)
 
 take(3)$Requests(+1)(*2)$0		       <+> --> [0,2,6]	      
-						   -- 30 steps         (11.3.20)
+						   -- 30 steps         (18.3.20)
 take(4)$Requests(+1)(*2)$0		       <+> --> [0,2,6,14]      						   		   -- 47 steps         (11.3.20)
 take(5)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30]   
 						   -- 66 steps         (10.2.20)
 take(6)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30,62]
 						   -- 89 steps         (10.2.20)
 take(3)$CSI(+1)(*2)$0                          <+> --> [0,2,6]
- 						   -- 42 steps         (11.3.20)
-
+ 						   -- 50 steps         (21.6.20)
 foo(3)					       <+> --> 0		
                   -- 15 depthfirst, 19 parallel, 27 breadthfirst steps  (4.2.20)
 goo(3)					           --> 0	       
   -- depthfirst is non-terminating, 19 parallel, 48 breadthfirst steps  (4.2.20)
-

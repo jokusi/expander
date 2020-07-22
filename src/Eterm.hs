@@ -2,8 +2,8 @@
 {-|
 Module      : Eterm
 Description : Functions and parser for Term.
-Copyright   : (c) Peter Padawitz, March 2019
-                  Jos Kusiek, March 2019
+Copyright   : (c) Peter Padawitz, May 2020
+                  Jos Kusiek, May 2020
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -346,9 +346,6 @@ indices_ s = [0..length s-1]
 contextM :: [Int] -> [t] -> [t]
 contextM is s = [s!!i | i <- indices_ s, i `notElem` is]
 
-restInd :: [a] -> [[Int]] -> [a]
-restInd ts ps = map (ts!!) $ indices_ ts `minus` map last ps
-
 updMax :: (Eq a, Ord b) => (a -> b) -> a -> [b] -> a -> b
 updMax f x = upd f x . maximum
 
@@ -519,10 +516,10 @@ upd2L f a b = upd f a . upd (f a) b . join1 (f a b)
 
 -- used by Eterm > regToAuto,graphToRel2
 
-updAssoc :: (Eq a,Eq b) => [(a,[b])] -> a -> [b] -> [(a,[b])]
-updAssoc s a bs = case searchGet ((== a) . fst) s of 
-                       Just (i,(_,cs)) -> updList s i (a,bs`join`cs)
-                       _ -> (a,bs):s
+updRel :: (Eq a,Eq b) => [(a,[b])] -> a -> [b] -> [(a,[b])]
+updRel rel a bs = case searchGet ((== a) . fst) rel of
+                       Just (i,(_,cs)) -> updList rel i (a,bs`join`cs)
+                       _ -> (a,bs):rel
 
 distinct :: Eq a => [a] -> Bool
 distinct (x:xs) = x `notElem` xs && distinct xs
@@ -700,11 +697,6 @@ mirror :: Int -> [a] -> [a]
 mirror n s = [s!!(x i*n+y i) | i <- indices_ s] where x i = n-1-i`div`n
                                                       y i = i`mod`n
 
-splitAndShuffle :: Int -> [a] -> [a]    -- not used
-splitAndShuffle n = shuffle . f where f s = if length s <= n then [s]
-                                            else take n s:f (drop n s)
-
-
 -- | @shuffle ss@ zips the lists of @ss@ before concatenating them.
 shuffle
     :: [[a]] -- ^ ss
@@ -819,7 +811,7 @@ shift
     -> [a]
 shift n ns = [i | i <- ns, i < n] ++ [i-1 | i <- ns, i > n]
 
-splitString :: Int -> Int -> String -> String
+splitString :: Int -> Int -> Renaming
 splitString k n str = if null rest then prefix 
                       else prefix++newBlanks k (splitString k n rest)
                     where (prefix,rest) = splitAt n str
@@ -1311,7 +1303,10 @@ infixToken :: Parser String
 infixToken  = token infixString
 
 infixString :: Parser String
-infixString = infixWord ++ some (sat item infixChar)
+infixString = concat [infixWord,
+                      do string "~~"; ds <- some $ sat item isDigit
+                         return $ '~':ds,
+                      some $ sat item infixChar]
 
 infixWord :: Parser String
 infixWord   = do char '`'; w <- some $ sat item (/= '`'); char '`'
@@ -1384,7 +1379,8 @@ curryrest sig p t = concat [do F "()" ts <- p; curryrest sig p $ applyL t ts,
 
 implication :: Sig -> Parser TermS
 implication sig = do t <- disjunct sig
-                     concat [symbol "==>" >> simplEq sig >>= return . mkImpl t,
+                     concat [symbol "==>" >> equation sig ["=="] 
+                                          >>= return . mkImpl t,
                              do x <- oneOf $ words "<=> ==> <==> ===> <==="
                                 u <- disjunct sig; return $ F x [t,u],
                              return t]
@@ -1392,8 +1388,8 @@ implication sig = do t <- disjunct sig
 enclosedImpl :: Sig -> Parser TermS
 enclosedImpl sig = do tchar '('; t <- implication sig; tchar ')'; return t
 
-simplEq sig  = do left <- term sig; symbol "=="; right <- term sig
-                  return $ F "==" [left,right]
+equation sig xs = do left <- term sig; x <- oneOf xs; right <- term sig
+                     return $ F x [left,right]
 
 disjunct :: Sig -> Parser TermS
 disjunct sig = do t <- conjunct sig; ts <- many $ do tchar '|'; conjunct sig
@@ -1406,7 +1402,7 @@ conjunct sig = do t <- factor sig; ts <- many $ do tchar '&'; factor sig
 -- ** Parser of factors
 
 factor :: Sig -> Parser TermS
-factor sig = concat [simplEq sig, atom sig, enclosedImpl sig,
+factor sig = concat [equation sig ["==","="], atom sig, enclosedImpl sig,
                      symbol "True" >> return mkTrue,
                      symbol "False" >> return mkFalse,
                      do symbol "Not"; t <- factor sig; return $ F "Not" [t],
@@ -1477,7 +1473,7 @@ prefixAtom sig = concat [sat noBlanks (declaredRel sig)
                                            >>= curryrestR sig . leaf,
                          do x <- symbol "rel"; tchar '('; ts <- p []; tchar ')'
                             curryrestR sig $ F x ts,
-                         do x <- oneOf $ words "MU NU"
+                         do x <- oneOf ["MU","NU"]
                             xs@(_:_) <- boundVars sig; tchar '.'
                             singleAtom sig >>= curryrestR sig . mkBinder x xs]
                  where p ts = do t <- term sig; tchar ','; u <- implication sig
@@ -1498,7 +1494,7 @@ termsum :: Sig -> Parser TermS
 termsum sig = termprod sig >>= maybeSum sig
 
 maybeSum :: Sig -> TermS -> Parser TermS
-maybeSum sig t = concat [do x <- oneOf $ words "+ -"; u <- termprod sig
+maybeSum sig t = concat [do x <- oneOf ["+","-"]; u <- termprod sig
                             maybeSum sig $ F x [t,u],
                          do x <- infixFun sig; termbag sig >>= application x t,
                          return t]
@@ -1516,7 +1512,7 @@ maybeProd sig t = concat [do symbol "||"; u <- implication sig
                           return t]
 
 termlist :: Sig -> Parser TermS
-termlist sig = concat [symbol "[]" >> return mkNil,
+termlist sig = concat [symbol "[]" >> return mkMt,
                        do tchar '['
                           concat [do t <- term sig; symbol ".."; u <- term sig
                                      tchar ']'; return $ F "range" [t,u],
@@ -1539,13 +1535,13 @@ singleTerm sig = concat [do x <- oneOf termBuilders
                          do sat noBlanks (sig&isFovar) >>= return . V,
                          constant sig,
                          symbol "pos " >> many (token nat) >>= return . mkPos,
-                         do x <- oneOf $ words "- ~"; t <- singleTerm sig
+                         do x <- oneOf ["-","~"]; t <- singleTerm sig
                             return $ F x [t],
                          symbol "()" >> return unit,
                          do symbol "ite"; tchar '('; t <- implication sig
                             tchar ','; u <- term sig; tchar ','; v <- term sig
                             tchar ')'; return $ F "ite" [t,u,v],
-                         do x <- oneOf $ words "mu nu"
+                         do x <- oneOf ["mu","nu"]
                             xs@(_:_) <- boundVars sig; tchar '.'
                             (enclosedTerm +++ singleTerm) sig
                                     >>= curryrestF sig . mkBinder x xs,
@@ -1945,14 +1941,6 @@ autoToReg sig start = if null finals then Const "no final states"
 
 -- used by Ecom > buildRegExp
 
-type Behaviour a = [String] -> a                       -- currently not used
-
-deltaBeh :: Behaviour a -> String -> Behaviour a
-deltaBeh f x w = f $ x:w
-
-betaBeh :: Behaviour a -> a
-betaBeh f = f []
-
 -- Brzozowski acceptor of regular and context-free languages
 
 deltaBro :: (String -> Maybe RegExp) -> RegExp -> String -> Maybe RegExp
@@ -2133,8 +2121,7 @@ data Special = Dissect [(Int,Int,Int,Int)] |
                BoolMat [String] [String] [(String,String)] |
                ListMat [String] [String] (Triples String String) | 
                ListMatL [String] (TriplesL String) | 
-               LRarr (Array (Int,Int) ActLR) |
-               ERR deriving (Show,Eq,Ord)        
+               LRarr (Array (Int,Int) ActLR) | Nil deriving (Show,Eq,Ord)
 
 type TermS = Term String
 
@@ -2157,7 +2144,8 @@ isF (F _ _) = True
 isF _       = False
 
 isHidden :: Term t -> Bool
-isHidden = not . (isV ||| isF)
+isHidden (Hidden _) = True
+isHidden _          = False
 
 root :: Root a => Term a -> a
 root (V x)   = x
@@ -2167,6 +2155,9 @@ root _       = undef
 subterms :: Term t -> [Term t]
 subterms (F _ ts) = ts
 subterms _        = []
+
+isLeaf :: Term t -> Bool
+isLeaf = null . subterms
 
 height :: (Num a, Ord a) => Term t -> a
 height (F _ ts) = foldl max 0 (map height ts)+1
@@ -2195,6 +2186,21 @@ x `isin` _      = False
 notIn :: Eq a => a -> Term a -> Bool
 notIn x = not . isin x
 
+mapT :: (a -> b) -> Term a -> Term b
+mapT f (V a)      = V $ f a
+mapT f (F a ts)   = F (f a) $ map (mapT f) ts
+mapT _ (Hidden t) = Hidden t
+
+mapTP :: ([Int] -> a -> b) -> [Int] -> Term a -> Term b
+mapTP f p (V a)      = V $ f p a
+mapTP f p (F a ts)   = F (f p a) $ zipWithSucs (mapTP f) p ts
+mapTP f _ (Hidden t) = Hidden t
+
+mapT2 :: (b -> c) -> Term (a,b) -> Term (a,c)
+mapT2 f (V (a,p))    = V (a,f p)
+mapT2 f (F (a,p) ts) = F (a,f p) $ map (mapT2 f) ts
+mapT2 _ (Hidden t)   = Hidden t
+
 foldT :: Root a => (a -> [b] -> b) -> Term a -> b
 foldT f (V a)    = f a []
 foldT f (F a ts) = f a $ map (foldT f) ts
@@ -2203,6 +2209,11 @@ foldT f _        = f undef []
 andT,orT :: Root a => (a -> Bool) -> Term a -> Bool
 andT f = foldT g where g x bs = f x && and bs
 orT f  = foldT g where g x bs = f x || or bs
+
+foldTP :: Root a => ([Int] -> a -> [b] -> b) -> Term a -> b
+foldTP f = g [] where g p (V a)    = f p a []
+                      g p (F a ts) = f p a $ zipWithSucs g p ts
+                      g p _        = f p undef []
 
 isSubterm :: Eq a => Term a -> Term a -> Bool
 isSubterm t u | t == u = True
@@ -2214,16 +2225,6 @@ nodeLabels = foldT f where f ('@':_) _ = ["@"]
                            f x xss     = delQuotes x:concat xss
 
 -- used by Ecom > drawThis
-
-mapT :: (a -> b) -> Term a -> Term b
-mapT f (V a)      = V $ f a
-mapT f (F a ts)   = F (f a) $ map (mapT f) ts
-mapT _ (Hidden t) = Hidden t
-
-mapT2 :: (b -> c) -> Term (a,b) -> Term (a,c)
-mapT2 f (V (a,p))    = V (a,f p)
-mapT2 f (F (a,p) ts) = F (a,f p) $ map (mapT2 f) ts
-mapT2 _ (Hidden t)   = Hidden t
 
 transTree1 :: Num a => a -> Term (b,(a,a)) -> Term (b,(a,a))
 transTree1 = mapT2 . flip add1
@@ -2283,6 +2284,10 @@ labelRandom rand _ t = (t,rand)
 
 -- POINTERS
 
+allPoss :: Root a => Term a -> [[Int]]
+allPoss (F _ ts) = []:liftPoss allPoss ts
+allPoss _        = [[]]
+
 leader :: String -> String -> Bool
 leader "" _  = False
 leader x str = head (words x) == str
@@ -2290,25 +2295,21 @@ leader x str = head (words x) == str
 getPos :: String -> [Int]
 getPos = map read . tail . words
 
-isPos,isEPos,hasTPos :: String -> Bool
-isPos x   = leader x "pos"
-isEPos x  = leader x "epos"
-hasTPos x = leader x "tpos"
+isPos,isExt,isTar :: String -> Bool
+isPos x = leader x "pos"
+isExt x = leader x "epos"
+isTar x = leader x "tpos"
 
-delTE :: String -> String
-delTE x | hasTPos x = tail $ dropWhile (/= '@') x
-        | isEPos x  = tail x
-        | True      = x
+delExt x = if isExt x then tail x else x
+
+delTar c x = if isTar x && c (getPos pos) then tail lab else x
+             where (pos,lab) = break (== '@') x
 
 mkPos0 :: [Int] -> String
 mkPos0 p = "pos " ++ unwords (map show p)
 
 mkPos :: [Int] -> TermS
 mkPos = V . mkPos0
-
-allPoss :: Root a => Term a -> [[Int]]
-allPoss (F _ ts) = []:liftPoss allPoss ts
-allPoss _        = [[]]
 
 hasPos :: TermS -> Bool
 hasPos (V x)    = isPos x
@@ -2320,7 +2321,7 @@ hasPos _        = False
 getSubterm :: Term a -> [Int] -> Term a
 getSubterm t [] = t
 getSubterm (F _ ts) (n:p) | n < length ts = getSubterm (ts!!n) p
-getSubterm t _  = Hidden ERR
+getSubterm t _  = Hidden Nil
 
 getSubterm1,removeAllCopies :: TermS -> [Int] -> TermS
 
@@ -2344,14 +2345,24 @@ label t [] = root t
 label (F _ ts) (n:p) | n < length ts = label (ts!!n) p
 label _ _  = undef
 
+-- pointers t returns all pointers of t.
+
+pointers :: TermS -> [[Int]]
+pointers = foldT f where f x pss = if isPos x then getPos x:ps else ps
+                                   where ps = concat pss
+
+-- used by Esolve > simplifyOne,bodyAndSub
+
 cPositions :: (String -> Bool) -> TermS -> [[Int]]
 cPositions f t = [p | p <- allPoss t, f $ label t p]
 
 positions = cPositions $ not . isPos
 
-constrPositions = cPositions . isConstruct
+refPositions = cPositions isPos
 
-varPositions = cPositions . isVar
+-- used by Esolve > bodyAndSub
+
+constrPositions = cPositions . isConstruct
 
 fixPositions = cPositions $ isFixF . take 2
 
@@ -2359,8 +2370,11 @@ boolPositions sig t@(F _ ts) = if isFormula sig t then []:ps else ps
                                where ps = liftPoss (boolPositions sig) ts
 boolPositions _ _            = []
 
-freePositions sig t = [p | p <- varPositions sig t, let c = leaf "CCC",
-                           label (t>>>const c) p == "CCC"]
+varPositions = cPositions . isVar
+
+freePositions sig t = [p | p <- varPositions sig t,
+                           let sub = const $ leaf "FREEPOS",
+                           label (t>>>sub) p == "FREEPOS"]
 
 freeXPositions sig x t = [p | p <- freePositions sig t, label t p == x]
 
@@ -2390,19 +2404,18 @@ liftPoss f ts = concatMap g $ indices_ ts where g i = map (i:) $ f $ ts!!i
 addToPoss,dropFromPoss :: [Int] -> TermS -> TermS
 
 addToPoss p t = if null p then t else mapT f t
-                where f x = if isPos x && q `elem` positions t
-                            then mkPos0 $ p++q else x
-                            where q = getPos x
+                where f x = if isPos x then mkPos0 $ p++getPos x else x
+
+dropFromPoss  = dropFromPoss0 False
+dropFromPossM = dropFromPoss0 True                     -- used by Eterm > match
+
+dropFromPoss0 b p t = if null p then t else mapT f t
+              where f x = if isPos x && p <<= q then mkPos0 $ drop (length p) q
+                          else if b && isPos x then "hidden" else x
+                          where q = getPos x
 
 addNatsToPoss = zipWith (addToPoss . single) [0..]
-
-dropFromPoss p t = if null p then t else mapT f t
-                   where f x = if isPos x && p << q && r `elem` positions t
-                               then mkPos0 r else x
-                               where q = getPos x; r = drop (length p) q
-
 drop0FromPoss = dropFromPoss [0]
-drop1FromPoss = dropFromPoss [1]
 
 dropnFromPoss :: Int -> TermS -> TermS
 dropnFromPoss n = mapT f
@@ -2440,39 +2453,34 @@ movePoss t p q = f $ getSubterm t p
 
 -- used by Eterm > replace{2},expand{One,Into}
 
--- addTargets and chgTargets redirect pointers during simplification steps.
+-- addTargets f t p saves the positions of the targets of pointers of t at the
+-- respective targets before a simplification step is performed. The 2nd value
+-- sub is the subterm of t at position p and the 3rd value subPoss consists of
+-- all target positions of sub. These are saved with the prefix tpos in the
+-- target nodes, other target positions are equipped with the prefix epos.
 
 addTargets :: (TermS -> TermS) -> TermS -> [Int] -> TermS
-addTargets f t p = mapT h $ add [] $ f $ getSubterm1 t p
-          where n = length p
-                g x pairs | isPos x && q `elem` positions t
-                                 = if p << q
-                                   then (joinM pss `join1` drop n q, joinM qss)
-                                   else (joinM pss, joinM qss `join1` q)
-                          | True = (joinM pss, joinM qss)
-                                   where q = getPos x; (pss,qss) = unzip pairs
-                (ps,qs) = foldT g $ getSubterm t p
-                add p (F x ts) = if p `elem` ps
-                                 then F (addTPos p x) $ zipWithSucs add p ts
-                                 else F x $ zipWithSucs add p ts
-                add p (V x)    = if p `elem` ps then V (addTPos p x) else V x
-                addTPos p x = 't':mkPos0 p++'@':x
-                h x = if isPos x && q `elem` qs then 'e':mkPos0 q else x
-                      where q = getPos x
+addTargets f t p = dropFromPoss p $ mapTP h p $ f u
+        where n = length p
+              u = getSubterm t p
+              h q x = if q `elem` pointers u then 't':mkPos0 (drop n q)++'@':x
+                      else if isPos x && not (p <<= getPos x) then 'e':x else x
 
 -- used by Esolve > simplifyOne,expandFix
 
+-- For all nodes p with label prefix tpos(q) such that p =/= q, chgTargets t
+-- turns all pointers to q into pointers to p after a simplification step has
+-- been performed.
+
 chgTargets :: TermS -> TermS
-chgTargets t = mapT delTE $ mapT g t
-               where pairs = f [] t
-                     f :: [Int] -> TermS -> [([Int],[Int])]
-                     f p (F x ts) = if hasTPos x && p /= q x
-                                    then (q x,p):concat (zipWithSucs f p ts)
-                                    else concat $ zipWithSucs f p ts
-                     f p (V x)    = if hasTPos x then [(q x,p)] else []
-                     q = getPos . takeWhile (/= '@')
+chgTargets t = mapT (delTar $ const True) $ mapT g t
+               where f p x pss = if isTar x && p /= q then (q,p):pairs
+                                 else pairs where (pos,_) = break (== '@') x
+                                                  q = getPos pos
+                                                  pairs = concat pss
+                     pairs = foldTP f t
                      g x = if isPos x then case lookup (getPos x) pairs of
-                                                Just q -> mkPos0 q
+                                                Just p -> mkPos0 p
                                                 _ -> x
                                       else x
 
@@ -2559,12 +2567,9 @@ closedSub t p = dropFromPoss p $ if foldT f u then u else expand 0 t p
 -- colorWith2 c d ps t colors t at all positions of ps with c and at all other
 -- positions with d.
 
-colorWith2 c d ps = f []
-                    where f p (F x ts) = F (e++'_':x) $ zipWithSucs f p ts
-                                         where e = if p `elem` ps then c else d
-                          f p t@(V x)  = if isPos x then t else V $ e++'_':x
-                                         where e = if p `elem` ps then c else d
-                          f _ t        = t
+colorWith2 c d ps = mapTP f [] where
+                    f p x = if isPos x then x 
+                            else if p `elem` ps then c++'_':x else d++'_':x
 
 -- changedPoss t u returns the minimal positions p of u such that the subterms
 -- of t resp. u at position p differ from each other.
@@ -2631,9 +2636,10 @@ replace0 t p u = f t p where f _ []         = u
 
 replace,replace1 :: TermS -> [Int] -> TermS -> TermS
 
--- replace t p u expands t at all pointers of t into proper subterms of the
--- subterm v of t at position p. Pointers to the same subterm are expanded only
--- once, the others are redirected. Afterwards v is replaced by u.
+-- For all pointers p->q of t into proper subterms of the subterm v of t at 
+-- position p0 such that p does not belong to v, replace t p0 u expands t at q. 
+-- Further pointers p'->q are redirected to the root of the new copy of t|q 
+-- created by the expansion. Afterwards v is replaced by u.
 
 replace t p0 u = f [] t where
                  f p _ | p == p0 = u
@@ -2655,7 +2661,7 @@ replace t p0 u = f [] t where
 -- narrowPar,narrowSubtree,releaseNode,releaseTree,renameVar',replaceVar,
 -- rewriteVar,stretch,subsumeSubtrees
 
-replace1 t p  = replace t p . addToPoss p
+replace1 t p = replace t p . addToPoss p
 
 -- used by Eterm > changeTerm, Esolve > simplifyOne,shiftSubformulas,expandFix 
 -- and Ecom > applyTransitivity,collapseStep,composePointers,decomposeAtom, 
@@ -2697,15 +2703,16 @@ eqTerm (F "<" [t,u]) (F ">" [v,w])   = eqTerm t w && eqTerm u v
 eqTerm (F ">" [t,u]) (F "<" [v,w])   = eqTerm t w && eqTerm u v
 eqTerm (F "<=" [t,u]) (F ">=" [v,w]) = eqTerm t w && eqTerm u v
 eqTerm (F ">=" [t,u]) (F "<=" [v,w]) = eqTerm t w && eqTerm u v
-eqTerm (F x [t]) (F y [u]) | binder x && binder y &&
-                             opx == opy && length xs == length ys =
-                             eqTerm (renameFree (fold2 upd id xs ys) t) u
-                             where opx:xs = words x; opy:ys = words y
-eqTerm (F x ts) (F y us)   | x == y =
-                             if idempotent x then eqSet eqTerm ts us
-                             else length ts == length us &&
-                                  if permutative x then eqBag eqTerm ts us
-                                  else eqTerms (renameVars emptySig x ts us) us
+eqTerm (F x [t]) (F y [u])
+               | binder x && binder y && opx == opy && length xs == length ys =
+                          eqTerm (renameFree emptySig (fold2 upd id xs ys) t) u
+                          where opx:xs = words x
+                                opy:ys = words y
+eqTerm (F x ts) (F y us)
+               | x == y = if idempotent x then eqSet eqTerm ts us
+                          else length ts == length us &&
+                               if permutative x then eqBag eqTerm ts us
+                               else eqTerms (renameVars emptySig x ts us) us
 eqTerm t u = bothHidden t u
 
 eqTerms :: [TermS] -> [TermS] -> Bool
@@ -2714,13 +2721,14 @@ eqTerms ts us = length ts == length us && and (zipWith eqTerm ts us)
 renameVars :: Sig -> String -> [TermS] -> [TermS] -> [TermS]
 renameVars sig x ts us = if lambda x then f ts us else ts
                     where f (t:t':ts) (u:_:us) = mapT chg t:mapT chg t':f ts us
-                                  where xs = allVars t; ys = allVars u
+                                  where xs = allVars sig t
+                                        ys = allVars sig u
                                         chg x = case search (== x) xs of 
                                                  Just i | i < length ys -> ys!!i
                                                  _ -> x
                           f _ _ = []
-                          allVars t = vars t `join` 
-                                      map (label t) (varPositions sig t)
+
+-- used by Eterm > eqTerm,splitEq
 
 neqTerm :: TermS -> TermS -> Bool
 neqTerm t = not . eqTerm t
@@ -2766,8 +2774,8 @@ joinTerms = foldl joinTerm
 joinTermsM :: [[TermS]] -> [TermS]
 joinTermsM = foldl joinTerms []
 
-joinTermMap :: (a -> [TermS]) -> [a] -> [TermS]
-joinTermMap f = foldl joinTerms [] . map f
+joinTermMap :: (TermS -> [TermS]) -> [TermS] -> [TermS]
+joinTermMap f = joinTermsM . map f
 
 removeTerm :: [TermS] -> TermS -> [TermS]
 removeTerm (t:ts) u = if eqTerm t u then removeTerm ts u else t:removeTerm ts u
@@ -2794,14 +2802,14 @@ vars _        = []
 isVar :: Sig -> String -> Bool
 isVar sig = isFovar sig ||| isHovar sig
 
-mkVar :: Sig -> String -> TermS
-mkVar sig x = if isFovar sig x then V x else F x []
-
 isVarRoot :: Sig -> TermS -> Bool
 isVarRoot sig = isV ||| isHovar sig . getOp ||| isHidden
 
-newVar :: Show a => a -> TermS
+newVar :: Int -> TermS
 newVar n = V $ 'z':show n
+
+mkVar :: Sig -> String -> TermS 
+mkVar sig x = if (sig&isFovar) x then V x else F x []
 
 allSyms :: (String -> Bool) -> TermS -> [String]
 allSyms b (F x [t]) | binder x = allSyms b t `join` filter b (tail $ words x)
@@ -2810,8 +2818,10 @@ allSyms b (F x ts)  | b x      = us `join1` x
 allSyms b (V x) = if null x || isPos x || not (b x) then [] else [x]
 allSyms _ _     = []
 
-sigVars :: Sig -> TermS -> [String]
+sigVars,allVars,bounded,frees :: Sig -> TermS -> [String]
 sigVars = allSyms . isVar
+
+allVars sig t = vars t `join` sigVars sig t
 
 bounded sig (F x [t]) | binder x = tail (words x)
 bounded sig (F x ts)  | lambda x = joinMap (sigVars sig) $ evens ts
@@ -2820,6 +2830,7 @@ bounded sig (V x)                = []
 
 frees sig t = sigVars sig t `minus` bounded sig t
 
+allFrees :: TermS -> [String]
 allFrees (F x [t]) | binder x = allFrees t `minus` tail (words x)
 allFrees (F x ts)  | lambda x = concat $ zipWith f (evens ts) $ odds ts
                    | True     = joinMap allFrees ts `join1` x
@@ -2827,7 +2838,7 @@ allFrees (F x ts)  | lambda x = concat $ zipWith f (evens ts) $ odds ts
 allFrees (V x)                = if null x || isPos x then [] else [x]
 allFrees _                    = []
 
--- allFrees is used in (>>>) (see below).
+-- used by Eterm > renameAwayFrom
 
 anys :: TermS -> [String]
 anys (F ('A':'n':'y':x) _) = words x
@@ -2965,10 +2976,10 @@ showTerm (F x [t]) n | x `elem` termBuilders || x == "~"
                                   = ((x++) . enclose st,lg+2+k)
                                      where lg = length x
                                            (st,k) = showImpl t $ n+lg+1
-showTerm (F "$" [t,u]) n          = (st . argEnclose v su,k+m+2)
+showTerm (F "$" [t,u]) n          = (st . argEnclose u su,k+m+2)
                                     where (st,k) = showTerm t n
-                                          v = drop1FromPoss u
-                                          (su,m) = showTerm v $ n+k+1
+                                          (su,m) = showTerm u $ n+k+1
+showTerm (F x@('~':_:_) ts) n     = showVer ('~':x) showFactor ts n
 showTerm (F x ts) n | isInfix x   = showVer x showFactor ts n
 showTerm (F "ite" [t,u,v]) n      = (("ite("++) . st . (',':) . su . (',':) .
                                      sv . (')':),k+l+m+7)
@@ -3222,9 +3233,9 @@ iniConstructs = words "() [] : 0 suc lin"
 iniDefuncts = words "_ $ . ; + ++ - * ** / !! atoms auto bag branch color" ++
               words "concat curry dnf filter flip foldl1 foldl foldr1 foldr" ++
               words "height id index indices insert `join` labels length" ++
-              words "list lsec mapG map `meet` min minimize`mod` obdd prodE" ++
-              words "prodL product procs range reverse rsec set shuffle" ++
-              words "states sum tup uncurry upd zip zipWith"
+              words "list lsec mapG map `meet` min minimize `mod` obdd" ++
+              words "prodE prodL product procs range reverse rsec set" ++
+              words "shuffle states sum tup uncurry upd zip zipWith"
 
 iniPreds = words "_ $ . () [] : ++ -> -/-> <= >= < > >> true false not" ++
            words "/\\ \\/ `then` EX AX # <> nxt all any allany disjoint" ++
@@ -3233,25 +3244,17 @@ iniPreds = words "_ $ . () [] : ++ -> -/-> <= >= < > >> true false not" ++
            words "NOTnull prodL Real `shares` `NOTshares` single `subset`" ++
            words "`NOTsubset` rsec Value zipWith"
 
-data Sig = Sig { isPred
-               , isCopred
-               , isConstruct
-               , isDefunct
-               , isFovar
-               , isHovar
-               , blocked     :: String -> Bool
-               , hovarRel    :: BoolFun String
-               , simpls
-               , transitions :: [(TermS,[TermS],TermS)]
-               , states
-               , atoms
-               , labels      :: [TermS]     -- components of a Kripke model
-               , trans
-               , value       :: [[Int]]
-               , transL
-               , valueL      :: [[[Int]]]
-               , safeEqs     :: Bool
-               }
+data Sig = Sig {
+              isPred,isCopred,isConstruct,isDefunct,isFovar,isHovar,blocked
+                                  :: String -> Bool,
+              hovarRel            :: BoolFun String,
+              simpls,transitions  :: [(TermS,[TermS],TermS)],
+              states,atoms,labels :: [TermS],     -- components
+              trans,value         :: [[Int]],     -- of a
+              transL,valueL       :: [[[Int]]],   -- Kripke model
+              safeEqs             :: Bool,
+              redexPos            :: [Int]
+              }
 
 out,parents :: Sig -> [[Int]]
 out sig     = invertRel (sig&atoms) (sig&states) (sig&value)
@@ -3277,13 +3280,25 @@ predSig preds = Sig { isPred = (`elem` preds)
                     , labels = []
                     , trans = []
                     , transL = []
-                    , value = []
-                    , valueL = []
-                    , safeEqs = False
+                    , value = [], valueL = [], safeEqs = False, redexPos = []
                     }
 
 emptySig :: Sig
 emptySig = predSig []
+
+chgRedPos :: Sig -> [Int] -> Sig
+chgRedPos sig pos = Sig {  isPred = (sig&isPred), isCopred = (sig&isCopred),
+                           isConstruct = (sig&isConstruct),
+                           isDefunct = (sig&isDefunct), isFovar = (sig&isFovar),
+                           isHovar = (sig&isHovar), blocked = (sig&blocked),
+                           hovarRel = (sig&hovarRel), simpls = (sig&simpls),
+                           transitions = (sig&transitions),states = (sig&states),
+                           atoms = (sig&atoms), labels = (sig&labels),
+                           trans = (sig&trans), transL = (sig&transL),
+                           value = (sig&value), valueL = (sig&valueL),
+                           safeEqs = (sig&safeEqs), redexPos = pos  -- not used
+                        }
+
 
 applySignatureMap sig sig' f t@(V x) | f x /= x         = Just $ V $ f x
                                      | (sig'&isFovar) x = Just t
@@ -3466,21 +3481,9 @@ isCoHorn _ _                   = False
 isAxiom :: Sig -> TermS -> Bool
 isAxiom sig = isTrans ||| isHorn sig ||| isCoHorn sig
 
-isTheorem :: TermS -> Bool
-isTheorem = isHornT ||| isCoHornT ||| noQuantsOrConsts
-
-unconditional :: TermS -> Bool
-unconditional (F "<===" _) = False
-unconditional (F "===>" _) = False
-unconditional _            = True
-
-isTaut :: TermS -> Bool
-isTaut (F "<===" [F "False" _,_]) = True
-isTaut (F "===>" [F "True"  _,_]) = True
-isTaut _                          = False
-
 isHornT :: TermS -> Bool
 isHornT (F "<===" [t,_]) = noQuantsOrConsts t
+isHornT (F "===>" _)     = False
 isHornT t                = noQuantsOrConsts t
 
 isCoHornT :: TermS -> Bool
@@ -3494,6 +3497,19 @@ noQuantsOrConsts (F ('A':'n':'y':_) _) = False
 noQuantsOrConsts (F ('A':'l':'l':_) _) = False
 noQuantsOrConsts (F _ ts)              = all noQuantsOrConsts ts
 noQuantsOrConsts _                     = True
+
+isTheorem :: TermS -> Bool
+isTheorem = isHornT ||| isCoHornT ||| noQuantsOrConsts
+
+unconditional :: TermS -> Bool
+unconditional (F "<===" _) = False
+unconditional (F "===>" _) = False
+unconditional _            = True
+
+isTaut :: TermS -> Bool
+isTaut (F "<===" [F "False" _,_]) = True
+isTaut (F "===>" [F "True"  _,_]) = True
+isTaut _                          = False
 
 isDisCon :: TermS -> Bool
 isDisCon (F "<===" [F "|" _,_]) = True
@@ -3552,6 +3568,15 @@ makeLambda sig cl p =
             removePars t             = t
             at x l pars r = F x [removePars l,F "fun" [mkTup pars,r]]
 
+axiomsFor :: [String] -> [TermS] -> [TermS]
+axiomsFor xs = filter f where f (F "==>" [_,cl])  = f cl
+                              f (F "===>" [at,_]) = f at
+                              f (F "<===" [at,_]) = f at
+                              f (F "<==>" [at,_]) = f at
+                              f (F "==" [t,_])    = any (`isin` t) xs
+                              f (F "=" [t,_])     = any (`isin` t) xs
+                              f at                = any (`isin` at) xs
+
 noSimplsFor :: [String] -> [TermS] -> [TermS]
 noSimplsFor xs = filter f where f (F "==>" [_,cl])  = f cl
                                 f (F "===>" [at,_]) = f at
@@ -3560,15 +3585,6 @@ noSimplsFor xs = filter f where f (F "==>" [_,cl])  = f cl
                                 f (F "==" _)        = False
                                 f (F "=" [t,_])     = any (`isin` t) xs
                                 f at                = any (`isin` at) xs
-
-clausesFor :: [String] -> [TermS] -> [TermS]
-clausesFor xs = filter f where f (F "==>" [_,cl])  = f cl
-                               f (F "===>" [at,_]) = f at
-                               f (F "<===" [at,_]) = f at
-                               f (F "<==>" [at,_]) = f at
-                               f (F "==" [t,_])    = any (`isin` t) xs
-                               f (F "=" [t,_])     = any (`isin` t) xs
-                               f at                = any (`isin` at) xs
 
 -- filterClauses sig redex filters the axioms/theorems that may be applicable to
 -- redex.
@@ -3633,8 +3649,8 @@ mkTup ts  = F "()" ts
 mkList :: [TermS] -> TermS
 mkList = F "[]"
 
-mkNil :: TermS
-mkNil = mkList []
+mkMt :: TermS
+mkMt = mkList []
 
 mkList' :: [TermS] -> TermS
 mkList' [a] = a
@@ -3744,12 +3760,10 @@ mkTerms (F "<+>" ts) = joinTermMap mkTerms $ removeUndef ts
 mkTerms t            = removeUndef [t]
 
 removeUndef :: [TermS] -> [TermS]
-removeUndef (F "()" []:ts) = removeUndef ts
-removeUndef (t:ts)         = t:removeUndef ts
-removeUndef _              = []
+removeUndef = filter $ not . quantConst "()"
 
 mkBag :: [TermS] -> TermS
-mkBag []  = mkNil
+mkBag []  = mkMt
 mkBag [t] = t
 mkBag ts  = case mkElems (F "^" ts) of [t] -> t; ts  -> F "^" ts
 
@@ -3806,7 +3820,6 @@ mkImpl :: TermS -> TermS -> TermS
 mkImpl t u | quantConst "True" t  = u
            | quantConst "False" t = mkTrue
            | quantConst "True" u  = mkTrue
---           | quantConst "False" u = F "Not" [t]
            | eqTerm t u           = mkTrue
            | otherwise            = F "==>" [t, u]
 
@@ -3861,16 +3874,15 @@ mkDisjunct [t] = t
 mkDisjunct ts  = case mkSummands (F "|" ts) of [] -> mkFalse; [t] -> t
                                                ts  -> F "|" ts
 
-mkSummands :: TermS -> [TermS]
-mkSummands (F "|" ts) = if any isTrue ts || complOccurs ts then [mkTrue] 
-                         else joinTermMap mkSummands $ removeFalse ts
-mkSummands t                = removeFalse [t]
-
 mkConjunct :: [TermS] -> TermS
 mkConjunct []  = mkTrue
 mkConjunct [t] = t
 mkConjunct ts  = case mkFactors (F "&" ts) of [] -> mkTrue; [t] -> t
                                               ts  -> F "&" ts
+
+mkSummands (F "|" ts) = if any isTrue ts || complOccurs ts then [mkTrue]
+                        else joinTermMap mkSummands $ removeFalse ts
+mkSummands t          = removeFalse [t]
 
 mkFactors :: TermS -> [TermS]
 mkFactors (F "&" ts) = if any isFalse ts || complOccurs ts then [mkFalse] 
@@ -3944,7 +3956,7 @@ derivedFun :: t
               -> [TermS]
               -> Maybe (String, [TermS], TermS)
 derivedFun _ f xs i lg axs =
-     case clausesFor [f] axs of
+     case axiomsFor [f] axs of
           [ax@(F "=" [F _ zs,F loop inits])] | lg == length zs && all isV zs && 
                                                distinct zs &&
                                                drop (lg-i) zs == take i inits
@@ -4018,6 +4030,10 @@ polarity pol (F "==>" [_,t]) (1:p)  = polarity pol t p
 polarity pol (F "Not" [t]) (0:p)    = polarity (not pol) t p
 polarity pol (F _ ts) (n:p)         = polarity pol (ts!!n) p
 polarity pol _ _                           = pol
+
+correctPolarity :: Term [Char] -> TermS -> [Int] -> Bool
+correctPolarity th t p = isHornT th && b || isCoHornT th && not b
+                         where b = polarity True t p
 
 monotone :: Sig -> [String] -> TermS -> Bool
 monotone _ xs = f True
@@ -4100,9 +4116,9 @@ hillTerm col lab t = un where un@(_,n) = f 0 t
 -- or greater than max (wrt the heap order). Each subtrees of t whose root 
 -- position is in ps is colored with col.
 cutTree :: Int -> TermS -> [[Int]] -> String -> [[Int]] -> TermS
-cutTree max t ps col qs = f [] $ fold2 replace (head $ cutTreeL [t] 0) qs 
-                                $ map (hide . getSubterm t) qs
-   where f p (F x ts) = F (c p x) $ zipWithSucs f p ts
+cutTree max t ps col qs = mapTP c [] $ fold2 replace (head $ cutTreeL [t] 0) qs
+                                     $ map (hide . getSubterm t) qs
+   where c p x = if p `elem` ps then col++'_':delCol x else x
          f p (V x)    = V $ c p x
          f _ t        = t                                                 
          cutTreeL [] _ = []
@@ -4113,7 +4129,6 @@ cutTree max t ps col qs = f [] $ fold2 replace (head $ cutTreeL [t] 0) qs
          h (ts,us,n) (x,isv) lg = (ts++[if isv then V y else F y subs],
                                    drop lg us,n+1)
                      where (y,subs) = (if n < max then x else '@':x,take lg us)
-         c p x = if p `elem` ps then col++'_':delCol x else x
          hide t@(F ('@':_) _) = t
          hide (F x ts)        = F ('@':x) ts   
          hide t@(V ('@':_))   = t
@@ -4164,9 +4179,9 @@ data ChangedTerm = Wellformed TermS | Bad String
 -- changeTerm t u ps@(p:qs) replaces the subterm of t at position p by u and 
 -- then replaces the leaves of u with label "_" by the subterms vs of t at 
 -- positions qs. 
--- If u does not have leaves with label "_", then all v in vs are replaced by u. 
--- If u has a single leaf with label "_" and ps is a list of pairwise orthogonal positions or if qs is empty, then for all v in vs, v is
--- replaced by u[v/_]. 
+-- If u does not have leaves with label "_", then all v in vs are replaced by u.
+-- If u has a single leaf with label "_" and ps is a list of pairwise orthogonal
+-- positions or if qs is empty, then for all v in vs, v is replaced by u[v/_]. 
 
 changeTerm :: TermS -> TermS -> [[Int]] -> ChangedTerm
 changeTerm t u ps = 
@@ -4292,21 +4307,6 @@ andPosition t p = goUp t (init p) [last p]
 
 -- used by Ecom > applyDisCon
 
--- boundedGraph x n t returns a subgraph of t with root x and height n.
-
-boundedGraph :: (Eq a, Num a) =>
-                String -> a -> TermS -> TermS
-boundedGraph x n t = if null ps then t else h u                -- not used
-                     where ps = cPositions (== x) t
-                           u = f (n-1) $ getSubterm1 t $ head ps
-                           f n u = case u of F x us -> F x $ g n us; _ -> u
-                           g 0 _  = []
-                           g n ts = map (f (n-1)) ts
-                           h (F x ts) = F x $ map h ts
-                           h (V x) | isPos x && p `notElem` positions u 
-                                          = F (label t p) [] where p = getPos x
-                           h t               = t
-
 -- outGraph{L} ... out {outL} t adds out!!x to each state node x of t and 
 -- outL!!x!!y to each label node y of t with state predecessor x. 
 
@@ -4330,7 +4330,7 @@ outGraphL sts labs ats out outL = f where
 
 -- used by Ecom > showTransOrKripke
 
-extendNode :: [String] -> [String] -> [[Int]] -> String -> String
+extendNode :: [String] -> [String] -> [[Int]] -> Renaming
 extendNode _ _ [] x      = x
 extendNode sts ats out x = if isPos x || x == "<+>" then x
                            else enterAtoms (filter (/= '\"') x)
@@ -4359,7 +4359,7 @@ colorClassesL sig = g where
               part = [s | s@(_:_:_) <- mkPartition (indices_ sts) $ bisim sig]
               n = length part
                           
-setColor :: [String] -> [[Int]] -> Int -> String -> String
+setColor :: [String] -> [[Int]] -> Int -> Renaming
 setColor sts part n x = if x `notElem` sts then x
                         else case searchGet (elem $ getInd x sts) part of
                           Just (k,_) -> show (hue 0 red n k) ++ '_':x
@@ -4515,7 +4515,7 @@ substituteVars t eqs ps = do guard $ all isV ts
                                                 u = get t
 
 -- solveRegEq turns a regular equation x = t1*x+...+tn*x+t into its least 
--- solution star(t1+...+t2)*t, which is unique if eps =/= ti for all 1�i�n.
+-- solution star(t1+...+t2)*t, which is unique if eps =/= ti for all 1≤i≤n.
 
 solveRegEq :: Sig -> IterEq -> Maybe TermS
 solveRegEq sig (Equal x t) = do (e,_) <- parseRE sig $ f $ case t of
@@ -4619,13 +4619,13 @@ graphToEqs n t p = (map f $ indices_ ps,n+length ps)
 
 relToEqs :: Int -> Pairs String -> ([IterEq],Int)
 relToEqs n rel = (map g $ indices_ ps,n+length ps)
-                where ps = foldr f [] rel
-                      f (a,bs) rel = if null bs then rel else updAssoc rel a bs
-                      g i = Equal ('z':show (n+i)) $ F a $ map h bs 
-                            where (a,bs) = ps !! i
-                                  h b = case search ((== b) . fst) ps of
-                                             Just i -> V $ 'z':show (n+i)
-                                             _ -> leaf b
+                 where ps = foldr f [] rel
+                       f (a,bs) rel = if null bs then rel else updRel rel a bs
+                       g i = Equal ('z':show (n+i)) $ F a $ map h bs
+                             where p@(a,bs) = ps!!i
+                                   h b = case search ((== b) . fst) ps of
+                                              Just i -> V $ 'z':show (n+i)
+                                              _ -> leaf b
 
 -- used by Ecom > showEqsOrGraph
 
@@ -4634,17 +4634,17 @@ relToEqs n rel = (map g $ indices_ ps,n+length ps)
 
 relLToEqs :: Int -> Triples String String -> ([IterEq],Int)
 relLToEqs n rel = (map g $ indices_ ts,n+length ts)
-     where ts = foldr f [] rel
-           f (a,b,cs) rel = if null cs then rel
-                             else case lookup a rel of
-                                 Just bcs -> updAssoc rel a $ updAssoc bcs b cs
-                                 _ -> (a,[(b,cs)]):rel
-           g i = Equal ('z':show (n+i)) $ F a $ map f bcs 
-                            where (a,bcs) = ts!!i
-                                  f (b,cs) = F b $ map h cs
-                                  h c = case search ((== c) . fst) ts of
-                                             Just i -> V $ 'z':show (n+i)
-                                             _ -> F c []
+         where ts = foldr f [] rel
+               f (a,b,cs) rel = if null cs then rel
+                                else case lookup a rel of
+                                     Just bcs -> updRel rel a $ updRel bcs b cs
+                                     _ -> (a,[(b,cs)]):rel
+               g i = Equal ('z':show (n+i)) $ F a $ map f bcs
+                     where (a,bcs) = ts!!i
+                           f (b,cs) = F b $ map h cs
+                           h c = case search ((== c) . fst) ts of
+                                      Just i -> V $ 'z':show (n+i)
+                                      _ -> F c []
 
 -- used by Esolve > simplifyT "auto" and Ecom > showTransOrKripke,transformGraph
 
@@ -4718,8 +4718,15 @@ reference t p ps = foldl g (f [] t) ps
                          g t q = changePoss q p t
 
 dereference :: TermS -> [[Int]] -> TermS
-dereference t ps = foldl f t ps where
-                   f t p = replace1 t p $ getSubterm1 t $ getPos $ trace t p
+dereference t = foldl f t where
+                f t p = replace1 t p $ getSubterm1 t $ getPos $ trace t p
+
+-- trace t p redirects a pointer from p to the first non-pointer that is
+-- reachable from p.
+
+trace :: TermS -> [Int] -> String
+trace t p = if isPos x then trace t $ getPos x else mkPos0 p
+            where x = label t p
 
 -- collapse b t recognizes the common subterms of t and builds a collapsed
 -- tree without common subtrees (see Huth, Ryan, Logic in Computer Science,
@@ -4811,45 +4818,38 @@ collapseCycles t = f t [(u,v) | u@(_,p) <- cycles, v@(_,q) <- cycles, p < q]
                                     where q = getPos x
             cyclePoss _ _        = []
 
--- trace t p redirects a pointer from p to the first non-pointer that is
--- reachable from p.
-
-trace :: TermS -> [Int] -> String
-trace t p = if isPos x then trace t $ getPos x else mkPos0 p
-            where x = label t p
-
 composePtrs :: TermS -> TermS
 composePtrs t = mapT f t where f x = if isPos x && isPos y 
                                       then trace t $ getPos y else x
                                      where y = label t $ getPos x
 
--- collapseLeaves f t sets pointers from the predecessors of all leaves of t
--- whose label satisfies f to the first leaf with this property.
+-- collapseLeaves pred t sets pointers from the predecessors of all leaves of t
+-- whose label satisfies pred to the first leaf with this property.
 
-collapseLeaves :: (String -> Bool) -> TermS -> TermS
-collapseLeaves f t = setPointers t $ chgPart (id,[]) $ filter (f . pr2)
-                                   $ mkNodes t
+collapseLeaves :: (String -> [Int] -> Bool) -> TermS -> TermS
+collapseLeaves pred t = setPointers t $ chgPart (id,[]) $ filter f $ mkNodes t
+                        where f (p,x,_) = pred x p
 
-collapseVars :: (String -> Bool) -> TermS -> TermS
-collapseVars vars t = g u [] u
-                     where u = collapseLeaves vars $ f $ expand 0 t []
-                           f (F x ts@(_:_)) | vars x
-                                      = F "$" [leaf x,mkTup $ map f ts]
-                           f (F x ts) = F x $ map f ts
-                           f t        = t
-                           g t p (F "$" [V x,u])
-                                          = if isPos x && eqTerm u' v'
-                                            then mkPos q
-                                            else F "$" [y,g t p' u]
-                                            where y = getSubterm t $ q++[0]
-                                                  q = init $ getPos x
-                                                  p' = p++[1]
-                                                  u' = expand 0 t p'
-                                                  v' = expand 0 t $ q++[1]
-                           g t p (F x ts) = F x $ zipWithSucs (g t) p ts
-                           g _ _ u        = u
+collapseVars :: Sig -> [String] -> TermS -> TermS
+collapseVars sig xs t = collapseHovars u [] u where
+        pred x p = x `elem` xs && p `elem` freeXPositions sig x t
+        u = collapseLeaves pred $ separateHovars [] t -- $ renameFree sig f t
+        separateHovars p (F x ts@(_:_)) | pred x p
+                       = F "$" [leaf x,mkTup $ zipWithSucs separateHovars p ts]
+        separateHovars p (F x ts) = F x $ zipWithSucs separateHovars p ts
+        separateHovars _ t        = t
+        collapseHovars t p (F "$" [V x,u])
+                                    = if isPos x && eqTerm u' v' then mkPos q
+                                      else F "$" [z,collapseHovars t p' u]
+                                      where p' = p++[1]
+                                            q = init $ getPos x
+                                            z = getSubterm t $ q++[0]
+                                            u' = expand 0 t p'
+                                            v' = expand 0 t $ q++[1]
+        collapseHovars t p (F x ts) = F x $ zipWithSucs (collapseHovars t) p ts
+        collapseHovars _ _ u        = u
 
--- used by Esolve > expandFix and Ecom > collapseVarsCom
+-- used by Esolve > bodyAndSub,expandFix and Ecom > collapseVarsCom
 
 -- expand/One n t p expands getSubterm t p by dereferencing all/one pointer(s) 
 -- to the same subterm. Moreover, each circle of u is unfolded n times. 
@@ -4885,6 +4885,8 @@ expandOne n t p = pr1 $ f n [] t p $ getSubterm t p
 
 expand0 :: TermS -> [Int] -> TermS
 expand0 t p = dropFromPoss p $ expand 0 t p
+
+-- used by Esolve > simplifyOne and Ecom > refNodes
 
 -- expandInto t p expands t at all pointers into the subterm of t at position p.
 
@@ -4925,32 +4927,40 @@ joinSubs xs fs gs = h $ fs++gs where h (f:s) = f:[g | g <- h s,
                                                       not $ eqSub xs g V]
                                      h _     = []
 
-(>>>) :: TermS -> SubstS -> TermS
-t>>>f = h t f []
- where h c@(V x) f p                = if isPos x then c else addToPoss p $ f x
-       h c@(F x [t]) f p | binder x = mkBinder op zs $ g $ p++[0]
-                                      where (zs,_,g) = renameAwayFrom f xs t c
-                                            op:xs = words x
-       h c@(F x ts) f p  | lambda x  = F x $ concat $
-                                           zipWithSucs2 g p (evens ts) $ odds ts
+(>>>),subFix :: TermS -> SubstS -> TermS
+t>>>f      = mkInst addToPoss t f []
+subFix t f = mkInst (const id) t f []             -- used by Esolve > expandFix
+
+mkInst :: ([Int] -> TermS -> TermS) -> TermS -> SubstS -> [Int] -> TermS
+mkInst chg c@(V x) f p = if isPos x then c else chg p $ f x
+mkInst chg c@(F x [t]) f p
+          | binder x = mkBinder op zs $ g $ p++[0]
+                       where (zs,_,g) = renameAwayFrom chg c f xs t
+                             op:xs = words x
+mkInst chg c@(F x ts) f p
+          | lambda x = F x $ concat $ zipWithSucs2 g p (evens ts) $ odds ts
                        where g p par t = [g1 par,g2 p]
-                              where (_,g1,g2) = renameAwayFrom f xs t c
+                              where (_,g1,g2) = renameAwayFrom chg c f xs t
                                     xs = foldT v par
                                     v x xss = if x == root (f x)
                                               then concat xss else x:concat xss
-       h (F x []) f p = case f x of V z -> F z []     -- isV (f x) ==> x is a
+mkInst chg (F x []) f p = case f x of V z -> F z []   -- isV (f x) ==> x is a
                                                       -- higher-order variable.
-                                    t -> addToPoss p t
-       h (F x ts) f p = case f x of V z -> F z $ g2 g0
-                                    F z [] -> F z $ g2 g0
-                                    t -> F "$" [addToPoss (p++[0]) t,u]
-                        where g0 t n = h t f (p++[n])
-                              g1 t n = h t f (p++[1,n])
-                              g2 g = zipWith g ts $ indices_ ts
-                              u = case ts of [t] -> g0 t 1
-                                             _ -> mkTup $ g2 g1
-       h t _ _ = t
-       renameAwayFrom f xs t c = (zs, g', h (g' t) $ fold2 upd f zs $ map V zs)
+                                      t -> chg p t
+mkInst chg (F x ts) f p = case f x of V z -> F z $ g2 g0
+                                      F z [] -> F z $ g2 g0
+                                      t -> F "$" [chg (p++[0]) t,u]
+                          where g0 t n = mkInst chg t f (p++[n])
+                                g1 t n = mkInst chg t f (p++[1,n])
+                                g2 g = zipWith g ts $ indices_ ts
+                                u = case ts of [t] -> g0 t 1
+                                               _ -> mkTup $ g2 g1
+mkInst _ t _ _ = t
+
+renameAwayFrom :: ([Int] -> TermS -> TermS) -> TermS -> SubstS -> [String]
+                  -> TermS -> ([String], TermS -> TermS, [Int] -> TermS)
+renameAwayFrom chg c f xs t = (zs, g',
+                               mkInst chg (g' t) $ fold2 upd f zs $ map V zs)
                       where g  = getSubAwayFrom c xs ys
                             zs = map g xs
                             g' = renameAll g
@@ -4980,11 +4990,12 @@ eqsToSubst _                   = Nothing
 
 -- * Renaming
 
+type Renaming   = String -> String
 type VarCounter = String -> Int
 
 -- | @splitVar x@ splits @x@ into its non-numerical prefix and its numerical
 -- suffix.
-splitVar :: String -> (String, String, Bool)
+splitVar :: String -> (String,String,Bool)
 splitVar x = (base,ds,b)
       where b = just $ parse infixWord x
             (base,ds) = span (not . isDigit) $ if b then init $ tail x else f x
@@ -4994,6 +5005,7 @@ splitVar x = (base,ds,b)
 -- getSubAwayFrom t xs ys renames the variables of xs `meet` ys away from the
 -- symbols of t.
 
+getSubAwayFrom :: TermS -> [String] -> [String] -> Renaming
 getSubAwayFrom t xs ys = fst $ renaming (iniVC $ allSyms b t) toBeRenamed
                          where toBeRenamed = xs `meet` ys
                                b x = any eqBase toBeRenamed
@@ -5025,28 +5037,20 @@ decrVC = foldl f where f vc x = upd vc z $ vc z-1 where z = pr1 $ splitVar x
 -- renaming vc xs renames xn in xs to x(vc(x)). The values of vc are increased 
 -- accordingly.
 
-renaming
-    :: VarCounter -- ^ vc
-    -> [String] -- ^ xs
-    -> (String -> String,VarCounter)
+renaming :: VarCounter -> [String] -> (Renaming,VarCounter)
 renaming vc = foldl f (id,vc) where f (g,vc) x = (upd g x y,incr vc base)
                                       where (base,_,b) = splitVar x
                                             str = base++show (vc base)
                                             y = if b then '`':str++"`" else str
 
--- used by Eterm > >>>,renameAwayFrom,renameApply, Esolve > moveUp and
+-- used by Eterm > (>>>),renameAwayFrom,renameApply, Esolve > moveUp and
 -- Ecom > applyInd
 
--- renameApply cls sig t vc computes a renaming f of the variables of t and
+-- renameApply sig t vc cls computes a renaming f of the variables of t and
 -- applies f to cls.
 
-renameApply
-    :: [TermS] -- ^ cls
-    -> Sig -- ^ sig
-    -> TermS -- ^ t
-    -> VarCounter -- ^ vc
-    -> ([TermS], VarCounter)
-renameApply cls sig t vc = (map (renameAll f) cls,vc')
+renameApply :: Sig -> TermS -> VarCounter -> [TermS] -> ([TermS],VarCounter)
+renameApply sig t vc cls = (map (renameAll f) cls,vc')
                 where (f,vc') = renaming vc [x | x <- sigVars sig t, noExcl x,
                                                     any (isin x) cls]
 
@@ -5057,34 +5061,52 @@ noExcl :: String -> Bool
 noExcl ('!':_:_) = False
 noExcl _         = True
 
--- renameAll f t renames each occurrence of a symbol x in t to f(x) and is used
--- by >>>, renameApply (see above), Esolve > simplifyF and Ecom > renameVar'.
-renameAll :: (String -> String) -> TermS -> TermS
+-- renameAll f t renames by f all symbol occurrences in t.
+renameAll :: Renaming -> TermS -> TermS
 renameAll f (F x [t]) | binder x = mkBinder op (map f xs) $ renameAll f t
-                                     where op:xs = words x
-renameAll f (F x ts)                   = F (f x) $ map (renameAll f) ts
-renameAll f (V x)                      = V $ f x
-renameAll _ t                                = t
+                                   where op:xs = words x
+renameAll f (F x ts)             = F (f x) $ map (renameAll f) ts
+renameAll f (V x)                = V $ f x
+renameAll _ t                    = t
 
--- renameFree f t renames each free occurrence of a symbol x in t to f(x).
+-- used by Eterm > (>>>),renameApply, Esolve > simplifyF/A and Ecom > renameVar'
 
-renameFree
-    :: (String -> String) -- ^ f
-    -> TermS -- ^ t
-    -> TermS
-renameFree f (F x [t]) | binder x 
-                       = mkBinder op xs $ renameFree (fold2 upd f xs xs) t
-                        where op:xs = words x
-renameFree f (F x ts) = F (f x) $ map (renameFree f) ts
-renameFree f (V x)    = V $ f x
-renameFree _ t               = t
+-- renameFree sig f t renames by f all free symbol occurrences in t.
 
--- used by Eterm > match and Esolve > subsumes
+renameFree :: Sig -> Renaming -> TermS -> TermS
+renameFree sig = rename where
+  rename f (F x [t]) | binder x = mkBinder op xs $ rename (block f xs) t
+                                  where op:xs = words x
+  rename f (F x ts)  | lambda x = F x $ concat $ zipWith g (evens ts) $ odds ts
+                                  where g pat t = [pat,rename (block f xs) t]
+                                                  where xs = allVars sig pat
+  rename f (F x ts) = F (f x) $ map (rename f) ts
+  rename f (V x)    = V $ f x
+  rename _ t        = t
+  block f xs = fold2 upd f xs xs
 
-getPrevious :: String -> String
+-- used by Eterm > eqTerm,match and Esolve > moveUp,subsumes
+
+-- renameBound sig f t renames by f all bound symbol occurrences in t.
+
+renameBound :: Sig -> Renaming -> TermS -> TermS
+renameBound sig f = rename where
+  rename (F x [t]) | binder x = mkBinder op (map f xs) $ g t
+                                where op:xs = words x
+  rename (F x ts)  | lambda x = F x $ concat $ zipWith h (evens ts) $ odds ts
+                                where h pat t = [g pat,g t]
+  rename (F x ts) = F x $ map rename ts
+  rename t        = t
+  g = rename . mapT f
+
+-- used by Eterm > collapseVars
+
+getPrevious :: Renaming
 getPrevious x = if b then '`':str++"`" else str
                 where (base,ds,b) = splitVar x; n = read ds
                       str = if n == 0 then base else base++show (n-1)
+
+-- used by Ecom > applyCoinduction,applyInd,applyInduction
 
 -- * Unification of terms and formulas
 
@@ -5371,36 +5393,38 @@ unifySBag _ _ _ _ = Just V
 -- f(x) are decreased by the position of x in u. 
 
 match :: Sig -> [String] -> TermS -> TermS -> Maybe SubstS
-match sig xs = h []
-    where g p = [p++[0],p++[1]]
-          h _ (V x) (V y) | x == y  = Just V
-          h p t (V y) | y `elem` xs = Just $ dropFromPoss p t `for` y
-          h p t@(F x ts) (F y us) 
-               | hovarRel sig y x && y `elem` xs =
-                   if b then do
-                       g <- match' ps (h ts) $ h us
-                       Just $ f `andThen` g
-                   else do
-                       guard $ null us
-                       Just $ dropFromPoss p t `for` y
-               | x == y && b = if permutative x then matchBag ps ts us 
-                               else match' ps ts us
-           where b = length ts == length us
-                 f = F x [] `for` y
-                 h = map (>>>f)
-                 ps = succsInd p ts
+match sig xs = h [] -- (sig&redexPos)
+    where h _ (V x) (V y) | x == y  = Just V
+          h p t (V y) | y `elem` xs = Just $ dropFromPossM p t `for` y
+          h p t@(F x ts) (F y us)
+              | (sig&hovarRel) y x && y `elem` xs =
+                                  do if b then do
+                                               g <- match' ps (h ts) $ h us
+                                               Just $ f `andThen` g
+                                          else do
+                                               guard $ null us
+                                               Just $ dropFromPossM p t `for` y
+              | x == y && b = if permutative x then matchBag ps ts us
+                                               else match' ps ts us
+                                               where b = length ts == length us
+                                                     f = F x [] `for` y
+                                                     h = map (>>>f)
+                                                     ps = succsInd p ts
           h p (F x [t]) (F y [u])
               | binder x && binder y && opx == opy && length xs == length ys =
-                               h (p++[0]) (renameFree (fold2 upd id xs ys) t) u
-                               where opx:xs = words x; opy:ys = words y
+                           h (p++[0]) (renameFree sig (fold2 upd id xs ys) t) u
+                           where opx:xs = words x; opy:ys = words y
           h p t (F "suc" [u]) | just n = h (p++[0]) (mkConst $ get n-1) u
-                                         where n = parsePnat t
+                                       where n = parsePnat t
           h p (F "suc" [t]) u | just n = h (p++[0]) t $ mkConst $ get n-1
-                                         where n = parsePnat u
-          h p (F "[]" (t:ts)) (F ":" [u,v]) = match' (g p) [t,mkList ts] [u,v]
-          h p (F ":" [u,v]) (F "[]" (t:ts)) = match' (g p) [u,v] [t,mkList ts]
-          h _ t u                           = do guard $ bothHidden t u; Just V
-          match' (p:ps) (t:ts) (u:us) = do f <- h p t u; g <- match' ps ts us
+                                       where n = parsePnat u
+          h p (F "[]" (t:ts)) (F ":" [u,v]) =
+                                     match' [p++[0],p++[1]] [t,mkList ts] [u,v]
+          h p (F ":" [u,v]) (F "[]" (t:ts)) =
+                                     match' [p++[0],p++[1]] [u,v] [t,mkList ts]
+          h _ t u                     = do guard $ bothHidden t u; Just V
+          match' (p:ps) (t:ts) (u:us) = do f <- h p t u
+                                           g <- match' ps ts us
                                            par f xs g $ meetVars xs us
                                         where xs = sigVars sig u
           match' [] _ _               = Just V
@@ -5409,7 +5433,7 @@ match sig xs = h []
                                            let xs = sigVars sig u
                                            par f xs g $ meetVars xs us
                               where try us = do u:us <- Just us
-                                                case h p t u of 
+                                                case h p t u of
                                                      Just f -> Just (f,u,us)
                                                      _ -> do (f,v,us) <- try us
                                                              Just (f,v,u:us)
@@ -5547,16 +5571,12 @@ alignLeaves _ _ t          = t
 
 equalGaps :: (String -> Int) -> Int -> [TermSP] -> [TermSP]
 equalGaps w hor ts = if length ts > 2 then us++vs else ts
-                    where (us,vs) = foldl f ([],[head ts]) $ tail ts
-                          f (us,vs) v = if isLeaf v then (us,vs++[v])
+                     where (us,vs) = foldl f ([],[head ts]) $ tail ts
+                           f (us,vs) v = if pred v then (us,vs++[v])
                                          else (us++transLeaves w hor vs v,[v])
+                           pred (F _ [V (x,_)]) = isPos x
+                           pred t               = isLeaf t
 
-isLeaf :: TermSP -> Bool
-isLeaf (V _)           = True
-isLeaf (F _ [])        = True
-isLeaf (F _ [V (x,_)]) = isPos x
-isLeaf _               = False
-      
 transLeaves :: (String -> Int) -> Int -> [TermSP] -> TermSP -> [TermSP]
 transLeaves w hor ts t = loop hor
          where loop hor = if x1+w1+hor >= x2-w2 then us else loop $ hor+1 

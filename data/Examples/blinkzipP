@@ -2,14 +2,14 @@
 
 0. Derivation of
 
-blink ~ zip(zero,one)
+blink ~ zip(zeros,ones)
 
 All simplifications are admitted.
 Equation removal is safe.
 
 1. Adding
 
-  (~0(z0,z1) <=== z0 = blink & z1 = zip(zero,one))
+  (~0(z0,z1) <=== z0 = blink & z1 = zip(zeros,ones))
 
 to the axioms and applying COINDUCTION wrt
 
@@ -17,18 +17,18 @@ to the axioms and applying COINDUCTION wrt
 
 at positions
 []
-of the preceding formulas leads to 
+of the preceding trees leads to 
 
-All s s':(s = blink & s' = zip(zero,one) ===> 
-          head(s) = head(s') & ~0(tail(s),tail(s')))
+All s s':((s = blink & s' = zip(zeros,ones) ===> 
+           head(s) = head(s') & ~0(tail(s),tail(s'))))
 
-2. SIMPLIFYING the preceding formulas (12 steps) leads to 
+2. SIMPLIFYING parallel the preceding trees (8 steps) leads to 
 
-~0(1:blink,zip(one,zero))
+~0(1:blink,zip(ones,zeros))
 
 3. Adding
 
-  (~0(z2,z3) <=== z2 = (1:blink) & z3 = zip(one,zero))
+  (~0(z2,z3) <=== z2 = 1:blink & z3 = zip(ones,zeros))
 
 to the axioms and applying COINDUCTION wrt
 
@@ -36,23 +36,24 @@ to the axioms and applying COINDUCTION wrt
 
 at positions
 []
-of the preceding formulas leads to 
+of the preceding trees leads to 
 
-All s s':(s = (1:blink) & s' = zip(one,zero) ===> 
-          head(s) = head(s') & ~0(tail(s),tail(s')))
+All s s':((s = 1:blink & s' = zip(ones,zeros) ===> 
+           head(s) = head(s') & ~0(tail(s),tail(s'))))
 
-4. SIMPLIFYING the preceding formulas (12 steps) leads to 
+4. SIMPLIFYING parallel the preceding trees (8 steps) leads to 
 
-~0(blink,zip(zero,one))
+~0(blink,zip(zeros,ones))
 
-5. NARROWING the preceding formulas (one step) leads to 
+5. NARROWING the preceding trees (one step) leads to 
 
-blink = blink & zip(zero,one) = zip(zero,one) | 
-blink = (1:blink) & zip(zero,one) = zip(one,zero)
+blink = blink & zip(zeros,ones) = zip(zeros,ones) | 
+blink = 1:blink & zip(zeros,ones) = zip(ones,zeros)
 
 The axioms have been MATCHED against their redices.
 
-6. SIMPLIFYING the preceding formulas (one step) leads to 
+6. SIMPLIFYING parallel the preceding trees (one step) leads to 
 
 True
+The formula coincides with no. 6
 

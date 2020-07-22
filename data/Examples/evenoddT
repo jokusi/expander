@@ -1,2 +1,2 @@
 -- /Users/Padawitz/ExpanderLib/evenoddT
-[Simplifying True, SetStrat PA, Induction True 0, Matching 0, Refuting False, Narrow 1 True, Narrow 1 True, Narrow 1 True, Narrow 1 True, Narrow 1 True]
+[Induction True 0, Simplify 100 False, Mark [[0, 1, 0, 0]], Mark [[0, 1, 0, 0], [1, 1, 0, 0]], Narrow 0 False, Simplify 100 False, Mark [[0, 1, 0, 1, 0]], Mark [[0, 1, 0, 1, 0], [0, 1, 0, 1, 1]], Mark [[0, 1, 0, 1, 0]], Mark [[0, 1, 0, 1, 0]], Mark [[0, 1, 0, 1, 0]], Mark [[0, 1, 0, 1, 0], [0, 1, 0, 1, 1]], Mark [[0, 1, 0, 1, 0], [0, 1, 0, 1, 1], [1, 1, 0, 1, 0]], Mark [[0, 1, 0, 1, 0], [0, 1, 0, 1, 1], [1, 1, 0, 1, 0], [1, 1, 0, 1, 1]], Narrow 0 False, Simplify 100 False, Narrow 1 True, Narrow 1 True, Narrow 1 True, Simplify 100 False]

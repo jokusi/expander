@@ -1,0 +1,349 @@
+-- /Users/Padawitz/ExpanderLib/seqparP
+
+0. Derivation of
+
+(t*(u+v)) ~ ((t*u)+(t*v))
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Adding
+
+  (z0 ~~0 z1 <=== z0 = t*(u+v) & z1 = (t*u)+(t*v))
+
+to the axioms and applying COINDUCTION wrt
+
+  (t ~ u ===> beta(t) = beta(u) & delta(t,x) ~ delta(u,x))
+
+at positions
+[]
+of the preceding trees leads to 
+
+All t u x:((Any t0 u0 v:
+             ((t = t0*(u0+v) & u = (t0*u0)+(t0*v))) ===> 
+            beta(t) = beta(u) & delta(t,x) ~~0 delta(u,x)))
+
+2. SIMPLIFYING parallel the preceding trees (11 steps) leads to 
+
+All x t0 u0 v:
+ delta(t0*(u0+v),x) ~~0 (delta(t0*u0,x)+delta(t0*v,x))
+
+3. Applying the axioms
+
+  (delta(t*u,x) = delta(t,x)*u <=== beta(t) = 0)
+& (delta(t*u,x) = (delta(t,x)*u)+delta(u,x) <=== beta(t) = 1)
+
+at positions
+[0,0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ (((delta(t0,x)*(u0+v)) ~~0 (delta(t0*u0,x)+delta(t0*v,x)) & beta(t0) = 0 | 
+   ((delta(t0,x)*(u0+v))+delta(u0+v,x)) ~~0 (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+The axioms have been MATCHED against their redices.
+
+4. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x t0 u0 v:
+ (((delta(t0,x)*(u0+v)) ~~0 (delta(t0*u0,x)+delta(t0*v,x)) & beta(t0) = 0 | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+5. Applying the axioms
+
+  (delta(t*u,x) = delta(t,x)*u <=== beta(t) = 0)
+& (delta(t*u,x) = (delta(t,x)*u)+delta(u,x) <=== beta(t) = 1)
+
+at positions
+[0,0,0,1,0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((((delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+delta(t0*v,x)) & beta(t0) = 0 | 
+    (delta(t0,x)*(u0+v)) ~~0 (((delta(t0,x)*u0)+delta(u0,x))+delta(t0*v,x)) & 
+    beta(t0) = 1) & 
+   beta(t0) = 0 | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+The axioms have been MATCHED against their redices.
+
+6. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 & (delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+delta(t0*v,x)) | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+7. Applying the axioms
+
+  (delta(t*u,x) = delta(t,x)*u <=== beta(t) = 0)
+& (delta(t*u,x) = (delta(t,x)*u)+delta(u,x) <=== beta(t) = 1)
+
+at positions
+[0,0,1,1,1]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 & 
+   ((delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+(delta(t0,x)*v)) & beta(t0) = 0 | 
+    (delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+((delta(t0,x)*v)+delta(v,x))) & 
+    beta(t0) = 1) | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+The axioms have been MATCHED against their redices.
+
+8. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 & (delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+(delta(t0,x)*v)) | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+9. Applying the theorem
+
+  (z0 ~~0 z1 <=== z0 = t*(u+v) & z1 = (t*u)+(t*v))
+
+at positions
+[0,0,1]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 & 
+   Any t u v0:
+    ((delta(t0,x)*(u0+v) = t*(u+v0) & 
+      (delta(t0,x)*u0)+(delta(t0,x)*v) = (t*u)+(t*v0))) | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+The axioms have been MATCHED against their redices.
+
+10. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x t0 u0 v:
+ ((Any t u v0:
+    ((delta(t0,x)*(u0+v) = t*(u+v0) & 
+      (delta(t0,x)*u0)+(delta(t0,x)*v) = (t*u)+(t*v0) & beta(t0) = 0)) | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+11. SUBSTITUTING delta(t0,x) FOR t at positions
+[0,0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((Any t u v0:
+    ((delta(t0,x)*(u0+v) = delta(t0,x)*(u+v0) & 
+      (delta(t0,x)*u0)+(delta(t0,x)*v) = (delta(t0,x)*u)+(delta(t0,x)*v0) & 
+      beta(t0) = 0)) | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+12. SUBSTITUTING u0 FOR u at positions
+[0,0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((Any t u v0:
+    ((delta(t0,x)*(u0+v) = delta(t0,x)*(u0+v0) & 
+      (delta(t0,x)*u0)+(delta(t0,x)*v) = (delta(t0,x)*u0)+(delta(t0,x)*v0) & 
+      beta(t0) = 0)) | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+13. SUBSTITUTING v FOR v0 at positions
+[0,0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((Any t u v0:
+    ((delta(t0,x)*(u0+v) = delta(t0,x)*(u0+v) & 
+      (delta(t0,x)*u0)+(delta(t0,x)*v) = (delta(t0,x)*u0)+(delta(t0,x)*v) & 
+      beta(t0) = 0)) | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+
+14. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 | 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (delta(t0*u0,x)+delta(t0*v,x)) & 
+   beta(t0) = 1))
+The formula coincides with no. 14
+
+15. Applying the axioms
+
+  (delta(t*u,x) = delta(t,x)*u <=== beta(t) = 0)
+& (delta(t*u,x) = (delta(t,x)*u)+delta(u,x) <=== beta(t) = 1)
+
+at positions
+[0,1,0,1,0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 | 
+   (((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+    ((delta(t0,x)*u0)+delta(t0*v,x)) & 
+    beta(t0) = 0 | 
+    ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+    (((delta(t0,x)*u0)+delta(u0,x))+delta(t0*v,x)) & 
+    beta(t0) = 1) & 
+   beta(t0) = 1))
+
+The axioms have been MATCHED against their redices.
+
+16. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 | 
+   beta(t0) = 1 & 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (((delta(t0,x)*u0)+delta(u0,x))+delta(t0*v,x))))
+
+17. Applying the axioms
+
+  (delta(t*u,x) = delta(t,x)*u <=== beta(t) = 0)
+& (delta(t*u,x) = (delta(t,x)*u)+delta(u,x) <=== beta(t) = 1)
+
+at positions
+[0,1,1,1,1]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 | 
+   beta(t0) = 1 & 
+   (((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+    (((delta(t0,x)*u0)+delta(u0,x))+(delta(t0,x)*v)) & 
+    beta(t0) = 0 | 
+    ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+    (((delta(t0,x)*u0)+delta(u0,x))+((delta(t0,x)*v)+delta(v,x))) & 
+    beta(t0) = 1)))
+
+The axioms have been MATCHED against their redices.
+
+18. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+All x t0 u0 v:
+ ((beta(t0) = 0 | 
+   beta(t0) = 1 & 
+   ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+   (((delta(t0,x)*u0)+delta(u0,x))+((delta(t0,x)*v)+delta(v,x)))))
+
+19. Applying the theorem
+
+beta(t) = 0 | beta(t) = 1
+
+at positions
+[0,0]
+[0,1,0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+ (((delta(t0,x)*u0)+delta(u0,x))+((delta(t0,x)*v)+delta(v,x)))
+
+20. Applying the theorem
+
+  (t+u)+(v+w) = (t+v)+(u+w)
+
+at positions
+[0,1]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ ((delta(t0,x)*(u0+v))+(delta(u0,x)+delta(v,x))) ~~0 
+ (((delta(t0,x)*u0)+(delta(t0,x)*v))+(delta(u0,x)+delta(v,x)))
+
+21. Applying the theorem
+
+  ((x1+x2) ~~0 (y1+y2) <=== x1 ~~0 y1 & x2 ~~0 y2)
+
+at positions
+[0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ (((delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+(delta(t0,x)*v)) & 
+   (delta(u0,x)+delta(v,x)) ~~0 (delta(u0,x)+delta(v,x))))
+
+22. Adding
+
+  x ~~0 x
+
+to the axioms and applying nothing to the preceding trees leads to 
+
+All x t0 u0 v:
+ (((delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+(delta(t0,x)*v)) & 
+   (delta(u0,x)+delta(v,x)) ~~0 (delta(u0,x)+delta(v,x))))
+The formula coincides with no. 21
+
+23. Applying the theorem
+
+  x ~~0 x
+
+at positions
+[0,1]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ (((delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+(delta(t0,x)*v)) & True))
+
+24. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x t0 u0 v:
+ (delta(t0,x)*(u0+v)) ~~0 ((delta(t0,x)*u0)+(delta(t0,x)*v))
+
+25. NARROWING the preceding trees (one step) leads to 
+
+All x t0 u0 v:
+ Any t u v2:
+  ((delta(t0,x)*(u0+v) = t*(u+v2) & 
+    (delta(t0,x)*u0)+(delta(t0,x)*v) = (t*u)+(t*v2)))
+
+The axioms have been MATCHED against their redices.
+
+26. SUBSTITUTING delta(t0,x) FOR t at positions
+[0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ Any t u v2:
+  ((delta(t0,x)*(u0+v) = delta(t0,x)*(u+v2) & 
+    (delta(t0,x)*u0)+(delta(t0,x)*v) = (delta(t0,x)*u)+(delta(t0,x)*v2)))
+
+27. SUBSTITUTING u0 FOR u at positions
+[0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ Any t u v2:
+  ((delta(t0,x)*(u0+v) = delta(t0,x)*(u0+v2) & 
+    (delta(t0,x)*u0)+(delta(t0,x)*v) = (delta(t0,x)*u0)+(delta(t0,x)*v2)))
+
+28. SUBSTITUTING v FOR v2 at positions
+[0]
+of the preceding trees leads to 
+
+All x t0 u0 v:
+ Any t u v2:
+  ((delta(t0,x)*(u0+v) = delta(t0,x)*(u0+v) & 
+    (delta(t0,x)*u0)+(delta(t0,x)*v) = (delta(t0,x)*u0)+(delta(t0,x)*v)))
+
+29. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+True
+

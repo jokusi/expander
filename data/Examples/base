@@ -1,8 +1,9 @@
 -- base
 
-defuncts: head tail init last take drop <=< kfold 
-fovars:	  x y z s s' n
-hovars:   F
+defuncts: head tail init last take drop <=< kfold
+preds:	P Q R
+fovars:	x y z s s' n
+hovars:	F G
 
 axioms:
 
@@ -86,4 +87,3 @@ x**suc(y) == x*(x**y) &
 (x `in` y:s <==> x = y | x `in` s) &
 (x `NOTin` y:s <==> x =/= y & x `NOTin` s) 
 -}
-

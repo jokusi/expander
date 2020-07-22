@@ -61,7 +61,7 @@ instance Test.Arbitrary Special where
     , BoolMat <$> Test.arbitrary <*> Test.arbitrary <*> Test.arbitrary
     , ListMat <$> Test.arbitrary <*> Test.arbitrary <*> Test.arbitrary
     , LRarr <$> Test.arbitrary
-    , return ERR
+    , return Nil
     ]
 
 deriving instance Generic a => Generic (Term a)

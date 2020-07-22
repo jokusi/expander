@@ -1,9 +1,9 @@
 -- brzozowski
 
 constructs: 	star mt eps a b c int
-defuncts: 	delta beta unfold1 unfold2 step S A B reg regI ite
+defuncts: 	delta beta unfold1 unfold2 step S A B reg regI
 preds:		RegExp
-copreds:	`~`
+copreds:	~
 fovars: 	t u v w 
 
 axioms:
@@ -13,30 +13,28 @@ axioms:
 (RegExp$t*u <=== RegExp$t & RegExp$u) &
 (RegExp$star$t <=== RegExp$t) &
 
-delta(t+u,x) == delta(t,x)+delta(u,x) &
-
--- delta(t*u,x) == delta(t,x)*u+ite(beta$t=0,mt,delta(u,x)) &    
- 
-(delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &	-- for brzo1v (?), brzo2v, brzo3
+(delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &  		  -- for seqpar
 (delta(t*u,x) = delta(t,x)*u+delta(u,x) <=== beta$t=1) &
 
+-- delta(t*u,x) == delta(t,x)*u+ite(beta$t=0,mt,delta(u,x)) & 
+
+delta(t+u,x) == delta(t,x)+delta(u,x) &
 delta(star$t,x) == delta(t,x)*star(t) &
-
-(x `in` [a,b,c,mt,eps] ==> delta(x,y) == ite(x=y,eps,mt)) &
-
 delta(int,x) == ite(Int$x,eps,mt) &
+
+-- (x `in` [a,b,c,mt,eps] ==> delta(x,y) == ite(x=y,eps,mt)) &
 
 beta$t+u == max(beta$t,beta$u) &
 beta$t*u == beta(t)*beta(u) &
 beta$eps == 1 &
 beta$star$t == 1 &
+
+x*max(y,z) == max(x*y,x*z) &		-- (5) see FCAM, Example SEQPAR
+
+{-
 (x `in` [a,b,c,mt,int] ==> beta(x) == 0) &
 
-(x `in` y:s <==> x = y | x `in` s) &		-- for brzo4
-
--- numbered equations occur in ELAS, Example SEQPAR
-
-t+mt == t & 					-- (2)
+t+mt == t & 				-- (2) see FCAM, Example SEQPAR
 mt+t == t &
 t+t == t &
 t*eps == t &
@@ -44,54 +42,55 @@ eps*t == t &
 t*mt == mt &
 mt*t == mt &
 
--- t+ite(x,u,v) == ite(x,t+u,t+v) &		-- (4)
--- ite(x,u,v)+t == ite(x,u+t,v+t) &	
-	
-x*max(y,z) == max(x*y,x*z) &			-- (5)
+t+ite(x,u,v) == ite(x,t+u,t+v) &	-- (4) see FCAM, Example SEQPAR
+ite(x,u,v)+t == ite(x,u+t,v+t) &	
+-}	
 
-unfold1$t == beta . sfold(delta)$t &		-- sfold = strict foldl
-unfold2$t == betaBro . sfold(deltaBro)$t &	-- (see Esolve.hs)
+(x `in` y:s <==> x = y | x `in` s) &	-- see regexpP
+
+unfold1$t == beta . sfold(delta)$t &	        -- sfold = strict foldl
+unfold2$t == betaBro . sfold(deltaBro)$t &      -- (see Esolve.hs)
 
 reg == star$a+b*c &
 regI == star$a+int*c &
 
 -- CF grammar
 
-step$S == a*B+b*A+eps &				-- accepts words with the same
-step$A == a*S+b*A*A &				-- number of a's and b's
+step$S == a*B+b*A+eps &			-- accepts words with the same
+step$A == a*S+b*A*A &			-- number of a's and b's
 step$B == b*S+a*B*B &
 
--- (t `~` u ===> beta$t = beta$u & all(rel(x,delta(t,x)`~`delta(u,x)))[a,b])
+(t ~ u ===> beta$t = beta$u & delta(t,x) ~ delta(u,x)) 
 
-(t `~` u ===> beta$t = beta$u & delta(t,x) `~` delta(u,x)) 
-						-- for brzo1v, brzo2v, brzo3
+-- (t ~ u ===> beta$t = beta$u & all(rel(x,delta(t,x)~delta(u,x)))[a,b])
+
 theorems:
 
-(beta$t = 0 | beta$t = 1) &			-- (6)
-(t+u)+(v+w) = (t+v)+(u+w) &			-- (3)
+(beta$t = 0 | beta$t = 1) &		-- (6) see FCAM, Example SEQPAR
+(t+u)+(v+w) = (t+v)+(u+w) &		-- (3) see FCAM, Example SEQPAR
 t*(u+v) = t*u+t*v &
 (u+v)*t = u*t+v*t &
-(t+u)+v = t+(u+v) &
+(t+u)+v = t+(u+v) 
 
-(max(x*y,y) = y <=== x = 0 | x = 1) 
+-- (max(x*y,y) = y <=== x = 0 | x = 1) &
 
--- (t+u `~0` v+w <=== t `~0` v & u `~0` w) &
--- t `~0` t
+-- (t+u ~0 v+w <=== t ~0 v & u ~0 w) &  -- ~0 is bisimulation modulo +
+-- t ~0 t				-- and reflexive
 
 conjects:
 
-star(a+b) `~` star(star(a)*star(b)) &	-- brzo1 (Rosu, Example 3.4)
+star(a+b) ~ star(star(a)*star(b)) &	-- brzo1 (Rosu, Example 3.4)
 					-- 3 x coinduction + 3 x narrowing
-star(t+u) `~` star(star(t)*star(u)) &	-- brzo1v	
+star(t+u) ~ star(star(t)*star(u)) &	-- brzo1v	
 
-star(a)*b `~` a*star(a)*b+b &		-- brzo2 (Rosu, Example 3.6)
+star(a)*b ~ a*star(a)*b+b &		-- brzo2 (Rosu, Example 3.6)
 					-- 1 x coinduction + 1 x narrowing
-star(t)*u `~` t*star(t)*u+u &		-- brzo2v	
+star(t)*u ~ t*star(t)*u+u &		-- brzo2v	
 					-- 1 x coinduction + theorems
-t*(u+v) `~` t*u+t*v &			-- brzo3 (ELAS, Example SEQPAR)
+t*(u+v) ~ t*u+t*v &			-- seqpar (FCAM, Example SEQPAR)
 					-- 1 x coinduction + theorems (3),(6)
 					-- + substitutions
-(RegExp$t ==> beta$t = 0 | beta$t = 1)	-- brzo4
+(RegExp$t ==> beta$t = 0 | beta$t = 1)	-- regexp
 					-- 1 x induction
 terms:
 

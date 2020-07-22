@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 22feabe968f86b040baabeea832fab6961a967aed804a1fcacbfd6e4a0c7a8bd
+-- hash: 921ca27d62fef5061d30b675dd6422a1a8ffe71b8c33b5ec2b10ba4d10ab618e
 
 name:           expander
 version:        3.0.0.0
@@ -154,11 +154,12 @@ data-files:
     Examples/eosum2P
     Examples/eosum2T
     Examples/eqtest
+    Examples/evenanyP
+    Examples/evenanyT
     Examples/evenoddNP
     Examples/evenoddNT
     Examples/evenoddP
     Examples/evenoddT
-    Examples/evens2
     Examples/evensmorse
     Examples/evensmorseT
     Examples/evensoddsP
@@ -186,11 +187,7 @@ data-files:
     Examples/fairblinkmuP
     Examples/fairblinkmuT
     Examples/fairblinkP
-    Examples/fairblinkSP
-    Examples/fairblinkST
     Examples/fairblinkT
-    Examples/fairblinkxP
-    Examples/fairblinkxT
     Examples/fern2-12-1-1G
     Examples/fib01
     Examples/fib01T
@@ -321,6 +318,8 @@ data-files:
     Examples/mergeP
     Examples/mergePalt
     Examples/mergePT
+    Examples/mergesortP
+    Examples/mergesortT
     Examples/micro
     Examples/micro1P
     Examples/micro1T
@@ -344,12 +343,6 @@ data-files:
     Examples/morseinv2
     Examples/morseinv2T
     Examples/morseinvT
-    Examples/msort1P
-    Examples/msort1PT
-    Examples/msort2P
-    Examples/msort2PT
-    Examples/msort3P
-    Examples/msort3PT
     Examples/mutex
     Examples/mutexAC
     Examples/mutexAlt
@@ -365,8 +358,7 @@ data-files:
     Examples/natloopNT
     Examples/natloopT
     Examples/natstream
-    Examples/natstreamSol
-    Examples/natstreamSolT
+    Examples/natstreamP
     Examples/natstreamT
     Examples/NEED0proof
     Examples/NEED1proof
@@ -399,12 +391,11 @@ data-files:
     Examples/one2P
     Examples/one2T
     Examples/overlaps
-    Examples/PAFL
-    Examples/PAFL1P
-    Examples/PAFL1T
-    Examples/PAFL2P
-    Examples/PAFL2T
-    Examples/pairs
+    Examples/pafl
+    Examples/pafl1P
+    Examples/pafl1T
+    Examples/pafl2P
+    Examples/pafl2T
     Examples/pal11P
     Examples/pal1P
     Examples/pal2P
@@ -501,6 +492,8 @@ data-files:
     Examples/safe
     Examples/safeT
     Examples/sendmore
+    Examples/seqparP
+    Examples/seqparT
     Examples/set
     Examples/SETproof
     Examples/shelves
@@ -521,8 +514,6 @@ data-files:
     Examples/sort1T
     Examples/sort2P
     Examples/sort2T
-    Examples/sortperm
-    Examples/SORTproof
     Examples/SPLITNproof
     Examples/stack
     Examples/STACK2IMPL
