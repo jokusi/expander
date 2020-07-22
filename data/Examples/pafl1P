@@ -1,8 +1,8 @@
--- /Users/Padawitz/ExpanderLib/pafl1P
+-- /Users/Padawitz/ExpanderLib/PAFL1P
 
 0. Derivation of
 
-part(s,p) ==> flatten(p) = s
+(part(s,p)==>(flatten(p)=s))
 
 All simplifications are admitted.
 Equation removal is safe.
@@ -19,98 +19,28 @@ to the axioms and applying FIXPOINT INDUCTION wrt
 
 at positions
 []
-of the preceding trees leads to 
+of the preceding formulas leads to 
 
-All x p y s s':
- (flatten[[x]] = [x]) & 
-All x p y s s':
- ((flatten([x]:p) = x:(y:s) <=== part0(y:s,p))) & 
-All x p y s s':
- ((flatten((x:s'):p) = x:(y:s) <=== part0(y:s,s':p)))
+(All x p y s s':((flatten([[x]])=[x]))&All x p y s s':(((flatten(([x]:p))=(x:(y:s)))<===part0((y:s),p)))&All x p y s s':(((flatten(((x:s'):p))=(x:(y:s)))<===part0((y:s),(s':p)))))
 
-2. SIMPLIFYING parallel the preceding trees (one step) leads to 
+2. SIMPLIFYING the preceding formulas (12 steps) leads to 
 
-All x:(flatten[[x]] = [x]) & 
-All x p y s:
- ((part0(y:s,p) ==> flatten([x]:p) = x:(y:s))) & 
-All x p y s s':
- ((part0(y:s,s':p) ==> flatten((x:s'):p) = x:(y:s)))
+(All p y s:((part0((y:s),p)==>(flatten(p)=(y:s))))&All p y s s':((part0((y:s),(s':p))==>((s'++flatten(p))=(y:s)))))
 
-3. SIMPLIFYING parallel the preceding trees (one step) leads to 
+3. Applying the theorem
 
-All x:([x]++flatten[] = [x]) & 
-All x p y s:
- ((part0(y:s,p) ==> [x]++flatten(p) = x:(y:s))) & 
-All x p y s s':
- ((part0(y:s,s':p) ==> (x:s')++flatten(p) = x:(y:s)))
+  (part0(s,p) ===> flatten(p) = s)
 
-4. SIMPLIFYING parallel the preceding trees (one step) leads to 
+at positions
+[1,0,0]
+[0,0,0]
+of the preceding formulas leads to 
 
-All x:(x:flatten[] = [x]) & 
-All x p y s:
- ((part0(y:s,p) ==> x:flatten(p) = x:(y:s))) & 
-All x p y s s':
- ((part0(y:s,s':p) ==> x:(s'++flatten(p)) = x:(y:s)))
-
-5. SIMPLIFYING parallel the preceding trees (one step) leads to 
-
-All x:(flatten[] = []) & 
-All x p y s:
- ((part0(y:s,p) ==> flatten(p) = y:s)) & 
-All x p y s s':
- ((part0(y:s,s':p) ==> s'++flatten(p) = y:s))
-
-6. SIMPLIFYING parallel the preceding trees (one step) leads to 
-
-flatten[] = [] & All p y s:((part0(y:s,p) ==> flatten(p) = y:s)) & 
-All p y s s':
- ((part0(y:s,s':p) ==> s'++flatten(p) = y:s))
-
-7. SIMPLIFYING parallel the preceding trees (one step) leads to 
-
-[] = [] & All p y s:((part0(y:s,p) ==> flatten(p) = y:s)) & 
-All p y s s':
- ((part0(y:s,s':p) ==> s'++flatten(p) = y:s))
-
-8. SIMPLIFYING parallel the preceding trees (one step) leads to 
-
-All p y s:((part0(y:s,p) ==> flatten(p) = y:s)) & 
-All p y s s':
- ((part0(y:s,s':p) ==> s'++flatten(p) = y:s))
-
-9. NARROWING the preceding trees (one step) leads to 
-
-All p y s:((flatten(p) = y:s ==> flatten(p) = y:s)) & 
-All p y s s':
- ((part0(y:s,s':p) ==> s'++flatten(p) = y:s))
+(All p y s:(((flatten(p)=(y:s))==>(flatten(p)=(y:s))))&All p y s s':(((flatten((s':p))=(y:s))==>((s'++flatten(p))=(y:s)))))
 
 The axioms have been MATCHED against their redices.
 
-10. NARROWING the preceding trees (one step) leads to 
-
-All p y s:((flatten(p) = y:s ==> flatten(p) = y:s)) & 
-All p y s s':
- ((flatten(s':p) = y:s ==> s'++flatten(p) = y:s))
-
-The axioms have been MATCHED against their redices.
-
-11. SIMPLIFYING parallel the preceding trees (one step) leads to 
-
-All p y s s':
- ((flatten(s':p) = y:s ==> s'++flatten(p) = y:s))
-The formula coincides with no. 11
-
-12. SIMPLIFYING parallel the preceding trees (one step) leads to 
-
-All p y s s':
- ((s'++flatten(p) = y:s ==> s'++flatten(p) = y:s))
-
-13. SIMPLIFYING parallel the preceding trees (one step) leads to 
-
-All p y s s':
- True
-
-14. SIMPLIFYING parallel the preceding trees (one step) leads to 
+4. SIMPLIFYING the preceding formulas (3 steps) leads to 
 
 True
 
