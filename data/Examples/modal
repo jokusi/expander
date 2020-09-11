@@ -1,41 +1,41 @@
 -- modal
 
 defuncts: noProcs procs states labels atoms valid
-preds:    Sat SatL X P Q true false not \/ /\ `then` or and  
-          allanytrans allanytransL alloutL EX XE <> >< EF AF FE FA `EU` `AU`
-          -- nxt nxt2 F `U` `leadsto` 
-copreds:  `~` eqstate AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR`
-          -- Path eqpath G `W` `R` `H` 
+preds:    X sat satL -> true false not \/ /\ `then` or and alloutL
+          allanytrans allanytransL EX XE <> >< EF AF FE FA `EU` `AU`
+copreds:  ~ eqstate AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR`
 fovars:   s s' st st' lab at
-hovars:   X P Q
+hovars:   X
 
 axioms:
 
    procs == [0..noProcs-1]    -- used in many specifications that import modal
 
-&  valid$P == branch$filter(P)$states
-&  (Sat(at)$st <==> at `in` out$st)
-&  (SatL(at)$st$lab <==> at `in` outL$st$lab)
-
 -- state equivalence relations
  
- & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & alloutL(st,st')&
+ & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & 
+			           alloutL(st,st') &
 				   allanytrans(X)(st,st') &
 				   allanytrans(X)(st',st) &
 				   allanytransL(X)(st,st') &
 				   allanytransL(X)(st',st)))
 
- & (st `~` st' ===> out$st=out$st' & alloutL(st,st') &
-		    allanytrans(`~`)(st,st') & allanytrans(`~`)(st',st) &
-		    allanytransL(`~`)(st,st') & allanytransL(`~`)(st',st))
+ & (st ~ st' ===> out$st=out$st' & 
+		  alloutL(st,st') &
+		  allanytrans(~)(st,st') & allanytrans(~)(st',st) &
+		  allanytransL(~)(st,st') & allanytransL(~)(st',st))
+
+ & (alloutL(st,st') <==> all(rel(lab,outL(st)$lab=outL(st')$lab))$labels)
 
  & (allanytrans(P)(st,st')  <==> allany(P)(trans$st,trans$st'))
  & (allanytransL(P)(st,st') <==> all(rel(lab,allany(P)(transL(st)$lab,
 						       transL(st')$lab)))
  				     $labels)
- & (alloutL(st,st') <==> all(rel(lab,outL(st)$lab=outL(st')$lab))$labels)
 
 -- simplification of first-order state formulas
+
+ & (sat(at)$st <==> at `in` out$st)
+ & (satL(at,lab)$st <==> at `in` outL(st)$lab)
 
  & (EX(P)$st <==> any(P)$concat$trans(st):map(transL$st)$labels)
  & (AX(P)$st <==> all(P)$concat$trans(st):map(transL$st)$labels)
@@ -96,46 +96,3 @@ axioms:
  & ((P`AW`Q)$st ===> Q$st | P$st & AX(P`AW`Q)$st)	
  & ((P`ER`Q)$st ===> Q$st & (P$st | EX(P`ER`Q)$st))	-- release
  & ((P`AR`Q)$st ===> Q$st & (P$st | AX(P`AR`Q)$st))
-
-{- path equivalence relations
-
- & (Path <==> NU X.nxt$X)
- & (eqpath <==> NU X.rel((s,s'),out$head$s=out$head$s' & nxt2(X)(s,s')))
-
- & (Path$s ===> nxt(Path)$s)
- & (eqpath(s,s') ===> out$head$s=out$head$s' & nxt2(eqpath)(s,s')) 
-
--- simplification of first-order path formulas
-
- & (nxt(P)$s <==> head$tail$s `in` trans$head$s & P$tail$s)
- & (nxt2(Q)(s,s') <==> head$tail$s `in` trans$head$s & 
-		       head$tail$s' `in` trans$head$s' & 
-		       Q(tail$s,tail$s'))
-
--- simplification of second-order path formulas
-
- & (F$P <==> MU X.(P\/nxt$X))			-- finally
- & (G$P <==> NU X.(P/\nxt$X))			-- generally
- & (P`U`Q <==> MU X.(Q\/(P/\nxt$X)))		-- until
- & (P`W`Q <==> NU X.(Q\/(P/\nxt$X)))		-- weak until
- & (P`R`Q <==> NU X.(Q/\(P\/nxt$X)))		-- release
- & (P`leadsto`Q <==> G$P`then`F$Q)
- 
--- narrowing of first-order path formulas
-
- & (F(P)$s <=== P$s | nxt(F$P)$s)			-- finally
- & (G(P)$s ===> P$s & nxt(G$P)$s)			-- generally
- & ((P`U`Q)$s <=== Q$s | P$s & nxt(P`U`Q)$s)		-- until
- & ((P`W`Q)$s ===> Q$s | P$s & nxt(P`W`Q)$s)		-- weak until
- & ((P`R`Q)$s ===> Q$s & (P$s | nxt(P`R`Q)$s)) 	   	-- release
- & ((P`H`Q)$s ===> P$s & nxt((P`H`Q)\/(Q`H`P)\/G(Q))$s)	-- alternate
-
-theorems:
-
-   (F(Q)$s <=== (true`U`Q)$s)
- & (G(P)$s <=== (P`W`false)$s)
- & ((P`U`Q)$s <=== (P`W`Q)$s & F(Q)$s)
- & ((P`W`Q)$s <=== (P`U`Q)$s | G(P)$s)
- & (not(F$P)$s <=== (G$not$P)$s)
- & (not(G$P)$s <=== (F$not$P)$s)
- & (not(P`R`Q)$s <=== (not(P)`U`not(Q))$s) -}

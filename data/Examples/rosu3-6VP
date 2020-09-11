@@ -1,0 +1,269 @@
+-- /Users/Padawitz/ExpanderLib/rosu3-6VP
+
+0. Derivation of
+
+(star(t)*u) `~` (((t*star(t))*u)+u)
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. Adding
+
+  (z0 `~0` z1 <=== z0 = (star(t)*u) & z1 = (((t*star(t))*u)+u))
+
+to the axioms and applying COINDUCTION wrt
+
+  (t `~` u ===> beta(t) = beta(u) & delta(t,x) `~` delta(u,x))
+
+at positions
+[]
+of the preceding trees leads to 
+
+All t u x:(Any t0 u0:(t = (star(t0)*u0) & u = (((t0*star(t0))*u0)+u0)) ===> 
+           beta(t) = beta(u) & delta(t,x) `~0` delta(u,x))
+
+2. SIMPLIFYING the preceding trees (16 steps) leads to 
+
+All t0 u0:(beta(u0) = max(beta(t0)*beta(u0),beta(u0))) & 
+All x t0 u0:
+ (delta(star(t0)*u0,x) `~0` (delta((t0*star(t0))*u0,x)+delta(u0,x)))
+
+3. Applying the theorem
+
+  (max(x*y,y) = y <=== x = 0 | x = 1)
+
+at positions
+[0,0,1]
+of the preceding trees leads to 
+
+All t0 u0:(beta(u0) = beta(u0) & (beta(t0) = 0 | beta(t0) = 1)) & 
+All x t0 u0:
+ (delta(star(t0)*u0,x) `~0` (delta((t0*star(t0))*u0,x)+delta(u0,x)))
+
+4. Applying the theorem
+
+beta(t) = 0 | beta(t) = 1
+
+at positions
+[0,0,1]
+of the preceding trees leads to 
+
+All t0 u0:(beta(u0) = beta(u0) & True) & 
+All x t0 u0:
+ (delta(star(t0)*u0,x) `~0` (delta((t0*star(t0))*u0,x)+delta(u0,x)))
+
+5. SIMPLIFYING the preceding trees (one step) leads to 
+
+All x t0 u0:
+ (delta(star(t0)*u0,x) `~0` (delta((t0*star(t0))*u0,x)+delta(u0,x)))
+
+6. Applying the axioms
+
+  (delta(t*u,x) = (delta(t,x)*u) <=== beta(t) = 0)
+& (delta(t*u,x) = ((delta(t,x)*u)+delta(u,x)) <=== beta(t) = 1)
+
+at positions
+[0,0]
+of the preceding trees leads to 
+
+All x t0 u0:
+ ((delta(star(t0),x)*u0) `~0` (delta((t0*star(t0))*u0,x)+delta(u0,x)) & 
+  beta(star(t0)) = 0 | 
+  ((delta(star(t0),x)*u0)+delta(u0,x)) `~0` 
+  (delta((t0*star(t0))*u0,x)+delta(u0,x)) & 
+  beta(star(t0)) = 1)
+
+The axioms have been MATCHED against their redices.
+
+7. SIMPLIFYING the preceding trees (7 steps) leads to 
+
+All x t0 u0:
+ ((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (delta((t0*star(t0))*u0,x)+delta(u0,x)))
+
+8. Applying the axioms
+
+  (delta(t*u,x) = (delta(t,x)*u) <=== beta(t) = 0)
+& (delta(t*u,x) = ((delta(t,x)*u)+delta(u,x)) <=== beta(t) = 1)
+
+at positions
+[0,1,0]
+of the preceding trees leads to 
+
+All x t0 u0:
+ ((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  ((delta(t0*star(t0),x)*u0)+delta(u0,x)) & 
+  beta(t0*star(t0)) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0*star(t0),x)*u0)+delta(u0,x))+delta(u0,x)) & 
+  beta(t0*star(t0)) = 1)
+
+The axioms have been MATCHED against their redices.
+
+9. SIMPLIFYING the preceding trees (6 steps) leads to 
+
+All x t0 u0:
+ ((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  ((delta(t0*star(t0),x)*u0)+delta(u0,x)) & 
+  beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0*star(t0),x)*u0)+delta(u0,x))+delta(u0,x)) & 
+  beta(t0) = 1)
+
+10. Applying the axioms
+
+  (delta(t*u,x) = (delta(t,x)*u) <=== beta(t) = 0)
+& (delta(t*u,x) = ((delta(t,x)*u)+delta(u,x)) <=== beta(t) = 1)
+
+at positions
+[0,0,0,1,0,0]
+of the preceding trees leads to 
+
+All x t0 u0:
+ (((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+   (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) & 
+   beta(t0) = 0 | 
+   (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+   ((((delta(t0,x)*star(t0))+delta(star(t0),x))*u0)+delta(u0,x)) & 
+   beta(t0) = 1) & 
+  beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0*star(t0),x)*u0)+delta(u0,x))+delta(u0,x)) & 
+  beta(t0) = 1)
+
+The axioms have been MATCHED against their redices.
+
+11. SIMPLIFYING the preceding trees (4 steps) leads to 
+
+All x t0 u0:
+ ((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) & 
+  beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0*star(t0),x)*u0)+delta(u0,x))+delta(u0,x)) & 
+  beta(t0) = 1)
+
+12. Applying the axioms
+
+  (delta(t*u,x) = (delta(t,x)*u) <=== beta(t) = 0)
+& (delta(t*u,x) = ((delta(t,x)*u)+delta(u,x)) <=== beta(t) = 1)
+
+at positions
+[0,1,0,1,0,0,0]
+of the preceding trees leads to 
+
+All x t0 u0:
+ ((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) & 
+  beta(t0) = 0 | 
+  ((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+   ((((delta(t0,x)*star(t0))*u0)+delta(u0,x))+delta(u0,x)) & 
+   beta(t0) = 0 | 
+   (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+   (((((delta(t0,x)*star(t0))+delta(star(t0),x))*u0)+delta(u0,x))+delta(u0,x)) & 
+   beta(t0) = 1) & 
+  beta(t0) = 1)
+
+The axioms have been MATCHED against their redices.
+
+13. SIMPLIFYING the preceding trees (6 steps) leads to 
+
+All x t0 u0:
+ ((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) & 
+  beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  ((((delta(t0,x)*star(t0))*u0)+delta(u0,x))+delta(u0,x)) & 
+  beta(t0) = 1)
+
+14. Adding
+
+  x `~0` x
+
+to the axioms and applying nothing to the preceding trees leads to 
+
+All x t0 u0:
+ ((((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) & 
+  beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  ((((delta(t0,x)*star(t0))*u0)+delta(u0,x))+delta(u0,x)) & 
+  beta(t0) = 1)
+The entire goal coincides with no. 13
+
+15. Applying the theorem
+
+  x `~0` x
+
+at positions
+[0,0,0]
+of the preceding trees leads to 
+
+All x t0 u0:
+ (True & beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  ((((delta(t0,x)*star(t0))*u0)+delta(u0,x))+delta(u0,x)) & 
+  beta(t0) = 1)
+
+16. SIMPLIFYING the preceding trees (one step) leads to 
+
+All x t0 u0:
+ (beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  ((((delta(t0,x)*star(t0))*u0)+delta(u0,x))+delta(u0,x)) & 
+  beta(t0) = 1)
+
+17. Applying the theorem
+
+  ((t+u)+v) = (t+(u+v))
+
+at positions
+[0,1,0,1]
+of the preceding trees leads to 
+
+All x t0 u0:
+ (beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0,x)*star(t0))*u0)+(delta(u0,x)+delta(u0,x))) & 
+  beta(t0) = 1)
+
+18. SIMPLIFYING the preceding trees (one step) leads to 
+
+All x t0 u0:
+ (beta(t0) = 0 | 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) `~0` 
+  (((delta(t0,x)*star(t0))*u0)+delta(u0,x)) & 
+  beta(t0) = 1)
+
+19. Applying the axioms
+
+  (z0 `~0` z1 <=== z0 = (star(t)*u) & z1 = (((t*star(t))*u)+u))
+& x `~0` x
+
+at positions
+[0,1,0]
+of the preceding trees leads to 
+
+All x t0 u0:
+ (beta(t0) = 0 | True & beta(t0) = 1)
+
+The axioms have been MATCHED against their redices.
+
+20. SIMPLIFYING the preceding trees (one step) leads to 
+
+All t0:(beta(t0) = 0 | beta(t0) = 1)
+
+21. Applying the theorem
+
+beta(t) = 0 | beta(t) = 1
+
+at positions
+[0]
+of the preceding trees leads to 
+
+All t0:True
+
+22. SIMPLIFYING the preceding trees (one step) leads to 
+
+True
+

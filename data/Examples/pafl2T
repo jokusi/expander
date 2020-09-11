@@ -1,2 +1,2 @@
--- /Users/Padawitz/ExpanderLib/PAFL2T
-[DeriveMode False False, Match 2, Mark [[0, 0]], CreateIndHyp, Mark [], Narrow 1 True, Mark [], Simplify True 100 False, Mark [[0, 0, 0, 1], [1, 0, 0, 1]], Theorem False (F "===>" [F "part" [V "s", V "p"], F "==>" [F ">>" [V "!s", V "s"], F "=" [F "flatten" [V "p"], V "s"]]]), Mark [[0, 0, 0, 1, 0], [1, 0, 0, 1, 0]], Theorem False (F ">>" [F ":" [V "x", V "s"], V "s"]), Mark [], Simplify True 100 False, Mark []]
+-- /Users/Padawitz/ExpanderLib/pafl2T
+[Mark [[0, 0]], CreateIndHyp, Narrow 1 True, Simplify 100 False, Mark [[0, 0, 0, 1]], Mark [[0, 0, 0, 1], [1, 0, 0, 1]], Theorem False (F "===>" [F "part" [V "s", V "p"], F "==>" [F ">>" [V "!s", V "s"], F "=" [F "flatten" [V "p"], V "s"]]]), Mark [[0, 0, 0, 1, 0]], Mark [[0, 0, 0, 1, 0], [1, 0, 0, 1, 0]], Theorem False (F ">>" [F ":" [V "x", V "s"], V "s"]), Simplify 100 False]

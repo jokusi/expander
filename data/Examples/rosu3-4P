@@ -1,4 +1,4 @@
--- /Users/Padawitz/ExpanderLib/brzo1P
+-- /Users/Padawitz/ExpanderLib/rosu3-4P
 
 0. Derivation of
 
@@ -49,7 +49,7 @@ of the preceding factors leads to
 All t u:(t = star(a+b) & u = ((star(a)*star(b))*star(star(a)*star(b))) ===> 
          beta(t) = beta(u) & all(rel(x,delta(t,x) `~0` delta(u,x)))[a,b])
 
-5. SIMPLIFYING the preceding factors (100 steps) leads to 3factors.
+5. SIMPLIFYING the preceding factors (100 steps) leads to 3 factors.
 The current factor is given by
 
 star(a+b) `~0` ((star(a)*star(b))*star(star(a)*star(b)))
@@ -64,7 +64,7 @@ star(a+b) = star(a+b) &
 
 The axioms have been MATCHED against their redices.
 
-7. SIMPLIFYING the preceding factors (one step) leads to 2factors.
+7. SIMPLIFYING the preceding factors (one step) leads to 2 factors.
 The current factor is given by
 
 star(a+b) `~0` 
@@ -101,7 +101,7 @@ of the preceding trees leads to
 All t u:(t = star(a+b) & u = (star(b)*star(star(a)*star(b))) ===> 
          beta(t) = beta(u) & all(rel(x,delta(t,x) `~0` delta(u,x)))[a,b])
 
-11. SIMPLIFYING the preceding factors (88 steps) leads to 2factors.
+11. SIMPLIFYING the preceding factors (88 steps) leads to 2 factors.
 The current factor is given by
 
 star(a+b) `~0` ((star(a)*star(b))*star(star(a)*star(b)))
@@ -125,7 +125,7 @@ which is given by
 star(a+b) `~0` (star(b)*star(star(a)*star(b)))
 The entire goal coincides with no. 9
 
-14. NARROWING the preceding summands (one step) leads to 3summands.
+14. NARROWING the preceding summands (one step) leads to 3 summands.
 The current summand is given by
 
 star(a+b) = star(a+b) & (star(b)*star(star(a)*star(b))) = star(star(a)*star(b))

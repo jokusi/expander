@@ -1,0 +1,2 @@
+-- /Users/Padawitz/ExpanderLib/rosu3-6T
+[Simplifying False, SetStrat PA, Induction False 0, Simplify 100 False, Mark [[0]], AddAxioms [F "~0" [V "x", V "x"]], Mark [[0], [1]], Theorem False (F "~0" [V "x", V "x"]), Simplify 100 False]

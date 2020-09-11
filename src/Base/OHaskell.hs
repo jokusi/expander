@@ -14,16 +14,19 @@ module Base.OHaskell
   , zero
   , (++)
   , concat
+  , accumulate
+  , sequence
   , while
   , done
   ) where
 
 import Paths (getDataDir)
 
-import Control.Monad (when, MonadPlus(mzero,mplus), msum, guard)
+import Control.Monad (MonadPlus,when,guard)
+import qualified Control.Monad as Haskell
 import Data.Char (chr, ord, toLower, isLower, isDigit)
 import Data.IORef
-import Prelude hiding ((++),concat,(<*))
+import Prelude hiding ((++),concat,(<*),sequence)
 
 
 -- O'Haskell types
@@ -36,19 +39,25 @@ type Cmd = IO
 infixr 5 ++
 
 zero :: MonadPlus m => m a
-zero = mzero
+zero = Haskell.mzero
 
 (++) :: MonadPlus m => m a -> m a -> m a
-(++) = mplus
+(++) = Haskell.mplus
 
 concat :: MonadPlus m => [m a] -> m a
-concat = msum
+concat = Haskell.msum
+
+accumulate :: Monad m => [m a] -> m [a]
+accumulate = Haskell.sequence
+
+sequence :: Monad m => [m a] -> m ()
+sequence = Haskell.sequence_
 
 -- O'Haskell constructs
 while :: Request Bool -> Action -> Action
 while mb act = do
     b <- mb 
-    when b $ do
+    Haskell.when b $ do
         act
         while mb act 
 

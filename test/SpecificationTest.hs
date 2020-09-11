@@ -73,11 +73,13 @@ modifyIORef ref f = do
   let a = getter ref st
   State.put $ setter ref a st
 
+
 -- State
--- In: "     (.+)Ref <- newIORef (.+)"
+-- In: "    (.+)Ref <- newIORef (.+)"
 -- Out: "  , $1Ref_ :: $2"
 data SolverState = SolverState
   { ctreeRef_ :: (Maybe ())
+  , iniStatesRef_ :: Maybe TermS
   , nodeRef_ :: (Maybe ())
   , penposRef_ :: (Maybe ())
   , subtreeRef_ :: (Maybe ())
@@ -101,18 +103,6 @@ data SolverState = SolverState
   , newTreesRef_ :: Bool
   , restoreRef_ :: Bool
 
-  , canvSizeRef_ :: (Int,Int)
-  , cornerRef_ :: (Int,Int)
-  , currRef_ :: Int
-  -- , curr1Ref_ :: Int
-  , matchingRef_ :: Int
-  , noProcsRef_ :: Int
-  , proofPtrRef_ :: Int
-  , proofTPtrRef_ :: Int
-  , picNoRef_ :: Int
-  , stateIndexRef_ :: Int
-  , simplStratRef_ :: Strategy
-
   , axiomsRef_ :: [TermS]
   , conjectsRef_ :: [TermS]
   , indClausesRef_ :: [()]
@@ -133,10 +123,21 @@ data SolverState = SolverState
   , treepossRef_ :: [()]
   , treesRef_ :: [()]
 
+  , canvSizeRef_ :: (Int,Int)
+  , cornerRef_ :: (Int,Int)
+  , currRef_ :: Int
+  -- , curr1Ref_ :: Int
+  , matchingRef_ :: Int
+  , noProcsRef_ :: Int
+  , proofPtrRef_ :: Int
+  , proofTPtrRef_ :: Int
+  , picNoRef_ :: Int
+  , simplStratRef_ :: Strategy
+
   , numberedExpsRef_ :: ([()],Bool)
   , constraintsRef_ :: (Bool,[String])
 
-  , drawFunRef_ :: String
+  , drawFunRef_ :: TermS
   , picEvalRef_ :: String
   , picDirRef_ :: String
 
@@ -163,6 +164,7 @@ data SolverState = SolverState
 -- Attributes
 -- Out: "$1Ref = IORef $1Ref_ (\a st -> st{ $1Ref_ = $1Ref_ a})"
 ctreeRef = IORef ctreeRef_ (\a st -> st{ ctreeRef_ = a})
+iniStatesRef = IORef iniStatesRef_ (\a st -> st{ iniStatesRef_ = a})
 nodeRef = IORef nodeRef_ (\a st -> st{ nodeRef_ = a})
 penposRef = IORef penposRef_ (\a st -> st{ penposRef_ = a})
 subtreeRef = IORef subtreeRef_ (\a st -> st{ subtreeRef_ = a})
@@ -186,18 +188,6 @@ collSimplsRef = IORef collSimplsRef_ (\a st -> st{ collSimplsRef_ = a})
 newTreesRef = IORef newTreesRef_ (\a st -> st{ newTreesRef_ = a})
 restoreRef = IORef restoreRef_ (\a st -> st{ restoreRef_ = a})
 
-canvSizeRef = IORef canvSizeRef_ (\a st -> st{ canvSizeRef_ = a})
-cornerRef = IORef cornerRef_ (\a st -> st{ cornerRef_ = a})
-currRef = IORef currRef_ (\a st -> st{ currRef_ = a})
--- curr1Ref = IORef curr1Ref_ (\a st -> st{ curr1Ref_ = a})
-matchingRef = IORef matchingRef_ (\a st -> st{ matchingRef_ = a})
-noProcsRef = IORef noProcsRef_ (\a st -> st{ noProcsRef_ = a})
-proofPtrRef = IORef proofPtrRef_ (\a st -> st{ proofPtrRef_ = a})
-proofTPtrRef = IORef proofTPtrRef_ (\a st -> st{ proofTPtrRef_ = a})
-picNoRef = IORef picNoRef_ (\a st -> st{ picNoRef_ = a})
-stateIndexRef = IORef stateIndexRef_ (\a st -> st{ stateIndexRef_ = a})
-simplStratRef = IORef simplStratRef_ (\a st -> st{ simplStratRef_ = a})
-
 axiomsRef = IORef axiomsRef_ (\a st -> st{ axiomsRef_ = a})
 conjectsRef = IORef conjectsRef_ (\a st -> st{ conjectsRef_ = a})
 indClausesRef = IORef indClausesRef_ (\a st -> st{ indClausesRef_ = a})
@@ -217,6 +207,17 @@ theoremsRef = IORef theoremsRef_ (\a st -> st{ theoremsRef_ = a})
 transRulesRef = IORef transRulesRef_ (\a st -> st{ transRulesRef_ = a})
 treepossRef = IORef treepossRef_ (\a st -> st{ treepossRef_ = a})
 treesRef = IORef treesRef_ (\a st -> st{ treesRef_ = a})
+
+canvSizeRef = IORef canvSizeRef_ (\a st -> st{ canvSizeRef_ = a})
+cornerRef = IORef cornerRef_ (\a st -> st{ cornerRef_ = a})
+currRef = IORef currRef_ (\a st -> st{ currRef_ = a})
+-- curr1Ref = IORef curr1Ref_ (\a st -> st{ curr1Ref_ = a})
+matchingRef = IORef matchingRef_ (\a st -> st{ matchingRef_ = a})
+noProcsRef = IORef noProcsRef_ (\a st -> st{ noProcsRef_ = a})
+proofPtrRef = IORef proofPtrRef_ (\a st -> st{ proofPtrRef_ = a})
+proofTPtrRef = IORef proofTPtrRef_ (\a st -> st{ proofTPtrRef_ = a})
+picNoRef = IORef picNoRef_ (\a st -> st{ picNoRef_ = a})
+simplStratRef = IORef simplStratRef_ (\a st -> st{ simplStratRef_ = a})
 
 numberedExpsRef = IORef numberedExpsRef_ (\a st -> st{ numberedExpsRef_ = a})
 constraintsRef = IORef constraintsRef_ (\a st -> st{ constraintsRef_ = a})
@@ -252,6 +253,7 @@ initSolverState = SolverState
   Nothing
   Nothing
   Nothing
+  Nothing
   -- Nothing
 
   True
@@ -270,42 +272,41 @@ initSolverState = SolverState
   False
   False
 
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+  []
+
   (0,0)
   (30,20)
   0
   -- 0
   0
-  0
-  0
+  2
   0
   0
   0
   PA
 
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-  []
-
   ([],True)
   (True,[])
 
-  ""
+  (leaf "id")
   "tree"
   "picDir"
 
@@ -366,8 +367,14 @@ addAxioms t file = do
       then do
           writeIORef solPositionsRef []
           modifyIORef axiomsRef $ \axioms -> axioms `join` axs
+          noProcs <- readIORef noProcsRef
           modifyIORef simplRulesRef
             $ \simplRules -> simplRules `join` trips ["==","<==>"] axs
+                        `join1` (leaf "noProcs",[],mkConst noProcs)
+          simplRules <- readIORef simplRulesRef
+          let rhs = searchGet ((== "states") . root . pr1) simplRules
+          writeIORef iniStatesRef
+            $ do guard $ just rhs; Just $ pr3 $ snd $ get rhs
           modifyIORef transRulesRef
             $ \transRules -> transRules `join` trips ["->"] axs
           labGreen' $ newCls "axioms" file
@@ -455,55 +462,53 @@ addTheorems t file = do
 
 getSignature :: Request Sig
 getSignature = do
-    (ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
-    (sts,labs,ats,tr,trL,va,vaL) <- readIORef kripkeRef
-    simplRules <- readIORef simplRulesRef
-    transRules <- readIORef transRulesRef
-    (block,xs) <- readIORef constraintsRef
-    safe <- readIORef safeRef
+  (ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
+  (sts,labs,ats,tr,trL,va,vaL) <- readIORef kripkeRef
+  simplRules <- readIORef simplRulesRef
+  transRules <- readIORef transRulesRef
+  (block,xs) <- readIORef constraintsRef
+  safe <- readIORef safeRef
 
-    return $ let
-      isPred'       = (`elem` ps)  ||| projection
-      isCopred'     = (`elem` cps) ||| projection
-      isConstruct'  = (`elem` cs)  ||| just . parse int
-                      ||| just . parse real
-                      ||| just . parse quoted
-                      ||| just . parse (strNat "inj")
-      isDefunct'    = (`elem` ds) ||| projection
-      isFovar'      = (`elem` fs) . base
-      isHovar'      = (`elem` (map fst hs)) . base
-      hovarRel' x y = isHovar' x &&
-          case lookup (base x) hs of
-              Just es@(_:_) -> isHovar' y || y `elem` es
-              _ -> not $ isFovar' y
-      blocked' x = if block then z `elem` xs else z `notElem` xs
-                where z = head $ words x
-      simpls' = simplRules; transitions' = transRules
-      states' = sts; atoms' = ats; labels' = labs;
-      trans' = tr; transL' = trL; value' = va; valueL' = vaL
-      safeEqs' = safe; redexPos' = []
-      base = pr1 . splitVar
-      in Sig
-        { isPred      = isPred'
-        , isCopred    = isCopred'
-        , isConstruct = isConstruct'
-        , isDefunct   = isDefunct'
-        , isFovar     = isFovar'
-        , isHovar     = isHovar'
-        , blocked     = blocked'
-        , hovarRel    = hovarRel'
-        , simpls      = simpls'
-        , transitions = transitions'
-        , states      = states'
-        , atoms       = atoms'
-        , labels      = labels'
-        , trans       = trans'
-        , value       = value'
-        , transL      = transL'
-        , valueL      = valueL'
-        , safeEqs     = safeEqs'
-        , redexPos    = redexPos'
-        }
+  return $ let
+    isPred'       = (`elem` ps)  ||| projection
+    isCopred'     = (`elem` cps) ||| projection
+    isConstruct'  = (`elem` cs)  ||| just . parse real |||
+                    just . parse quoted ||| just . parse (strNat "inj")
+    isDefunct'    = (`elem` ds) ||| projection
+    isFovar'      = (`elem` fs) . base
+    isHovar'      = (`elem` (map fst hs)) . base
+    hovarRel' x y = isHovar' x &&
+        case lookup (base x) hs of
+            Just es@(_:_) -> isHovar' y || y `elem` es
+            _ -> not $ isFovar' y
+    blocked' x = if block then z `elem` xs else z `notElem` xs
+              where z = head $ words x
+    simpls' = simplRules; transitions' = transRules
+    states' = sts; atoms' = ats; labels' = labs;
+    trans' = tr; transL' = trL; value' = va; valueL' = vaL
+    safeEqs' = safe; redexPos' = []
+    base = pr1 . splitVar
+    in Sig
+      { isPred      = isPred'
+      , isCopred    = isCopred'
+      , isConstruct = isConstruct'
+      , isDefunct   = isDefunct'
+      , isFovar     = isFovar'
+      , isHovar     = isHovar'
+      , blocked     = blocked'
+      , hovarRel    = hovarRel'
+      , simpls      = simpls'
+      , transitions = transitions'
+      , states      = states'
+      , atoms       = atoms'
+      , labels      = labels'
+      , trans       = trans'
+      , value       = value'
+      , transL      = transL'
+      , valueL      = valueL'
+      , safeEqs     = safeEqs'
+      }
+
 
 parseConjects :: Sig -> FilePath -> String -> Action
 parseConjects sig file conjs =

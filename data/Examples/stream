@@ -3,10 +3,11 @@
 defuncts:   zeros ones blink blink' evens odds map zipWith zip bzip 
 	    fact facts iter1 iter2 fib fib0 fib1 addTail nats loop 
 	    inv switch morse morse1 morse2 morsef
-preds:      Nat X P FT Fmu Gmu /\ eqstream Fpath `ble` GF
-copreds:    NatStream Gpath `le` ~
+preds:      Nat X P true false not \/ /\ `then` `leadsto` `ble`
+            Fmu Gnu Fpath GF FG `U` `Umu` `Wnu` `Rnu` eqstream 
+copreds:    NatStream Gpath `le` `W` `Rpath` ~
 fovars:     n z z' s s'
-hovars:     X P F
+hovars:     X
 
 axioms:
 
@@ -108,11 +109,20 @@ axioms:
 
 & (Fpath(P)$s <=== P$s | Fpath(P)$tail$s)   	   	-- finally
 & (Gpath(P)$s ===> P$s & Gpath(P)$tail$s)		-- generally
-
+& ((P`U`Q)$s <=== Q$s | P$s & (P`U`Q)$tail$s)		-- until
+& ((P`W`Q)$s ===> Q$s | P$s & (P`W`Q)$tail$s)		-- weak until
+& ((P`Rpath`Q)$s ===> Q$s & (P$s | (P`Rpath`Q)$tail$s)) -- release
+ 
 & (GF <==> Gpath.Fpath)
+& (FG <==> Fpath.Gpath)
 
 & (Fmu$P <==> MU X.(P\/X.tail))				-- finally
-& (Gmu$P <==> NU X.(P/\X.tail))				-- generally
+& (Gnu$P <==> NU X.(P/\X.tail))				-- generally
+& (P`Umu`Q <==> MU X.(Q\/(P/\X.tail)))			-- until
+& (P`Wnu`Q <==> NU X.(Q\/(P/\X.tail)))			-- weak until
+& (P`Rnu`Q <==> NU X.(Q/\(P\/X.tail)))			-- release
+& (P`leadsto`Q <==> Gmu$P`then`Fmu$Q)	
+
 & ((P/\Q)$s <==> P$s & Q$s)
 & ((P\/Q)$s <==> P$s | Q$s)
 
@@ -139,6 +149,14 @@ theorems:
 & (x `ble` z <=== x `ble` y & y `ble` z)
 & (x `ble` y & y `ble` z & x = z ===> y = z & x = y)
 & (x+z `ble` y+z' <=== x `ble` y & z `ble` z')
+
+& (Fpath(Q)$s <=== (true`U`Q)$s)
+& (Gpath(P)$s <=== (P`W`false)$s)
+& ((P`U`Q)$s <=== (P`W`Q)$s & Fpath(Q)$s)
+& ((P`W`Q)$s <=== (P`U`Q)$s | Gpath(P)$s)
+& (not(Fpath$P)$s <=== (Gpath$not$P)$s)
+& (not(Gpath$P)$s <=== (Fpath$not$P)$s)
+& (not(P`Rpath`Q)$s <=== (not(P)`U`not(Q))$s) 
 
 conjects:
 
@@ -180,13 +198,11 @@ conjects:
 & (s = x & s' = zip(evens$x,odds$x) | 
    s = tail$x & s' = zip(odds$x,evens$x) ==> eqstream(s,s'))
 
-
 & (x `le` y & y `le` z ==> x `le` z)			-- kozen1
 & (x `le` y & z `le` z' ==> x+z `le` y+z')		-- kozen2
 
 -- & GF((=!x).head)$blink	--> !x=0 | !x=1		-- fairblinkx
 -- & NatStream$1:2:3:!s		--> !s = 1:2:3:!s |	-- natstreamSol
 				--  !s = 2:3:!s | !s = 3:!s
-
 
 

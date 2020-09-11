@@ -1,0 +1,39 @@
+-- /Users/Padawitz/ExpanderLib/unifyExaP
+
+0. Derivation of
+
+Any y:((P(f(y,f(h(y,y),y))) & P(f(y,f(h(y,g(g(x,x),x)),y))) & 
+        All x:((P(f(y,f(h(y,y),y))) & P(f(y,f(h(y,g(g(x,x),x)),y))) & Q(h(x,x))))))
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. FORMULA UNIFICATION at positions
+[0,0]
+[0,1]
+of the preceding trees leads to 
+
+Any y:((P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x,x),x)),g(g(x,x),x)))) & 
+        P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x,x),x)),g(g(x,x),x)))) & 
+        All x0:((P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x,x),x)),g(g(x,x),x)))) & 
+                 P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x0,x0),x0)),g(g(x,x),x)))) & 
+                 Q(h(x0,x0))))))
+
+2. SIMPLIFYING depthfirst the preceding trees (one step) leads to 
+
+P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x,x),x)),g(g(x,x),x)))) & 
+All x0:P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x,x),x)),g(g(x,x),x)))) & 
+All x0:P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x0,x0),x0)),g(g(x,x),x)))) & 
+All x0:Q(h(x0,x0))
+
+3. SIMPLIFYING depthfirst the preceding trees (one step) leads to 
+
+P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x,x),x)),g(g(x,x),x)))) & 
+All x0:P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x0,x0),x0)),g(g(x,x),x)))) & 
+All x0:Q(h(x0,x0))
+
+4. SIMPLIFYING depthfirst the preceding trees (one step) leads to 
+
+All x0:P(f(g(g(x,x),x),f(h(g(g(x,x),x),g(g(x0,x0),x0)),g(g(x,x),x)))) & 
+All x0:Q(h(x0,x0))
+

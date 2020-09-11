@@ -222,7 +222,8 @@ take(5)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30]
 take(6)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30,62]
 						   -- 89 steps         (10.2.20)
 take(3)$CSI(+1)(*2)$0                          <+> --> [0,2,6]
- 						   -- 50 steps         (21.6.20)
+ 						   -- 50 steps         (30.8.20)
+ 						   -- (all strategies)
 foo(3)					       <+> --> 0		
                   -- 15 depthfirst, 19 parallel, 27 breadthfirst steps  (4.2.20)
 goo(3)					           --> 0	       

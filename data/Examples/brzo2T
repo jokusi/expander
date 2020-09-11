@@ -1,2 +1,0 @@
--- /Users/Padawitz/ExpanderLib/brzo2T
-[DeriveMode False False, Match 0, Mark [], Induction False 0, Mark [], Simplify True 100 False, Mark [[1]], AddAxioms [F "`~0`" [V "x", V "x"]], Narrow 0 False, Mark [], Narrow 1 True, Mark [], Simplify True 100 False, Mark []]

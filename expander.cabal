@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 921ca27d62fef5061d30b675dd6422a1a8ffe71b8c33b5ec2b10ba4d10ab618e
+-- hash: 636e093f49faea8adf5614760f2739062237b5c2545f22532e29f86f0e1da875
 
 name:           expander
 version:        3.0.0.0
@@ -85,12 +85,6 @@ data-files:
     Examples/blocksPic
     Examples/bool
     Examples/bottle
-    Examples/brzo1P
-    Examples/brzo1T
-    Examples/brzo2P
-    Examples/brzo2T
-    Examples/brzo3P
-    Examples/brzo3T
     Examples/brzozowski
     Examples/btree
     Examples/bzipP
@@ -360,12 +354,19 @@ data-files:
     Examples/natstream
     Examples/natstreamP
     Examples/natstreamT
-    Examples/NEED0proof
-    Examples/NEED1proof
-    Examples/NEED2proof
     Examples/needcoind
-    Examples/NEEDproof
-    Examples/NEEDterm
+    Examples/needFun0P
+    Examples/needFun0T
+    Examples/needFunP
+    Examples/needFunT
+    Examples/needPred0P
+    Examples/needPred0T
+    Examples/needPredP
+    Examples/needPredT
+    Examples/needTrans0P
+    Examples/needTrans0T
+    Examples/needTransP
+    Examples/needTransT
     Examples/nemo.gif
     Examples/nemo2.gif
     Examples/nemos
@@ -488,6 +489,12 @@ data-files:
     Examples/robotActs
     Examples/robotActsP
     Examples/robotGraph
+    Examples/rosu3-4P
+    Examples/rosu3-4T
+    Examples/rosu3-6P
+    Examples/rosu3-6T
+    Examples/rosu3-6VP
+    Examples/rosu3-6VT
     Examples/rotate
     Examples/safe
     Examples/safeT
@@ -587,6 +594,8 @@ data-files:
     Examples/tweety/tweety_8.gif
     Examples/tweety/tweety_9.gif
     Examples/tweetynet
+    Examples/unifyExaP
+    Examples/unifyExaT
     Examples/updeq
     Examples/UPDproof
     Examples/UPDterm

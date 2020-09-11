@@ -3,7 +3,7 @@
 defuncts: head tail init last take drop <=< kfold
 preds:	P Q R
 fovars:	x y z s s' n
-hovars:	F G
+hovars:	F G P Q R
 
 axioms:
 

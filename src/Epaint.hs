@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, March 2020
-                  Jos Kusiek, March 2020
+Copyright   : (c) Peter Padawitz, August 2020
+                  Jos Kusiek, August 2020
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -87,8 +87,8 @@ data Solver = Solver
   
 data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep Bool |
-            CollapseVars [String] | ComposePointers | CopySubtrees |
-            CreateIndHyp | CreateInvariant Bool | DecomposeAtom | DerefNodes |
+            CollapseVars | ComposePointers | CopySubtrees | CreateIndHyp |
+            CreateInvariant Bool | DecomposeAtom | DerefNodes | Distribute |
             EvaluateTrees | ExpandTree Bool Int | FlattenImpl |
             Generalize [TermS] | Induction Bool Int | Mark [[Int]] |
             Matching Int | Minimize | ModifyEqs Int |
@@ -200,7 +200,7 @@ data Scanner = Scanner
     }
 
 scanner :: (Widget_ -> Action) -> Template Scanner
-scanner act = do                  -- used by Epaint > drawPict,scaleAndDraw
+scanner act = do                                -- used by drawPict,scaleAndDraw
     runRef     <- newIORef undefined
     runningRef <- newIORef False
     asRef      <- newIORef []
@@ -270,16 +270,15 @@ subtreesMsg :: String -> String
 subtreesMsg solver = "The selected subtrees of " ++ solver ++ 
                      " have the following pictorial representations:"
 
-treesMsg :: (Eq a, Num a, Show a, Show a1) =>
-            a1 -> a -> String -> Bool -> String
+treesMsg :: (Eq b, Num b, Show b, Show a) => a -> b -> String -> Bool -> String
 treesMsg k 1 solver b =
-        "A single tree has a pictorial representation. It is " ++
-        ("solved and " `onlyif` b) ++ "located at position " ++ show k ++ " of "
-       ++ solver ++ "."
-treesMsg k n solver b =
-        show n ++ " trees have pictorial representations. The one below is " ++
-        ("solved and " `onlyif` b) ++ "located at position " ++ show k ++ " of "
-       ++ solver ++ "."
+                     "A single tree has a pictorial representation. It is " ++
+                     ("solved and " `onlyif` b) ++ "located at position " ++
+                     show k ++ " of " ++ solver ++ "."
+treesMsg k n solver b = show n ++
+                  " trees have pictorial representations. The one below is " ++
+                  ("solved and " `onlyif` b) ++ "located at position " ++
+                  show k ++ " of " ++ solver ++ "."
 
 saved :: String -> String -> String
 saved "graphs" file = "The trees have been saved to " ++ file ++ "."
@@ -1898,7 +1897,7 @@ nodeLevels b (pict,arcs) = iter (replicate (length nodes) 0) nodes
                           in f (updList levels j (levels!!i+k),free`minus1`j) j
 
 
--- used by Epaint > shelf,colorLevels
+-- used by shelf,colorLevels
 
 -- colorLevels b pict arcs colors all nodes of pict on the same level with the
 -- same color.
@@ -2038,7 +2037,7 @@ getRectIndices pict sc rect = [i | i <- indices_ scpict,
                               where scpict = scalePict sc pict
                                     f = (`inRect` rect)
 
--- used by Epaint > addOrRemove,releaseButton,undo
+-- used by addOrRemove,releaseButton,undo
 
 splitPath :: [a] -> [[a]]
 splitPath ps = if null rs then [qs] else qs:splitPath (last qs:rs)
@@ -2149,7 +2148,7 @@ mkWidg (Tria (p@(x,y),a,c,i) r)   = Path0 c i (filled c) $ last qs:qs
                                           z = y+lg*0.57735    -- y+lg*sqrt 3/3
                                           qs = map (rotate p a) ps
 
--- used by Epaint > drawWidget,hulls
+-- used by drawWidget,hulls
 
 circlePts :: Point -> Double -> Double -> [Double] -> Path
 circlePts p a inc = fst . foldl f ([],a)
@@ -2217,14 +2216,14 @@ mkPict (Turtle (p,a,c,i) sc acts) =
 
 mkPict w = [w]
 
--- used by Epaint > convexPath,hulls,drawWidget
+-- used by convexPath,hulls,drawWidget
 
 inFrame :: Point -> Point -> Point -> Bool
 inFrame (x1,y1) (x,y) (x2,y2) = min x1 x2 `le` x && x `le` max x1 x2 &&
                                 min y1 y2 `le` y && y `le` max y1 y2
                                 where le a b = a < b || abs (a-b) < 0.5
 
--- used by Epaint > crossing,inWidget,strands
+-- used by crossing,inWidget,strands
 
 -- interior p lines returns True iff p is located within lines.
 
@@ -2232,14 +2231,14 @@ interior :: Point -> Lines -> Bool
 interior p@(_,y) = odd . length . filter (just . crossing ((p,q),q)) . addSuc
                    where q = (2000,y)
 
--- used by Epaint > strands,joinPict 13/14
+-- used by strands,joinPict 13/14
 
 -- inWidget p@(x,y) = (== p) . coords ||| any (interior p) . getFrameLns 
 
 inWidget :: Point -> Widget_ -> Bool
 inWidget p w = inFrame (x1,y1) p (x2,y2) where (x1,y1,x2,y2) = widgFrame w
 
--- used by Epaint > getWidget,joinPict 6
+-- used by getWidget,joinPict 6
 
 -- getWidget p scale pict returns a widget of pict close to p and scales it.
 
@@ -2247,13 +2246,12 @@ getWidget :: Point -> Double -> Picture -> Maybe (Int,Widget_)
 getWidget p sc = searchGetR (not . isSkip &&& inWidget p) .
                  map (transXY (5,5) . scaleWidg sc)
 
--- used by Epaint > moveButton,pressButton
+-- used by moveButton,pressButton
 
 getFramePts :: Bool -> Widget_ -> Path
 getFramePts edgy = concatMap getPoints . hulls edgy
 
--- used by Epaint > getRectIndices,gravity,mkSnow,morphPict,turtleFrame,
--- widgFrame
+-- used by getRectIndices,gravity,mkSnow,morphPict,turtleFrame,widgFrame
 
 getFrameLns :: Widget_ -> [Lines]
 getFrameLns = map getLines . hulls False
@@ -2292,8 +2290,7 @@ hulls edgy = f
        f (Repeat w)   = f w
        f _            = []
 
--- used by Epaint > dots,getFrameLns,getFramePts,joinPict,outline,splinePict,
--- strands
+-- used by dots,getFrameLns,getFramePts,joinPict,outline,splinePict,strands
 
 stringsInPict :: [Widget_] -> [String]
 stringsInPict = concatMap stringsInWidg
@@ -2673,10 +2670,10 @@ widgConst c sizes@(n,width) spread = f where
                                              [p0,(-4,-8),(0,-150),(4,-8),p0]
    f (F "taichi" s)      = jturtle $ taichi sizes s c
    f (F "text" ts)       = Just $ textWidget c (n,width) $ showTree False
-                                                         $ colHidden $ mkTup ts
+                                                         $ mkHidden $ mkTup ts
    f (F "tree" [t])      = Just $ Tree st0B n c $ mapT h ct
-                           where ct = coordTree width spread (20,20) $
-                                                             colHidden t
+                           where ct = coordTree width spread (20,20)
+                                                             $ mkHidden t
                                  (_,(x,y)) = root ct
                                  h (a,(i,j)) = (a,fromInt2 (i-x,j-y),width a)
    f (F "tria" [r])      = do r <- parseReal r; Just $ Tria (st0 c) r
@@ -2904,7 +2901,7 @@ wTreeToBunches mode (hor,ver) grade t = w:ws2
                     where vs = sort rel [w | w <- ws, y == ycoord w]
                           rel v w = xcoord v > xcoord w
 
--- used by Epaint > arrangeGraph,concatGraphs,newPaint
+-- used by arrangeGraph,concatGraphs,newPaint
 
 shiftW :: Num a => ((t, t) -> (a, a)) -> a -> [(t, a)] -> [a]
 shiftW maxmin d (x:xs) = fst $ foldl f ([0],x) xs
@@ -2986,7 +2983,7 @@ graphToTree graph = eqsToGraph [] eqs
    where (eqs,_) = relToEqs 0 $ map f $ propNodes $ fst graph
          f i = (show i,[show $ last path | k:path <- buildPaths graph, k == i])
 
--- used by Epaint > arrangeGraph,showInSolver
+-- used by arrangeGraph,showInSolver
 
 -- * __Morphing__, __scaling__ and __framing__
 
@@ -3052,7 +3049,7 @@ widgFrame :: Widget_ -> (Double, Double, Double, Double)
 widgFrame (Turtle st sc acts) = turtleFrame st sc acts
 widgFrame w                   = minmax $ coords w:getFramePts True w
 
--- used by Epaint > scaleAndDraw,addFrame,shelf
+-- used by scaleAndDraw,addFrame,shelf
 
 turtleFrame ::State -> Double -> TurtleActs -> (Double,Double,Double,Double)
 turtleFrame (p,a,_,_) sc acts = minmax $ fst $ foldl f ([p],[(p,a,sc)]) acts
@@ -3075,7 +3072,7 @@ turtleFrame (p,a,_,_) sc acts = minmax $ fst $ foldl f ([p],[(p,a,sc)]) acts
                               (x1,y1,x2,y2) = minmax $ getFramePts True 
                                                       $ moveTurnScale b p a sc w
 
--- used by Epaint > actsCenter,widgFrame
+-- used by actsCenter,widgFrame
 
 -- * __Picture__ operators
 
@@ -3103,7 +3100,7 @@ moveTurn _ p a    = updState f where f (_,_,c,i) = (p,a,c,i)
 moveTurnScale :: Bool -> Point -> Double -> Double -> Widget_ -> Widget_
 moveTurnScale b p a sc = scaleWidg sc . moveTurn b p a
 
--- used by Epaint > mkPict,widgFrame
+-- used by mkPict,widgFrame
 
 updCol,updCol0 :: Color -> WidgTrans
 updCol (RGB 0 0 0)  = id
@@ -3504,7 +3501,7 @@ getSupport graph s t =
       where f path = s `elem` path && t `elem` path && g s <= g t
                      where g s = getInd s path
 
--- used by Epaint > releaseButton
+-- used by releaseButton
 
 pictToWTree :: Picture -> TermW
 pictToWTree pict = case map f pict of [t] -> t
@@ -3517,7 +3514,7 @@ pictToWTree pict = case map f pict of [t] -> t
                                      where p = i:getPos x
                       g _ t        = t
 
--- used by Epaint > newPaint,concatGraphs
+-- used by newPaint,concatGraphs
 
 concatGraphs :: Point -> Double -> String -> [Graph] -> Graph 
 concatGraphs _ _ _ []                 = nil2
@@ -3529,7 +3526,7 @@ concatGraphs spread grade mode graphs = (concat pictures,foldl g [] edges)
        g arcs = (arcs++) . map (map (+ length arcs))
        m = if isTree mode then mode else "t1"
 
--- used by Epaint > addOrRemove,arrangeOrCopy
+-- used by addOrRemove,arrangeOrCopy
 
 -- bunchesToArcs (pict,arcs) removes the bunches of pict and adds their edges to
 -- arcs.
@@ -3557,7 +3554,7 @@ bunchesToArcs graph@(pict,_) = (pict2,foldl removeCycles arcs1 cycles)
                                                   | otherwise = arcs!!n
 
 
--- used by Epaint > arrangeGraph,concatGraphs,scaleAndDraw,showInSolver
+-- used by arrangeGraph,concatGraphs,scaleAndDraw,showInSolver
 
 -- addSmoothArc graph (s,t,..) adds a smooth line from s to t together with the
 -- control points of the line.
@@ -3579,7 +3576,7 @@ addSmoothArc (pict,arcs) (s,t,v,w,ts)
                                targets = lg:ts `minus1` t
                                setArcs n = fold2 updList $ arcs++replicate n []
 
--- used by Epaint > releaseButton,bunchesToArcs
+-- used by releaseButton,bunchesToArcs
 
 arcsToBunches :: Graph -> Picture
 arcsToBunches (Bunch w is:pict,ks:arcs) 
@@ -3601,7 +3598,7 @@ buildAndDrawPaths graph@(pict,_) = map f $ buildPaths graph
                                          p' = hullCross (head $ ps++[q],p) v
                                          q' = hullCross (last $ p:ps,q) w
 
--- used by Epaint > scaleAndDraw
+-- used by scaleAndDraw
 
 -- exchgWidgets pict s t exchanges the positions of nodes s and t in the graph
 -- and in the plane.
@@ -3611,7 +3608,7 @@ exchgWidgets pict s t = updList (updList pict s $ moveWidg (coords v) w) t
                                                 $ moveWidg (coords w) v
                         where (v,w) = (pict!!s,pict!!t)
 
--- used by Epaint > arrangeButton,releaseButton
+-- used by arrangeButton,releaseButton
 
 -- exchgPositions graph s t exchanges the positions of nodes s and t of graph in
 -- the plane. 
@@ -3635,7 +3632,7 @@ exchgPositions graph@(pict,arcs) s t = (exchgWidgets pict s t,
                                  where arcs' = updList arcs m (arcs!!m`join1`n)
             paths2arcs arcs _ = arcs
 
--- used by Epaint > permutePositions,releaseButton
+-- used by permutePositions,releaseButton
 
 -- buildPaths graph regards the nodes of each maximal path p of graph consisting
 -- of red dots as control points of smooth lines that connect a direct
@@ -3662,8 +3659,7 @@ buildPaths (pict,arcs) = connect $ concatMap f $ indices_ pict
                               f2 path = last path == hpath && headdot
                               connectC path i = connect2 path $ context i paths
 
--- used by Epaint > buildAndDrawPaths,exchgPositions,graphToTree,releaseButton,
--- subgraph
+-- used by buildAndDrawPaths,exchgPositions,graphToTree,releaseButton,subgraph
 
 -- CROSSINGS and PICTURE EXTENSIONS
 
@@ -3690,7 +3686,7 @@ hullCross line@(p1@(x1,y1),p2@(x2,y2)) w =
            f ls = if null ps then [p2] else map get ps
                 where ps = filter just $ map (crossing (line,p2)) $ addSuc ls
 
--- used by Epaint > buildAndDrawPaths,convexPath,drawTrees
+-- used by buildAndDrawPaths,convexPath,drawTrees
 
 -- crossing line1 line2 returns the crossing point of line1 with line2.
 
@@ -3723,7 +3719,7 @@ crossing ((p1@(x1, y1), p2@(x2, _)), p5)
                                  (p /= p4 || inFrame p3 p p6)
                         Just p
 
--- used by Epaint > crossings,hullCross,interior
+-- used by crossings,hullCross,interior
 
 -- crossings lines1 lines2 returns all triples (p,line1,line2) with line1 in
 -- lines1, line2 in lines2 and crossing point p of line1 and line2.
@@ -3735,7 +3731,7 @@ crossings lines1 lines2 = [(get p,(fst line1,fst line2)) |
                             line1 <- addSuc lines1, line2 <- addSuc lines2,
                            let p = crossing line1 line2, just p]
 
--- used by Epaint > strands
+-- used by strands
 
 addSuc :: Lines -> [(Line_,Point)]
 addSuc [] = []
@@ -3808,7 +3804,7 @@ strands pict = (hcs,map pr3 inner,innerCols,outer,map col outer)
                               where g i = connect . updList pss i
            connect _ = []
 
--- used by Epaint > dots,joinPict,outline,planarWidg,widgArea
+-- used by dots,joinPict,outline,planarWidg,widgArea
 
 joinPict :: Int -> PictTrans
 joinPict m pict = case m of
@@ -3841,7 +3837,7 @@ joinPict m pict = case m of
                                where f qs = all g ps
                                             where g p = interior p $ mkLines qs
 
--- used by Epaint > scaleAndDraw,widgets
+-- used by scaleAndDraw,widgets
 
 {- |
 convexHull ps computes the convex hull of ps by splitting ps into halves and 
@@ -3906,7 +3902,7 @@ convexPath ps pict = if straight ps then (h ps,ps) else (h $ last qs:qs,qs)
         g p q = hullCross (p,q) $ pict!!get (search ((== q) . coords) pict)
         h ps = zipWith f ps $ tail ps
 
--- used by Epaint > scaleAndDraw
+-- used by scaleAndDraw
 
 -- * __Turtle actions__
 
@@ -4407,7 +4403,7 @@ graphString :: Parser ([Widget_], [[Int]])
 graphString = do symbol "("; pict <- list widgString; symbol ","
                  arcs <- list (list int); symbol ")"; return (pict,arcs)
 
--- used by Epaint > loadGraph
+-- used by loadGraph
 
 widgString :: Parser Widget_
 widgString = concat [do symbol "Arc"; ((x,y),a,c,i) <- state; t <- arcType
@@ -4526,4 +4522,4 @@ replaceCommandMenu connectIdRef menuItem act = do
     id <- menuItem `on` menuItemActivated $ act
     writeIORef connectIdRef id
 
--- used by Epaint > loadWidget
+-- used by loadWidget

@@ -1,7 +1,7 @@
 -- brzozowski
 
-constructs: 	star mt eps a b c int
-defuncts: 	delta beta unfold1 unfold2 step S A B reg regI
+constructs: 	+ * star mt eps a b c int
+defuncts: 	delta beta unfold1 unfold2 step S A B reg 
 preds:		RegExp
 copreds:	~
 fovars: 	t u v w 
@@ -13,16 +13,16 @@ axioms:
 (RegExp$t*u <=== RegExp$t & RegExp$u) &
 (RegExp$star$t <=== RegExp$t) &
 
-(delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &  		  -- for seqpar
-(delta(t*u,x) = delta(t,x)*u+delta(u,x) <=== beta$t=1) &
+-- (delta(t*u,x) = delta(t,x)*u <=== beta$t=0) &  	-- see seqparP
+-- (delta(t*u,x) = delta(t,x)*u+delta(u,x) <=== beta$t=1) &
 
--- delta(t*u,x) == delta(t,x)*u+ite(beta$t=0,mt,delta(u,x)) & 
+delta(t*u,x) == delta(t,x)*u+ite(beta$t=0,mt,delta(u,x)) & 
 
 delta(t+u,x) == delta(t,x)+delta(u,x) &
 delta(star$t,x) == delta(t,x)*star(t) &
 delta(int,x) == ite(Int$x,eps,mt) &
 
--- (x `in` [a,b,c,mt,eps] ==> delta(x,y) == ite(x=y,eps,mt)) &
+(x `in` [a,b,c,mt,eps] ==> delta(x,y) == ite(x=y,eps,mt)) &
 
 beta$t+u == max(beta$t,beta$u) &
 beta$t*u == beta(t)*beta(u) &
@@ -31,7 +31,6 @@ beta$star$t == 1 &
 
 x*max(y,z) == max(x*y,x*z) &		-- (5) see FCAM, Example SEQPAR
 
-{-
 (x `in` [a,b,c,mt,int] ==> beta(x) == 0) &
 
 t+mt == t & 				-- (2) see FCAM, Example SEQPAR
@@ -43,16 +42,15 @@ t*mt == mt &
 mt*t == mt &
 
 t+ite(x,u,v) == ite(x,t+u,t+v) &	-- (4) see FCAM, Example SEQPAR
-ite(x,u,v)+t == ite(x,u+t,v+t) &	
--}	
+ite(x,u,v)+t == ite(x,u+t,v+t) &		
 
 (x `in` y:s <==> x = y | x `in` s) &	-- see regexpP
 
 unfold1$t == beta . sfold(delta)$t &	        -- sfold = strict foldl
 unfold2$t == betaBro . sfold(deltaBro)$t &      -- (see Esolve.hs)
 
-reg == star$a+b*c &
-regI == star$a+int*c &
+reg$1 == star$a+b*c &
+reg$2 == star$a+int*c &
 
 -- CF grammar
 
@@ -60,9 +58,9 @@ step$S == a*B+b*A+eps &			-- accepts words with the same
 step$A == a*S+b*A*A &			-- number of a's and b's
 step$B == b*S+a*B*B &
 
-(t ~ u ===> beta$t = beta$u & delta(t,x) ~ delta(u,x)) 
+-- (t ~ u ===> beta$t = beta$u & delta(t,x) ~ delta(u,x)) -- see seqpar
 
--- (t ~ u ===> beta$t = beta$u & all(rel(x,delta(t,x)~delta(u,x)))[a,b])
+(t ~ u ===> beta$t = beta$u & all(rel(x,delta(t,x)~delta(u,x)))[a,b])
 
 theorems:
 
@@ -74,38 +72,42 @@ t*(u+v) = t*u+t*v &
 
 -- (max(x*y,y) = y <=== x = 0 | x = 1) &
 
--- (t+u ~0 v+w <=== t ~0 v & u ~0 w) &  -- ~0 is bisimulation modulo +
--- t ~0 t				-- and reflexive
+-- (t+u ~0 v+w <=== t ~0 v & u ~0 w) &  -- ~0 is a bisimulation modulo +
+-- t ~0 t				-- and reflexive	(7)
 
 conjects:
 
-star(a+b) ~ star(star(a)*star(b)) &	-- brzo1 (Rosu, Example 3.4)
+star(a+b) ~ star(star(a)*star(b)) &	-- rosu3-4 (Rosu, Example 3.4)
 					-- 3 x coinduction + 3 x narrowing
-star(t+u) ~ star(star(t)*star(u)) &	-- brzo1v	
 
-star(a)*b ~ a*star(a)*b+b &		-- brzo2 (Rosu, Example 3.6)
+star(t+u) ~ star(star(t)*star(u)) &	-- rosu3-4V	
+
+star(a)*b ~ a*star(a)*b+b &		-- rosu3-6 (Rosu, Example 3.6)
 					-- 1 x coinduction + 1 x narrowing
-star(t)*u ~ t*star(t)*u+u &		-- brzo2v	
+
+star(t)*u ~ t*star(t)*u+u &		-- rosu3-6V	
 					-- 1 x coinduction + theorems
+
 t*(u+v) ~ t*u+t*v &			-- seqpar (FCAM, Example SEQPAR)
-					-- 1 x coinduction + theorems (3),(6)
+					-- 1 x coinduction + (3),(6),(7)
 					-- + substitutions
+
 (RegExp$t ==> beta$t = 0 | beta$t = 1)	-- regexp
 					-- 1 x induction
 terms:
 
-unfold1(reg)[a,b,c,a]	<+>		--> 1 	35 steps (some are slow)
-unfold1(regI)[a,5,c,a]	<+>		--> 1	35 steps (some are slow)
-unfold1(reg)[b,c,a,c]	<+>		--> 0	34 steps (some are slow)
+unfold1(reg$1)[a,b,c,a]	<+>		--> 1 	35 steps (some are slow)
+unfold1(reg$1)[b,c,a,c]	<+>		--> 0	34 steps (some are slow)
+unfold1(reg$2)[a,5,c,a]	<+>		--> 1	35 steps (some are slow)
 
-unfold2(reg)[a,b,c,a]	<+>		--> 1	8 steps 
-unfold2(regI)[a,5,c,a]	<+>		--> 1	8 steps 
-unfold2(reg)[b,c,a,c]	<+>		--> 0 	8 steps 
+unfold2(reg$1)[a,b,c,a]	<+>		--> 1	8 steps 
+unfold2(reg$1)[b,c,a,c]	<+>		--> 0 	8 steps 
+unfold2(reg$2)[a,5,c,a]	<+>		--> 1	8 steps 
 
-unfoldBro(reg)[a,b,c,a] 	<+>     --> 1	2 steps
-unfoldBro(regI)[a,5,c,a,a,566,c]<+>	--> 1	2 steps 
-unfoldBro(regI)[a,c,67,a] 	<+>	--> 0	2 steps
-unfoldBro(reg)[b,c,a,c] 	<+>	--> 0	2 steps
+unfoldBro(reg$1)[a,b,c,a] 	<+>     --> 1	2 steps
+unfoldBro(reg$1)[b,c,a,c] 	<+>	--> 0	2 steps
+unfoldBro(reg$2)[a,5,c,a,a,566,c]<+>	--> 1	2 steps 
+unfoldBro(reg$2)[a,c,67,a] 	<+>	--> 0	2 steps
 
 -- unfold2/Bro(S) accepts words with an equal number of a's and b's
 

@@ -1,0 +1,46 @@
+-- /Users/Padawitz/ExpanderLib/rosu3-6P
+
+0. Derivation of
+
+(star(a)*b) ~ (((a*star(a))*b)+b)
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. The set of axioms is extended by
+
+  (z0 ~~0 z1 <=== z0 = star(a)*b & z1 = ((a*star(a))*b)+b)
+
+Applying COINDUCTION wrt
+
+  (t ~ u ===> beta(t) = beta(u) & all(rel(x,delta(t,x) ~ delta(u,x)))[a,b]) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+All t u:((t = star(a)*b & u = ((a*star(a))*b)+b ===> 
+          beta(t) = beta(u) & all(rel(x,delta(t,x) ~~0 delta(u,x)))[a,b]))
+
+2. SIMPLIFYING parallel the preceding trees (35 steps) leads to 
+
+(star(a)*b) ~~0 (star(a)*b) & eps ~~0 eps
+
+3. The set of axioms is extended by
+
+  x ~~0 x
+
+4. Applying the axiom or theorem
+
+  x ~~0 x
+
+at positions
+[1]
+[0]
+of the preceding trees leads to 
+
+True & True
+
+5. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+True
+

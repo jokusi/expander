@@ -1,0 +1,48 @@
+-- /Users/Padawitz/ExpanderLib/needFun0P
+
+0. Derivation of
+
+f(f(x,y),z) = 0
+
+All simplifications are admitted.
+Equation removal is safe.
+
+1. NARROWING the preceding trees (one step) leads to 
+
+f(f(x,y),0) = 0 & z = 0
+
+The reducts have been simplified parallel.
+Failure atoms have been removed.
+
+2. NARROWING the preceding trees (one step) leads to 
+
+(f(0,0) = 0 & x = 0 & y = 0 | Any x1:((f(1,0) = 0 & x = suc(x1) & y = 0)) | 
+ Any y1:((f(2,0) = 0 & y = suc(y1)))) & 
+z = 0
+
+The reducts have been simplified parallel.
+Failure atoms have been removed.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+(x = 0 & y = 0 | Any x1:((f(1,0) = 0 & x = suc(x1) & y = 0)) | 
+ Any y1:((f(2,0) = 0 & y = suc(y1)))) & 
+z = 0
+
+The reducts have been simplified parallel.
+Failure atoms have been removed.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+(x = 0 & y = 0 | Any y1:((f(2,0) = 0 & y = suc(y1)))) & z = 0
+
+The reducts have been simplified parallel.
+Failure atoms have been removed.
+
+5. NARROWING the preceding trees (one step) leads to 
+
+x = 0 & y = 0 & z = 0
+
+The reducts have been simplified parallel.
+Failure atoms have been removed.
+
