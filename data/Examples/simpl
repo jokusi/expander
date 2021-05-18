@@ -41,6 +41,7 @@ conjects:
 & (P(1) | P(2) | P(3) | (P(4) & P(5) & P(6)))
 & (P(1) ==> P(2) & P(3) & P(4))
 & (P(1) | P(2) | P(3) ==> P(4))
+& bool(P(x)) = bool(Q(x,pos 0 0 0))     --> Q(x,y) <==> Q(x,pos 1 0)
 
 & zipWith(=)[1,x,3,4][1,2,y,5,6]      	--> [True,x = 2,3 = y,False]
 & fun((x,y),x+z+y) = fun((y,x),y+z+x) 	--> True
@@ -96,16 +97,23 @@ conjects:
 
 terms: 
 
-    g(f(pos 0 1)#f(a),f(a)#f(pos 1 0)) 
-	--> g(f(a),f(f(a)))
-<+> g(f(f(f(a)))#f(f(f(pos 0 0 0))))
-	--> g(f(f(f(f(f(a))))))
-<+> g(a ## f(b,pos 0 1 0)) 
-        --1-> g(f(b,pos 0 0 0) ## a) --1-> g(a ## f(b,pos 0 1 0)) --1-> ...
-<+> g(f(f(pos 0 0 0 1)#f(f(a,a,a,a,a)))#f(f(a,a,a,pos 0 1 0 1,a)),      f(f(a,a,a,pos 1 0 0 1,a))#f(f(pos 1 1 0 1)#f(f(a,a,a,a,a)))) 
-	--> g(f(f(a,a,a,pos 0 0 1,a)),f(f(f(a,a,a,a,a))))
-<+> g(f(f(a),f(pos 0 0 2 0),f(a))#f(f(a),f(pos 0 1 3 0),f(f(a)),f(a))) 
-	--> g(f(f(a),f(pos 0 3 0),f(f(a)),f(a)))
+    2:3:6:(7+1):[1..4*2] --evaluate-> [2,3,6,8,1,2,3,4,5,6,7,8]
+
+<+> g(f(pos 0 1)#f(a),f(a)#f(pos 1 0)) --> g(f(a),f(f(a)))		(!)
+<+> g(f(f(f(a)))#f(f(f(pos 0 0 0))))   --> g(f(f(f(f(f(a)))))        
+<+> g(a ## f(b,pos 0 1 0)) --1-> g(f(b,pos 0 0 0) ## a) 
+		           --1-> g(a ## f(b,pos 0 1 0)) --1-> ...
+<+> g(f(f(pos 0 0 0 1)#f(f(a,a,a,a,a)))#f(f(a,a,a,pos 0 1 0 1,a)),      f(f(a,a,a,pos 1 0 0 1,a))#f(f(pos 1 1 0 1)#f(f(a,a,a,a,a))))
+        --> g(f(f(a,a,a,pos 0 0 1,a)),f(f(f(a,a,a,a,a))))
+<+> g(f(f(a),pos 0 0 0,pos 0 0 0)#f(f(a),pos 0 1 2,f(f(a)),pos 0 1 2))
+        --> g(f(f(a),pos 0 2,f(f(a)),pos 0 2))
+
+<+> (0+g(f(h(pos 1 0),0),22))+f(h(x),0)
+        --> g(f(h(pos 1 0),0),22)+f(h(x),0)
+<+> (0+g(f(h(pos 0 1 1),0),22))+f(h(x),0)
+        --> g(f(h(pos 0 1),0),22)+f(h(x),0)
+<+> ((0+g(f(pos 1 1 0,0),0))+0)+(x,g(h(x)),pos 0 0 1 0) 
+	--> g(f(pos 1 1 0,0),0)+(x,g(h(x)),f(pos 1 1 0,0))
 
 <+> 0+F(x,g$x,88)+F(x,g$x,88)+0 	-- collapse variables and simplfy
 	--> pos 1+F(pos 1 1 0,g(x),88)
@@ -113,24 +121,58 @@ terms:
 	--> F(pos 1 1 0 0,g(pos 1 1 0 0),pos 1 2)+F(pos 1 1 0 0,g(h(x)),88)            
 <+> 0+F(g$x)+F(x,g$h$x,88)+0
         --> F(g(pos 1 1 0 0))+F(pos 1 1 0 0,g(h(x)),88)
-<+> x+x+F(x)+6+x+x+F(x)+x+6+F(x)+x
-        --> (((((((((pos 1+pos 1)+pos 0 1)+pos 1)+pos 1)+pos 1)+pos 0 1)+
-        --      pos 1)+pos 1)+F(pos 1))+x
+
+<+> x+x+F(x)+6+x+x+F(x)+x+6+F(x)+x	-- collapse {variables}
+
+<+> f(get1((F(pos 0 0 1,g(x)),
+            F(pos 0 0 0 1 0,pos 0 0 1 2,
+              F(pos 0 0 0 1,g(x),g(pos 0 0 1 2 1 0),g(pos 0 0 1))))))
+        --> f(F(x,pos 0 2,F(g(x),g(x),g(pos 0 2 1),g(pos 0))))		(!)
+
+<+> f(get1((f(f(a),f(f(pos 0 0 0 0),f(pos 1 0 2)),f(f(a))),pos 0 0 0 1)),
+      (f(f(a),f(pos 1 0 0 0),f(a)),pos 1 0 1))
+        --> f(f(f(f(a)),f(pos 1 0 2)),(f(f(a),pos 1 0 0,f(a)),pos 1 0 1))
+
+<+> f(get1((f(f(a),f(f(pos 0 0 0 0),f(pos 1 0 2 0)),f(f(a))),pos 0 0 0 1)),
+      (f(f(a),f(pos 1 0 0 0),f(pos 1 0 0)),pos 1 0 1))
+        --> f(f(f(f(a)),pos 1 0 2),(f(f(a),pos 1 0 0,f(pos 1 0 0)),pos 1 0 1))
+
+<+> f(get0((ggg(pos 0 0 1 1 1 1 0)(get0(pos 0 0 1 1 1 1 0)),
+            fun(a,fun(s,a:get1(head(s)))),
+            fun(a,fun(s,pos 0 0 1 1 1 1 0:pos 0 0 1 1 1 1 0)))),
+      get2(pos 0 0))						     
+        --> f(ggg(head(s))(get0(pos 0 0 0)),				(!)
+        --    fun(a,fun(s,head(s):pos 1 1 1 0)))
+
+<+> f(get0((get0(get1(head(pos 0 0 0 0 0 2,pos 0 0 0 0 0 2,
+                           fun(pos 0 0 0 0 0 2 1,w),pos 0 0 1))),
+            a)))
+        --> f(get0(get1(head(pos 0 0 0 2,pos 0 0 0 2,fun(pos 0 0 0 2 1,w),a))))
+
+<+> f(get0((hhll(gg(pos 0 0 1 1 1 1),get0(pos 0 0 1 1 1 1),pos 0 0 1 1 1 1 0,
+                 get0(pos 0 0 1 1 1 1)),
+            fun(a,fun(s,a:get1(head(pos 0 0 3 0 1,s,pos 0 0 3 0 1)))),
+            fun(a,fun(s)),fun(fun(s,fun(pos 0 0 3 0 1 1,w)),w))))
+        --> f(hhll(gg(get1(head(fun(pos 0 0 0 0 0 1,w),s,pos 0 0 0 0 0))),
+        --         get0(pos 0 0 0),
+        --         head(pos 0 0 0 0 0,s,pos 0 0 0 0 0),
+        --         get0(pos 0 0 0)))
 
 <+> branch[3,(),4,5,(),7,5]   --> 3 <+> 4 <+> 5 <+> 7
 <+> set[3,(),4,5,(),7,5]      --> {3,(),4,5,7}
 <+> ((+pos 1)^^pos 1)$6	      --> 42
 <+> upd[1..9](6)(hhh)         --> [1,2,3,4,5,6,hhh,8,9]
-<+> take(4)$iter(+1)$0 	      --> [0,1,2,3]
+<+> take(4)$iter(+1)$0 	      --> [0,1,2,3]    31 steps (24.1.21)
 <+> take(4)$iterate(+1)$0     --> [0,1,2,3]
 <+> take(4)$iterate(+3*2)$0   --> [0,6,12,18]
 <+> take(4)$iterate(f.g)$0    --> [0,f(g(0)),f(g(f(g(0)))),f(g(f(g(f(g(0))))))]
 <+> take(4)$mu s.(idle:s)     --> [idle,idle,idle,idle]
+<+> f$(5:pos 0 0 1 1 1 4:8:[1,3,3,4,5,6,6])!!1	--> f(5)
 
-<+> fun(x,ite(x>0&x=/=6,x-1,88))(7-1)		--> 88
-<+> fun(x,fun(y,x+y))(5+y)			--> fun(y0,(5+y)+y0)	(!)
-<+> fun(x,fun(y5,x+y5))(5+y5)			--> fun(y6,(5+y5)+y6)
-<+> fun(x,fun(y,z+5+x+y))$3+y+z   		--> fun(y0,(z+5)+((3+y)+z)+y0)
+<+> fun(x,ite(x>0&x=/=6,x-1,88))(7-1)	        --> 88
+<+> fun(x,fun(y,x+y))(5+y)		        --> fun(y0,(5+y)+y0)	(!)
+<+> fun(x,fun(y5,x+y5))(5+y5)		        --> fun(y6,(5+y5)+y6)
+<+> fun(x,fun(y,z+5+x+y))$3+y+z 		--> fun(y0,(z+5)+((3+y)+z)+y0)
 
 <+> fun(suc(x),x+((x+x)+x))(5)			--> 16
 <+> fun(suc(x)||x>4,x+x,z,z*z)$5		--> 25
@@ -147,7 +189,8 @@ terms:
 <+> fun(c(x),f(x,x),b(x),g(g(x,x),g(x,x)))$b$c$suc$5
 <+> fun(x,x+x)(pos 0)			        --> pos 1+fun(x,x+x)
 
-<+> (fun(x,[x,x])<=<fun(x,[x,x,x]))$5 		--> [pos 1,5,pos 3,5,pos 5,5]
+<+> (fun(x,[x,x])<=<fun(x,[x,x,x]))$5           --> [pos 1,5,pos 3,5,pos 5,5]
+                                                -- simpl1		(!)
 <+> length$(fun(x,[x,x])<=<
             fun(x,[x,x,x])<=<
             fun(x,[x,x]))$5                     --> 12
@@ -184,6 +227,7 @@ terms:
 
 <+> f$mapG(fun(x,x+1))[5..8]			--> f[6,7,8,9]
 <+> mapG(fun(F,frameS(5)$F$text$fff'hhhhh'fff))[red,green,blue]
+					        -- paint with widgets
 <+> concat$mapG(fun(x,[x,suc(x)]))[1..6]	--> [1,2,2,3,3,4,4,5,5,6,6,7]
 <+> replicateG(9)[1..4]  
                 --> [[1,2,3,4],pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0,pos 0]
@@ -200,48 +244,50 @@ terms:
 <+> ((-2*z)+(10*x))-((-2*z)+(5*y)+(10*x))
 <+> (10*x)+(5*y)-(2*z)-(3*((12*x)+(6*y)-(3*z)))
 
-<+> lin(5*x+6*y+z)+lin(4*x+7*y+z)
+<+> lin(5*x+6*y+z)+lin(4*x+7*y+z) --> lin(((9.0*x)+(13.0*y))+(2.0*z))
 
 <+> gauss(x+y-z+z' = 6	&
       2*x+y-z-z'   = 8	&
       x+2*y+z-2*z' = 10	&
-      x-y-z+3*z'   = 2)
+      x-y-z+3*z'   = 2) 
+                      --> bool(x = 4.0 & y = 3.0 & z = 2.0 & z' = 1.0)
 <+> gaussI(x+y-z+z' = 6	 &
       2*x+y-z-z'    = 8	 &
       x+2*y+z-2*z'  = 10 &
-      x-y-z+3*z'    = 2)
+      x-y-z+3*z'    = 2) 
+                      --> gaussI(x = 4.0 & y = 3.0 & z = 1.99997 & z' = 0.99999)
 
-<+> [(1,4),(2,2),(3,5),(4,3),(5,1)]		     -- press matrices and paint
-<+> [(1,4,9),(2,2,k),(3,5,h),(4,3,k),(5,1,o)]        -- and show graph
-<+> [(0,[1]),(1,[2]),(2,[3]),(3,[4]),(4,[5]),(5,[0])]
+<+> [(1,4),(2,2),(3,5),(4,3),(5,1)]		         -- paint with matrices
+<+> [(1,4,9),(2,2,k),(3,5,h),(4,3,k),(5,1,o)]          	 
+<+> [(0,[1]),(1,[2]),(2,[3]),(3,[4]),(4,[5,8]),(5,[0])]  -- graph > show graph
 <+> [(1,4,9),(2,2,k),(3,5,[1..5]),(4,3,k),(5,1,[uu,o])]
 <+> [(2,b,[1,3,3,3,3]),(3,b,[3]),(3,a,[4]),(2,a,[4,4]),		
      (2,c,[4,uuuuuuuuuuuuuuuuuuuuuuu,5]),(4,b,[3]),		
      (2,d,[1,3,3,3,3,3,3,3,3,3,39,3,3,3,3,3,3])]
 
 <+> map($)$prodL[[is,less],[0..3]]
-<+> filter(=/=)$prodL[[1,2,3],[1,2,3]]
-<+> filter(<4)[1..5]
-<+> filter(1`in`)[[1,2,3],[2,3,2],[12,0,-6]]
-<+> filter(`NOTin`[2,5])[1,2,3,4,5]
-<+> filter(rel(x,sum$x=6))[[1,2,3],[2,3,2],[12,0,-6]]
-<+> filter(rel([x,y,z],x=/=y&y=/=z&z=/=x))[[1,2,3],[2,3,2],[12,0,-6]]
-  
-<+> fun(x,f(f(x,x,x),f(x,x,x)))(f(ggg,nnn,bbb))
-<+> fun(st,ite(List(st),pic(st),pic(get1(st))))(666,[1,5,7])
+		   --> [is(0),is(1),is(2),is(3),less(0),less(1),less(2),less(3)]
 
-<+> prodE(id,suc,fun(z,z+2),fun(z,z*(5+3)))$3			--> (3,4,5,24)
+<+> filter(=/=)$prodL[[1,2,3],[1,2,3]]
+		   --> [(1,2),(1,3),(2,1),(2,3),(3,1),(3,2)]
+<+> filter(<4)[1..5]				     	--> [[1,2,3]]
+<+> filter(1`in`)[[1,2,3],[2,3,2],[12,0,-6]]	      	--> [[1,2,3]]
+<+> filter(`NOTin`[2,5])[1,2,3,4,5]		      	--> [1,3,4]
+<+> filter(rel(x,sum$x=6))[[1,2,3],[2,3,2],[12,0,-6]] 	--> [[1,2,3],[12,0, -6]]
+<+> filter(rel([x,y,z],x=/=y&y=/=z&z=/=x))[[1,2,3],[2,3,2],[12,0,-6]]
+						      	--> [[1,2,3],[12,0, -6]]  
+<+> fun(x,f(f(x,x,x),f(x,x,x)))(f(ggg,nnn,bbb))
+          --> f(f(pos 1 2,pos 1 2,pos 1 2),f(pos 1 2,pos 1 2,f(ggg,nnn,bbb)))
+
+<+> fun(s,ite(List(s),pic(s!!1),pic(s)))[1,5,7]		--> pic(5)
+
+<+> prodE(id,suc,fun(z,z+2),fun(z,z*(5+3)))$3		--> (3,4,5,24)
 
 <+> (get1.prodE(suc,suc.suc))(9) - (get0.prodE(suc,suc.suc))(9)	--> 1
-
-<+> string$dark orange$f(g,h) 	--> brown string f(g(h) 
-<+> string$dark'orange$f(g,h)   --> string dark'orange$f(g,h) 
-			            --paint-> brown string f(g(h) 
 	
-<+> red_uuu(light blue_hhhh,
-	     magenta_uuu(bbbbbbb(light blue_hhhh,
-				 light green_xxxx),
-			 yellow_xxxx,cyan_ppp,iiiii))
+<+> red_uuu(frame(5)$dark blue$text$hhhh,		-- paint with widgets
+	    magenta_uuu(bbbbbbb(light blue_hhhh,light green_xxxx),
+			yellow_xxxx,cyan_ppp,iiiii))
 
 <+> 1(2(3(4(a,a),4(a,a)),3(4(a,a),4(a,a))),2(3(4(a,a),4(a,a)),3(4(a,a),4(a,a))))
 
@@ -251,84 +297,70 @@ terms:
 <+> f(a,f(a),f(a,f(a,a)),f(f(f(a,a),f(a,a)),f(a,f(a,a,a),f(a)),f(a)),a,
       f(f(f(a,b),b,f(a,b)),f(f(a,b),f(a,b)),f(a,f(a),a),f(a,f(a),f(a,b),f(a))),
       f(f(a)))
+
 <+> f(f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),
       f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a),f(a,a,a,a,a,a,a))
+
 <+> f(a,f(a,a,a,a,a,a,a),a,a,f(a,a,a,a,a,a,a),a,f(a,a,a,a,a,a,a))
+
 <+> f(a,f(a,a,f(a,a,a,f(a,a,a,a,a,a,a,a,a),a,a,a),a,a),a)	-- hill term
 
 <+> f(a,f(a,f(a,h(pos 1 1 1 1,c))),f(f(pos 1 1 1,f(a,b))),      
       f(pos 1 1 1,f(f(a,b),b)),f(pos 1 1,pos 1 1 1),g(a,a,a,a,a,a,a,a,a))
-<+> f(g(h(pos 1 0 1,pos 1)),k(m(c(pos 1 0 1),d(pos 1 0 0,pos 0))))
+
+<+> f(g(h(pos 1 0 1,pos 1)),c(e(c(pos 1 0 1),d(pos 1 0 0,pos 0))))
 
 <+> (a*((a*pos )+(b*(b*pos ))))+
     (b*(((a*((a*pos 1 1)+(b*((a*pos )+(b*(b*pos ))))))+(b*pos ))+eps))
 
-<+> f$(hh(uuu)**5)$888						-- (!)
-	--> f(hh(uuu)(pos 0 0(pos 0 0(pos 0 0(hh(uuu)(888))))))	
-<+> f$((+1)**5)$888 
-	--> f(893)
-<+> f(g(pos 1 0 0 0),h(g((3+5)+(3+5))))
-	--> f(g(8),h(g(16)))
-<+> ((0+g(f(pos 1 1 0,0),0))+0)+(x,g(h(x)),pos 0 0 1 0) 
-	--> g(f(pos 1 1 0,0),0)+(x,g(h(x)),f(pos 1 1 0,0))
+<+> f$(hh(uuu)**5)$888						
+	--> f(hh(uuu)(pos 0 0(pos 0 0(pos 0 0(pos 0 0(888))))))		(!)
+<+> f$((+1)**5)$888 				--> f(893)
+<+> f(g(pos 1 0 0 0),h(g((3+5)+(3+5)))) 	--> f(g(8),h(g(16)))
+
 <+> fun(s,fff(pos 1)(head(f(pos 0 1 0 1 0 1,3),s,pos 0 1 0 1 0))(tail(s)))$
        ggg(aa,aa,hhh(pos 1 1)) 
-	--> fff(ggg(aa,aa,hhh(aa)))(head(f(3,3),pos 1 0,f(3,3)))
-        --     (tail(ggg(aa,aa,hhh(aa))))
-<+> fun(s,0:(pos 1 $ tail(s) $ s))(fun(s,tail(s):s)) 		-- (!)
-	--> 0:(tail(pos 1 1):(tail(pos 1 1 1)(fun(s,tail(s):s))))   
-
+	--> fff(ggg(aa,aa,hhh(pos 0 0 0 1)))
+        --      (head(f(3,3),pos 1 0,f(3,3)))(tail(ggg(aa,aa,hhh(pos 1 0 1))))
+<+> fun(s,0:(pos 1 $ tail(s) $ s))(fun(s,tail(s):s)) 			
+	--> 0:(tail(pos 1 1):(tail(fun(s,tail(s):s))(fun(s,tail(s):s))))
 <+> take(3)$fun(s,0:hhhh(pos 1 1)(head(s)*2)(tail(s)))$aaaa 
 	--> 0:(take(2)(hhhh(aaaa)(head(pos 1 1 1 0)*2)(tail(aaaa))))
 <+> take(3)(fun(s,get1(pos 1 1 1)(s))(fun(a,fun(a,fun(s,tail(s)))))) 
-	--> take(3)(get1(fun(a,fun(s,tail(s))))(fun(a,fun(a,fun(s,tail(s))))))
+	--> take(3)(get1(pos 1 1 1)(fun(a,fun(a,fun(s,tail(s))))))
 <+> take(3)(fun(s,get1(tail(s),fun(s,bbb(s,s,s)),s)(hhh(s,s)))(ssss(s,a,s))) 
-	--> take(3)(get1(tail(pos 1 1 1),fun(s0,bbb(s0,s0,s0)),pos 1 1 1)
-        --         (hhh(pos 1 1 1,ssss(s,a,s))))
+	--> take(3)(bbb(pos 1 2,pos 1 2,hhh(pos 1 2 1,ssss(s,a,s))))
 
-<+> fun(x,g(x,h(x)))$5
-	--> g(pos 1 0,h(5))
-<+> fun(x,bod(x,g(pos 0 1 0),h(pos 1)))$5		     
-	--> bod(pos 1 0,g(5),h(5))				
+<+> fun(x,g(x,h(x)))$5                      --> g(pos 1 0,h(5))
+<+> fun(x,bod(x,g(x),h(pos 1)))$5           --> bod(pos 1 0,g(5),h(pos 1 0))
 <+> ddd$fun(x,bod(ggg$x,h(pos 0 1)))(bod(g$x,hh$5)) 
-	--> ddd(bod(ggg(pos 0 1 0 0 0),h(bod(g(bod(g(x),hh(5))),hh(5)))))
-<+> fun(x,g(x,h(x),h(x),h(pos 1 1),h(pos 0 1 2 0)))(f(7,8)) 
-	--> g(pos 4 0,h(pos 4 0),h(pos 4 0),h(8),h(f(7,8)))
-<+> cc$fun(x,g(g(x,h(x)),h(pos 0 0 1 0)))(5555)  
-	--> cc(g(g(pos 0 1 0 1 0,h(pos 0 1 0 1 0)),
-	--       h(g(pos 0 1 0 1 0,h(5555)))))
-<+> fun(F,F(5,8)+F(5,8))(+1)					-- (!)
-	--> pos 1+((5,8)+1)
+	--> ddd(bod(ggg(bod(g(x),hh(5))),h(pos 0 0 0)))
+<+> fun(x,g(x,h(x),h(x),h(pos 1 1),pos 0 1 2))(f(7,8)) 
+	--> g(pos 4 0,pos 4,pos 4,h(pos 4 0 1),h(f(7,8)))
+<+> cc$fun(x,g(g(x,h(x)),h(pos 0 0 1 0)))(5555)    
+	--> cc(g(g(pos 0 1 0 1 0,pos 0 1 0 1),h(g(pos 0 1 0 1 0,h(5555)))))
+<+> fun(F,F(5,8)+F(5,8))(+1)		    --> pos 1+((5,8)+1) 	(!)
 
-<+> fun(suc(x),4*(2*x))(3) 
-	--> 16
-<+> gg(fun(suc(suc(x)),x*x,suc(x),x+pos 1,0,100)(1),m) 		-- (!)
-	--> gg(pos 1,m)
-<+> gg(fun(suc(suc(x)),x*x,suc(x),x+pos 1,0,100)(2),m) 
-	--> gg(0,m)
-<+> gg(fun(suc(x) || (x > 4),pos 1+x,z,z*z)(6),m) 
-	--> gg(pos 1+5,m)
-<+> gg(fun(suc(x) || (x > 4),pos 1+x,z,z*z)(5),m) 
-	--> gg(25,m)	
-<+> gg(fun(suc(x) || (x > 4),pos 1+x,z,z*z)(6),100) 
-   	--> gg(105,100)
+<+> fun(suc(x),4*(2*x))(3) 		  	      	    --> 16
+<+> gg(fun(suc(suc(x)),x*x,suc(x),x+pos 1,0,100)(1),m)      --> gg(pos 1,m)	
+<+> gg(fun(suc(suc(x)),x*x,suc(x),x+pos 1,0,100)(2),m)      --> gg(0,m)
+<+> gg(fun(suc(x) || (x > 4),pos 1+x,z,z*pos 0 0 3 0)(6),m) --> gg(m+5,m)
+<+> gg(fun(suc(x) || (x > 4),pos 1+x,z,z*pos 0 0 3 0)(5),m) --> gg(25,m)	
+<+> gg(fun(suc(x) || (x > 4),pos 0 0 1 1+x,z,pos 0 0 3 1*z)(6),m)
+   						            --> gg(10,m)
 
 <+> h(fun(x,g(x,h(x),h(x),h(pos 1 0),h(h(x,h(x,y)))))(f(f(7,pos 0 1 1),8)),      h(z,h(x,pos 1 2),h(x,y)))
-	--> h(g(pos 0 4 0 1 0,h(pos 0 4 0 1 0),h(pos 0 4 0 1 0),h(z),        --      h(h(pos 0 4 0 1 0,h(f(f(7,8),8),y)))),
+        --> h(g(pos 0 4 0 1 0,h(pos 0 4 0 1 0),h(pos 0 4 0 1 0),h(pos 1 0),        --      h(h(pos 0 4 0 1 0,h(f(f(7,pos 0 4 0 1 0 1),8),y)))),
         --    h(z,h(x,pos 1 2),h(x,y)))
-<+> h(fun(x,g(x,h(pos 1),h(tar(x,h(x,pos 1 2),pos 1 2)),y,h(25)))(8),      h(x,pos 0 0 1 2 0,y)) 
-	--> h(g(pos 0 2 0 1 0,h(pos 1),h(tar(pos 0 2 0 1 0,
-	--      h(8,pos 1 2),pos 1 2)),y,h(25)),
-	--    h(x,tar(x,h(x,pos 1 2),pos 1 2),y))
-<+> h(fun(x,g(x,x,h(pos 1),h(tar),h(y),h(25)))(arg(bb,8)),h(x,hh(x),h(x,y))) 
-	--> h(g(pos 0 1,arg(bb,8),h(pos 1),h(tar),h(y),h(25)),
+<+> h(fun(x,g(x,x,h(pos 1),h(tar),h(y),h(25)))(arg(bb,8)),h(x,hh(x),h(x,y)))
+        --> h(g(pos 0 1,arg(bb,8),h(pos 1),h(tar),h(y),h(25)),
 	--    h(x,hh(x),h(x,y)))
 
 <+> epsilon(1(11,12,13),2,3,4(41(411(4111,4112,4113,4114,4115),412),   
                               42(421,422(4221)))) 
 
-{- <+> f(f(a,f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,f(f(f(f(a,f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))),f(a,a)),f(a,f(f(a,f(a,a)),f(a,a)))))))),f(a,a)),f(a,a)))),a) 
-
+<+> subst(f(8),x,[g(x),g(x),g(x)]) --> [g(pos 2 0),g(pos 2 0),g(f(8))]
+{-
 <+> aaaa(ddd,
      aaaa(ddd,
           bbb(ddd,

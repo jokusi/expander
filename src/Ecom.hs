@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, September 2020
-                  Jos Kusiek, September 2020
+Copyright   : (c) Peter Padawitz, January 2021
+                  Jos Kusiek, January 2021
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -27,17 +27,17 @@ data PossAct = Add [[Int]] | Remove [Int] | Replace [[Int]]
 -- * __Proofs__
 
 data ProofElem = ProofElem
-    { peMsg, peMsgL, peTreeMode :: String
-    , peTrees               :: [TermS]
-    , peTreePoss            :: [[Int]]
-    , peCurr                :: Int
-    , pePerms               :: Int -> [Int]
-    , peVarCounter          :: String -> Int
-    , peNewPreds            :: ([String],[String])
-    , peSolPositions        :: [Int]
-    , peSubstitution        :: (SubstS,[String])
-    , peConstraints         :: (Bool,[String])
-    , peJoined, peSafe        :: Bool
+    { peMsg, peMsgL, peTreeMode     :: String
+    , peAxioms, peTheorems, peTrees :: [TermS]
+    , peTreePoss                    :: [[Int]]
+    , peCurr                        :: Int
+    , pePerms                       :: Int -> [Int]
+    , peVarCounter                  :: String -> Int
+    , peNewPreds                    :: ([String],[String])
+    , peSolPositions                :: [Int]
+    , peSubstitution                :: (SubstS,[String])
+    , peConstraints                 :: (Bool,[String])
+    , peJoined, peSafe              :: Bool
     }
 
 showDeriv :: [ProofElem] -> [Term String] -> [Int] -> String
@@ -108,6 +108,7 @@ command = concat
            symbol "Matching" >> token int >>= return . Matching,
            symbol "Minimize" >> return Minimize,
            symbol "ModifyEqs" >> token int >>= return . ModifyEqs,
+           symbol "MoveQuant" >> return MoveQuant,
            do symbol "Narrow"; limit <- token int
               token bool >>= return . Narrow limit,
            do symbol "NegateAxioms"; ps <- list quoted
@@ -136,7 +137,6 @@ command = concat
            do symbol "ReplaceVar"; x <- token quoted; u <- enclosed linearTerm
               list int >>= return . ReplaceVar x u,
            symbol "ReverseSubtrees" >> return ReverseSubtrees,
-           symbol "SafeEqs" >> return SafeEqs,
            do symbol "SetAdmitted"; block <- token bool
               list quoted >>= return . SetAdmitted block,
            do symbol "SetCurr"; msg <- token quoted
@@ -150,6 +150,7 @@ command = concat
            symbol "Simplifying" >> token bool >>= return . Simplifying,
            symbol "SplitTree" >> return SplitTree,
            symbol "SubsumeSubtrees" >> return SubsumeSubtrees,
+           symbol "SwitchSafe" >> return SwitchSafe,
            do symbol "Theorem"; b <- token bool
               enclosed linearTerm >>= return . Theorem b,
            symbol "Transform" >> token int >>= return . Transform,
@@ -163,7 +164,7 @@ linearTerm = concat [do symbol "F"; x <- token quoted
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (September 1, 2020)"
+start = "Welcome to Expander3 (February 2, 2021)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -268,12 +269,6 @@ enterNumbers = "Enter numbers of formulas shown in " ++ tfield ++ "!"
 
 eqInverted :: String
 eqInverted = "The selected equation has been inverted."
-
-equationRemoval True = "Equation removal is safe." 
-equationRemoval _    = "Equation removal is unsafe." 
-
-eqsButMsg True = "unsafe equation removal"
-eqsButMsg _    = "safe equation removal"
 
 eqsModified :: String
 eqsModified = "The selected regular equations have been modified."
@@ -453,8 +448,10 @@ posInSubst = "There is a pointer in a substitution."
 proofLoaded :: String -> String
 proofLoaded file = "The proof term has been loaded from " ++ file ++ "."
 
-referenced :: String
-referenced = "Selected nodes have been turned into pointers."
+quantifierMoved = "A quantifier has been moved down the selected subtree."
+
+referenced = "The node selected at first is the target of pointers " ++
+             "from the predecessors of the other selected nodes."
 
 regBuilt :: String
 regBuilt = "A regular expression has been built from the Kripke model."
@@ -477,6 +474,10 @@ replaceIn solve = "The subtree has been replaced by the tree of "++solve++"."
 reversed :: String
 reversed = "The list of selected (sub)trees has been reversed."
 
+safeButText b = "simplification is " ++ if b then "safe" else "unsafe"
+
+safeMsg b = "Simplification is " ++ if b then "safe." else "unsafe."
+
 see :: String -> String
 see str = "See the " ++ str ++ " in the text field."
 
@@ -485,7 +486,7 @@ selectCorrectSubformula = "Select an implication, a conjunction or a " ++
                           "disjunction and subterms to be replaced!"
 
 selectDistribute = "Select a factor, summand, premise or conclusion to be " ++
-                   " distributed and a dis- or conjunction!"
+                   "distributed and a dis- or conjunction!"
 
 selectSub :: String
 selectSub = "Select a proper non-hidden subtree!"
@@ -555,8 +556,8 @@ transitivityApplied :: String
 transitivityApplied
               = "The transitivity axiom has been applied to the selected atoms."
 
-treeParsed = "The text field contains a string representation of the " ++
-             " selected tree."
+treeParsed =
+        "The text field contains a string representation of the selected tree."
 
 treesSimplified :: String
 treesSimplified = "The trees are simplified."
@@ -674,7 +675,6 @@ solver this solveRef enum paint = do
 
     axiomsRef <- newIORef []
     conjectsRef <- newIORef []
-    indClausesRef <- newIORef []
     matchTermRef <- newIORef []
     oldTreepossRef <- newIORef []
     proofRef <- newIORef []
@@ -1027,12 +1027,12 @@ solver this solveRef enum paint = do
           mapM_ (mkButF interpreterMenu setInterpreter') interpreters
 
           sigMenu <- getMenu "sigMenu"
+          but <- mkBut sigMenu (safeButText True) switchSafe
+          writeIORef safeButRef but
           mkBut sigMenu "admit all simplifications" $ setAdmitted' True []
           mkBut sigMenu ".. except for symbols" $ setAdmitted True
           mkBut sigMenu ".. for symbols" $ setAdmitted False
           mkBut sigMenu "collapse after simplify" setCollapse
-          but <- mkBut sigMenu (eqsButMsg True) switchSafe
-          writeIORef safeButRef but
           mkBut sigMenu "show sig" showSig
           mkBut sigMenu "show map" showSigMap
           mkBut sigMenu "apply map" applySigMap
@@ -1048,13 +1048,18 @@ solver this solveRef enum paint = do
           mkBut streeMenu "coinduction" $ startInd False
           mkBut streeMenu "stretch premise" $ stretch True
           mkBut streeMenu "stretch conclusion" $ stretch False
-          mkBut streeMenu "instantiate" instantiate
-          mkBut streeMenu "unify" unifySubtrees
-          mkBut streeMenu "generalize" generalize
           mkBut streeMenu "specialize" specialize
-          mkBut streeMenu "decompose atom" decomposeAtom
+          mkBut streeMenu "generalize" generalize
+          mkBut streeMenu "instantiate" instantiate
+          mkBut streeMenu "build unifier" buildUnifier
+          mkBut streeMenu ("unify with tree of " ++ other) unifyOther
+          mkBut streeMenu ("replace by tree of " ++ other) replaceOther
           mkBut streeMenu "replace by other sides of in/equations"
                   replaceSubtrees
+          mkBut streeMenu "move down quantifier" moveQuant
+          mkBut streeMenu "move up quantifiers" shiftQuants
+          mkBut streeMenu "distribute (d)" distribute
+          mkBut streeMenu "decompose atom" decomposeAtom
           mkBut streeMenu "use transitivity" applyTransitivity
           subMenu <- mkSub streeMenu "apply clause"
           mkBut subMenu "Left to right (Left)" $ applyClause False False False
@@ -1065,23 +1070,18 @@ solver this solveRef enum paint = do
           mkBut subMenu ".. and save redex" $ applyClause False True True
           mkBut subMenu "Right to left lazily" $ applyClause True True False
           mkBut subMenu ".. and save redex" $ applyClause True True True
-          mkBut streeMenu "move up quantifiers" shiftQuants
-          mkBut streeMenu "distribute (d)" distribute
-          mkBut streeMenu "shift subformulas" shiftSubs
           mkBut streeMenu "create Hoare invariant" $ createInvariant True
           mkBut streeMenu "create subgoal invariant" $ createInvariant False
           mkBut streeMenu "flatten (co-)Horn clause" flattenImpl
           mkBut streeMenu "shift pattern to rhs" shiftPattern
-          mkBut streeMenu ("replace by tree of " ++ other) replaceOther
-          mkBut streeMenu ("unify with tree of " ++ other) unifyOther
-          mkBut streeMenu "build unifier" buildUnifier
+          mkBut streeMenu "shift subformulas" shiftSubs
           mkBut streeMenu "subsume" subsumeSubtrees
           mkBut streeMenu "evaluate" evaluateTrees
           mkBut streeMenu "copy (c)" copySubtrees
           mkBut streeMenu "remove (r)" removeSubtrees
           mkBut streeMenu "remove node (o)" removeNode
-          mkBut streeMenu "permute subtrees (m)" permuteSubtrees
           mkBut streeMenu "reverse (v)" reverseSubtrees
+          mkBut streeMenu "permute subtrees (m)" permuteSubtrees
           mkBut streeMenu "insert/replace by text (i)" replaceText
           mkBut streeMenu "random labels (L)" randomLabels
           mkBut streeMenu "random tree (T)" randomTree
@@ -1137,7 +1137,6 @@ solver this solveRef enum paint = do
           mkBut thsMenu ".. in entry field" $ removeClauses 3
           mkBut thsMenu "remove conjects" removeConjects
           mkBut thsMenu ".. in entry field" $ removeClauses 2
-          mkBut thsMenu "show induction hypotheses" showIndClauses
           subMenu <- mkSub thsMenu "add conjects"
           createSub 2 subMenu
 
@@ -1175,7 +1174,7 @@ solver this solveRef enum paint = do
           if null cls
              then do
                   writeIORef solPositionsRef []
-                  modifyIORef axiomsRef $ \axioms -> axioms `join` axs
+                  modifyIORef axiomsRef $ \axioms -> joinTerms axioms axs
                   noProcs <- readIORef noProcsRef
                   modifyIORef simplRulesRef
                     $ \simplRules -> simplRules `join` trips ["==","<==>"] axs
@@ -1218,8 +1217,7 @@ solver this solveRef enum paint = do
                        else addCongAxioms' axs
 
         addCongAxioms' axs = do
-          modifyIORef axiomsRef $ \axioms -> axioms `join` axs
-          modifyIORef indClausesRef $ \indClauses -> indClauses `join` axs
+          modifyIORef axiomsRef $ \axioms -> joinTerms axioms axs
           enterFormulas' axs
           extendPT False False False False $ AddAxioms axs
           let msg = "ADDC" ++ showFactors axs
@@ -1403,14 +1401,14 @@ solver this solveRef enum paint = do
                               p -> incorrect p str $ illformed "formula"
           where stretchAndApply k cl = do
                  varCounter <- readIORef varCounterRef
-                 let zNo = varCounter "z"
+                 let vcz = varCounter "z"
                  case preStretch True (const True) cl of
                       Just (_,varps) -> do
                                         setZcounter n; finish k clp
-                                        where (clp,n) = stretchPrem zNo varps cl
+                                        where (clp,n) = stretchPrem vcz varps cl
                       _ -> case preStretch False (const True) cl of
                                 Just (_,varps) -> do setZcounter n; finish k clc
-                                        where (clc,n) = stretchConc zNo varps cl
+                                        where (clc,n) = stretchConc vcz varps cl
                                 _ -> notStretchable "The left-hand side"
                 finish k cl = applyTheorem saveRedex k $
                                           if invert then invertClause cl else cl
@@ -1513,20 +1511,10 @@ solver this solveRef enum paint = do
               vc1 = decrVC varCounter syms
               indsyms' = indsyms `join` map getPrevious syms
               (f,vc2) = renaming vc1 indsyms'
-              axs0 = map mergeWithGuard axs
-              (axs1,vc3) = iterate h (axs0,vc2)!!limit
+              rels = map f indsyms'
+              (axs1,vc3) = iterate h (axs0,vc2)!!limit -- iterate (co)resolution
               h (axs,vc) = applyToHeadOrBody sig (((`elem` indsyms') .) . label)
                                                  False axs0 axs vc
-              newAxs = map mkAx conjs
-              mkAx (F x [t,u]) = F x [g t,u]
-              mkAx _           = error "applyInd"
-              -- g replaces a logical predicate r by f(r) and an equation
-              -- h(t)=u with h in xs by the logical atom f(h)(t,u).
-              g eq@(F "=" [F x ts,u]) = if x `elem` indsyms'
-                                        then F (f x) $ ts++[u] else eq
-              g (F x ts)              = F (f x) $ map g ts
-              g t                     = t
-              rels = map f indsyms'
               (ps',cps') = if ind then ([],rels) else (rels,[])
           (ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
           writeIORef symbolsRef (ps `join` ps',cps `join` cps',cs,ds,fs,hs)
@@ -1539,15 +1527,30 @@ solver this solveRef enum paint = do
               u = replace t p $ mkConjunct $ mkAll xs conj:rest
               msg = "ADDI" ++ showFactors newAxs ++ "\n\nApplying " ++ rule ++
                     " wrt\n\n" ++ showFactors axs1
-          modifyIORef indClausesRef (`join` newAxs)
-          modifyIORef axiomsRef (`join` newAxs)
+              newAxs = concatMap (split . mkAx) conjs
+              mkAx (F x [t,u]) = F x [g t,u]
+              mkAx _           = error "applyInd"
+              -- g replaces a logical predicate r by f(r) and an equation h(t)=u
+              -- with h in xs by the logical atom f(h)(t,u).
+              g eq@(F "=" [F x ts,u])
+                         = if x `elem` indsyms' then F (f x) $ ts++[u] else eq
+              g (F x ts) = F (f x) $ map g ts
+              g t        = t
+              join ts@(t:us) u = if eqTerm t u || onlyRenamed sig t u
+                                 then ts else t:join us u
+              join _ t         = [t]
+          modifyIORef axiomsRef $ \axioms -> foldl join axioms newAxs
           writeIORef varCounterRef vc4
           extendPT False False True True $ Induction ind limit
           maybeSimplify sig u
           makeTrees sig
           setTreesFrame []
           setProof True True msg [p] $ indApplied rule
-        
+          where axs0 = map mergeWithGuard axs
+                split (F "<===" [t,F "|" ts]) = map (mkHorn t) ts
+                split (F "===>" [t,F "&" ts]) = map (mkCoHorn t) ts
+                split t                       = [t]
+
         -- | Used by 'checkForward' and 'startInd'.
         applyInduction :: Int -> Action
         applyInduction limit = do
@@ -1746,18 +1749,18 @@ solver this solveRef enum paint = do
                     F x [l,r]:_ -> do
                         varCounter <- readIORef varCounterRef
                         let p:qs = ps
-                            n = varCounter "z"
-                            z = 'z':show n
-                            n' = n+1
+                            vcz = varCounter "z"
+                            z = 'z':show vcz
+                            n = vcz+1
                         if isOrd x && null qs && polarity True t p
                            then do
                                 let u = anyConj [z] [F x [l,V z],F x [V z,r]]
                                 curr <- readIORef currRef
                                 modifyIORef treesRef $ \trees ->
                                     updList trees curr $ replace1 t p u
-                                setZcounter n'
+                                setZcounter n
                         else do
-                            let z' = 'z':show n'
+                            let z' = 'z':show n
                                 u | qs == [p ++ [0]]
                                     = anyConj [z] [mkEq l $ V z, F x [V z, r]]
                                   | qs == [p ++ [1]]
@@ -1769,7 +1772,7 @@ solver this solveRef enum paint = do
                             curr <- readIORef currRef
                             modifyIORef treesRef $ \trees ->
                                 updList trees curr $ replace1 t p u
-                            setZcounter $ n'+1
+                            setZcounter $ n+1
                         finish ps
                     _ ->
                         if any null ps then labMag "Select proper subtrees!"
@@ -2145,9 +2148,11 @@ solver this solveRef enum paint = do
             safeBut <- readIORef safeButRef
 
             let proofElem = proof!!ptr
+            writeIORef axiomsRef (proofElem&peAxioms)
+            writeIORef theoremsRef (proofElem&peTheorems)
+            writeIORef treeModeRef (proofElem&peTreeMode)
             writeIORef treesRef $ peTrees proofElem
             modifyIORef counterRef $ \counter -> upd counter 't' $ length trees
-            writeIORef treeModeRef $ peTreeMode proofElem
             writeIORef currRef $ peCurr proofElem
             writeIORef permsRef $ pePerms proofElem
             writeIORef varCounterRef $ peVarCounter proofElem
@@ -2159,7 +2164,7 @@ solver this solveRef enum paint = do
             setTreesFrame ps
             setSubst' (peSubstitution proofElem)
             labGreen' (peMsgL proofElem)
-            safeBut `gtkSet` [ menuItemLabel := eqsButMsg safe ]
+            safeBut `gtkSet` [ menuItemLabel := safeButText safe ]
             splitBut `gtkSet` [ buttonLabel := if joined then "split" else "join" ]
 
         changeStrat = do
@@ -2273,6 +2278,7 @@ solver this solveRef enum paint = do
                       modifyIORef matchTermRef $ \matchTerm -> n:matchTerm
                     Minimize -> minimize
                     ModifyEqs m -> modifyEqs m
+                    MoveQuant -> moveQuant
                     Narrow limit sub -> narrow'' limit sub
                     NegateAxioms ps cps -> negateAxioms' ps cps
                     PermuteSubtrees -> permuteSubtrees
@@ -2298,7 +2304,6 @@ solver this solveRef enum paint = do
                     ReplaceText x -> replaceText' x
                     ReplaceVar x u p -> replaceVar x u p
                     ReverseSubtrees -> reverseSubtrees
-                    SafeEqs -> switchSafe
                     SetAdmitted block xs -> setAdmitted' block xs
                     SetCurr msg n -> setCurr msg n
                     SetStrat s -> do
@@ -2315,6 +2320,7 @@ solver this solveRef enum paint = do
                     StretchConclusion -> stretch False
                     StretchPremise -> stretch True
                     SubsumeSubtrees -> subsumeSubtrees
+                    SwitchSafe -> switchSafe
                     Theorem b th -> applyTheorem b Nothing th
                     Transform m -> transformGraph m
                     UnifySubtrees -> unifySubtrees
@@ -2498,8 +2504,8 @@ solver this solveRef enum paint = do
                 Just (n:ks) | n < length exps ->
                     if b then do
                         varCounter <- readIORef varCounterRef
-                        let i = varCounter "z"
-                            (th,k) = combineOne sig i ks (exps!!n) exps
+                        let vcz = varCounter "z"
+                            (th,k) = combineOne sig vcz ks (exps!!n) exps
                         modifyIORef theoremsRef $ \theorems -> th:theorems
                         setZcounter k
                         enterFormulas' [th]
@@ -2560,8 +2566,8 @@ solver this solveRef enum paint = do
                             hyps = mkIndHyps t $ F ">>" [g f,g V]
                         modifyIORef treesRef $ \trees -> updList trees curr $
                             mkAll (frees sig t `minus` xs) $ t>>>f
-                        writeIORef indClausesRef hyps
-                        modifyIORef theoremsRef $ \theorems -> hyps++theorems
+                        modifyIORef theoremsRef
+                          $ \theorems -> joinTerms theorems hyps
                         extendPT False False False False CreateIndHyp
                         setProof True False "SELECTING INDUCTION VARIABLES"
                             treeposs $ indHypsCreated xs
@@ -3212,14 +3218,14 @@ solver this solveRef enum paint = do
             treeposs <- readIORef treepossRef
             let t = trees!!curr
                 p = emptyOrLast treeposs
-            generalizeEnd t p (getSubterm t p) cls
+            generalizeEnd t p (getSubterm1 t p) cls
         
         -- | Used by 'generalize' and 'generalize''.
         generalizeEnd :: TermS -> [Int] -> TermS -> [TermS] -> Action
         generalizeEnd t p cl cls = do
             curr <- readIORef currRef
             modifyIORef treesRef $ \trees ->
-                updList trees curr $ replace t p $ f $ cl:cls
+                updList trees curr $ replace1 t p $ f $ cl:cls
             enterFormulas' cls
             extendPT False False False False $ Generalize cls
             setProof True False "GENERALIZING" [p] generalized
@@ -3302,7 +3308,7 @@ solver this solveRef enum paint = do
             simpls' = simplRules; transitions' = transRules
             states' = sts; atoms' = ats; labels' = labs;
             trans' = tr; transL' = trL; value' = va; valueL' = vaL
-            safeEqs' = safe; redexPos' = []
+            notSafe' = not safe; redexPos' = []
             base = pr1 . splitVar
            in Sig
               { isPred      = isPred'
@@ -3322,7 +3328,7 @@ solver this solveRef enum paint = do
               , value       = value'
               , transL      = transL'
               , valueL      = valueL'
-              , safeEqs     = safeEqs'
+              , notSafe     = notSafe'
               }
 
         -- | Returns name of this solver object. Exported by public
@@ -3421,18 +3427,11 @@ solver this solveRef enum paint = do
           (nps,ncps) <- readIORef newPredsRef
           let (ps',cps') = (ps `minus` nps,cps `minus` ncps)
           constraints@(block,xs) <- readIORef constraintsRef
-          treeMode <- readIORef treeModeRef
-          trees <- readIORef treesRef
-          varCounter <- readIORef varCounterRef
-          safe <- readIORef safeRef
-          joined <- readIORef joinedRef
-          indClauses <- readIORef indClausesRef
-
           writeIORef symbolsRef (ps',cps',cs,ds,fs,hs)
-          modifyIORef axiomsRef $ \axioms -> removeTerms axioms indClauses
-          modifyIORef theoremsRef
-              $ \theorems -> removeTerms theorems indClauses
-          writeIORef indClausesRef []
+          proof <- readIORef proofRef
+          when (notnull proof) $ do
+            writeIORef axiomsRef $ (proof!!0)&peAxioms
+            writeIORef theoremsRef $ (proof!!0)&peTheorems
           writeIORef newPredsRef nil2
           writeIORef solPositionsRef []
           writeIORef varCounterRef
@@ -3442,12 +3441,20 @@ solver this solveRef enum paint = do
           writeIORef permsRef $ \n -> [0..n-1]
           varCounter <- readIORef varCounterRef
           perms <- readIORef permsRef
+          axioms <- readIORef axiomsRef
+          theorems <- readIORef theoremsRef
+          treeMode <- readIORef treeModeRef
+          trees <- readIORef treesRef
+          varCounter <- readIORef varCounterRef
+          safe <- readIORef safeRef
+          joined <- readIORef joinedRef
           writeIORef proofRef
               [ ProofElem
                   { peMsg = "Derivation of\n\n"++str++
-                                      '\n':'\n':admitted block xs++
-                                      '\n':equationRemoval safe
+                            '\n':'\n':admitted block xs++'\n':safeMsg safe
                   , peMsgL = ""
+                  , peAxioms = axioms
+                  , peTheorems = theorems
                   , peTreeMode = treeMode
                   , peTrees = trees
                   , peTreePoss = []
@@ -3511,7 +3518,7 @@ solver this solveRef enum paint = do
                         ps' = x:(x++"Loop"):ps
                     writeIORef symbolsRef (ps',cps`minus1`x,cs,ds,fs,hs)
                     modifyIORef axiomsRef
-                        $ \axioms -> axioms `minus` axs `join` axs'
+                        $ \axioms -> joinTerms (axioms `minus` axs) axs'
                     modifyIORef varCounterRef
                         $ \varCounter -> upd (incr varCounter "i") "z" k
                     enterFormulas' axs'
@@ -3632,13 +3639,11 @@ solver this solveRef enum paint = do
         -- 'replaceSubtrees'' and 'replaceVar'.
         maybeSimplify :: Sig -> TermS -> Action
         maybeSimplify sig t = do
-            trees <- readIORef treesRef
-            curr <- readIORef currRef
-            simplifying <- readIORef simplifyingRef
+          simplifying <- readIORef simplifyingRef
+          let t' = if simplifying then simplifyIter sig t else t
+          curr <- readIORef currRef
+          modifyIORef treesRef $ \trees -> updList trees curr t'
 
-            writeIORef treesRef $ updList trees curr
-                $ if simplifying then simplifyIter sig t else t
-        
         -- | Used by 'checkForward'. Called by menu item "minimize" from
         -- "specification" menu.
         minimize :: Action
@@ -3665,11 +3670,11 @@ solver this solveRef enum paint = do
                let t = trees!!curr
                    ps@(p:qs) = emptyOrAll treeposs
                    u = getSubterm1 t p
+                   msg = "MODIFYING THE EQUATIONS"
                    act p u = do
                        writeIORef treesRef $ updList trees curr $ replace1 t p u
                        extendPT False False False False $ ModifyEqs m
-                       setProof False False "MODIFYING THE EQUATIONS" [p] $
-                                            eqsModified
+                       setProof False False msg [p] eqsModified
                        clearTreeposs; drawCurr'
                case m of 0 -> case parseEqs u of       -- connect equations
                                    Just eqs
@@ -3738,7 +3743,25 @@ solver this solveRef enum paint = do
                         f p a cyan magenta
                         writeIORef nodeRef $ Just (a,p)
                     _ -> writeIORef nodeRef Nothing
-        
+
+        moveQuant = do
+          trees <- readIORef treesRef
+          if null trees then labBlue' start
+          else do
+               sig <- getSignature
+               curr <- readIORef currRef
+               treeposs <- readIORef treepossRef
+               let t = trees!!curr
+                   p = emptyOrLast treeposs
+                   u = getSubterm1 t p
+                   msg = "MOVING DOWN A QUANTIFIER"
+               writeIORef treesRef
+                 $ updList trees curr $replace1 t p $ moveQdown sig u
+               extendPT False False False False MoveQuant
+               setProof True False msg [p] quantifierMoved
+               clearTreeposs; drawCurr'
+
+
         {- |
             Moves a subtree of a tree on the canvas. Click and hold the left
             mouse button over a subtree. Move the subtree to its new
@@ -3974,7 +3997,7 @@ solver this solveRef enum paint = do
                   -> (String -> Int)
                   -> Action
         narrowPar t sig k cls saveRedex used (p:ps) qs vc =
-            if p `notElem` positions t --- || isVarRoot sig redex
+            if p `notElem` noRefPositions t -- || isVarRoot sig redex
             then narrowPar t sig k cls saveRedex used ps qs vc
             else do
                 matching <- readIORef matchingRef
@@ -4155,7 +4178,7 @@ solver this solveRef enum paint = do
                     (ps `join` ps2,cps `join` cps2,cs,ds,fs,hs)
                 sig <- getSignature
                 let axs2 = map (mkComplAxiom sig) axs1
-                modifyIORef axiomsRef (`join` axs2)
+                modifyIORef axiomsRef (++ axs2)
                 enterFormulas' axs2
                 trees <- readIORef treesRef
                 if null trees then labGreen' msg
@@ -4374,7 +4397,9 @@ solver this solveRef enum paint = do
                treeposs <- readIORef treepossRef
                let t = trees!!curr
                    p:ps = emptyOrAll treeposs
-               if all (eqTerm $ expand0 t p) $ map (expand0 t) ps then do
+               if length treeposs < 2 
+                  then labMag "Select at least two subterms!"
+               else if all (eqTerm $ expand0 t p) $ map (expand0 t) ps then do
                   modifyIORef treesRef $ \trees -> updList trees curr
                     $ reference t p ps
                   extendPT False False False False RefNodes
@@ -4397,7 +4422,7 @@ solver this solveRef enum paint = do
                        trees <- readIORef treesRef
                        curr <- readIORef currRef
 
-                       let t = replace (trees!!curr) q $ mkPos p
+                       let t = replace0 (trees!!curr) q $ mkPos p
                        if p `elem` allPoss t
                            then do
                                modifyIORef treesRef
@@ -4406,7 +4431,7 @@ solver this solveRef enum paint = do
                                extendPT False False False False ReleaseNode
                                setProof False False "INSERTING AN ARC" [r,p] $
                                         arcInserted r p
-                           else labRed' referenced
+                           else labRed' $ show p ++ " does not exist!"
                        drawCurr'
                        writeIORef nodeRef Nothing
                        canv `gtkSet` [ canvasCursor := LeftPtr ]
@@ -4441,8 +4466,7 @@ solver this solveRef enum paint = do
                             beep 
                             when (null target) $ changeMode u
                             replaceQuant u target
-                            finishRelease
-                                (replace2 t source t target)
+                            finishRelease (moveAndReplace t source t target)
                                 source ReleaseSubtree
                     _ -> do
                         setTreeposs $ Remove source
@@ -4474,7 +4498,7 @@ solver this solveRef enum paint = do
                         Just (_,q) -> when (p /= q) $ do
                             beep
                             f $ replace1 t q u
-                        _ -> f $ replace t p $ V z
+                        _ -> f $ replace0 t p $ V z
                     setSubst' (g `andThen` for u z, dom `join1` z)
                     modifyIORef varCounterRef
                         $ \varCounter -> incr varCounter "z"
@@ -4499,7 +4523,7 @@ solver this solveRef enum paint = do
                 axs = axiomsFor xs axioms
             if null axs then labRed' $ noAxiomsFor xs
             else do
-                writeIORef axiomsRef $  removeTerms axioms axs
+                writeIORef axiomsRef $ axioms `minus` axs
                 axioms <- readIORef axiomsRef
                 writeIORef simplRulesRef $ trips ["==","<==>"] axioms
                 writeIORef transRulesRef $ trips ["->"] axioms
@@ -4519,23 +4543,19 @@ solver this solveRef enum paint = do
                     let ts = map (exps!!) ns
                     case n of
                       0 -> do
-                          modifyIORef axiomsRef
-                              $ \axioms -> removeTerms axioms ts
+                          modifyIORef axiomsRef (`minus` ts)
                           axioms <- readIORef axiomsRef
                           writeIORef simplRulesRef $ trips ["==","<==>"] axioms
                           writeIORef transRulesRef $ trips ["->"] axioms
                           showAxioms True
                       1 -> do
-                          modifyIORef theoremsRef
-                              $ \theorems -> removeTerms theorems ts
+                          modifyIORef theoremsRef (`minus` ts)
                           showTheorems True
                       2 -> do
-                          modifyIORef conjectsRef
-                              $ \conjects -> removeTerms conjects ts
+                          modifyIORef conjectsRef (`minus` ts)
                           showConjects
                       _ -> do
-                          modifyIORef termsRef
-                              $ \terms -> removeTerms terms ts
+                          modifyIORef termsRef (`minus` ts)
                           showTerms
                 _ -> labMag enterNumbers
         
@@ -4543,9 +4563,7 @@ solver this solveRef enum paint = do
         removeConjects :: Action
         removeConjects = do
             writeIORef conjectsRef []
-            writeIORef indClausesRef []
-            labGreen' $ "There are neither conjectures nor "
-                ++ "induction hypotheses."
+            labGreen' "There are no conjectures."
         
         -- | Used by 'checkForward'. Called by menu item /remove copies/
         -- from menu /graph/.
@@ -4779,8 +4797,7 @@ solver this solveRef enum paint = do
             if null trees then labBlue' start
             else do
                 str <- ent `gtkGet` entryText
-                case words str of [x] -> replaceNodes' x
-                                  _ -> labRed' "Enter a single nonempty word."
+                replaceNodes' $ unwords $ words str
         
         -- | Used by 'checkForward' and 'replaceNodes'.
         replaceNodes' :: String -> Action
@@ -4973,7 +4990,7 @@ solver this solveRef enum paint = do
         
         -- | Used by 'narrowOrRewritePar'.
         rewritePar t sig k cls saveRedex used (p:ps) qs vc =
-            if p `notElem` positions t --- || isVarRoot sig redex
+            if p `notElem` noRefPositions t -- || isVarRoot sig redex
             then rewritePar t sig k cls saveRedex used ps qs vc
             else do
                 matching <- readIORef matchingRef
@@ -5103,8 +5120,9 @@ solver this solveRef enum paint = do
                 solPositions <- readIORef solPositionsRef
                 proofTerm <- readIORef proofTermRef
                 -- TODO use filechooser widget instead.
+                specfiles <- readIORef specfilesRef
                 file <- ent `gtkGet` entryText
-                filePath <- userLib file
+                filePath <- userLib $ head specfiles ++ '_':file
                 let pfile = filePath ++ "P"
                     tfile = filePath ++ "T"
                 write pfile $ '\n':showDeriv proof trees solPositions
@@ -5302,12 +5320,10 @@ solver this solveRef enum paint = do
           spread <- readIORef spreadRef
           setEval paint eval spread
           str <- ent `gtkGet` entryText
-          case parse (term sig) str of
-               Just draw -> do
-                            writeIORef drawFunRef draw
-                            drawFun <- readIORef drawFunRef
-                            labGreen' $ newInterpreter eval drawFun
-               _ -> labRed' "Enter a widget-term generator!"
+          case parse (term sig) str of Just draw -> writeIORef drawFunRef draw
+                                       _ -> writeIORef drawFunRef $ leaf "id"
+          drawFun <- readIORef drawFunRef
+          labGreen' $ newInterpreter eval drawFun
         
         -- | Used by 'changeMode', 'setDeriveMode' and 'setTreeposs'. Called by
         -- button 'matchBut'.
@@ -5395,7 +5411,7 @@ solver this solveRef enum paint = do
           simplStrat <- readIORef simplStratRef
           let oldProofElem = proof!!proofPtr
               n = counter 'd'
-              msgAE = msg == "ADMITTED" || msg == "EQS"
+              msgAE = msg == "ADMITTED" || msg == "SAFE"
               msgSP = msg == "SPLIT"
               msgMV = msg == "MOVED" || msg == "JOIN"
               msgAD = take 4 msg == "ADDC"
@@ -5443,9 +5459,13 @@ solver this solveRef enum paint = do
              modifyIORef proofPtrRef succ
              proofPtr <- readIORef proofPtrRef
              perms <- readIORef permsRef
+             axioms <- readIORef axiomsRef
+             theorems <- readIORef theoremsRef
              let next = ProofElem
                       { peMsg = msgP ++ cmsg
                       , peMsgL = msg3
+                      , peAxioms = axioms
+                      , peTheorems = theorems
                       , peTreeMode = treeMode
                       , peTrees = trees
                       , peTreePoss = ps
@@ -5736,17 +5756,6 @@ solver this solveRef enum paint = do
                 curr <- readIORef currRef
                 drawThis (trees!!curr) [glbPos treeposs] "green"
         
-        -- | Called by menu item /show induction hypotheses/ from menu
-        -- /theorems/.
-        showIndClauses :: Action
-        showIndClauses = do
-            indClauses <- readIORef indClausesRef
-            if null indClauses
-            then labGreen' "There are no induction hypotheses."
-            else do
-                enterFormulas' indClauses
-                labGreen' $ see "induction hypotheses"
-        
         -- | Called by all /show matrix/ menu items from menu /graph/.
         showMatrix :: Int -> Action
         showMatrix m = do
@@ -5869,7 +5878,7 @@ solver this solveRef enum paint = do
                 writeIORef restoreRef True
                 curr <- readIORef currRef
                 let t = trees!!curr
-                drawThis (mapT f $ posTree [] t) (cPositions isPos t) "red"
+                drawThis (mapT f $ posTree [] t) (refPositions t) "red"
             where f = unwords . map show
         
         -- | Called by menu item /predecessors/ from menu /nodes/.
@@ -5956,8 +5965,7 @@ solver this solveRef enum paint = do
 
           enterText' $ showSignature (minus6 symbols iniSymbols) ""
           let (block,xs) = constraints
-          labGreen' $ see "signature" ++ '\n':admitted block xs
-                                      ++ '\n':equationRemoval safe
+          labGreen' $see "signature" ++'\n':admitted block xs++'\n':safeMsg safe
 
         
         -- | Called by menu item /show map/ from menu /signature/.
@@ -6337,8 +6345,7 @@ solver this solveRef enum paint = do
           if null trees then labBlue' start
           else do
                str <- ent `gtkGet` entryText
-               let pars = words str
-               case pars of
+               case words str of
                   ["ext",limit] | just k -> f $ get k where k = parse pnat limit
                   _ -> f 0
           where f = if ind then applyInduction else applyCoinduction
@@ -6418,7 +6425,7 @@ solver this solveRef enum paint = do
                         if isImpl u then do
                             curr <- readIORef currRef
                             modifyIORef treesRef $ \trees ->
-                                updList trees curr $ replace t r mkTrue
+                                updList trees curr $ replace0 t r mkTrue
                             finish ps "premise"
                         else if isConjunct u then do
                             let u' = F "&" $ context (last q) $ subterms u
@@ -6455,12 +6462,12 @@ solver this solveRef enum paint = do
         switchSafe :: Action
         switchSafe = do
             modifyIORef safeRef not
-            extendPT False False False False SafeEqs
+            extendPT False False False False SwitchSafe
             safe <- readIORef safeRef
-            setProof True False "EQS" [] $ equationRemoval safe
+            setProof True False "SAFE" [] $ safeMsg safe
             safe <- readIORef safeRef
             safeBut <- readIORef safeButRef
-            safeBut `gtkSet` [ menuItemLabel := eqsButMsg safe]
+            safeBut `gtkSet` [ menuItemLabel := safeButText safe]
 
         transformGraph mode = do
           trees <- readIORef treesRef

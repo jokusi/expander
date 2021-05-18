@@ -1,15 +1,15 @@
 -- lazy 
 
-specs:      bool
 constructs: leaf #
 defuncts:   is_even mergesortL splitL mergeL mergesort split merge
-	    mergesortF splitF mergeF replaceL replace foldRepL foldRep 
-            palL pal palF reveqL reveq reveqI reveqF sortTL sortT sortTI
-	    leavesRepL leavesRep leavesRepI foo goo nats nats' fibs fibs'  
+	    mergesortF splitF mergeF replaceL replace foldRepL foldRep
+            palL pal palLI palF reveqL reveqLI reveq reveqI reveqF 
+	    sortTL sortT sortTI leavesRepL leavesRep leavesRepI 
+	    foo goo nats nats' fibs fibs'  
 	    RequestsL ClientL Requests Client CSI || tree1 tree2 tree3
 preds:      even odd 
-fovars:     t u r a b requests acc t1 t2 u1 u2 s1 s2 ls ls1 ls2 pair
-hovars:     f g client
+fovars:     t u r a b b1 b2 rb rc requests acc t1 t2 u1 u2 s1 s2 ls ls1 ls2
+hovars:     f g h client
 
 axioms:
 
@@ -17,7 +17,7 @@ axioms:
 (even$suc$x <==> odd$x) &
 (odd$x <==> Not(even$x)) &
 
-is_even == fun(x||even$x,true,x||odd$x,false) &
+is_even == fun(x||even$x,1,x||odd$x,0) &
 
 -- MERGESORT
 
@@ -61,36 +61,36 @@ mergeF(s)[]      == s &
 
 (palL$s = b <=== reveqL(s)$r = (r,b)) &  
 					
-reveqL[]$s        = ([],true) &         
-(reveqL(x:s)$y:s' = (r++[x],eq(x,y)`and`b) <=== reveqL(s)$s' = (r,b)) &
+reveqL[]$s        = ([],1) &         
+(reveqL(x:s)$y:s' = (r++[x],bool(x=y)*b) <=== reveqL(s)$s' = (r,b)) &
 
-pal$s == get1$mu r b.reveq(s)(r) &           -- reveq(s)$s' = (reverse$s,s=s')
+(palLI$s = b <=== reveqLI(s)(r)[] = (r,b)) &  
+					
+reveqLI[](s)$acc = (acc,1) &        
+(reveqLI(x:s)(y:s')$acc = (r,bool(x=y)*b) <=== reveqLI(s)(s')$x:acc = (r,b)) &
 
-reveq[]$s == ([],true) &
-reveq(x:s)$s' 
- == fun(pair,(get0(pair)++[x],eq(x,head$s')`and`get1$pair))$reveq(s)$tail$s' &
+pal$s == get1$mu rb.reveq(s)(get0$rb) &       -- reveq(s)$s' = (reverse$s,s=s')
 
--- (reveq(s)$tail$s' = pair 
---       ==> reveq(x:s)$s' == (get0(pair)++[x],eq(x,head$s')`and`get1$pair)) &
--- slow
+reveq[]$s == ([],1) &
+reveq(x:s)$s' == fun((r,b),(r++[x],bool(x=head$s')*b))$reveq(s)$tail$s' &
 
--- reveq(x:s)$s' == fun((r,b),(r++[x],eq(x,head$s')`and`b))$reveq(s)$tail$s' &
--- terminates incorrectly
+-- (reveq(s)$tail$s' = (r,b) 						slow
+--       ==> reveq(x:s)$s' == (r++[x],bool(x=head$s')*b)) &  		
 
-palI$s == get1$mu r b.reveqI(s)(r)[] & 
+palI$s == get1$mu rb.reveqI(s)(get0$rb)[] & 
 			         -- revEqI(s)(s')$acc = (reverse(s)++acc,s=s')
 
-reveqI[](s)$acc == (acc,true) &
-reveqI(x:s)(s')$acc == fun((r,b),(r,eq(x,head$s')`and`b))
+reveqI[](s)$acc == (acc,1) &
+reveqI(x:s)(s')$acc == fun((r,b),(r,bool(x=head$s')*b))
                        $reveqI(s)(tail$s')$x:acc &
--- (reveqI(s)(tail$s')$x:acc = (r,b) 
---	            ==> reveqI(x:s)(s')$acc == (r,eq(x,head$s')`and`b)) &
--- slow
+
+-- (reveqI(s)(tail$s')$x:acc = (r,b) 					slow
+--	            ==> reveqI(x:s)(s')$acc == (r,bool(x=head$s')*b)) &
 
 (reveqF$s = (r,f) ==> palF$s == f$r) &
 
-reveqF[] == ([],fun(s,true)) &
-reveqF$x:s == (get0(reveqF$s)++[x],fun(y:s',eq(x,y)`and`get1(reveqF$s)$s')) &
+reveqF[] == ([],fun(s,1)) &
+reveqF$x:s == (get0(reveqF$s)++[x],fun(y:s',bool(x=y)*(get1(reveqF$s)$s'))) &
 
 -- BINARY TREES
 
@@ -111,8 +111,6 @@ replace(f)$t == get1$mu x u.foldRep(f)(t)(x) &
 foldRep(f)(leaf$x)$y == (x,leaf(y)) &
 (foldRep(f)(t1)$x = (y,u1) & foldRep(f)(t2)$x = (z,u2) 
 		     ==> foldRep(f)(t1#t2)$x == (f(y,z),u1#u2)) &
-
--- TREE SORTING
 
 (sortTL$t = u <=== leavesRepL(t)(sort$ls) = (ls,u,s)) &
 
@@ -147,22 +145,25 @@ fibs' == mu s.(1:1:zipWith(+)(s)$tail$s) & -- simplify breadthfirst/parallel
 
 -- CLIENT-SERVER INTERACTION
 
-RequestsL(f)(g)$a = ClientL(g)(0)$map(f)$RequestsL(f)(g)$a &
+RequestsL(f)(g) = ClientL(g)(0).map(f).RequestsL(f)(g) &
 
-ClientL(g)(a)$s = a:ClientL(g)(g$head$s)$tail$s &
+(ClientL(g)(a)$s = a:ClientL(g)(g$b)$s' <=== s = b:s') &
 
 Requests(f)(g)$a == Client(g)(a)$map(f)$Requests(f)(g)$a &
 
 Client(g)(a)$s == a:Client(g)(g$head$s)$tail$s &
 
-CSI(f)(g)$a == get0$mu requests client.
-		       (client(a)$map(f)$requests,
-                        fun(a,fun(s,a:client(g$head$s)$tail$s))) &
+CSI(f)(g)$a == get0$mu rc.(get1(rc)(a)$map(f)$get0$rc,
+                           fun(a,fun(s,a:get1(rc)(g$head$s)$tail$s))) &
 
 -- LAZY MULTIPLICATION
 
 foo(x) == ite(x=0,0,foo(x-1)*foo(x+1)) &
 goo(x) == ite(x=0,0,goo(x+1)*goo(x-1))
+
+theorems:
+
+Any b b1 b2 s:map(h)$RequestsL(f)(g)$a = b:b1:b2:s     -- (*)
 
 conjects:
 
@@ -175,12 +176,18 @@ palL[1,1] = b 				   &   -- unify and narrow, simpl
 palL[1,2] = b 				   &   -- unify and narrow, simpl
 				                   -- 4 steps           (9.3.20)      
 palL[2,3,2] = b 			   &   -- unify and narrow, simpl
+				                   -- 5 steps         (30.10.20)      
 palL[2,3,1,2] = b			   &   -- unify and narrow, simpl
 
+palLI[2,3,2] = b 			   &   -- unify and narrow, simpl
+				                   -- 5 steps          (24.1.21)      
+palLI[2,3,2,1] = b 			   &   -- unify and narrow, simpl
+				                   -- 6 steps          (24.1.21)      
 sortTL$tree1 = t              	           &   -- match and narrow, simpl
-
+				                   -- 6 steps          (24.1.21)      
 take(3)$RequestsL(+1)(*2)(0) = s               -- match and narrow, simpl
-				  	       -- 11 steps             (18.3.20)      
+				  	           -- 14 steps         (25.1.21)  
+    						   -- uses (*)
 terms: 
 
 mergesort[3,2,1,4] 			       <+>
@@ -189,17 +196,17 @@ mergesortF[3,2,1,4] 			       <+>
 replace(min)$tree1   		               <+> 
 replace(+)$tree1   		               <+> 
 
-pal[1,1] 			       	       <+> -- 18 steps         (18.3.20)
-pal[1,2] 			       	       <+> -- 17 steps         (18.3.20)
+pal[1,1] 			       	       <+> -- 22 steps        (31.12.20)
+pal[1,2] 			       	       <+> -- 16 steps        (31.12.20)
 pal[2,3,2] 			       	       <+> -- 24 steps         (18.3.20)
 pal[2,3,3]                                     <+> -- 20 steps         (18.3.20)
-pal[2,3,1,2]                                   <+> -- 29 steps         (18.3.20)
-pal[2,3,3,2]                                   <+> -- 31 steps         (18.3.20)
+pal[2,3,1,2]                                   <+> -- 29 steps        (31.12.20)
+pal[2,3,3,2]                                   <+> -- 45 steps        (31.12.20)
 
-palI[2,3,2] 			       	       <+> -- 19 steps         (18.3.20)
-palI[2,3,1,2]                                  <+> -- 19 steps         (18.3.20)
-palI[1,2,3,2,1]                                <+> -- 29 steps         (18.3.20)				
-palF[2,3,2] 			       	       <+> -- 10 steps         (18.3.20)
+palI[2,3,2] 			       	       <+> -- 19 steps         (22.1.21)
+palI[2,3,2,1]                                  <+> -- 22 steps         (22.1.21)
+palI[1,2,3,2,1]                                <+> -- 25 steps         (22.1.21)				
+palF[2,3,2] 			       	       <+> -- 12 steps         (22.1.21)
 palF[2,3,1,2] 			       	       <+> -- 9 steps          (18.3.20)
 						   
 sortT$tree1	       			       <+> -- 13 steps         (16.2.20)
@@ -215,15 +222,19 @@ take(3)$nats			      	       <+> -- 21 steps         (1.11.17)
 take(3)$nats'  			               <+> -- 22 steps         (1.11.17)
 
 take(3)$Requests(+1)(*2)$0		       <+> --> [0,2,6]	      
-						   -- 30 steps         (18.3.20)
-take(4)$Requests(+1)(*2)$0		       <+> --> [0,2,6,14]      						   		   -- 47 steps         (11.3.20)
+						   -- 30 steps        (26.10.20)
+take(4)$Requests(+1)(*2)$0		       <+> --> [0,2,6,14]
+						   -- 47 steps        (26.10.20)
 take(5)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30]   
 						   -- 66 steps         (10.2.20)
 take(6)$Requests(+1)(*2)$0                     <+> --> [0,2,6,14,30,62]
 						   -- 89 steps         (10.2.20)
 take(3)$CSI(+1)(*2)$0                          <+> --> [0,2,6]
- 						   -- 50 steps         (30.8.20)
- 						   -- (all strategies)
+ 						   -- 50 steps paral   (22.1.21)
+ 						   -- 52 steps df/bf   (22.1.21)
+take(4)$CSI(+1)(*2)$0                          <+> --> [0,2,6,14]
+ 						   -- 93 steps paral   (23.1.21)
+
 foo(3)					       <+> --> 0		
                   -- 15 depthfirst, 19 parallel, 27 breadthfirst steps  (4.2.20)
 goo(3)					           --> 0	       

@@ -105,7 +105,6 @@ data SolverState = SolverState
 
   , axiomsRef_ :: [TermS]
   , conjectsRef_ :: [TermS]
-  , indClausesRef_ :: [()]
   , matchTermRef_ :: [()]
   , oldTreepossRef_ :: [()]
   , proofRef_ :: [()]
@@ -190,7 +189,6 @@ restoreRef = IORef restoreRef_ (\a st -> st{ restoreRef_ = a})
 
 axiomsRef = IORef axiomsRef_ (\a st -> st{ axiomsRef_ = a})
 conjectsRef = IORef conjectsRef_ (\a st -> st{ conjectsRef_ = a})
-indClausesRef = IORef indClausesRef_ (\a st -> st{ indClausesRef_ = a})
 matchTermRef = IORef matchTermRef_ (\a st -> st{ matchTermRef_ = a})
 oldTreepossRef = IORef oldTreepossRef_ (\a st -> st{ oldTreepossRef_ = a})
 proofRef = IORef proofRef_ (\a st -> st{ proofRef_ = a})
@@ -290,7 +288,6 @@ initSolverState = SolverState
   []
   []
   []
-  []
 
   (0,0)
   (30,20)
@@ -366,7 +363,7 @@ addAxioms t file = do
   if null cls
       then do
           writeIORef solPositionsRef []
-          modifyIORef axiomsRef $ \axioms -> axioms `join` axs
+          modifyIORef axiomsRef $ \axioms -> joinTerms axioms axs
           noProcs <- readIORef noProcsRef
           modifyIORef simplRulesRef
             $ \simplRules -> simplRules `join` trips ["==","<==>"] axs
@@ -486,7 +483,7 @@ getSignature = do
     simpls' = simplRules; transitions' = transRules
     states' = sts; atoms' = ats; labels' = labs;
     trans' = tr; transL' = trL; value' = va; valueL' = vaL
-    safeEqs' = safe; redexPos' = []
+    notSafe' = not safe; redexPos' = []
     base = pr1 . splitVar
     in Sig
       { isPred      = isPred'
@@ -506,7 +503,7 @@ getSignature = do
       , value       = value'
       , transL      = transL'
       , valueL      = valueL'
-      , safeEqs     = safeEqs'
+      , notSafe     = notSafe'
       }
 
 

@@ -1,0 +1,40 @@
+-- /Users/Padawitz/ExpanderLib/eosum_EO_BehP
+
+0. Derivation of
+
+State(st) ==> betaEO(st) = betaBeh(h(st))
+
+All simplifications are admitted.
+Simplification is safe.
+
+1. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> betaEO(esum) = h(esum)[]) & 
+(st = osum ==> betaEO(osum) = h(osum)[])
+
+The reducts have been simplified parallel.
+
+2. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> 1 = h(esum)[]) & (st = osum ==> betaEO(osum) = h(osum)[])
+
+The reducts have been simplified parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+st = osum ==> betaEO(osum) = h(osum)[]
+
+The reducts have been simplified parallel.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+st = osum ==> 0 = h(osum)[]
+
+The reducts have been simplified parallel.
+
+5. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The reducts have been simplified parallel.
+

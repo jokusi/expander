@@ -1,0 +1,90 @@
+-- /Users/Padawitz/ExpanderLib/eosum_homomP
+
+0. Derivation of
+
+Nat(x) & State(st) ==> h(deltaEO(st)(x))(w) = deltaBeh(h(st))(x)(w)
+
+All simplifications are admitted.
+Simplification is safe.
+
+1. NARROWING the preceding trees (one step) leads to 
+
+Nat(x) & (st = esum | st = osum) ==> h(deltaEO(st)(x))(w) = h(st)(x:w)
+
+The reducts have been simplified parallel.
+
+2. DISTRIBUTING at positions
+[0,0]
+[0,1]
+of the preceding trees leads to 
+
+(Nat(x) & st = esum | Nat(x) & st = osum) ==> h(deltaEO(st)(x))(w) = h(st)(x:w)
+
+3. SIMPLIFYING parallel the preceding trees (3 steps) leads to 
+
+(st = esum & Nat(x) ==> h(deltaEO(esum)(x))(w) = h(esum)(x:w)) & 
+(st = osum & Nat(x) ==> h(deltaEO(osum)(x))(w) = h(osum)(x:w))
+
+4. NARROWING the preceding trees (one step) leads to 
+
+(st = esum & Nat(x) ==> 
+ h(esum)(w) = h(esum)(x:w) & even(x) | h(osum)(w) = h(esum)(x:w) & odd(x)) & 
+(st = osum & Nat(x) ==> h(deltaEO(osum)(x))(w) = h(osum)(x:w))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+5. NARROWING the preceding trees (one step) leads to 
+
+(st = esum & Nat(x) ==> even(x) | h(osum)(w) = h(esum)(x:w) & odd(x)) & 
+(st = osum & Nat(x) ==> h(deltaEO(osum)(x))(w) = h(osum)(x:w))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+6. NARROWING the preceding trees (one step) leads to 
+
+(st = esum & Nat(x) ==> even(x) | odd(x)) & 
+(st = osum & Nat(x) ==> h(deltaEO(osum)(x))(w) = h(osum)(x:w))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+7. NARROWING the preceding trees (one step) leads to 
+
+(st = esum & Nat(x) ==> even(x) | odd(x)) & 
+(st = osum & Nat(x) ==> 
+ h(esum)(w) = h(osum)(x:w) & odd(x) | h(osum)(w) = h(osum)(x:w) & even(x))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+8. NARROWING the preceding trees (one step) leads to 
+
+(st = esum & Nat(x) ==> even(x) | odd(x)) & 
+(st = osum & Nat(x) ==> odd(x) | h(osum)(w) = h(osum)(x:w) & even(x))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+9. NARROWING the preceding trees (one step) leads to 
+
+(st = esum & Nat(x) ==> even(x) | odd(x)) & 
+(st = osum & Nat(x) ==> odd(x) | even(x))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+10. Applying the axiom or theorem
+
+Nat(x) ===> even(x) | odd(x)
+
+at positions
+[1,0,1]
+[0,0,1]
+of the preceding trees leads to 
+
+True
+
+The reducts have been simplified parallel.
+

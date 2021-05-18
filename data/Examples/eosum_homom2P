@@ -1,0 +1,89 @@
+-- /Users/Padawitz/ExpanderLib/eosum_homom2P
+
+0. Derivation of
+
+State(st) ==> h(deltaEO(st)(x))(w) = deltaBeh(h(st))(x)(w)
+
+All simplifications are admitted.
+Simplification is safe.
+
+1. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> h(deltaEO(esum)(x))(w) = h(esum)(x:w)) & 
+(st = osum ==> h(deltaEO(osum)(x))(w) = h(osum)(x:w))
+
+The reducts have been simplified parallel.
+
+2. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> 
+ h(esum)(w) = h(esum)(x:w) & even(x) | h(osum)(w) = h(esum)(x:w) & odd(x)) & 
+(st = osum ==> h(deltaEO(osum)(x))(w) = h(osum)(x:w))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> even(x) | h(osum)(w) = h(esum)(x:w) & odd(x)) & 
+(st = osum ==> h(deltaEO(osum)(x))(w) = h(osum)(x:w))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> even(x) | odd(x)) & 
+(st = osum ==> h(deltaEO(osum)(x))(w) = h(osum)(x:w))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+5. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> even(x) | odd(x)) & 
+(st = osum ==> 
+ h(esum)(w) = h(osum)(x:w) & odd(x) | h(osum)(w) = h(osum)(x:w) & even(x))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+6. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> even(x) | odd(x)) & 
+(st = osum ==> odd(x) | h(osum)(w) = h(osum)(x:w) & even(x))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+7. NARROWING the preceding trees (one step) leads to 
+
+(st = esum ==> even(x) | odd(x)) & (st = osum ==> odd(x) | even(x))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+8. Applying the axiom or theorem
+
+even(x) | odd(x)
+
+at positions
+[0,1]
+of the preceding trees leads to 
+
+st = osum ==> odd(x) | even(x)
+
+The reducts have been simplified parallel.
+
+9. Applying the axiom or theorem
+
+even(x) | odd(x)
+
+at positions
+[1]
+of the preceding trees leads to 
+
+True
+
+The reducts have been simplified parallel.
+

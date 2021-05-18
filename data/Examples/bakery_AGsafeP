@@ -1,0 +1,159 @@
+-- /Users/Padawitz/ExpanderLib/bakery_AGsafeP
+
+0. Derivation of
+
+AG(Safe)(start)
+
+All simplifications are admitted.
+Simplification is safe.
+
+1. The set of axioms is extended by
+
+  (AG0(z0)(z1) <=== z0 = Safe & z1 = start)
+
+Applying COINDUCTION wrt
+
+  (AG(P)(st) ===> P(st) & AX(AG(P))(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+AG0(((<=1).length).filterP(=crit))[wait,idle]
+
+The reducts have been simplified parallel.
+
+2. The set of axioms is extended by
+
+  (AG0(z2)(z3) <=== z2 = ((<=1).length).filterP(=crit) & z3 = [wait,idle])
+
+Applying COINDUCTION wrt
+
+  (AG(P)(st) ===> P(st) & AX(AG(P))(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+AG0(((<=1).length).filterP(=crit))[wait,wait] & 
+AG0(((<=1).length).filterP(=crit))[crit,idle]
+
+The reducts have been simplified parallel.
+
+3. The set of axioms is extended by
+
+  (AG0(z4)(z5) <=== z4 = ((<=1).length).filterP(=crit) & z5 = [wait,wait])
+& (AG0(z4)(z5) <=== z4 = ((<=1).length).filterP(=crit) & z5 = [crit,idle])
+
+Applying COINDUCTION wrt
+
+  (AG(P)(st) ===> P(st) & AX(AG(P))(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+AG0(((<=1).length).filterP(=crit))[crit,wait] & 
+AG0(((<=1).length).filterP(=crit))[idle,idle]
+
+The reducts have been simplified parallel.
+
+4. Applying the axioms
+
+  (AG0(z0)(z1) <=== z0 = Safe & z1 = start)
+& (AG0(z2)(z3) <=== z2 = ((<=1).length).filterP(=crit) & z3 = [wait,idle])
+& (AG0(z4)(z5) <=== z4 = ((<=1).length).filterP(=crit) & z5 = [wait,wait])
+& (AG0(z4)(z5) <=== z4 = ((<=1).length).filterP(=crit) & z5 = [crit,idle])
+
+at positions
+[1]
+of the preceding trees leads to 
+
+AG0(((<=1).length).filterP(=crit))[crit,wait]
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+5. The set of axioms is extended by
+
+  (AG0(z6)(z7) <=== z6 = ((<=1).length).filterP(=crit) & z7 = [crit,wait])
+
+Applying COINDUCTION wrt
+
+  (AG(P)(st) ===> P(st) & AX(AG(P))(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+AG0(((<=1).length).filterP(=crit))[idle,wait]
+
+The reducts have been simplified parallel.
+
+6. The set of axioms is extended by
+
+  (AG0(z8)(z9) <=== z8 = ((<=1).length).filterP(=crit) & z9 = [idle,wait])
+
+Applying COINDUCTION wrt
+
+  (AG(P)(st) ===> P(st) & AX(AG(P))(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+AG0(((<=1).length).filterP(=crit))[wait,wait] & 
+AG0(((<=1).length).filterP(=crit))[idle,crit]
+
+The reducts have been simplified parallel.
+
+7. The set of axioms is extended by
+
+  (AG0(z10)(z11) <=== z10 = ((<=1).length).filterP(=crit) & z11 = [wait,wait])
+& (AG0(z10)(z11) <=== z10 = ((<=1).length).filterP(=crit) & z11 = [idle,crit])
+
+Applying COINDUCTION wrt
+
+  (AG(P)(st) ===> P(st) & AX(AG(P))(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+AG0(((<=1).length).filterP(=crit))[crit,wait] & 
+AG0(((<=1).length).filterP(=crit))[idle,idle] & 
+AG0(((<=1).length).filterP(=crit))[wait,crit]
+
+The reducts have been simplified parallel.
+
+8. NARROWING the preceding trees (one step) leads to 
+
+AG0(((<=1).length).filterP(=crit))[idle,idle] & 
+AG0(((<=1).length).filterP(=crit))[wait,crit]
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+9. NARROWING the preceding trees (one step) leads to 
+
+AG0(((<=1).length).filterP(=crit))[wait,crit]
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+10. The set of axioms is extended by
+
+  (AG0(z12)(z13) <=== z12 = ((<=1).length).filterP(=crit) & z13 = [wait,crit])
+
+Applying COINDUCTION wrt
+
+  (AG(P)(st) ===> P(st) & AX(AG(P))(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+AG0(((<=1).length).filterP(=crit))[wait,idle]
+
+The reducts have been simplified parallel.
+
+11. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

@@ -4,7 +4,7 @@ constructs: 	a f g h esum osum
 
 defuncts: 	blink' nats' fibs' zen
 
-preds: 		even odd
+preds: 		even odd ->
 
 fovars: 	x' y' z' blink nats fibs fib gras requests responses  
 
@@ -59,3 +59,8 @@ esum = State(delta(tup(even x(esum),odd x(osum))),beta(1)) &osum = State(delta(
 & gras = f(zen(gras),a)
 & requests = client(init,responses)
 & responses = server(requests)
+
+terms:
+
+get0((State(delta(tup(even x(get0(pos 0)),odd x(get1(pos 0)))),beta(1)),
+      State(delta(tup(even x(get1(pos 0)),odd x(get0(pos 0)))),beta(0))))

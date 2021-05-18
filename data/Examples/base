@@ -1,8 +1,8 @@
 -- base
 
-defuncts: head tail init last take drop <=< kfold
+defuncts: init last take drop <=< kfold
 preds:	P Q R
-fovars:	x y z s s' n
+fovars:	x y z s s' m n i j k
 hovars:	F G P Q R
 
 axioms:
@@ -11,9 +11,6 @@ axioms:
 []++s == s &
 s++[] == s &
 (x:s)++s' == x:s++s' &
-
-head$x:s == x &
-tail$x:s == s &
 
 init[x] == [] &
 init$x:y:s == x:init$y:s &

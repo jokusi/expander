@@ -2,7 +2,7 @@
 
 constructs: 	esum osum elab olab final 
 defuncts:	parity delta beta deltaEO betaEO deltaBeh betaBeh unfold h
-preds: 		even odd Nat State List
+preds: 		even odd Nat State List ->
 fovars:		st w
 hovars:		f
 
@@ -49,15 +49,17 @@ h(osum)[] = 0 &
 
 theorems:
 
-(Nat(x) ===> even$x | odd$x) & 	      		-- used by eosum1P 
-				      		-- conjecture of nat
+(Nat(x) ===> even$x | odd$x) &	      		-- used by homom 
+(even$x | odd$x) 	      			-- used by homom2 
+				      		
 conjects:
 
 -- h is Acc(Int)-homomorphic and thus equal to unfold:
 
 (Nat(x) & State(st) ==> h(deltaEO(st)$x)$w = deltaBeh(h$st)(x)$w) &	
-						-- eosum1
-(State(st) ==> betaEO$st = betaBeh$h$st) 	-- eosum2
+							 -- homom
+(State(st) ==> betaEO$st = betaBeh$h$st) &		 -- EO_Beh
+(State(st) ==> h(deltaEO(st)$x)$w = deltaBeh(h$st)(x)$w) -- homom2	
 
 terms:
 

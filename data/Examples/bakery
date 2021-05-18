@@ -3,9 +3,7 @@
 specs:   	modal
 constructs:	idle wait crit safe
 defuncts:       start filterP updMin
-preds:		P anyP allP Safe
-fovars:		st
-hovars:		P
+preds:		anyP allP Safe
 
 axioms:
 
@@ -38,9 +36,10 @@ axioms:
 
 conjects:
 
-  EX(true)$start	-->             8 simplification steps
-& AG(Safe)$start	--> True	6 x coinduction + 3 x narrowing
-			--		if length$procs = 2
+  EX(true)$start	--> True        9 simplification steps
+& states = eval$EX$true --> True
+& AG(Safe)$start	--> True	coinduction + narrowing
+
 terms:
 
     eval$EX$true	--> states 

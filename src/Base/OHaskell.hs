@@ -24,7 +24,7 @@ import Paths (getDataDir)
 
 import Control.Monad (MonadPlus,when,guard)
 import qualified Control.Monad as Haskell
-import Data.Char (chr, ord, toLower, isLower, isDigit)
+import Data.Char (chr, ord, toLower, isLower, isDigit, isAlpha)
 import Data.IORef
 import Prelude hiding ((++),concat,(<*),sequence)
 

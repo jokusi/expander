@@ -1,0 +1,2 @@
+-- /Users/Padawitz/ExpanderLib/eosum_homom2T
+[Matching 0, Narrow 1 True, Matching 2, Narrow 1 True, Simplify 100 False, Matching 0, Narrow 1 True, Narrow 1 True, Narrow 1 True, Narrow 1 True, Narrow 1 True, Narrow 1 True, Narrow 1 True, Mark [[0, 1]], Narrow 1 True, Mark [[0, 1]], Theorem False (F "|" [F "even" [V "x"], F "odd" [V "x"]]), Mark [[1]], Theorem False (F "|" [F "even" [V "x"], F "odd" [V "x"]])]

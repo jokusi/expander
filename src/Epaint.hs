@@ -91,7 +91,7 @@ data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             CreateInvariant Bool | DecomposeAtom | DerefNodes | Distribute |
             EvaluateTrees | ExpandTree Bool Int | FlattenImpl |
             Generalize [TermS] | Induction Bool Int | Mark [[Int]] |
-            Matching Int | Minimize | ModifyEqs Int |
+            Matching Int | Minimize | ModifyEqs Int | MoveQuant |
             Narrow Int Bool | NegateAxioms [String] [String] |
             RefNodes | PermuteSubtrees | RandomLabels | RandomTree |
             ReduceRE Int | Refuting Bool | ReleaseNode | ReleaseSubtree |
@@ -99,13 +99,13 @@ data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             RemoveOthers | RemovePath | RemoveSubtrees | RenameVar String |
             ReplaceNodes String | ReplaceOther |
             ReplaceSubtrees [[Int]] [TermS] | ReplaceText String |
-            ReplaceVar String TermS [Int] | ReverseSubtrees | SafeEqs |
+            ReplaceVar String TermS [Int] | ReverseSubtrees |
             SetAdmitted Bool [String] | SetCurr String Int | SetDeriveMode |
             SetMatch | SetStrat Strategy | ShiftPattern | ShiftQuants |
             ShiftSubs [[Int]] | Simplify Int Bool | Simplifying Bool |
             SplitTree | StretchConclusion | StretchPremise | SubsumeSubtrees |
-            Theorem Bool TermS | Transform Int | UnifySubtrees | POINTER Step
-            deriving Show
+            SwitchSafe | Theorem Bool TermS | Transform Int | UnifySubtrees |
+            POINTER Step deriving Show
 
 -- Small templates
 
@@ -2671,11 +2671,10 @@ widgConst c sizes@(n,width) spread = f where
    f (F "taichi" s)      = jturtle $ taichi sizes s c
    f (F "text" ts)       = Just $ textWidget c (n,width) $ showTree False
                                                          $ mkHidden $ mkTup ts
-   f (F "tree" [t])      = Just $ Tree st0B n c $ mapT h ct
-                           where ct = coordTree width spread (20,20)
-                                                             $ mkHidden t
-                                 (_,(x,y)) = root ct
-                                 h (a,(i,j)) = (a,fromInt2 (i-x,j-y),width a)
+   f (F "tree" [t])      = Just $ Tree st0B n c $ mapT h ct where
+                               ct = coordTree width spread (20,20) $ mkHidden t
+                               (_,(x,y)) = root ct
+                               h (a,(i,j)) = (a,fromInt2 (i-x,j-y),width a)
    f (F "tria" [r])      = do r <- parseReal r; Just $ Tria (st0 c) r
    f (F x [n,d,a]) | z == "wave" = do mode <- search (== mode) pathmodes
                                       n <- parsePnat n; (d,a) <- parseReals d a
@@ -4522,4 +4521,4 @@ replaceCommandMenu connectIdRef menuItem act = do
     id <- menuItem `on` menuItemActivated $ act
     writeIORef connectIdRef id
 
--- used by loadWidget
+-- used by graphString,loadWidget

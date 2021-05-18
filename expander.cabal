@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 636e093f49faea8adf5614760f2739062237b5c2545f22532e29f86f0e1da875
+-- hash: 1193ad956cfb83bb3248e86753dcd5da0b5225e2938c67bb6e1ac6393c70c42e
 
 name:           expander
 version:        3.0.0.0
@@ -73,7 +73,8 @@ data-files:
     Examples/auto3
     Examples/auto4
     Examples/bakery
-    Examples/bakery_AG(Safe)$startP
+    Examples/bakery_AGsafeP
+    Examples/bakery_AGsafeT
     Examples/band
     Examples/base
     Examples/bisblinkP
@@ -113,7 +114,6 @@ data-files:
     Examples/crossing3
     Examples/cse
     Examples/cycle
-    Examples/decagonG
     Examples/derec1P
     Examples/derec1T
     Examples/derecExp
@@ -143,10 +143,12 @@ data-files:
     Examples/EFatomheat5T
     Examples/election
     Examples/eosum
-    Examples/eosum1P
-    Examples/eosum1T
-    Examples/eosum2P
-    Examples/eosum2T
+    Examples/eosum_EO_BehP
+    Examples/eosum_EO_BehT
+    Examples/eosum_homom2P
+    Examples/eosum_homom2T
+    Examples/eosum_homomP
+    Examples/eosum_homomT
     Examples/eqtest
     Examples/evenanyP
     Examples/evenanyT
@@ -206,12 +208,9 @@ data-files:
     Examples/graphs
     Examples/grow
     Examples/hanoi
-    Examples/hanoi3G
     Examples/hanoi3T
     Examples/hanoiActs
     Examples/hanoiLab
-    Examples/hextree2G
-    Examples/hextree3G
     Examples/hinze
     Examples/hrel
     Examples/hulls
@@ -227,7 +226,6 @@ data-files:
     Examples/iterloopT
     Examples/javaterm
     Examples/kaffee.gif
-    Examples/karnaugh5G
     Examples/kino
     Examples/kinotest
     Examples/kinotest2
@@ -485,7 +483,6 @@ data-files:
     Examples/Req1randomP
     Examples/Req1randomPT
     Examples/robot
-    Examples/robot80-120
     Examples/robotActs
     Examples/robotActsP
     Examples/robotGraph
@@ -514,7 +511,6 @@ data-files:
     Examples/SOLSPICT1
     Examples/SOLSPICT2
     Examples/solver
-    Examples/SolverCG
     Examples/SolverP
     Examples/SolverR
     Examples/sort1P
@@ -531,8 +527,6 @@ data-files:
     Examples/stream
     Examples/sum
     Examples/sumT
-    Examples/tattoo4
-    Examples/tattooG
     Examples/testdirP
     Examples/testdirT
     Examples/testgrow

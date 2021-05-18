@@ -1,6 +1,7 @@
 -- auto1
 
 constructs: D E dot plus minus final
+preds: -> ~
 
 axioms:
 
