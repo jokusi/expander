@@ -1,0 +1,59 @@
+-- /Users/Padawitz/ExpanderLib/list_partflatNP
+
+0. Derivation of
+
+part(s,p) ==> flatten(p) = s
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids pure expansion.
+
+1. SELECTING INDUCTION VARIABLES at positions
+[0,0]
+of the preceding trees leads to 
+
+All p:((part(!s,p) ==> flatten(p) = !s))
+
+2. NARROWING the preceding trees (one step) leads to 
+
+All x y s p0:
+ ((!s = x:(y:s) & part(y:s,p0) ==> flatten(p0) = y:s)) & 
+All x y s s' p0:
+ ((!s = x:(y:s) & part(y:s,s':p0) ==> s'++flatten(p0) = y:s))
+
+The reducts have been simplified parallel.
+
+3. Applying the induction hypothesis
+
+part(s,p) ===> (!s >> s ==> flatten(p) = s)
+
+at positions
+[1,0,0,1]
+[0,0,0,1]
+of the preceding trees leads to 
+
+All x y s p0:
+ ((!s = x:(y:s) & ((x:(y:s)) >> (y:s) ==> flatten(p0) = y:s) ==> 
+   flatten(p0) = y:s)) & 
+All x y s s' p0:
+ ((!s = x:(y:s) & ((x:(y:s)) >> (y:s) ==> s'++flatten(p0) = y:s) ==> 
+   s'++flatten(p0) = y:s))
+
+The reducts have been simplified parallel.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+All x y s s' p0:
+ ((!s = x:(y:s) & ((x:(y:s)) >> (y:s) ==> s'++flatten(p0) = y:s) ==> 
+   s'++flatten(p0) = y:s))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+5. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

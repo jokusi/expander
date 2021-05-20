@@ -1,0 +1,2 @@
+-- /Users/Padawitz/ExpanderLib/list_lendoubT
+[Mark [] [], Mark [] [], Induction, Mark [] [], Narrow 1 True, Mark [] [], Narrow 1 True, Mark [] [], Narrow 1 True, Mark [] [], Narrow 1 True, Mark [] [], Narrow 1 True, Mark [] [], Narrow 1 True, Mark [] [], Narrow 1 True, Mark [] [], Narrow 1 True, Mark [] [], Mark [] [[0, 1, 1, 0]], Mark [[0, 1, 1, 0]] [[0, 1, 1, 0], [0, 1, 1, 1]], ReverseSubtrees, Mark [[0, 1, 1, 0], [0, 1, 1, 1]] [], Mark [] [[0, 1]], DecomposeAtom, Mark [[0, 1]] [], Simplify 100 False, Mark [] []]

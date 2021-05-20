@@ -1,0 +1,44 @@
+-- database1
+
+specs: modal
+
+axioms:
+
+labels == [wife,completed,kennt,liebt,hasst,age] &
+
+states == [Robin,Inge,Markus,Fred,Sarah,Bob] & 
+
+DBproject == map(Database)[1,2] &
+
+(Robin,wife) -> Hanna &
+(Robin,age) -> 72 &
+(Inge,wife) -> Isolde &
+(Inge,age) -> 85 &
+(Markus,wife) -> Hilde &
+(Markus,age) -> 72 &
+
+(Fred,completed) -> branch$Compiler1:DBproject & 
+(Inge,completed) -> Database(1)<+>Compiler1 & 
+(Sarah,completed) -> branch$DBproject &
+
+(Alice,kennt) -> Bob &
+(Bob,hasst) -> Alice<+>Dave &
+(Carol,kennt) -> Alice &
+(Carol,liebt) -> Dave &
+(Dave,liebt) -> Carol &
+
+atoms == [0..8] 
+
+terms:
+
+eval([age]<>[72]) <+>			-->  [Robin,Markus]
+eval([wife]<>[Hilde]) <+>  		-->  [Markus]
+eval([hasst]<>[Alice]) <+>		-->  [Bob]
+eval([kennt]<>[Alice,Bob]) <+>		-->  [Alice,Carol]
+eval([hasst]<>[Alice]/\[Dave]) <+> 	-->  [Bob]
+eval(child[completed]/DBproject) <+>	-->  [Fred,Sarah]
+evalR(child[completed])	<+>		-->  db1_completed
+evalRM(child[completed]) <+>		-->  db1_completed
+evalRG(child[completed]) <+>		-->  db1_completed
+eval(sel((=2).length)$child[hasst]) <+> -->  [Bob]
+eval(sel((=1).length)$child[kennt])     -->  [Alice,Carol]

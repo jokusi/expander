@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1193ad956cfb83bb3248e86753dcd5da0b5225e2938c67bb6e1ac6393c70c42e
+-- hash: da1c95f396e6677d3055d94b3b9ff0f3166b56c43de7167eb665c5a798088752
 
 name:           expander
 version:        3.0.0.0
@@ -59,11 +59,8 @@ data-files:
     Examples/abuT
     Examples/abuW
     Examples/account
-    Examples/AFcrit
     Examples/AFheatP
     Examples/AFheatPT
-    Examples/AGsafeP
-    Examples/AGsafeT
     Examples/align
     Examples/aniP
     Examples/aniT
@@ -72,10 +69,6 @@ data-files:
     Examples/auto2
     Examples/auto3
     Examples/auto4
-    Examples/bakery
-    Examples/bakery_AGsafeP
-    Examples/bakery_AGsafeT
-    Examples/band
     Examples/base
     Examples/bisblinkP
     Examples/bisblinkT
@@ -114,6 +107,8 @@ data-files:
     Examples/crossing3
     Examples/cse
     Examples/cycle
+    Examples/database1
+    Examples/database2
     Examples/derec1P
     Examples/derec1T
     Examples/derecExp
@@ -168,8 +163,6 @@ data-files:
     Examples/EVproof
     Examples/evterm
     Examples/EXPproof
-    Examples/EXwait
-    Examples/EXwaitT
     Examples/fact
     Examples/factflow
     Examples/factor3-4-6-2
@@ -263,6 +256,16 @@ data-files:
     Examples/lightsnow
     Examples/lisa
     Examples/list
+    Examples/list_evenoddP
+    Examples/list_evenoddT
+    Examples/list_lendoubP
+    Examples/list_lendoubT
+    Examples/list_mergesortP
+    Examples/list_mergesortT
+    Examples/list_partflatNP
+    Examples/list_partflatNT
+    Examples/list_partflatP
+    Examples/list_partflatT
     Examples/listeval
     Examples/listrev
     Examples/LISTREVproof
@@ -286,12 +289,8 @@ data-files:
     Examples/logConj2
     Examples/logConj2T
     Examples/lr1
-    Examples/lr1run
-    Examples/lr1runT
-    Examples/lr2
-    Examples/lr2Act
-    Examples/lr2run
-    Examples/lr2runT
+    Examples/lr1_cdP
+    Examples/lr1_cdT
     Examples/lr3
     Examples/LRalt
     Examples/LRaltRun
@@ -310,8 +309,6 @@ data-files:
     Examples/mergeP
     Examples/mergePalt
     Examples/mergePT
-    Examples/mergesortP
-    Examples/mergesortT
     Examples/micro
     Examples/micro1P
     Examples/micro1T
@@ -335,16 +332,19 @@ data-files:
     Examples/morseinv2
     Examples/morseinv2T
     Examples/morseinvT
-    Examples/mutex
+    Examples/mutex1
+    Examples/mutex2
     Examples/mutexAC
-    Examples/mutexAlt
-    Examples/mutexco
     Examples/mutexquad
     Examples/mwgc
     Examples/mwgc1altG
     Examples/mwgc1G
     Examples/mwgc3G
     Examples/nat
+    Examples/nat_evenanyP
+    Examples/nat_evenanyT
+    Examples/nat_evenoddP
+    Examples/nat_evenoddT
     Examples/natloop
     Examples/natloopN
     Examples/natloopNT
@@ -390,11 +390,6 @@ data-files:
     Examples/one2P
     Examples/one2T
     Examples/overlaps
-    Examples/pafl
-    Examples/pafl1P
-    Examples/pafl1T
-    Examples/pafl2P
-    Examples/pafl2T
     Examples/pal11P
     Examples/pal1P
     Examples/pal2P
@@ -553,7 +548,18 @@ data-files:
     Examples/trans0code4
     Examples/trans0code5
     Examples/trans1
+    Examples/trans1_allONEP
+    Examples/trans1_allONET
     Examples/trans2
+    Examples/trans2_allNOTTHREEP
+    Examples/trans2_allNOTTHREET
+    Examples/trans2_allTHREEP
+    Examples/trans2_allTHREET
+    Examples/trans2_map_evalG
+    Examples/trans2_NOTTHREEP
+    Examples/trans2_NOTTHREET
+    Examples/trans2_THREEP
+    Examples/trans2_THREET
     Examples/trans2sols
     Examples/trans2SP
     Examples/trans3
@@ -608,6 +614,7 @@ data-files:
     style/icon.png
     style/Painter.glade
     style/Solver.glade
+    style/Solver.glade~
     style/style.css
 data-dir:       data
 
@@ -644,7 +651,9 @@ library
       Paths_expander
   hs-source-dirs:
       src
-  other-extensions: ForeignFunctionInterface GeneralizedNewtypeDeriving
+  other-extensions:
+      ForeignFunctionInterface
+      GeneralizedNewtypeDeriving
   build-depends:
       JuicyPixels
     , array
@@ -699,7 +708,8 @@ executable hilbs
       Paths_expander
   hs-source-dirs:
       app
-  other-extensions: BangPatterns
+  other-extensions:
+      BangPatterns
   ghc-options: -threaded -rtsopts=none -with-rtsopts=-N
   build-depends:
       base

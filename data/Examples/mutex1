@@ -1,0 +1,148 @@
+-- mutex1
+
+{- Huth, Ryan, Logic in Computer Science, 14.3
+
+   Safety:       There is at most one process in the critical section.	(1)
+   Liveness:     If a process asks for entering the critical section,
+	         it will enter it sometime.				(2)
+   Non-blocking: Every process may ask for entering the critical 
+		 section.						(3)
+   No strict sequencing : 
+		 Every process that has left the critical section may 
+		 enter it again before another process does so. 	(4)
+-}	
+
+specs:		modal
+constructs:  	safe idle wait crit
+defuncts:       start pairs diffpairs drawN drawI drawL drawK drawS drawC
+preds:   	live nonBlock noSeq Safe Live NonBlock NoSeq Reachable
+		crit' crits Idle Wait Crit Crit' Crits check
+fovars:		is ws cs
+
+axioms:
+
+start == (procs,[],[]) & 
+states == [start] &
+
+-- state transitions
+
+(is,ws,cs) -> branch$map(fun(i,(is-[i],ws++[i],cs)))$is &   -- i waits
+(is,i:ws,[]) -> (is,ws,[i]) &    			    -- first(ws) enters
+(is,ws,[i]) -> (insert(i)$is,ws,[]) &			    -- i leaves
+
+(Reachable$st <=== st = (procs,[],[])) &
+(Reachable$st <=== Reachable(is,ws,cs) & i `in` is & st = (is-[i],ws++[i],cs)) &
+(Reachable$st <=== Reachable(is,i:ws,[]) & st = (is,ws,[i])) &
+(Reachable$st <=== Reachable(is,ws,[i]) & st = (insert(i)$is,ws,[])) &
+
+-- 2 processes yield 9 states
+-- 3 processes yield 31 states
+
+atoms == safe:pairs & 
+
+safe   -> valid$Safe &
+idle$i -> valid$Idle$i &
+wait$i -> valid$Wait$i &
+crit$i -> valid$Crit$i &
+
+(Safe <==> (<=1).length.get2) &
+(Idle$i <==> (i `in`).get0) &
+(Wait$i <==> (i `in`).get1) &
+(Crit$i <==> (i `in`).get2) &
+
+pairs == map($)$prodL[[idle,wait,crit],procs] &
+
+diffpairs == filter(=/=)$prodL$[procs,procs] &
+
+-- modal operator simplification
+
+(live$i <==> (wait$i) `then` AF$crit$i) &			
+
+(nonBlock$i <==> (idle$i) `then` EX$wait$i) &
+
+(noSeq$i <==> EF $ (crit$i) /\ ((crit$i) `EU` 
+			        ((not$crit$i) /\ 
+			         ((crit'$i) `EU` crit$i)))) &
+
+(crit'$i <==> all(not.crit)$procs-[i]) & 
+
+(crits <==> map(crit)$procs) &
+
+-- modal operator simplification outside eval
+
+(Live$i <==> (Wait$i) `then` AF$Crit$i) &
+
+(NonBlock$i <==> (Idle$i) `then` EX$Wait$i) &
+
+(NoSeq$i <==> EF $ (Crit$i) /\ ((Crit$i) `EU` 
+			        ((not$Crit$i) /\ 
+ 			         ((Crit'$i) `EU` Crit$i)))) &
+
+(Crit'$i <==> all(not.Crit)$procs-[i]) & 
+
+(Crits <==> map(Crit)$procs) &
+
+-- widget interpreters
+
+drawN == wtree $ fun(st,text$index(st,states)) &
+
+drawI == wtree $ fun(st,color(index(st,states),length$states)$circ$11) &
+
+drawL == wtree(2,fun((st,k,n),color(k,n)$circ$11)) &
+
+drawK == wtree $ fun(st,mat$filter(check$st)$pairs) &
+
+(check(st)(idle,i) <==> Idle(i)$st) &
+(check(st)(wait,i) <==> Wait(i)$st) &
+(check(st)(crit,i) <==> Crit(i)$st) 
+
+conjects:
+
+AG(Safe)$start &		--> True ?				 
+sat(AG$Safe)$start		--> True
+sat(AG$safe)$start		--> True
+(Crit$1)$start &		--> False
+(EF$Crit$1)$start &		--> True
+(or$Crits)$start &		--> False
+
+(Live$1)$start &		--> True
+(NonBlock$1)$start &		--> True
+(NoSeq$1)$start &		--> True ?
+(EF$or$Crits)$start &		--> True
+
+(EF$and$Crits)$start &						--> False ?
+(and$map(EF.Crit)$procs)$start &				--> True
+(or$map(rel((i,y),EF$Crit(i)/\Crit$y))$diffpairs)$start & 	--> False ?
+(and$map(rel((i,y),EF$Crit(i)\/Crit$y))$diffpairs)$start &      --> True
+
+(and$map(Live)$procs)$start &					--> True
+(and$map(NonBlock)$procs)$start &				--> True
+(and$map(NoSeq)$procs)$start &					--> True ?
+(and$map($)$prodL[[Live,NonBlock,NoSeq],procs])$start		--> True ?
+
+terms: 
+
+eval$or$crits <+> --> [([1],[],[0]),([],[1],[0]),([0],[],[1]),[],[0],[1])]
+
+eval$safe <+>							--> states
+eval(live$1) <+>						--> states
+eval(nonBlock$1) <+>						--> states
+eval(noSeq$1) <+>						--> states
+
+eval(EF$or$crits) <+>						--> states
+initState(EF$or$crits) <+>					--> states
+eval(EF$and$crits) <+>						--> []
+initState(EF$and$crits) <+>					--> []
+eval(and$map(EF.crit)$procs) <+>				--> states
+eval(or$map(rel((i,y),EF$crit(i)/\crit$y))$diffpairs) <+>	--> []
+eval(and$map(rel((i,y),EF$crit(i)\/crit$y))$diffpairs) <+>	--> states
+
+eval(and$map(live)$procs) <+>					--> states
+eval(and$map(nonBlock)$procs) <+>				--> states
+eval(and$map(noSeq)$procs) <+>					--> states
+eval(and$map($)$prodL[[live,nonBlock,noSeq],procs]) <+>		--> states
+
+eval(idle(1)`EU`wait$1) --> [([0],[1],[]),([],[1,0],[]),([],[0,1],[]),
+			--   ([],[1],[0]),([0,1],[],[]),([1],[0],[]),
+			--   ([1],[],[0])]                        iEUw.eps
+

@@ -7,12 +7,14 @@ defuncts:       drawI drawS
 axioms:     
 
   states == [0,22] 
-& atoms  == [is$0,is$4]++map(less)[2,4,14]
+& atoms  == is(4):map(less)[2,4,14]
 
 & (st < 6 ==> st -> st+1<+>ite(st`mod`2 = 0,st,()))
 & 6 -> branch$[1..5]++[7..10]	  
+--& 6 -> branch$33:[1..5]++[7..10]	  
 & 7 -> 14 
 & 22 -> 33<+>44
+--& 33 -> 7
 
 & is$st -> valid(=st)
 & less$st -> valid(<st)
@@ -29,25 +31,36 @@ conjects:
 
   (=14)$3		--> False
 & AG(<14)$9		--> True
+& AG(>6)$7		--> True
 & all(EX(=4))[3,4,6]	--> True
 & sat(is$4)$3		--> False
 & sat(is$4)$4		--> True
-& x^4^y->st		-- narrow&simplify --> 5^x^y = st | 4^x^y = st 
+& x^4^y->st		--> 5^x^y = st | 4^x^y = st    narrow and simplify
 
 terms:   
 
-    eval$is$4		--> [4]
-<+> eval$less$4		--> [0,1,2,3]
-<+> eval(EX$less$4)	--> [0,1,2,6]
-<+> eval(EF$less$4)	--> [0..6]	
-<+> eval(AF$less$4)	--> [0..3]	
-<+> eval(EG$less$4)	--> [0..2]	
-<+> eval(AG$less$4)	--> []
-<+> eval(AG$less$14)  	--> [8..10]
-<+> eval(is(4) `then` EF$less$2)	--> [0..10,14,22,33,44]
-<+> eval(is(4) `then` EF$is$0)		--> [0..3,5..10,14,22,33,44]
-<+> eval(AG $ is(4) `then` EF$is$0)	--> [7..10,14,22,33,44]
-<+> trans(6) `meet` eval(less$2)	--> [1]
-<+> f(x^4^y) 		-- rewrite&simplify --> f(5^x^y) <+> f(4^x^y)
+    eval$is$4				--> [4]
+<+> eval$less$4				--> [0,1,2,3]
+<+> eval[0..3]				--> [0,1,2,3]
+<+> eval((<4).(+2))                     --> [0,1]
+<+> eval(fun(st,[st+2,st+3])<>(<4))     --> [0,1]
+<+> eval(fun(st,[st+2,st+3])#(<4))      --> [0,22,33,44,9,10,14]
+<+> eval(fun(st,[st+2,st+4])#(<4))      --> [22,33,44,9,14]
+<+> eval(EX(<4))			--> [0,1,2,6]
+<+> eval(EF$less$4)			--> [0..6]	
+<+> eval(AF$less$4)			--> [0..3]	
+<+> eval(EG$less$4)			--> [0..2]	
+<+> eval(AG$less$4)			--> []
+<+> eval(AG$less$14)  			--> [8..10]
+<+> eval((=4)`then`EF(<2))	        --> states
+<+> eval((=4)`then`EF(=0))		--> states
+<+> eval(AG$(=4)`then`EF(=0))		--> [7..10,14,22,33,44]
+<+> children[](6)`meet`eval(less$2)	--> [1]
+<+> eval(mkfun(child[])$0)		--> [0,1]
+<+> eval(mkfun(plus$child[])$6)		--> [1..10,14]		succs(6)
+<+> evalR(child[])
+<+> evalR(plus$child[])
+
+<+> f(x^4^y)        -- rewrite&simplify --> f((5 <+> 4)^x^y)
 
 

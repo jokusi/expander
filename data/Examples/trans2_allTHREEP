@@ -1,0 +1,28 @@
+-- /Users/Padawitz/ExpanderLib/trans2_allTHREEP
+
+0. Derivation of
+
+all(THREE)[2,4]
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids expansion.
+
+1. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+THREE(2) & THREE(4)
+
+2. NARROWING the preceding trees (one step) leads to 
+
+THREE(4)
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

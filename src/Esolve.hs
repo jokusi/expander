@@ -2,8 +2,8 @@
 {-|
 Module      : Esolve
 Description : TODO
-Copyright   : (c) Peter Padawitz, January 2021
-                  Jos Kusiek, January 2021
+Copyright   : (c) Peter Padawitz, May 2021
+                  Jos Kusiek, May 2021
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -69,7 +69,7 @@ keywords = words "specs: preds: copreds: constructs: defuncts: fovars: hovars:"
 sigMap :: (String -> String, [String])
        -> Sig -> Sig -> Parser (String -> String, [String])
 sigMap p@(f,xs) sig sig' = concat [act relational, act functional,
-                                   act isFovar, act isHovar, return p]
+                                   act sig_isFovar, act sig_isHovar, return p]
                         where act g = do (x,y) <- assignment (g sig) $ g sig'
                                          sigMap (upd f x y,xs`join1`x) sig sig'
 
@@ -79,7 +79,7 @@ assignment c d = do x <- sat sigWord c; symbol "->"
 
 -- * __Signature__ and __signature map parser__ into strings
 
-showSignature :: ([String],[String],[String],[String],[String],Pairs String)
+showSignature :: ([String],[String],[String],[String],[String],PairsS) 
                  -> String -> String
 showSignature (ps,cps,cs,ds,fs,hs) = showSymbols "preds:      " ps .
                                        showSymbols "copreds:    " cps .
@@ -111,7 +111,7 @@ showSignatureMap _ str        = str
 
 -- * __Evaluation__
 
--- * signature for arithmetic expressions
+-- arithmetic expressions
 
 data Arith a = Arith
     { parseA :: TermS -> Maybe a
@@ -120,8 +120,7 @@ data Arith a = Arith
     , aPlus, aMinus, aTimes, aDiv, aMin, aMax :: a -> a -> a
     }
 
--- * The Arith-algebras of integer numbers, real numbers, linear functions and
--- binary relations
+-- Arith-algebras for integers, reals, linear functions and binary relations
 
 intAlg :: Arith Int
 intAlg = Arith
@@ -165,11 +164,11 @@ linAlg = Arith
     , aMax = \_ _ -> ([],1)
     }
 
-relAlg :: Sig -> Arith [(TermS,TermS)]
+relAlg :: Sig -> Arith (BinRel TermS)
 relAlg sig = Arith
-    { parseA = parseRel $ states sig
+    { parseA = parseRel $ (sig&sig_states)
     , aZero = []
-    , one = [(x,x) | x <- states sig]
+    , one = [(x,x) | x <- (sig&sig_states)]
     , inv = minus pairs
     , aPlus = join
     , aMinus = minus
@@ -179,337 +178,513 @@ relAlg sig = Arith
     , aMin = min
     , aMax = max
     }
-             where pairs = prod2 (states sig) (states sig)
+             where pairs = prod2 (sig&sig_states) (sig&sig_states)
                    
--- * generic Arith-interpreter
-
 foldArith :: Eq a => Arith a -> TermS -> Maybe a
 foldArith alg = f
- where f (F "-" [t])      = do a <- f t; Just $ inv alg a
-       f (F "+" [t,u])    = do a <- f t; b <- f u; Just $ aPlus alg a b
-       f (F "sum" [F x ts]) | collector x = do as <- mapM f ts; Just $ sum_ as
-       f (F "-" [t,u])    = do a <- f t; b <- f u; Just $ aMinus alg a b
-       f (F "*" [t,u])    = do a <- f t; b <- f u; Just $ aTimes alg a b
+ where f (F "-" [t])        = do a <- f t; Just $ (alg&inv) a
+       f (F "+" [t,u])      = do a <- f t; b <- f u; Just $ (alg&aPlus) a b
+       f (F "sum" [F x ts]) | collector x
+                            = do as <- mapM f ts; Just $ sum_ as
+       f (F "-" [t,u])      = do a <- f t; b <- f u; Just $ (alg&aMinus) a b
+       f (F "*" [t,u])      = do a <- f t; b <- f u; Just $ (alg&aTimes) a b
        f (F "product" [F x ts]) | collector x
-                          = do as <- mapM f ts; Just $ prod as
-       f (F "**" [t,u])   = do a <- f t; n <- parseNat u
-                               Just $ prod $ replicate n a
-       f (F "/" [t,u])    = do a <- f t; b <- f u; guard $ b /= aZero alg
-                               Just $ aDiv alg a b
-       f (F "min" [t,u])  = do a <- f t; b <- f u; Just $ aMin alg a b
-       f (F "max" [t,u])  = do a <- f t; b <- f u; Just $ aMax alg a b
+                            = do as <- mapM f ts; Just $ prod as
+       f (F "**" [t,u])     = do a <- f t; n <- parseNat u
+                                 Just $ prod $ replicate n a
+       f (F "/" [t,u])      = do a <- f t; b <- f u; guard $ b /= (alg&aZero)
+                                 Just $ (alg&aDiv) a b
+       f (F "min" [t,u])    = do a <- f t; b <- f u; Just $ (alg&aMin) a b
+       f (F "max" [t,u])    = do a <- f t; b <- f u; Just $ (alg&aMax) a b
        f (F "min" [F x ts]) | collector x
-                          = do as@(_:_)<- mapM f ts; Just $ foldl1 (aMin alg) as
+                            = do as@(_:_)<- mapM f ts; Just $ foldl1 (alg&aMin) as
        f (F "max" [F x ts]) | collector x
-                          = do as@(_:_)<- mapM f ts; Just $ foldl1 (aMax alg) as
-       f t                    = parseA alg t
-       sum_ = foldl (aPlus alg) (aZero alg)
-       prod = foldl (aTimes alg) (one alg)
+                            = do as@(_:_)<- mapM f ts; Just $ foldl1 (alg&aMax) as
+       f t                  = (alg&parseA) t
+       sum_ = foldl (alg&aPlus) (alg&aZero)
+       prod = foldl (alg&aTimes) (alg&one)
 
--- * a signature for state formulas
+-- modal formulas
 
-data Modal a label = Modal
-    { true, false :: a
-    , modalNeg :: a -> a
-    , modalOr, modalAnd :: a -> a -> a
-    , ex,ax,xe,xa :: a -> a
-    , dia,box,aid,xob :: label -> a -> a
-    }
+type BinRel a  = [(a,a)]
+type Table a b = [[(a,b)]]
 
--- * the Modal-algebra of state sets
+data Modal state label atom = Modal {
+             termsToSts           :: [TermS] -> [state],
+             termsToLabs          :: [TermS] -> [label],
+             termsToAts           :: [TermS] -> [atom],
+             satisfy              :: TermS -> [state],
+             valFun               :: atom -> [state],
+             valLFun              :: atom -> label -> [state],
+             topS,botS            :: [state],
+             notS                 :: [state] -> [state],
+             orS,andS             :: [state] -> [state] -> [state],
+             existsS,forallS,divS :: BinRel state -> [state] -> [state],
+             selS                 :: TermS -> BinRel state -> [state],
+             pi1,pi2              :: BinRel state -> [state],
+             topR,botR            :: BinRel state,
+             child                :: [label] -> BinRel state,
+             fchild               :: TermS -> BinRel state,
+             invR,notR            :: BinRel state -> BinRel state,
+             orR,andR,comp :: BinRel state -> BinRel state -> BinRel state,
+             prodR   :: [state] -> [state] -> BinRel state,
+             sjoin   :: BinRel state -> [state] -> [state] -> BinRel state,
+             mkTab   :: [atom]  -> Table label state,
+             sortT   :: label   -> Table label state -> Table label state,
+             project :: [label] -> Table label state -> Table label state,
+             selT    :: TermS   -> Table label state -> Table label state,
+             tjoin   :: TermS   -> Table label state -> Table label state
+                                                     -> Table label state,
+             mOrT,mAndT,minusT,njoin,prodT,divT
+                 :: Table label state -> Table label state -> Table label state}
 
-ctlAlg :: Sig -> Modal [Int] Int
-ctlAlg sig = Modal
-  { true  = sts
-  , false = []
-  , modalNeg   = minus sts 
-  , modalOr    = join
-  , modalAnd   = meet
-  , ex    = imgsShares sts $ f (sig&trans) (sig&transL)
-  , ax    = imgsSubset sts $ f (sig&trans) (sig&transL)
-  , xe    = imgsShares sts $ f (parents sig) (parentsL sig)
-  , xa    = imgsSubset sts $ f (parents sig) (parentsL sig)
-  , dia   = imgsShares sts . flip (g (sig&transL))
-  , box   = imgsSubset sts . flip (g (sig&transL))
-  , aid   = imgsShares sts . flip (g $ parentsL sig)
-  , xob   = imgsSubset sts . flip (g $ parentsL sig)
-  }
-              where sts = indices_ (sig&states)
-                    f trans transL i = join (trans!!i) $ joinMap (g transL i) 
-                                                       $ indices_ (sig&labels)
-                    g transL i k = transL!!i!!k
+-- Modal-algebra for state sets and relations
 
--- | the interpreter of state formulas in ctlAlg
-type States = Maybe [Int]
+intModAlg :: Sig -> Modal Int Int Int
+intModAlg sig = Modal{ termsToSts  = termsToSts,
+                       termsToLabs = termsToLabs,
+                       termsToAts  = termsToAts,
+                       valFun      = ((sig&sig_value)!!),
+                       valLFun     = \i k -> (sig&sig_valueL)!!i!!k,
+                       satisfy     = termsToSts . satisfying sig,
+                       topS        = sts,
+                       botS        = [],
+                       notS        = minus sts,
+                       orS         = join,
+                       andS        = meet,
+                       existsS     = existsS,
+                       forallS     = forallS,
+                       divS        = (/),
+                       selS        = selS,
+                       pi1         = mapSet fst,
+                       pi2         = mapSet snd,
+                       topR        = sts2,
+                       botR        = [],
+                       child       = child,
+                       fchild      = fchild,
+                       invR        = invR,
+                       notR        = minus sts2,
+                       orR         = join,
+                       andR        = meet,
+                       comp        = comp,
+                       prodR       = prodR,
+                       sjoin       = \r s -> meet r . prodR s,
+                       mkTab       = map $ fst . mkRow,
+                       sortT       = sortT,
+                       project     = proj,
+                       selT        = selT,
+                       mOrT         = join,
+                       mAndT        = meet,
+                       minusT      = minus,
+                       njoin       = njoin,
+                       tjoin       = \p t -> selT p . (njoin t),
+                       prodT       = (*),
+                       divT        = (//)}
+    where sts  = indices_ (sig&sig_states)
+          sts2 = [(i,j) | i <- sts, j <- sts]
+          labs = indices_ (sig&sig_labels)
+          termsToSts  = getJust $ searchS sig
+          termsToLabs = getJust $ searchL sig
+          termsToAts  = getJust $ searchA sig
+          existsS r s = [i | i <- sts, relToFun r i `shares` s]
+          forallS r s = [i | i <- sts, relToFun r i `subset` s]
+          r/s         = [i | i <- sts, s `subset` relToFun r i]
+          selS t r    = [i | i <- sts, p $ relToFun r i]
+                        where p = isTrue . sapply sig t . mkStates sig
+          child []    = [(i,j) | i <- sts, j <- (sig&sig_trans)!!i]
+          child ks    = [(i,j) | i <- sts, k <- ks, j <- (sig&sig_transL)!!i!!k]
+          fchild f    = [(i,j) | i <- sts, j <- transF f i]
+          transF :: TermS -> Int -> [Int]
+          transF f i  = if isList t then termsToSts $ subterms t else []
+                        where t = sapply sig f $ (sig&sig_states)!!i
+          invR r      = [(j,i) | (i,j) <- r]
+          comp r r'   = [(i,k) | (i,j) <- r, (j',k) <- r', j == j']
+          prodR s s'  = [(i,j) | i <- s, j <- s']
+          getLabs :: Table Int Int -> [Int]
+          getLabs = mapSet fst . joinM
+          mkRow :: Int -> (BinRel Int,Int)
+          mkRow i = foldr f ([],last labs) $ (sig&sig_valueL)!!i where
+                    f is (row,k) = if length is == 1 then ((k,head is):row,k-1)
+                                                     else (row,k-1)
+          sortT k = qsort rel where
+                    rel row1 row2 = nothing st2 || just st1 && just st2 &&
+                                                   f st1 < f st2
+                                    where st1 = lookup k row1
+                                          st2 = lookup k row2
+                                          f = ((sig&sig_states)!!) . get
+          proj ks = foldr f [] where
+                    f row tab' = if null row' then tab' else tab' `join1` row'
+                                 where row' = foldr g [] row
+                                       g (k,i) row = if k `elem` ks
+                                                     then (k,i):row else row
+          selT t = filter $ isTrue . simplifyIter sig . subst t
+          subst :: TermS -> BinRel Int -> TermS
+          subst lab row | just k && just st = (sig&sig_states)!!get st
+                                              where k = searchL sig lab
+                                                    st = lookup (get k) row
+          subst (F x ts) row = F x $ map (flip subst row) ts
+          subst t _          = t
+          njoin t t' = do row <- t; row' <- t'
+                          let p lab = lookup lab row == lookup lab row'
+                          guard $ all p $ mapSet fst row `meet` mapSet fst row'
+                          [row `join` row']
+          t*t'  = do row <- t; row' <- t'
+                     guard $ map fst row `disjoint` map fst row'
+                     [row `join` row']
+          t//t' = if (labs2 `subset` labs1) && notnull t'
+                  then p t `minus` p ((p t*t') `minus` t) else []
+                  where labs1 = getLabs t; labs2 = getLabs t'
+                        p = proj $ labs1 `minus` labs2
 
-foldModal :: Sig -> TermS -> States
-foldModal sig = f $ const Nothing where
-          alg = ctlAlg sig
-          f :: (String -> States) -> TermS -> States
-          f g (F x []) | x == "true"  = Just (alg&true)
-                       | x == "false" = Just (alg&false)
-                       | just a       = a where a = g x
-          f g (F "not" [t])           = do a <- f g t; Just $ (alg&modalNeg) a
-          f g (F "\\/" [t,u])         = do a <- f g t; b <- f g u
-                                           Just $ (alg&modalOr) a b
-          f g (F "/\\" [t,u])         = do a <- f g t; b <- f g u
-                                           Just $ (alg&modalAnd) a b
-          f g (F "`then`" [t,u])      = do a <- f g t; b <- f g u
-                                           Just $ (alg&modalOr)
-                                                  ((alg&modalNeg) a) b
-          f g (F "EX" [t])            = do a <- f g t; Just $ (alg&ex) a
-          f g (F "AX" [t])            = do a <- f g t; Just $ (alg&ax) a
-          f g (F "XE" [t])            = do a <- f g t; Just $ (alg&xe) a
-          f g (F "XA" [t])            = do a <- f g t; Just $ (alg&xa) a
-          f g (F "<>" [lab,t])        = do a <- f g t; k <- searchL lab
-                                           Just $ (alg&dia) k a
-          f g (F "#" [lab,t])         = do a <- f g t; k <- searchL lab
-                                           Just $ (alg&box) k a
-          f g (F "><" [lab,t])        = do a <- f g t; k <- searchL lab
-                                           Just $ (alg&aid) k a
-          f g (F "##" [lab,t])        = do a <- f g t; k <- searchL lab
-                                           Just $ (alg&xob) k a
-          f g (F ('M':'U':' ':x) [t]) = fixptM subset (step g x t) (alg&false)
-          f g (F ('N':'U':' ':x) [t]) = fixptM supset (step g x t) (alg&true)
-          f _ (F "$" [at,lab])
-                   | just i && just k = Just $ (sig&valueL)!!get i!!get k
-                                        where i = searchA at; k = searchL lab
-          f _ at                    = do i <- searchA at; Just $ (sig&value)!!i
+-- Interpretation of set formulas in Modal-algebras
 
-          searchA,searchL :: TermS -> Maybe Int
-          searchA at  = search (== at) (sig&atoms)
-          searchL lab = search (== lab) (sig&labels)
+--foldPred :: Eq state => Modal state label atom -> (String -> Maybe [state])
+--                     -> (String -> Maybe (BinRel state)) -> TermS -> [state]
+foldPred alg g h = f where
+             f (F "true" [])           = (alg&topS)
+             f (F "false" [])          = (alg&botS)
+             f (F x []) | just a       = get a where a = g x
+                                      -- g x /= Nothing ==> x is a variable
+             f (F "not" [s])           = (alg&notS) $ f s
+             f (F "\\/" [s,s'])        = (alg&orS) (f s) $ f s'
+             f (F "/\\" [s,s'])        = (alg&andS) (f s) $ f s'
+             f (F "exists" [r,s])      = (alg&existsS) (evalR r) $ f s
+             f (F "forall" [r,s])      = (alg&forallS) (evalR r) $ f s
+             f (F "/" [r,s])           = (alg&divS) (evalR r) $ f s
+             f (F "$" [F "sel" [t],r]) = (alg&selS) t $ evalR r
+             f (F "pi1" [r])           = (alg&pi1) $ evalR r
+             f (F "pi2" [r])           = (alg&pi2) $ evalR r
+             f (F ('M':'U':' ':x) [s]) = fixpt subset (step x s) (alg&botS)
+             f (F ('N':'U':' ':x) [s]) = fixpt supset (step x s) (alg&topS)
+             f (F "$" [F "val" [t],u]) | notnull ats && notnull labs
+                                       = (alg&valLFun) (head ats) $ head labs
+                                         where ats  = (alg&termsToAts) [t]
+                                               labs = (alg&termsToLabs) [u]
+             f t | notnull ats         = (alg&valFun) $ head ats
+                                         where ats = (alg&termsToAts) [t]
+             f (F "[]" ts)             = (alg&termsToSts) ts
+             f p                       = (alg&satisfy) p
+             step x s a = foldPred alg (upd g x $ Just a) h s
+             evalR = foldRel alg g h
 
-          step :: (String -> States) -> String -> TermS -> [Int] -> States
-          step g x t a = f (upd g x $ Just a) t
+evalPred :: Sig -> TermS -> [Int]
+evalPred sig = foldPred (intModAlg sig) (const Nothing) (const Nothing) .
+               simplifyIter sig
 
-{-h :: (TermS -> TermS) -> [Int]
-  h app = getIndices (isTrue . simplifyIter sig . app) (sig&states)-}
+-- Interpretation of rel formulas in Modal-algebras
 
--- | partial evaluation
+-- foldRel :: Eq state => Modal state label atom -> (String -> Maybe [state])
+--                  -> (String -> Maybe (BinRel state)) -> TermS -> BinRel state
+foldRel alg g h = f where
+            f (F x []) | just a        = get a where a = h x
+                                      -- g x /= Nothing ==> x is a variable
+            f (F "child" [F "[]" ts])  = (alg&child) $ (alg&termsToLabs) ts
+            f (F "fchild" [f])         = (alg&fchild) f
+            f (F "inv" [r])            = (alg&invR) $ f r
+            f (F "not" [r])            = (alg&notR) $ f r
+            f (F "\\/" [r,r'])         = (alg&orR) (f r) $ f r'
+            f (F "/\\" [r,r'])         = (alg&andR) (f r) $ f r'
+            f (F ";" [r,r'])           = (alg&comp) (f r) $ f r'
+            f (F "prodR" [s,s'])       = (alg&prodR) (evalS s) $ evalS s'
+            f (F "sjoin" [r,s,s'])     = (alg&sjoin) (f r) (evalS s) $ evalS s'
+            f (F ('M':'U':' ':x) [r])  = fixpt subset (step x r) (alg&botR)
+            f (F ('N':'U':' ':x) [r])  = fixpt supset (step x r) (alg&topR)
+            f _ = []
+            step x r a = foldRel alg g (upd h x $ Just a) r
+            evalS = foldPred alg g h
+
+evalRel :: Sig -> TermS -> BinRel Int
+evalRel sig = foldRel (intModAlg sig) (const Nothing) (const Nothing) .
+              simplifyIter sig
+
+-- Interpretation of tab formulas in Modal-algebras
+
+foldTab :: Modal state label atom -> TermS -> Table label state
+foldTab alg = f where
+    f (F "tab" [F "[]" ts])            = (alg&mkTab) $ (alg&termsToAts) ts
+    f (F "$" [F "sort" [t],u])         = (alg&sortT) (head $ (alg&termsToLabs) [t])
+                                                   $ f u
+    f (F "$" [F "proj" [F "[]" ts],t]) = (alg&project) ((alg&termsToLabs) ts) $ f t
+    f (F "$" [F "sel" [p],t])          = (alg&selT) p $ f t
+    f (F "\\/" [t,t'])                 = (alg&mOrT) (f t) $ f t'
+    f (F "/\\" [t,t'])                 = (alg&mAndT) (f t) $ f t'
+    f (F "njoin" [t,t'])               = (alg&njoin) (f t) $ f t'
+    f (F "tjoin" [p,t,t'])             = (alg&tjoin) p (f t) $ f t'
+    f (F "*" [t,t'])                   = (alg&prodT) (f t) $ f t'
+    f (F "//" [t,t'])                  = (alg&divT) (f t) $ f t'
+    f _ = []
+
+evalTab :: Sig -> TermS -> Table Int Int
+evalTab sig = foldTab (intModAlg sig) . simplifyIter sig
+
+searchS,searchL,searchA :: Sig -> TermS -> Maybe Int
+searchS sig st  = search (== st) (sig&sig_states)
+searchL sig lab = search (== lab) (sig&sig_labels)
+searchA sig at  = search (== at) (sig&sig_atoms)
+
+getStates,getLabels,getAtoms :: Sig -> [Int] -> [TermS]
+getStates sig = map ((sig&sig_states)!!)
+getLabels sig = map ((sig&sig_labels)!!)
+getAtoms sig  = map ((sig&sig_atoms)!!)
+
+mkStates,mkLabels,mkAtoms :: Sig -> [Int] -> TermS
+mkStates sig = mkList . getStates sig
+mkLabels sig = mkList . getLabels sig
+mkAtoms sig  = mkList . getAtoms sig
+
+mkRelPairs :: Sig -> BinRel Int -> [(TermS,TermS)]
+mkRelPairs sig rel = zip (map ((sig&sig_states)!!) is) $ map ((sig&sig_states)!!) js
+                     where (is,js) = unzip rel
+
+-- used by simplifyS "evalR/evalRM"
+
+mkGraph :: Sig -> BinRel Int -> TermS
+mkGraph sig rel = relToGraph pairs [] $ sourcesPT pairs []
+                  where pairs = zip (map f is) $ map (single . f) js
+                        f = showTerm0 . ((sig&sig_states)!!)
+                        (is,js) = unzip rel
+
+-- used by simplifyS "evalRG"
+
+mkTabTrips :: Sig -> Table Int Int -> [(TermS,TermS,TermS)]
+mkTabTrips sig tab = concatMap f $ indices_ tab where
+                     f i = map g $ tab!!i where
+                      g (k,st) = (mkConst i,(sig&sig_labels)!!k,(sig&sig_states)!!st)
+
+-- used by simplifyS "evalT/evalM"
+
+-- satisfying sig p returns all states that satisfy p
+
+satisfying :: Sig -> TermS -> [TermS]
+satisfying sig p = filter (isTrue . sapply sig p) (sig&sig_states)
+
+-- partial evaluation (includes interpretation in the above Arith-algebras)
+
 evaluate :: Sig -> TermS -> TermS
-evaluate sig = eval
-   where eval (F "<==>" [t,u]) | eqTerm t u = mkTrue
-         eval (F "===>" [t,u])              = mkImpl (eval t) $ eval u
-         eval (F "<===" [t,u])              = mkImpl (eval u) $ eval t
-         eval (F "&" ts)                    = mkConjunct $ map eval ts
-         eval (F "|" ts)                    = mkDisjunct $ map eval ts
-         eval (F ('A':'n':'y':x) [t])       = evalQ mkAny x $ eval t
-         eval (F ('A':'l':'l':x) [t])       = evalQ mkAll x $ eval t
-         eval (F "Not" [t])                 = mkNot sig $ eval t
-         eval (F "id" [t])                  = eval t
-         eval (F "head" [F ":" [t,_]])      = eval t
-         eval (F "tail" [F ":" [_,t]])      = eval t
-         eval (F "head" [t])    = case eval t of F "[]" (t:_) -> t
-                                                 t -> F "head" [t]
-         eval (F "tail" [t])    = case eval t of F "[]" (_:ts) -> mkList ts
-                                                 t -> F "tail" [t]
-         eval (F "bool" [t])    = case eval t of F "True" [] -> mkConst 1
-                                                 F "False" [] -> mkConst 0
-                                                 t -> F "bool" [t]
-         eval (F "ite" [t,u,v]) = case eval t of F "True" [] -> eval u
-                                                 F "False" [] -> eval v
-                                                 t -> F "ite" [t,u,v]
-         eval (F ":" [t,u])     = case eval u of F "[]" ts -> mkList $ t':ts
-                                                 u -> F ":" [t',u]
-                                  where t' = eval t
-         eval (F "!!" [t,u])    = case eval t of
+evaluate sig = eval where
+       eval (F "<==>" [t,u]) | isTrue t   = eval u
+                             | isTrue u   = eval t
+                             | isFalse t  = mkNot sig $ eval u
+                             | isFalse u  = mkNot sig $ eval t
+                             | eqTerm t u = mkTrue
+       eval (F "==>" [t,u])  | isTrue t   = eval u
+                             | isTrue u   = mkTrue
+                             | isFalse t  = mkTrue
+                             | isFalse u  = mkNot sig $ eval t
+       eval (F "&" ts)               = mkConjunct $ map eval ts
+       eval (F "|" ts)               = mkDisjunct $ map eval ts
+       eval (F ('A':'n':'y':x) [t])  = evalQ mkAny x $ eval t
+       eval (F ('A':'l':'l':x) [t])  = evalQ mkAll x $ eval t
+       eval (F "Not" [t])            = mkNot sig $ eval t
+       eval (F "id" [t])             = eval t
+       eval (F "head" [F ":" [t,_]]) = eval t
+       eval (F "tail" [F ":" [_,t]]) = eval t
+       eval (F "head" [t])    = case eval t of F "[]" (t:_) -> t
+                                               t -> F "head" [t]
+       eval (F "tail" [t])    = case eval t of F "[]" (_:ts) -> mkList ts
+                                               t -> F "tail" [t]
+       eval (F "bool" [t])    = case eval t of F "True" [] -> mkConst 1
+                                               F "False" [] -> leaf "0"
+                                               t -> F "bool" [t]
+       eval (F "ite" [t,u,v]) = case eval t of F "True" [] -> eval u
+                                               F "False" [] -> eval v
+                                               t -> F "ite" [t,u,v]
+       eval (F ":" [t,u])     = case eval u of F "[]" ts -> mkList $ t':ts
+                                               u -> F ":" [t',u]
+                                where t' = eval t
+       eval (F "!!" [t,u])    = case eval t of
                                    F "[]" ts | just i && k < length ts -> ts!!k
                                    t -> F "!!" [t,eval u]
-                                  where i = foldArith intAlg u
-                                        k = get i
-         eval (F "length" [t])  = case eval t of
-                                       F "[]" ts -> mkConst $ length ts
-                                       t ->  F "length" [t]
-         eval (F "range" [t,u]) | just i && just k
-                                = mkList $ map mkConst [get i..get k]
-                                  where i = foldArith intAlg t
-                                        k = foldArith intAlg u
-         eval (F "$" [F "lsec" [t,F x []],u]) = F x [eval t,eval u]
-         eval (F "$" [F "rsec" [F x [],t],u]) = F x [eval u,eval t]
-         eval (F "$" [F x [],F "()" ts])      = F x $ map eval ts
-         eval (F "$" [F x [],t])              = F x [eval t]
-         eval (F "suc" [t]) | just i          = mkConst $ get i+1
-                                                where i = foldArith intAlg t
-         eval (F x p@[_,_]) | isOrd x && just ip = mkRel x $ get ip
-                            | isOrd x && just rp = mkRel x $ get rp
-                            | isOrd x && just fp = mkRel x $ get fp
-                            | isOrd x && just sp = mkRel x $ get sp
+                                where i = foldArith intAlg u; k = get i
+       eval (F "length" [t])  = case eval t of F "[]" ts -> mkConst $ length ts
+                                               t ->  F "length" [t]
+       eval (F "range" [t,u]) | just i && just k
+                              = mkList $ map mkConst [get i..get k]
+                                where i = foldArith intAlg t
+                                      k = foldArith intAlg u
+       eval (F "$" [F "lsec" [t,F x []],u]) = F x [eval t,eval u]
+       eval (F "$" [F "rsec" [F x [],t],u]) = F x [eval u,eval t]
+       eval (F "$" [F x [],F "()" ts])      = F x $ map eval ts
+       eval (F "$" [F x [],t])              = F x [eval t]
+       eval (F "Value" [t])                 = mkConst $ isValue sig t
+       eval (F "List" [t])                  = mkConst $ isList t
+       eval (F "Int" [t])  | just i         = mkTrue
+                           | isValue sig t  = mkFalse
+                                              where i = foldArith intAlg t
+       eval (F "Real" [t]) | just r         = mkTrue
+                           | isValue sig t  = mkFalse
+                                              where r = foldArith realAlg t
+       eval (F "suc" [t])  | just i         = mkConst $ get i+1
+                                              where i = foldArith intAlg t
+       eval (F x p@[_,_])  | isRel x && just ip = mkAtom x $ get ip
+                           | isRel x && just rp = mkAtom x $ get rp
+                           | isRel x && just fp = mkAtom x $ get fp
+                           | isRel x && just sp = mkAtom x $ get sp
                                          where ip = mapM (intAlg&parseA) p
                                                rp = mapM (realAlg&parseA) p
                                                fp = mapM (linAlg&parseA) p
                                                sp = mapM ((relAlg sig)&parseA) p
-         eval (F "=" [t,u])   = evalEq t u
-         eval (F "=/=" [t,u]) = evalNeq t u
-         eval (F "<+>" ts)    = mkSum $ map eval ts
-         eval t | just i = mkConst $ get i
-                | just r = mkConst $ get r
-                | just f = mkLin $ get f
-                | just s = mkList $ map (uncurry mkPair) $ sort (<) $ get s
-                           where i = foldArith intAlg t
-                                 r = foldArith realAlg t
-                                 f = foldArith linAlg t
-                                 s = foldArith (relAlg sig) t
-         eval (F x ts) = F x $ map eval ts
-         eval t        = t
+       eval (F "=" [t,u])   = evalEq t u
+       eval (F "=/=" [t,u]) = evalNeq t u
+       eval (F "<+>" ts)    = mkSum $ map eval ts
+       eval t | just i = mkConst $ get i
+              | just r = mkConst $ get r
+              | just f = mkLin $ get f
+              | just s = mkList $ map (uncurry mkPair) $ sort (<) $ get s
+                                          where i = foldArith intAlg t
+                                                r = foldArith realAlg t
+                                                f = foldArith linAlg t
+                                                s = foldArith (relAlg sig) t
+       eval (F x ts) = F x $ map eval ts
+       eval t        = t
 
-         evalQ f x t = f (words x `meet` frees sig t) t
+       evalQ f x t = f (words x `meet` frees sig t) t
 
-         evalEq t u | eqTerm t u = mkTrue
-         evalEq (F x ts) (F y us)
-                                | x == y && f x && f y && all g ts && all g us
-                                         = mkConst $ ts `eqset` us
-                                           where f x = x `elem` ["{}","<+>"]
-                                                 g = isValue sig
-         evalEq t (F "suc" [u]) | just n = evalEq (mkConst $ get n-1) u
-                                             where n = parsePnat t
-         evalEq (F "suc" [u]) t | just n = evalEq u (mkConst $ get n-1)
-                                             where n = parsePnat t
-         evalEq (F "[]" (t:ts)) (F ":" [u,v]) = mkConjunct 
-                                               [evalEq t u,evalEq (mkList ts) v]
-         evalEq (F ":" [u,v]) (F "[]" (t:ts)) = mkConjunct 
-                                               [evalEq u t,evalEq v $ mkList ts]
-         evalEq (F x ts) (F y us) | all (isConstruct sig) [x,y] =
-                                       if x == y && length ts == length us 
-                                       then mkConjunct $ zipWith evalEq ts us
+       evalEq t u | eqTerm t u = mkTrue
+       evalEq (F x ts) (F y us) | x == y && f x && f y && all g ts && all g us
+                                       = mkConst $ ts `eqset` us
+                                         where f x = x `elem` ["{}","<+>"]
+                                               g = isValue sig
+       evalEq t (F "suc" [u]) | just n = evalEq (mkConst $ get n-1) u
+                                         where n = parsePnat t
+       evalEq (F "suc" [u]) t | just n = evalEq u (mkConst $ get n-1)
+                                         where n = parsePnat t
+       evalEq (F "[]" (t:ts)) (F ":" [u,v]) =
+                                   mkConjunct [evalEq t u,evalEq (mkList ts) v]
+       evalEq (F ":" [u,v]) (F "[]" (t:ts)) =
+                                   mkConjunct [evalEq u t,evalEq v $ mkList ts]
+       evalEq (F x ts) (F y us) | all (sig&sig_isConstruct) [x,y] =
+                                       if x == y && length ts == length us
+                                       then mkConjunct $ zipWith (evalEq) ts us
                                        else mkFalse
-         evalEq t u = mkEq (eval t) $ eval u
-                                   
-         evalNeq t u | eqTerm t u = mkFalse
-         evalNeq (F "{}" ts) (F "{}" us)
-                    | just qs && just rs = mkConst $ not $ get qs `eqset` get rs
-                                           where qs = mapM parseReal ts
-                                                 rs = mapM parseReal us
-         evalNeq t (F "suc" [u]) | just n = evalNeq (mkConst $ get n-1) u
-                                              where n = parsePnat t
-         evalNeq (F "suc" [u]) t | just n = evalNeq u (mkConst $ get n-1)
-                                              where n = parsePnat t
-         evalNeq (F "[]" (t:ts)) (F ":" [u,v]) = 
-                                  mkDisjunct [evalNeq t u,evalNeq (mkList ts) v]
-         evalNeq (F ":" [u,v]) (F "[]" (t:ts)) = 
-                                  mkDisjunct [evalNeq u t,evalNeq v $ mkList ts]
-         evalNeq (F x ts) (F y us) | all (isConstruct sig) [x,y] =
-                                      if x == y && length ts == length us 
-                                      then mkDisjunct $ zipWith evalNeq ts us
+       evalEq t u = mkEq (eval t) $ eval u
+
+       evalNeq t u | eqTerm t u = mkFalse
+       evalNeq (F "{}" ts) (F "{}" us)
+                   | just qs && just rs = mkConst $ not $ get qs `eqset` get rs
+                                          where qs = mapM parseReal ts
+                                                rs = mapM parseReal us
+       evalNeq t (F "suc" [u]) | just n = evalNeq (mkConst $ get n-1) u
+                                          where n = parsePnat t
+       evalNeq (F "suc" [u]) t | just n = evalNeq u (mkConst $ get n-1)
+                                          where n = parsePnat t
+       evalNeq (F "[]" (t:ts)) (F ":" [u,v]) =
+                                 mkDisjunct [evalNeq t u,evalNeq (mkList ts) v]
+       evalNeq (F ":" [u,v]) (F "[]" (t:ts)) =
+                                 mkDisjunct [evalNeq u t,evalNeq v $ mkList ts]
+       evalNeq (F x ts) (F y us) | all (sig&sig_isConstruct) [x,y] =
+                                      if x == y && length ts == length us
+                                      then mkDisjunct $ zipWith (evalNeq) ts us
                                       else mkTrue
-         evalNeq t u = mkNeq (eval t) $ eval u
+       evalNeq t u = mkNeq (eval t) $ eval u
 
 -- used by getReduct and Ecom > evaluateTrees
 
 -- FLOWGRAPH ANALYSIS
 
-data Flow a = In (Flow a) a | Assign String TermS (Flow a) a |
-              Ite TermS (Flow a) (Flow a) a |
-              Fork [Flow a] a | Atom a | Neg (Flow a) a |
-              Comb Bool [Flow a] a | Mop Bool TermS (Flow a) a |
-              Fix Bool (Flow a) a | Pointer [Int]
+-- stepwise global model checking of state formulas (backward analysis)
 
-parseFlow :: Bool -> Sig -> TermS -> (TermS -> Maybe a) -> Maybe (Flow a)
+initState :: Sig -> TermS -> Maybe TermS
+initState sig = f where
+                f t@(V _)        = Just t
+                f (F "true" [])  = Just $ mkList (sig&sig_states)
+                f (F "false" []) = Just mkNil
+                f (F "MU" [t])   = do t <- f t; Just $ F "MU []" [t]
+                f (F "NU" [t])   = do t <- f t; Just $ F ("NU "++sts) [t]
+                f (F x [F "child" [t@(F "[]" labs)],u])
+                             | x `elem` words "exists forall"
+                                 = do p labs; u <- f u; Just $ F (g x) [t,u]
+                                   where g "exists" = "<>"; g _ = "#"
+                f t@(F x ts) | x `elem` words "not \\/ /\\"
+                                 = do ts <- mapM f ts; Just $ F x ts
+                f t@(F "[]" sts) = do mapM (searchS sig) sts; Just t
+                f at             = do i <- searchA sig at
+                                      Just $ mkStates sig $ (sig&sig_value)!!i
+                p = guard . just . mapM (searchL sig)
+                sts = showTerm0 $ mkList (sig&sig_states)
 
-parseFlow True sig t parseVal = f t where
-     f (F x [u]) | take 8 x == "inflow::"
-                   = do g <- f u; val <- dropVal 8 x; Just $ In g val
-     f (F x [V z,e,u]) | take 8 x == "assign::"
-                   = do g <- f u; val <- dropVal 8 x; Just $ Assign z e g val
-     f (F x [c,u1,u2]) | take 5 x == "ite::"
-                   = do g1 <- f u1; g2 <- f u2; val <- dropVal 5 x
-                        Just $ Ite c g1 g2 val
-     f (F x ts)  | take 6 x == "fork::"
-                   = do gs <- mapM f ts; val <- dropVal 6 x; Just $ Fork gs val
-     f (F x [u]) | take 5 x == "not::"
-                   = do g <- f u; val <- dropVal 5 x; Just $ Neg g val
-     f (F x ts)  | take 4 x == "\\/::"
-                   = do gs <- mapM f ts; val <- dropVal 4 x
-                        Just $ Comb True gs val
-     f (F x ts)  | take 4 x == "/\\::"
-                   = do gs <- mapM f ts; val <- dropVal 4 x
-                        Just $ Comb False gs val
-     f (F x [u]) | take 4 x == "EX::"
-                   = do g <- f u; val <- dropVal 4 x
-                        Just $ Mop True (leaf "") g val
-     f (F x [u]) | take 4 x == "AX::"
-                   = do g <- f u; val <- dropVal 4 x
-                        Just $ Mop False (leaf "") g val
-     f (F x [lab,u]) | take 4 x == "<>::"
-                   = do g <- f u;  guard $ lab `elem` (sig&labels)
-                        val <- dropVal 4 x; Just $ Mop True lab g val
-     f (F x [lab,u]) | take 3 x == "#::"
-                   = do g <- f u;  guard $ lab `elem` (sig&labels)
-                        val <- dropVal 3 x; Just $ Mop False lab g val
-     f (F x [u])       | take 4 x == "MU::"
-                   = do g <- f u; val <- dropVal 4 x; Just $ Fix True g val
-     f (F x [u])       | take 4 x == "NU::"
-                   = do g <- f u; val <- dropVal 4 x; Just $ Fix False g val
-     f (V x)           | isPos x
-                   = do guard $ q `elem` noRefPositions t
-                        Just $ Pointer q where q = getPos x
-     f val         = do val <- parseVal val; Just $ Atom val
-     dropVal n x   = do val <- parse (term sig) $ drop n x; parseVal val
+evalStep :: Sig -> TermS -> (TermS,Bool)
+evalStep sig t = down t where
+  getVal :: TermS -> Maybe [TermS]
+  getVal (V x)        = getVal $ getSubterm t $ tail $ getPos x
+  getVal (F "[]" sts) = Just sts
+  getVal (F x ts)     = do [_,val] <- Just $ words x
+                           F "[]" sts <- parse (term sig) val; Just sts
+  chg n x val = take n x ++ ' ':showTerm0 (mkList val)
+  lfp x = take 2 x == "MU"
+  gfp x = take 2 x == "NU"
+  hasFix (F x ts) = lfp x || gfp x || or (map hasFix ts)
+  hasFix t        = False
+  down t@(F x [u]) | take 3 x == "not" && not (hasFix u) && just val2
+                  = if isList u then (mkList val3,True)
+                    else (F z [v], b || nothing val1 || get val1 /= val3)
+                    where (v,b) = down u
+                          val1 = getVal t; val2 = getVal u
+                          val3 = (sig&sig_states) `minus` get val2
+                          z = chg 3 x val3
+  down t@(F x ts) | (dis || con) && all (not . hasFix) ts && all just vals
+                  = if and $ map isList ts then (mkList val2,True)
+                    else (F z us, or bs || nothing val1 || get val1 /= val2)
+                    where (us,bs) = unzip $ map down ts
+                          dis = take 2 x == "\\/"; con = take 2 x == "/\\"
+                          val1 = getVal t; vals = map getVal ts
+                          val2 = if dis then joinMap get vals
+                                        else meetMap get vals
+                          z = chg 2 x val2
+  down t@(F x [F "[]" labs,u]) | (dia || box) && not (hasFix u) && just val2
+                  = if isList u then (mkList val3,True)
+                    else (F z [mkList labs,v],
+                          b || nothing val1 || get val1 /= val3)
+                    where (v,b) = down u
+                          dia = take 2 x == "<>"; box = head x == '#'
+                          val1 = getVal t; val2 = getVal u
+                          val3 = filter (f . g) (sig&sig_states)
+                          z = chg (if dia then 2 else 1) x val3
+                          f = if dia then shares $ get val2
+                                     else flip subset $ get val2
+                          g = getStates sig . h . get . searchS sig
+                          h i = if null labs then (sig&sig_trans)!!i
+                                else joinMap tr $ get $ mapM (searchL sig) labs
+                                where tr k = (sig&sig_transL)!!i!!k
+  down t@(F x [u]) | (lfp x || gfp x) && not (hasFix u) && just val2
+                = (if lfp x && subset (get val2) val1 ||
+                      gfp x && subset val1 (get val2)
+                   then if b then F x [v] else mkList val1 else F z [v],True)
+                   where (v,b) = down u
+                         val1 = get $ getVal t; val2 = getVal u
+                         z = chg 2 x $ if lfp x then val1 `join` get val2
+                                                else val1 `meet` get val2
+  down (F x ts) = (F x us,or bs) where (us,bs) = unzip $ map down ts
+  down t        = (t,False)
 
-parseFlow _ sig t parseVal = f t where
-     f (F "inflow" [u,val])        = do g <- f u; val <- parseVal val
-                                        Just $ In g val
-     f (F "assign" [V x,e,u,val])  = do g <- f u; val <- parseVal val
-                                        Just $ Assign x e g val
-     f (F "ite" [c,u1,u2,val])     = do g1 <- f u1; g2 <- f u2
-                                        val <- parseVal val
-                                        Just $ Ite c g1 g2 val
-     f (F "fork" ts@(_:_))         = do gs <- mapM f $ init ts
-                                        val <- parseVal $ last ts
-                                        Just $ Fork gs val
-     f (F "not" [u,val])           = do g <- f u; val <- parseVal val
-                                        Just $ Neg g val
-     f (F "\\/" ts@(_:_))          = do gs <- mapM f $ init ts
-                                        val <- parseVal $ last ts
-                                        Just $ Comb True gs val
-     f (F "/\\" ts@(_:_))          = do gs <- mapM f $ init ts
-                                        val <- parseVal $ last ts
-                                        Just $ Comb False gs val
-     f (F "EX" [lab,u,val])        = do g <- f u; val <- parseVal val
-                                        Just $ Mop True (leaf "") g val
-     f (F "AX" [lab,u,val])        = do g <- f u; val <- parseVal val
-                                        Just $ Mop False (leaf "") g val
-     f (F "<>" [lab,u,val])        = do g <- f u; guard $ lab `elem`(sig&labels)
-                                        val <- parseVal val
-                                        Just $ Mop True lab g val
-     f (F "#" [lab,u,val])         = do g <- f u; guard $ lab `elem`(sig&labels)
-                                        val <- parseVal val
-                                        Just $ Mop False lab g val
-     f (F "MU" [u,val])            = do g <- f u; val <- parseVal val
-                                        Just $ Fix True g val
-     f (F "NU" [u,val])            = do g <- f u; val <- parseVal val
-                                        Just $ Fix False g val
-     f (V x) | isPos x             = do guard $ q `elem` noRefPositions t
-                                        Just $ Pointer q where q = getPos x
-     f val                         = do val <- parseVal val; Just $ Atom val
+-- postflow and subsflow
 
-parseVal sig (t@(F "()" [])) = Just t
-parseVal sig t = do F "[]" ts <- Just t; guard $ ts `subset` (sig&states);Just t
+data Flow a = In (Flow a) a | Atom a | Assign String TermS (Flow a) a |
+              Ite TermS (Flow a) (Flow a) a | Fork [Flow a] a | Pointer [Int]
 
--- mkFlow computes the term representation of a flow graph
+mkFlow :: Sig -> (TermS -> a) -> TermS -> Flow a
+mkFlow sig mkVal = f where
+   f (F x [t]) | take 7 x == "inflow "       = In (f t) $ dropVal 7 x
+   f (F x [V z,e,t]) | take 7 x == "assign " = Assign z e (f t) $ dropVal 7 x
+   f (F x [c,t,t'])  | take 4 x == "ite "    = Ite c (f t) (f t') $ dropVal 4 x
+   f (F x ts)  | take 5 x == "fork "         = Fork (map f ts) $ dropVal 5 x
+   f (V x) | isPos x                         = Pointer $ getPos x
+   dropVal n = mkVal . get . parse (term sig) . drop n
 
-mkFlow :: Bool -> Sig -> Flow a -> (a -> TermS) -> TermS
-mkFlow b sig flow mkVal = f flow
-       where f (In g val)                 = h "inflow" val [f g]
-             f (Assign x e g val)         = h "assign" val [V x,e,f g]
-             f (Ite c g1 g2 val)          = h "ite" val [c,f g1,f g2]
-             f (Fork gs val)              = h "fork" val $ map f gs
-             f (Atom val)                 = mkVal val
-             f (Neg g val)                = h "not" val [f g]
-             f (Comb True gs val)         = h "\\/" val $ map f gs
-             f (Comb _ gs val)            = h "/\\" val $ map f gs
-             f (Mop True (F "" []) g val) = h "EX" val [f g]
-             f (Mop _ (F "" []) g val)    = h "AX" val [f g]
-             f (Mop True lab g val)       = h "<>" val [lab,f g]
-             f (Mop _ lab g val)          = h "#" val [lab,f g]
-             f (Fix True g val)           = h "MU" val [f g]
-             f (Fix _ g val)              = h "NU" val [f g]
-             f (Pointer p)                = mkPos p
-             h op val ts = if b then F (op ++ "::" ++ showTerm0 (mkVal val)) ts
-                                else F op $ ts ++ [mkVal val]
+-- mkFlowTerm computes the term representation of a flowgraph
 
--- getVal g p returns the value at the first non-pointer position of g that is
--- reachable from p.
+mkFlowTerm :: Sig -> (a -> TermS) -> Flow a -> TermS
+mkFlowTerm sig mkTerm = f where
+                        f (In g val)            = h "inflow " val [f g]
+                        f (Atom val)            = mkTerm val
+                        f (Assign x e g val)    = h "assign " val [V x,e,f g]
+                        f (Ite c g1 g2 val)     = h "ite " val [c,f g1,f g2]
+                        f (Fork gs val)         = h "fork " val $ map f gs
+                        f (Pointer p)           = mkPos p
+                        h x val = F $ x ++ showTerm0 (mkTerm val)
+
+-- getVal g p computes the value at the first non-pointer value position of g
+-- that is reachable from p. The position is also returned.
 
 getVal :: Flow a -> [Int] -> (a,[Int])
 getVal f p = h f p p where h (In g _) (0:p) q         = h g p q
@@ -520,187 +695,86 @@ getVal f p = h f p p where h (In g _) (0:p) q         = h g p q
                            h (Ite _ g _ _) (1:p) q    = h g p q
                            h (Ite _ _ g _) (2:p) q    = h g p q
                            h (Ite _ _ _ val) _ q      = (val,q)
-                           h (Fork gs _) p@(_:_) q    = h' gs p q
+                           h (Fork gs _) p@(_:_) q    = hL gs p q
                            h (Fork _ val) _ q         = (val,q)
-                           h (Neg g _) (0:p) q        = h g p q
-                           h (Neg _ val) _ q          = (val,q)
-                           h (Comb _ gs _) p@(_:_) q  = h' gs p q
-                           h (Comb _ _ val) _ q       = (val,q)
-                           h (Mop _ _ g _) (1:p) q    = h g p q
-                           h (Mop _ _ _ val) _ q      = (val,q)
-                           h (Fix _ g _) (0:p) q      = h g p q
-                           h (Fix _ _ val) _ q        = (val,q)
                            h (Pointer p) _ _          = h f p p
-                           h' (g:_)  (0:p) = h g p
-                           h' (_:gs) (n:p) = h' gs ((n-1):p)
-
--- global model checking of state formulas (backward analysis)
-
-initStates :: Bool -> Sig -> TermS -> Maybe TermS
-
-initStates True sig = f
-     where sts = mkList (sig&states)
-           f (t@(V x))          = do guard $ isPos x; Just t
-           f (F "true" [])      = Just sts
-           f (F "false" [])     = Just mkNil
-           f (F "`then`" [t,u]) = f (F "\\/" [F "not" [t],u])
-           f (F "MU" [t])       = do t <- f t; jOP "MU" "[]" [t]
-           f (F "NU" [t])       = do t <- f t; jOP "NU" (showTerm0 sts) [t]
-           f (F "EX" [t])       = do t <- f t; jOP "EX" "()" [t]
-           f (F "AX" [t])       = do t <- f t; jOP "AX" "()" [t]
-           f (F "<>" [lab,t])   = do p lab; t <- f t; jOP "<>" "()" [lab,t]
-           f (F "#" [lab,t])    = do p lab; t <- f t; jOP "#" "()" [lab,t]
-           f (F "not" [t])      = do t <- f t; jOP "not" "()" $ [t]
-           f (F "\\/" ts)       = do ts <- mapM f ts; jOP "\\/" "()" ts
-           f (F "/\\" ts)       = do ts <- mapM f ts; jOP "/\\" "()" ts
-           f at                 = do i <- search (== at) (sig&atoms)
-                                     Just $ mkList $ map ((sig&states)!!)
-                                                   $ (sig&value)!!i
-           p lab = guard $ just $ search (== lab) (sig&labels)
-           jOP op val = Just . F (op++"::"++val)
-
-initStates _ sig = f
-     where sts = mkList (sig&states)
-           f (t@(V x))          = do guard $ isPos x; Just t
-           f (F "true" [])      = Just sts
-           f (F "false" [])     = Just mkNil
-           f (F "`then`" [t,u]) = f (F "\\/" [F "not" [t],u])
-           f (F "MU" [t])       = do t <- f t; jOP "MU" [t,mkNil]
-           f (F "NU" [t])       = do t <- f t; jOP "NU" [t,sts]
-           f (F "EX" [t])       = do t <- f t; jOP "EX" [t,unit]
-           f (F "AX" [t])       = do t <- f t; jOP "AX" [t,unit]
-           f (F "<>" [lab,t])   = do p lab; t <- f t; jOP "<>" [lab,t,unit]
-           f (F "#" [lab,t])    = do p lab; t <- f t; jOP "#" [lab,t,unit]
-           f (F "not" [t])      = do t <- f t; jOP "not" $ [t,unit]
-           f (F "\\/" ts)       = do ts <- mapM f ts; jOP "\\/" $ ts++[unit]
-           f (F "/\\" ts)       = do ts <- mapM f ts; jOP "/\\" $ ts++[unit]
-           f at                 = do i <- search (== at) (sig&atoms)
-                                     Just $ mkList $ map ((sig&states)!!)
-                                                   $ (sig&value)!!i
-           p lab = guard $ just $ search (== lab) (sig&labels)
-           jOP op = Just . F op
-
-evalStates :: Sig -> TermS -> Flow TermS -> (Flow TermS,Bool)
-evalStates sig t flow = up [] flow
- where ps = maxis (<<=) $ fixPositions t
-       up p (Neg g val)
-            | val1 == unit || any (p<<) ps = (Neg g1 val, b)
-            | True = if null ps then (Atom val2, True)
-                                else (Neg g1 val2, b || val /= val2)
-                         where q = p++[0]; (g1,b) = up q g
-                               val1 = fst $ getVal flow q
-                               val2 = mkList $ minus(sig&states) $ subterms val1
-       up p (Comb c gs val)
-            | any (== unit) vals || any (p<<) ps = (Comb c gs1 val, or bs)
-            | True = if null ps then (Atom val1, True)
-                                else (Comb c gs1 val1, or bs || val /= val1)
-                     where qs = succsInd p gs
-                           (gs1,bs) = unzip $ zipWith up qs gs
-                           vals = map (fst . getVal flow) qs
-                           val1 = mkList $ foldl1 (if c then join else meet)
-                                         $ map subterms vals
-       up p (Mop c lab g val)
-            | val1 == unit || any (p<<) ps = (Mop c lab g1 val, b)
-            | True = if null ps then (Atom val2, True)
-                                else (Mop c lab g1 val2, b || val /= val2)
-                     where q = p++[1]; (g1,b) = up q g
-                           val1 = fst $ getVal flow q
-                           f True = shares; f _ = flip subset
-                           val2 = mkList $ filter (f c (subterms val1) . h)
-                                           (sig&states)
-                           h st = map ((sig&states)!!) $ tr i
-                                  where i = get $ search (== st) (sig&states)
-                           tr i = if lab == leaf "" then (sig&trans)!!i
-                                  else (sig&transL)!!i!!j
-                                  where j = get $ search (== lab) (sig&labels)
-       up p (Fix c g val)
-            | val1 == unit || any (p<<) ps = (Fix c g1 val, b)
-            | True = if f c subset valL val1L
-                     then if not b && p `elem` ps then (Atom val, True)
-                                                  else (Fix c g1 val, b)
-                          else (Fix c g1 $ mkList $ h c valL val1L, True)
-                     where f True = flip; f _ = id
-                           h True = join; h _ = meet
-                           q = p++[0]; (g1,b) = up q g
-                           val1 = fst $ getVal flow q
-                           valL = subterms val; val1L = subterms val1
-       up _ g = (g,False)
+                           hL (g:_)  (0:p) = h g p
+                           hL (_:gs) (n:p) = hL gs $ (n-1):p
 
 -- mkCycles replaces the bounded variables of fixpoint subformulas by back
 -- pointers to their bodies. Alternating fixpoints may lead to wrong results.
 
 mkCycles :: [Int] -> TermS -> TermS
-mkCycles p t@(F x _) | isFixF x = addToPoss p $ eqsToGraph [0] eqs
+mkCycles p t@(F x _) | isFixF x = addToPoss p $ eqsToGraph0 eqs
                                   where (_,eqs,_) = fixToEqs t 0
 mkCycles p (F x ts)             = F x $ zipWithSucs mkCycles p ts
 
--- used by simplifyS stateflow
+-- used by simplifyS "initState"
 
 fixToEqs :: TermS -> Int -> (TermS,[IterEq],Int)
 fixToEqs (F x [t]) n | isFixF x = (F z [],Equal z (F mu [u]):eqs,k)
-                           where mu:y:_ = words x
-                                 b = y `elem` foldT f t
+                           where mu:y:_ = words x; b = y `elem` foldT f t
                                  f x xss = if isFixF x then joinM xss `join1` y
                                                        else joinM xss
                                            where _:y:_ = words x
                                  z = if b then y++show n else y
-                                 (u,eqs,k) = if b then fixToEqs (t>>>g) $ n+1
+                                 (u,eqs,k) = if b then fixToEqs v $ n+1
                                                   else fixToEqs t n
-                                 g = F z [] `for` y
+                                 v = t >>> for (F z []) y
 fixToEqs (F x ts) n = (F x us,eqs,k)
-                      where (us,eqs,k) = f ts n
-                            f (t:ts) n = (u:us,eqs++eqs',k')
-                                         where (u,eqs,k) = fixToEqs t n
-                                               (us,eqs',k') = f ts k
-                            f _ n      = ([],[],n)
+                           where (us,eqs,k) = f ts n
+                                 f (t:ts) n = (u:us,eqs++eqs',k')
+                                              where (u,eqs,k) = fixToEqs t n
+                                                    (us,eqs',k') = f ts k
+                                 f _ n      = ([],[],n)
 fixToEqs t n        = (t,[],n)
+
+-- used by mkCycles
 
 -- verification of postconditions (backward-all analysis)
 
 initPost :: TermS -> TermS
 initPost (F op ts) | op `elem` words "assign fork ite"
-           = F (op++"::bool(True)") $ map initPost ts
+           = F (op++" bool(True)") $ map initPost ts
 initPost t = t
 
 evalPost :: (TermS -> TermS) -> Flow TermS -> (Flow TermS,Bool)
 evalPost simplify flow = up [] flow where
-                 up p (Assign x e g val) = (Assign x e g1 val2, b1 || b2)
+                 selVal = fst . getVal flow
+                 up p (Assign x e g t) = (Assign x e g1 v, b1 || b2)
                             where q = p++[2]
                                   (g1,b1) = up q g
-                                  val1 = f q
-                                  (val2,b2) = mkMeet val $ val1>>>(e`for`x)
-                 up p (Ite c g1 g2 val) = (Ite c g3 g4 val3, b1 || b2 || b3)
+                                  u = selVal q
+                                  (v,b2) = mkMeet t $ u>>>(e`for`x)
+                 up p (Ite c g1 g2 t) = (Ite c g3 g4 t, b1 || b2 || b3)
                             where q1 = p++[1]; q2 = p++[2]
                                   (g3,b1) = up q1 g1; (g4,b2) = up q2 g2
-                                  val1 = f q1; val2 = f q2
-                                  c1 = mkDisjunct [c,val1]
-                                  c2 = mkDisjunct [F "Not" [c],val2]
-                                  (val3,b3) = mkMeet val $ mkConjunct [c1,c2]
-                 up p (Fork gs val) = (Fork gs1 val1, or bs || b)
+                                  u = selVal q1; v = selVal q2
+                                  c1 = mkDisjunct [c,u]
+                                  c2 = mkDisjunct [F "Not" [c],v]
+                                  (val,b3) = mkMeet t $ mkConjunct [c1,c2]
+                 up p (Fork gs t) = (Fork gs1 u, or bs || b)
                             where qs = succsInd p gs
                                   (gs1,bs) = unzip $ zipWith up qs gs
-                                  (val1,b) = mkMeet val $ mkConjunct $ map f qs
+                                  (u,b) = mkMeet t $ mkConjunct $ map selVal qs
                  up _ g = (g,False)
-                 f = fst . getVal flow
-                 mkMeet val val' = if isTrue $ simplify $ mkImpl val val'
-                                   then (val,False)
-                                   else (simplify $ mkConjunct [val,val'],True)
+                 mkMeet t u = if isTrue $ simplify $ mkImpl t u then (t, False)
+                                 else (simplify $ mkConjunct [t,u], True)
 
 -- computation of program states (forward-any analysis)
 
 initSubs :: TermS -> TermS
 initSubs = f
-     where f (F "inflow" [c,val]) = h "inflow" (showTerm0 val) [initSubs c]
-           f (F "assign" [x,e,c]) = h "assign" "[[]]" [x,e,initSubs c]
-           f (F "ite" [b,c,c'])   = h "ite" "[]" [b,initSubs c,initSubs c']
-           f (F "fork" ts)        = h "fork" "[]" $ map initSubs ts
-           f t = t
-           h op val = F $ op++"::"++val
+       where f (F "inflow" [c,val]) = F ("inflow "++showTerm0 val) [initSubs c]
+             f (F "assign" [x,e,c]) = F "assign [[]]" [x,e,initSubs c]
+             f (F "ite" [b,c,c'])   = F "ite []" [b,initSubs c,initSubs c']
+             f (F "fork" ts)        = F "fork []" $ map initSubs ts
+             f t = t
 
 evalSubs :: (TermS -> TermS) -> Flow [SubstS] -> [String]
                                               -> (Flow [SubstS],Bool)
 evalSubs simplify flow xs = down flow False [] flow
-  where down flow b p (In g val)         = down flow1 (b || b1) q g
+  where down flow b p (In g val) = down flow1 (b || b1) q g
                              where q = p++[0]
                                    (flow1,b1) = change flow q val
         down flow b p (Assign x e g val) = down flow1 (b || b1) q g
@@ -770,41 +844,87 @@ subsumes sig = h
 
 -- * __Simplification__
 
-simplifyIter :: Sig -> TermS -> TermS
-simplifyIter sig = pr1 . simplifyLoop sig 100 PA
+simplifyIter,simplifyFix :: Sig -> TermS -> TermS
+simplifyIter sig = loop 0 100
+                   where loop _ 0 t = t
+                         loop k m t = case step PA (simplifyOne sig) t of
+                                           Just t -> loop (k+1) (m-1) t
+                                           _ -> t
+simplifyFix sig  = pr1 . simplifyLoop sig 100 PA
 
-simplifytoList :: Sig -> String -> [TermS]
-simplifytoList sig x = case simplifyIter sig $ leaf x of F "[]" ts -> ts
-                                                         _ -> []
+-- simplifyLoop sig limit strat t applies simplification rules at most limit
+-- times to the maximal subtrees of t and returns the simplified tree together
+-- with the number of actually applied steps.
 
-reduceString :: Sig -> String -> Maybe String
-reduceString sig t = do t <- parse (term sig) t
-                        Just $ showTerm0 $ simplifyIter sig t
+simplifyLoop :: Sig -> Int -> Strategy -> TermS -> (TermS,Int,Bool)
+simplifyLoop sig limit strat t = loop 0 limit [t] where
+             loop k 0 (t:_)    = (t,k,False)
+             loop k m ts@(t:_) = case step strat (simplifyOne sig) t of
+                                 Just t -> loop' t
+                                 _ -> case step DF (expandFix sig True []) t of
+                                      Just t -> loop' t
+                                      _ -> (t,k,False)
+                                 where loop' t = if just $ search (== t) ts
+                                                 then (t,k,True)
+                                                 else loop (k+1) (m-1) $ t:ts
+
+-- used by simplifyFix and Ecom > simplify',simplifySubtree
+
+step :: Strategy -> (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
+step strat simplify t =
+    do --guard $ isF t
+       case strat of DF -> modifyDF [] t                       -- depthfirst
+                     BF -> modifyBF [[]] [t]                   -- breadthfirst
+                     _  -> do let u = modifyPA t [] t          -- in parallel
+                              guard $ t /= u; Just u
+    where modifyDF p u   = concat $ simplify t p:zipWithSucs modifyDF p us
+                           where us = subterms u
+          modifyBF ps us = do guard $ notnull ps
+                              concat (map (simplify t) ps) ++ modifyBF qs vs
+                           where (qs,vs) = unzip $ concat
+                                                 $ zipWith (zipWithSucs (,)) ps
+                                                 $ map subterms us
+          modifyPA t p u = case simplify t p of
+                                Just t -> t
+                                _ -> fold2 modifyPA t (succsInd p us) us
+                           where us = subterms u
+
+-- used by simplifyLoop
 
 sapply sig t  = simplifyIter sig . apply t
 
 sapplyL sig t = simplifyIter sig . applyL t
 
-filterTerms :: Sig -> TermS -> [TermS] -> Maybe ([TermS],[TermS])
-filterTerms sig p (t:ts) = do (ts1,ts2) <- filterTerms sig p ts
-                              if isTrue $ f t then Just (t:ts1,ts2)
-                                              else do guard $ isFalse $ f t
-                                                      Just (ts1,t:ts2)
-                           where f = sapply sig p
-filterTerms _ _ _ = Just nil2
+searchTerm :: Sig -> TermS -> [TermS] -> Maybe TermS
+searchTerm sig p (t:ts) = if isTrue $ f t then Just t
+                          else do guard $ isFalse $ f t; searchTerm sig p ts
+                          where f = sapply sig p
+searchTerm _ _ _        = Nothing
 
-applyDrawFun :: Sig -> TermS -> String -> [TermS] -> [TermS]
+filterTerms :: Sig -> TermS -> [TermS] -> Maybe [TermS]
+filterTerms sig p (t:ts) = do ts <- filterTerms sig p ts
+                              if isTrue $ f t then Just $ t:ts
+                              else do guard $ isFalse $ f t; Just ts
+                           where f = sapply sig p
+filterTerms _ _ _        = Just []
+
+addTitle b str t = F "<+>" [path (if b then "widg blue $" else "blue $")
+                                 [path "frame 5" [],F "text" [leaf str]],
+                            t]
+                  where path str ts = f $ words str where f [x]    = F x ts
+                                                          f (x:xs) = F x [f xs]
+
+applyDrawFun :: Sig -> TermS -> String -> TermS -> TermS
 applyDrawFun _ (F "id" _) _      = id
 applyDrawFun _ (F "title" _) str = if null str then id
-                                   else map $ F "<+>" . add . add1ToPoss
-  -- The pre-interpreter "title" frames the text in the entry field and adds it
-  -- to the picture of t. ' in the text is interpreted as line break.
-  where add t = [path "widg blue $" [path "frame 5" [],F "text" [leaf str]],t]
-        path str ts = f $ words str where f [x]    = F x ts
-                                          f (x:xs) = F x [f xs]
-applyDrawFun sig t _ = map $ widg . \u -> simplifyIter sig $
-                                                       F "$" [t,add1ToPoss u]
-  where widg (F "$" [F "$" [F "wtree" [m],f],t]) | just m' = g t pt
+                                   else addTitle True str . add1ToPoss
+
+-- The pre-interpreter "title" frames the text in the entry field and adds it
+-- to the picture of t. ' in the text is interpreted as a line break.
+
+applyDrawFun sig t _ = widg . simplify where
+        simplify u = simplifyIter sig $ F "$" [t,add1ToPoss u]
+        widg (F "$" [F "$" [F "wtree" [m],f],t]) | just m' = g t pt
              where m' = parsePnat m
                    order = case get m' of 1 -> levelTerm; 2 -> preordTerm
                                           3 -> heapTerm;  _ -> hillTerm
@@ -827,65 +947,30 @@ applyDrawFun sig t _ = map $ widg . \u -> simplifyIter sig $
         widg t = simplifyIter sig t
         parser = parse $ singleTerm sig
 
--- used by Ecom > showSubtreePicts,showTreePicts,showTransOrKripke
+ -- wtree(f)(t) replaces each subgraph x(t1,..,tn) of t by the subgraph 
+ -- widg(t1,...,tn,f(x)).
 
--- wtree(f)(t) replaces each subgraph x(t1,..,tn) of t by the subgraph 
--- widg(t1,...,tn,f(x)).
+ -- wtree(m)(f)(t) replaces each subtree x(t1,...,tn) of t by the subtree 
+ -- widg(t1,...,tn,f(x,k,max)) where k is the position of x within t with respect
+ -- to level order (m=1), prefix order (m=2), heap order (m=3) or hill order 
+ -- (m>3) and max is the maximum of positions of t.
 
--- wtree(m)(f)(t) replaces each subtree x(t1,...,tn) of t by the subtree 
--- widg(t1,...,tn,f(x,k,max)) where k is the position of x within t with respect
--- to level order (m=1), prefix order (m=2), heap order (m=3) or hill order 
--- (m>3) and max is the maximum of positions of t.
+ -- If the interpreter widgetTree is applied to the resulting term, node x is 
+ -- replaced by the widget f(x) resp. f(x,k,max).
 
--- If the interpreter widgetTree is applied to the resulting term, node x is 
--- replaced by the widget f(x) resp. f(x,k,max).
-
--- simplifyLoop sig limit strat t applies simplification rules at most limit
--- times to the maximal subtrees of t and returns the simplified tree together
--- with the number of actually applied steps.
-
-simplifyLoop :: Sig -> Int -> Strategy -> TermS -> (TermS,Int,Bool)
-simplifyLoop sig limit strat t = loop 0 limit [t] where
-        loop k 0 (t:_)    = (t,k,False)
-        loop k m ts@(t:_) = case step strat (simplifyOne sig) t of
-                                 Just t -> loop' t
-                                 _ -> case step DF (expandFix sig True []) t of
-                                           Just t -> loop' t
-                                           _ -> (t,k,False)
-                            where loop' t = if just $ search (== t) ts
-                                            then (t,k,True)
-                                            else loop (k+1) (m-1) $ t:ts
-
--- used by simplifyIter and Ecom > simplify',simplifySubtree
-
-step :: Strategy -> (TermS -> [Int] -> Maybe TermS) -> TermS -> Maybe TermS
-step strat simplify t =
-    do guard $ isF t
-       case strat of DF -> modifyDF [] t                       -- depthfirst
-                     BF -> modifyBF [[]] [t]                   -- breadthfirst
-                     _  -> do let u = modifyPA t [] t          -- in parallel
-                              guard $ t /= u; Just u
-    where modifyDF p u   = concat $ simplify t p:zipWithSucs modifyDF p us
-                           where us = subterms u
-          modifyBF ps us = do guard $ notnull ps
-                              concat (map (simplify t) ps) ++ modifyBF qs vs
-                           where (qs,vs) = unzip $ concat
-                                                 $ zipWith (zipWithSucs (,)) ps
-                                                 $ map subterms us
-          modifyPA t p u = case simplify t p of
-                                Just t -> t
-                                _ -> fold2 modifyPA t (succsInd p us) us
-                           where us = subterms u
-
--- used by simplifyLoop
+-- used by Ecom > showSubtreePicts,showTreePicts,showTrans
 
 -- simplifyOne sig t p applies the first applicable simplification rule at
 -- position p of t.
 
 simplifyOne :: Sig -> TermS -> [Int] -> Maybe TermS
 simplifyOne sig t p = concat [collapseUnary t p,try 1 True,try 2 True,
-                              try 3 True,try 2 False,try 3 False]
-    where try k b   = do (reduct,ps) <- aux k b u
+                              try 3 True,try 2 False,try 3 False,fixCycles]
+    where u = mapT block t
+          block x = if (sig&sig_blocked) x then "BLOCK"++x else x
+          unblock ('B':'L':'O':'C':'K':x) = x
+          unblock x = x
+          try k b   = do (reduct,ps) <- aux k b u
                          v <- foldlM (derefPreds 2 k b) u $ map (p++) ps
                          (reduct,_) <- aux k b v
                          Just . mapT unblock $ replace1 v p $ chgTargets reduct
@@ -903,18 +988,15 @@ simplifyOne sig t p = concat [collapseUnary t p,try 1 True,try 2 True,
                                             else foldl g (dereference t [r]) rs
                              g t p = replace0 t p $ mkPos r
                          (_,qs) <- aux k b u
-                         if null qs || n == 0
-                            then Just u else derefPreds (n-1) k b u q
+                         if null qs || n == 0 then Just u
+                                              else derefPreds (n-1) k b u q
                       where srcs = sources q t
-          n = length p
-          u = mapT block t
-          block x = if (sig&blocked) x then "BLOCK"++x else x
-          unblock ('B':'L':'O':'C':'K':x) = x
-          unblock x = x
+          fixCycles  = do reduct <- getReduct 3 False sig u p $ getSubterm1 u p
+                          Just . mapT unblock $ replace1 u p reduct
 
 -- used by simplifyLoop and Ecom > simplifyPar
 
--- If node p of t is labelled with a pointer to, say, target, collapseUnary t p
+-- If node p of t is labelled with a pointer to target, then collapseUnary t p
 -- identifies the parent q of p with the parent r of target if q and r are
 -- labelled with the same unary operator.
 
@@ -929,10 +1011,10 @@ collapseUnary t p = do guard $ notnull p && isPos x && f q == 1 &&
                           f = outdegree . getSubterm t
 -- used by simplifyOne
 
-getReduct 1 _ sig t p redex = do guard $ (sig&notSafe) && polarity True t p
+getReduct 1 _ sig t p redex = do guard $ (sig&sig_notSafe) && polarity True t p
                                  simplCoInd sig redex
 getReduct 2 _ sig _ _ redex = do guard $ redex /= reduct; Just reduct
-                                 where reduct = evaluate sig redex
+                              where reduct = evaluate sig redex
 getReduct _ b sig _ _ redex = do guard $ b || isF redex; simplifyF sig redex
 
 -- used by simplifyOne
@@ -943,7 +1025,7 @@ getReduct _ b sig _ _ redex = do guard $ b || isF redex; simplifyF sig redex
 
 expandFix :: Sig -> Bool -> [Int] -> TermS -> [Int] -> Maybe TermS
 expandFix sig firstCall muPos t p =
-                   do guard $ not $ (sig&blocked) "fixes"
+                   do guard $ not $ (sig&sig_blocked) "fixes"
                       F mu [body] <- Just redex
                       guard $ isFix mu
                       let [_,x] = words mu
@@ -957,10 +1039,6 @@ expandFix sig firstCall muPos t p =
 -- used by simplifyLoop
 
 simplCoInd,simplifyF,simplifyA,simplifyS :: Sig -> TermS -> Maybe TermS
-
--- remove in/equational summands or factors
-
-simplCoInd sig t | just u = u where u = removeEq sig True t
 
 -- fixpoint induction rules
 
@@ -1044,15 +1122,14 @@ simplifyF sig (F "$" [F "concRepl" [t],u@(F "[]" us)]) | just n =
                                                  (mkList $ map f $ indices_ us)
                          f i = mkPos [0,i]
 
-simplifyF _ (F "$" [F "**" [f,t],u]) | just n =
+simplifyF _ (F "$" [F "**" [f,t],u]) | just n =   -- collapse into first f-occ.
                   Just $ if null $ subterms f then iterate (apply f) v!!m
                          else apply copy $ iterate (apply $ mkPos [0]) v!!(m-1)
                   where n = parsePnat t; m = get n
                         v = changePoss [1] (replicate m 1) u
                         copy = changePoss [0,0] [0] f
-                  -- collapse into first copy of f
 
-simplifyF _ (F "$" [F "***" [f,t],u]) | just n =
+simplifyF _ (F "$" [F "***" [f,t],u]) | just n =  -- collapse into last f-occ.
                Just $ if null $ subterms f then iterate (apply f) v!!m
                       else iterate (apply $ mkPos funpos) (apply copy v)!!(m-1)
                where n = parsePnat t; m = get n
@@ -1114,13 +1191,12 @@ simplifyF sig (F x ts@(_:_)) | notnull us =
 simplifyF sig (F "$" [t,u]) | notnull ts = Just $ apply (mkSum ts) u
                                            where ts = simplReducts sig False t
 
--- logical reductions
+-- LOGICAL REDUCTIONS
 
-simplifyF sig (F "<==>" [t,u]) | isTrue t         = Just u
-                               | isTrue u         = Just t
-                               | isFalse t        = Just $ mkNot sig u
-                               | isFalse u        = Just $ mkNot sig t
-                               | subsumes sig t u = Just $ mkImpl u t
+simplifyF _ (F "===>" [t,u]) = Just $ mkImpl t u
+simplifyF _ (F "<===" [t,u]) = Just $ mkImpl u t
+
+simplifyF sig (F "<==>" [t,u]) | subsumes sig t u = Just $ mkImpl u t
                                | subsumes sig u t = Just $ mkImpl t u
 
 -- distribute ==> over the factors of the conclusion of an implication
@@ -1230,7 +1306,7 @@ simplifyF _ (F "$" [F "allany" [r],F "()" [F x ts,F y us]])
 --          --> ... & conc          & ... & prem & ...
 
 simplifyF _ (F "&" ts) | notnull is = Just $ mkConjunct $ map f $ indices_ ts
-                                where is = [i | i <- searchAll isImpl ts,
+                                where is = [i | i <- getIndices isImpl ts,
                                                 let F _ [prem,_] = ts!!i,
                                                 prem `elem` context i ts]
                                       f i = if i `elem` is then conc else ts!!i
@@ -1245,7 +1321,7 @@ simplifyF _ (F "$" [F "\\/" [t,u],v]) = Just $ F "|" [apply t v,apply u v]
 -- remove in/equational summands or factors with a quantified variable on one
 -- side.
 
-simplifyF sig t | just u = u where u = removeEq sig False t
+simplifyF sig t | just u = u where u = removeEq sig t
 
 simplifyF sig t = simplifyA sig t
 
@@ -1257,9 +1333,9 @@ simplifyF sig t = simplifyA sig t
 -- that is applicable to t.
 
 simplReducts :: Sig -> Bool -> TermS -> [TermS]
-simplReducts sig isTrans t = if isTrans then concatMap f (sig&transitions)
+simplReducts sig isTrans t = if isTrans then concatMap f (sig&sig_transitions)
                              else if null reds then [] else [head reds]
- where reds = concatMap f (sig&simpls)
+ where reds = concatMap f (sig&sig_simpls)
        reduce = if isTrans then simplifyIter sig else id
        f (u,cs,v) = case matchSubs sig xs t u of
                          Just (sub,ts,is,bag) | just sub'
@@ -1286,21 +1362,23 @@ simplReducts sig isTrans t = if isTrans then concatMap f (sig&transitions)
 -- used by simplifyF,simplifyS,buildTrans{Loop},getRHS
 
 -- buildTrans sig ts constructs the binary and ternary relations generated by ts
--- and the simplification and transition axioms of sig.
+-- and the transition rules of sig.
 
-buildTrans :: Sig -> [TermS] -> (Pairs TermS,Triples TermS TermS)
-buildTrans sig ts = (zip ts $ reduce ts,
-                     zipL pairs $ reduce [mkPair t lab | (t,lab) <- pairs])
-                    where reduce = map $ simplReducts sig True
-                          pairs = prod2 ts (sig&labels)
+buildTrans :: Sig -> [TermS] -> ([TermS],PairsT,TriplesT)
+buildTrans sig ts = ((sig&sig_states) `join` joinM reds1 `join` joinM reds2,
+                     zip ts reds1,zipL pairs reds2)
+                    where reds1 = reduce ts
+                          reds2 = reduce [mkPair t lab | (t,lab) <- pairs]
+                          reduce = map $ simplReducts sig True
+                          pairs = prod2 ts (sig&sig_labels)
 
--- used by Ecom > buildKripke >=3
+-- used by Ecom > buildKripke 3/4,buildKripkeValues
 
 -- buildTransLoop sig mode constructs the transition system generated by
--- sig.states and the simplification and transition axioms of sig.
+-- sig.states and the transition rules of sig.
 
-buildTransLoop :: Sig -> Int -> ([TermS],Pairs TermS,Triples TermS TermS)
-buildTransLoop sig mode = loop (sig&states) (sig&states) [] [] where
+buildTransLoop :: Sig -> Int -> ([TermS],PairsT,TriplesT)
+buildTransLoop sig mode = loop (sig&sig_states) (sig&sig_states) [] [] where
                    loop old sts ps psL =
                       if null new then (old,rs,rsL)
                                   else loop (old `join` new) new rs rsL
@@ -1309,8 +1387,9 @@ buildTransLoop sig mode = loop (sig&states) (sig&states) [] [] where
                             redss  = reduce sts
                             redssL = reduce [mkPair st lab | (st,lab) <- pairs]
                             reduce = map $ simplReducts sig True
-                            pairs = prod2 sts (sig&labels)
-                            qs = zip sts redss; qsL = zipL pairs redssL
+                            pairs = prod2 sts (sig&sig_labels)
+                            qs = zip sts redss
+                            qsL = zipL pairs redssL
                             meetNew = map $ meet new
                             (rs,rsL) = case mode of
                                         0 -> (ps++map removeCycles qs,
@@ -1321,18 +1400,28 @@ buildTransLoop sig mode = loop (sig&states) (sig&states) [] [] where
                             removeCycles (st,reds) = (st,f st reds)
                             removeCyclesL (st,lab,reds) = (st,lab,f st reds)
                             f st sts = [st' | st' <- sts,
-                                              st `notElem` fixpt subset g [st']]
-                            g sts = sts `join` joinMap h sts where
-                            h st = (case lookup st ps of Just sts -> sts
-                                                         _ -> []) ++
-                                   joinMap f (sig&labels)
+                                   st `notElem` fixpt subset (joinMap g) [st']]
+                            g st = (case lookup st ps of Just sts -> sts
+                                                         _ -> [])
+                                   `join` joinMap f (sig&sig_labels) `join1` st
                                    where f lab = case lookupL st lab psL of
-                                                      Just sts -> sts; _ -> []
+                                                      Just sts -> sts
+                                                      _ -> []
 
--- used by Ecom > buildKripke <=2
+-- used by Ecom > buildKripke 0/1/2
 
-removeEq :: Sig -> Bool -> Term [Char] -> Maybe TermS
-removeEq sig unsafe t =
+getFrom :: Sig -> [TermS] -> String -> [TermS]
+getFrom sig axioms str = if null ts then []
+                                    else case simplifyIter sig $ head ts of
+                                              F "[]" ts -> ts
+                                              _ -> []
+                         where ts = do F "==" [F x [],u] <- axioms
+                                       guard $ x == str
+                                       [u]
+
+-- used by Ecom > buildKripke 0/1/2
+
+removeEq sig t =
       case t of F ('A':'l':'l':x) [F "==>" [F "&" ts,u]] | just pair 
                   -> Just $ mkAll xs $ mkImpl (mkConjunct reds) $ u>>>g
                              where xs = words x
@@ -1360,17 +1449,20 @@ removeEq sig unsafe t =
                   -> Just $ mkAny xs $ mkConjunct $ fst $ get pair
                             where xs = words x
                                   pair = f "=" xs ts
-                F ('A':'n':'y':x) ts
+                F ('A':'n':'y':x) ts | just $ f "=" (words x) ts
+                  -> Just mkTrue
                     | just $ f "=" (words x) ts -> Just mkTrue
                 _ -> Nothing
       where f rel xs = g [] 
               where g rest (t@(F z us@[l,r]):ts) 
-                              | z == rel && (unsafe || xs  `shares` map root us)
+                         | z == rel && ((sig&sig_notSafe) || xs `shares` map root us)
                                         = case unifyS sig xs l r of
                                     Just h -> Just (map (>>>h) $ ts++rest,h)
                                     _ -> g (rest++[t]) ts
                     g rest (t:ts) = g (rest++[t]) ts
                     g _ _         = Nothing
+
+-- used by simplifyF
 
 -- replaceTerms sig rel ts vs replaces l in vs by r if ts contains the
 -- atom (l rel r) or (r rel l). At first, atoms (t rel t) are removed.
@@ -1393,7 +1485,7 @@ replaceTerms sig rel ts vs = f [] ts
                           g (F x ts)   = (F x us,or bs)
                                          where (us,bs) = unmap g ts
                           g t          = (t,False) 
-         isc = isConstruct sig . root
+         isc = (sig&sig_isConstruct) . root
          unmap g = unzip . map g
 
 -- subsume summands
@@ -1488,22 +1580,7 @@ simplifyA sig (F "`NOTsubset`" [F x ts,F y us])
                          jConst $ not $ subsetTerm ts us
                       where f = isValue sig
 
-simplifyA sig (F "Int" [t]) | andT (not . isVar sig) t =
-                                                  jConst $ just $ parseInt t
-
-simplifyA sig (F "Real" [t]) | andT (not . isVar sig) t =
-                                                  jConst $ just $ parseDouble t
-
-simplifyA sig (F "Value" [t]) = jConst $ isValue sig t
-
-simplifyA _ (F "List" [t])    = jConst $ isList t
-
 simplifyA sig t = simplifyS sig t
-
-mkStates,mkLabels,mkAtoms :: Sig -> [Int] -> TermS
-mkStates sig = mkList . map ((sig&states)!!)
-mkLabels sig = mkList . map ((sig&labels)!!)
-mkAtoms sig  = mkList . map ((sig&atoms)!!)
 
 simplifyS sig (F "`meet`" [F x ts,F y us])
   | collectors x y = do guard $ all f ts && all f us; jList $ meetTerm ts us
@@ -1520,9 +1597,11 @@ simplifyS sig (F "-" [F x ts,F y us])
                         jList $ removeTerms ts us
                      where f = isValue sig
 
+simplifyS sig (F "$" [F "search" [p],F x ts])
+ | collector x && just t = Just $ get t where t = searchTerm sig p ts
+
 simplifyS sig (F "$" [F "filter" [p],F x ts])
- | collector x && just ps = Just $ F x $ fst $ get ps
-                            where ps = filterTerms sig p ts
+ | collector x && just us = Just $ F x $ get us where us = filterTerms sig p ts
 
 simplifyS sig (F "$" [F "$" [F "sfold" [f],a],F x []]) | collector x = Just a
 
@@ -1530,203 +1609,176 @@ simplifyS sig (F "$" [F "$" [F "sfold" [f],a],F x (t:ts)]) | collector x =
        Just $ apply (apply (F "sfold" [f]) $ simplifyIter sig $ applyL f [a,t])
             $ F x ts
 
-simplifyS sig (F "tree" [F x []]) = parse (term sig) x   -- inverse of "string"
+simplifyS sig (F "term" [F x []]) = parse (term sig) x   -- inverse of "string"
+
+simplifyS sig (F "$" [F "mapT" [t],u]) = Just $ mapT f u where
+                                     f x = case parse (term sig) x of
+                                           Just v -> showTerm0 $ sapply sig t v
+                                           _ -> x
 
 simplifyS sig (F "subst" [t,u,v]) | isVar sig x =
-       Just $ collapseVars sig [x] v >>> for t x where x = root u
+                     Just $ collapseVars sig [x] v >>> for t x where x = root u
 
 -- LR parsing
 
-simplifyS sig (F "parseLR" [str]) =
-             do input <- parseWords str
-                guard $ ("end":input) `subset` map root (labels sig) &&
-                        all (\i -> all (det i) [0..m]) [0..n]
-                Just $ F "parseLR" [Hidden $ LRarr acttab,mkStates sig [0],
-                                    mkNil,mkList $ map leaf $ input]
-             where upb@(n,m) = (length (states sig)-1,length (labels sig)-1)
-                   bds = ((0,0),upb)
-                   acttab = array bds [(ik,actTable sig ik) | ik <- range bds]
-                   det i k = length (transL sig !!i!!k) <= 1
-                             
-simplifyS sig (F "parseLR" [Hidden (LRarr acttab),F "[]" sts,F "[]" trees,
-                            F "[]" input])  =
-            Just $ case nextLR sig acttab (getIndices (`elem` sts) (sig&states))
-                               trees $ getIndices (`elem` input) (sig&labels) of
-                        Success t -> t
-                        More is trees input
-                          -> F "parseLR" [Hidden $ LRarr acttab,
-                                          mkStates sig is,mkList trees,f input]
-                        _ -> leaf "no parse"
-            where f [] = mkList [leaf "end"] 
-                  f ks = mkList $ map (labels sig !!) ks
+simplifyS sig (F "parseLR" [input@(F "[]" ts)]) =
+                do guard $ isLRmodel sig && ts `subset` getLabels sig terminals
+                   Just $ F "parseLR" [mkList [(sig&sig_states)!!0],mkNil,input]
+                where terminals = indices_ (sig&sig_labels) `minus` nonterminals sig
 
--- auxiliary functions for evaluating modal formulas
+simplifyS sig (F "parseLR" [s@(F "[]" sts),a@(F "[]" asts),F "[]" input]) =
+                       Just $ case nextLR sig sts asts input of
+                                   Success t -> t
+                                   More sts asts input
+                                     -> F "parseLR" [s,a,mkList input]
+                                   _ -> leaf "no parse"
 
-simplifyS sig (F "trans" state@(_:_)) =
-              if null (sig&states) then Just $ mkList $ simplReducts sig True st
-                                 else do i <- search (== st) (sig&states)
-                                         Just $ mkStates sig $ (sig&trans)!!i
-              where st = mkTup state
+-- local modal checking (used in specification modal)
 
-simplifyS sig (F "$" [F "transL" state@(_:_),lab]) =
-             if null (sig&states) then Just $ mkList $ simplReducts sig True
-                                                   $ mkPair st lab
-                                else do i <- search (== st) (sig&states)
-                                        k <- search (== lab) (sig&labels)
-                                        Just $ mkStates sig $ (sig&transL)!!i!!k
-             where st = mkTup state
+simplifyS sig (F "$" [F "out" [F "[]" []],st]) | just i =
+                       Just $ mkAtoms sig $ out sig!!get i where
+                       i = searchS sig $ simplifyIter sig st
 
-simplifyS sig (F "out" state@(_:_)) =
-                  if null (sig&states) then Just $ mkList $ filter f (sig&atoms)
-                                     else do i <- search (== st) (sig&states)
-                                             Just $ mkAtoms sig $ out sig!!i
-                  where st = mkTup state
-                        f = elem st . simplReducts sig True
+simplifyS sig (F "$" [F "out" [F "[]" labs],st]) | just i =
+                       Just $ mkAtoms sig $ concatMap (f $ get i) ks where
+                       i = searchS sig $ simplifyIter sig st
+                       ks = getJust (searchL sig) $ map (simplifyIter sig) labs
+                       f i k = outL sig!!i!!k
 
-simplifyS sig (F "$" [F "outL" state@(_:_),lab]) =
-                 if null (sig&states) then Just $ mkList $ filter f (sig&atoms)
-                                    else do i <- search (== st) (sig&states)
-                                            k <- search (== lab) (sig&labels)
-                                            Just $ mkAtoms sig $ outL sig!!i!!k
-                 where st = mkTup state
-                       f = elem (mkPair st lab) . simplReducts sig True
+simplifyS sig (F "$" [F "children" [F "[]" []],st]) | just i =
+                       Just $ mkStates sig $ (sig&sig_trans)!!get i where
+                       i = searchS sig $ simplifyIter sig st
 
--- functions for analyzing the Kripke model stored in the actual signature
+simplifyS sig (F "$" [F "children" [F "[]" labs],st]) | just i =
+                       Just $ mkStates sig $ joinMap (f $ get i) ks where
+                       i = searchS sig $ simplifyIter sig st
+                       ks = getJust (searchL sig) $ map (simplifyIter sig) labs
+                       f i k = (sig&sig_transL)!!i!!k
 
-simplifyS sig (F "succs" state) = do i <- search (== st) (sig&states)
-                                     Just $ mkStates sig $ fixpt subset f [i]
-                                  where st = mkTup state
-                                        f is = is `join` joinMap g is
-                                        ks = indices_ (sig&labels)
-                                        g i = (sig&trans)!!i `join`
-                                              joinMap (((sig&transL)!!i)!!) ks
+simplifyS sig (F "$" [F "parents" [F "[]" []],st]) | just i =
+                       Just $ mkStates sig $ parents sig!!get i where
+                       i = searchS sig $ simplifyIter sig st
 
-simplifyS sig (F "parents" state) = do i <- search (== st) (sig&states)
-                                       Just $ mkStates sig $ parents sig!!i
-                                    where st = mkTup state
-
-simplifyS sig (F "$" [F "parentsL" state,lab])
-                                  = do i <- search (== st) (sig&states)
-                                       k <- search (== lab) (sig&labels)
-                                       Just $ mkStates sig $ parentsL sig!!i!!k
-                                    where st = mkTup state
-
-simplifyS sig (F "preds" state)   = do i <- search (== st) (sig&states)
-                                       Just $ mkStates sig $ fixpt subset f [i]
-                                    where st = mkTup state
-                                          f is = is `join` joinMap g is
-                                          ks = indices_ (sig&labels)
-                                          g i = parents sig !!i `join`
-                                               joinMap ((parentsL sig!!i)!!) ks
+simplifyS sig (F "$" [F "parents" [F "[]" labs],st]) | just i =
+                       Just $ mkStates sig $ concatMap (f $ get i) ks where
+                       i = searchS sig $ simplifyIter sig st
+                       ks = getJust (searchL sig) $ map (simplifyIter sig) labs
+                       f i k = parentsL sig!!i!!k
 
 simplifyS sig (F "$" [F "traces" state,st']) =
-                                   do i <- search (== st) (sig&states)
-                                      j <- search (== st') (sig&states)
+                                   do i <- searchS sig st
+                                      j <- searchS sig st'
                                       jList $ map (mkStates sig) $ traces f i j
                                    where st = mkTup state
-                                         ks = indices_ (sig&labels)
-                                         f i = (sig&trans)!!i `join`
-                                               joinMap (((sig&transL)!!i)!!) ks
+                                         ks = indices_ (sig&sig_labels)
+                                         f i = (sig&sig_trans)!!i `join`
+                                               joinMap (((sig&sig_transL)!!i)!!) ks
 
 simplifyS sig (F "$" [F "tracesL" state,st']) =
-                               do i <- search (== st) (sig&states)
-                                  j <- search (== st') (sig&states)
+                               do i <- searchS sig st
+                                  j <- searchS sig st'
                                   jList $ map (mkLabels sig) $ tracesL ks f i j
                                where st = mkTup state
-                                     ks = indices_ (sig&labels)
-                                     f i k = ((sig&transL)!!i)!!k
+                                     ks = indices_ (sig&sig_labels)
+                                     f i k = ((sig&sig_transL)!!i)!!k
 
 -- state equivalence
 
-simplifyS sig (F "~" [t,u]) = do i <- search (== t) (sig&states)
-                                 j <- search (== u) (sig&states)
-                                 let cli = search (elem i) part
-                                     clj = search (elem j) part
-                                 Just $ mkConst $ cli == clj
-                    where part = mkPartition (indices_ (sig&states)) $ bisim sig
+simplifyS sig (F "~" [st,st']) = do i <- searchS sig st; j <- searchS sig st'
+                                    let cli = search (elem i) part
+                                        clj = search (elem j) part
+                                    Just $ mkConst $ cli == clj
+                     where part = mkPartition (indices_ (sig&sig_states)) $ bisim sig
 
-simplifyS sig (F x@"equivStep" []) = Just $ F x [Hidden mat]
-                    where sts = map showTerm0 (sig&states)
-                          mat = ListMatL sts [(f i,f j,map (apply2 $ map f) ps)
-                                              | (i,j,ps) <- bisim0 sig]
-                          f = showTerm0 . ((sig&states)!!)
+simplifyS sig (F x@"PaullUnger" []) = Just $ Hidden $ EquivMat sig $ bisim0 sig
 
-simplifyS _ (F x@"equivStep" [Hidden mat]) =
-                                    do ListMatL sts s <- Just mat
-                                       let new = bisimStep s
-                                       guard $ s /= new 
-                                       Just $ F x [Hidden $ ListMatL sts new]
+simplifyS sig (Hidden (EquivMat _ trips)) | trips /= new
+                                    = Just $ Hidden $ EquivMat sig new
+                                      where new = bisimStep trips
 
--- global model checking
+-- global model checking (used in specification modal)
 
-simplifyS sig (F "eval" [phi])  = do sts <- foldModal sig phi
-                                     Just $ mkStates sig sts
+-- evaluate a state set formula phi
 
-simplifyS sig (F "evalG" [phi]) = do sts <- foldModal sig phi
-                                     let f st | isPos st || st == "<+>" = st
-                                              | st `elem` map (strs!!) sts
-                                                         = "dark green_"++st 
-                                              | True     = "red_"++st
-                                     Just $ mapT f $ eqsToGraph [] eqs
-    where [strs,labs] = map (map showTerm0)[(sig&states),(sig&labels)]
-          (eqs,_) = if null labs then relToEqs 0 $ mkPairs strs strs (sig&trans)
-                    else relLToEqs 0 $ mkTriples strs labs strs (sig&transL)
+simplifyS sig (F "eval" [phi])  = Just $ mkStates sig $ evalPred sig phi
 
-simplifyS sig (F "valid" [phi]) = Just $ mkSum
-                                 $ filter (isTrue . sapply sig phi) (sig&states)
+simplifyS sig (F "evalG" [phi]) = Just $ mapT f $ relToGraph pairs trips
+                                                $ map showTerm0 (sig&sig_inits)
+                      where is = evalPred sig phi
+                            [sts,labs,_] = showSLA sig
+                            pairs = mkPairs sts sts (sig&sig_trans)
+                            trips = mkTrips sts labs sts (sig&sig_transL)
+                            f st | isPos st || st == "<+>"  = st
+                                 | st `elem` map (sts!!) is = "dark green_"++st
+                                 | True                     = "red_"++st
 
--- flow graph initialization
+-- evaluate a relation formula
 
-simplifyS sig (F "stateflow" [t])  = if just u then u
-                                     else initStates True sig $ mkCycles [] t
-                                     where u = initStates True sig t
+simplifyS sig (F "evalR" [rel]) = Just $ f $ evalRel sig rel where
+                                  f rel = mkList $ map g $ mkRelPairs sig rel
+                                  g (t,u) = mkPair t u
 
-simplifyS sig (F "stateflowT" [t]) = if just u then u
-                                     else initStates False sig $ mkCycles [] t
-                                     where u = initStates False sig t
+simplifyS sig (F "evalRG" [rel]) = Just $ mkGraph sig $ evalRel sig rel
 
-simplifyS _ (F "postflow" [t])     = do eqs <- parseEqs t
-                                        Just $ initPost $ eqsToGraph [0] eqs
+simplifyS sig (F "evalRM" [rel]) = Just $ Hidden $ BoolMat dom1 dom2 pairs
+                         where (dom1,dom2) = sortDoms pairs
+                               pairs = map f $ mkRelPairs sig $ evalRel sig rel
+                               f (t,u) = (showTerm0 t,showTerm0 u)
 
-simplifyS _ (F "subsflow" [t])     = do eqs <- parseEqs t
-                                        Just $ initSubs $ eqsToGraph [0] eqs
+-- evaluate a table formula
+
+simplifyS sig (F "evalT" [tab]) = Just $ f $ evalTab sig tab where
+                                  f tab = mkList $ map g $ mkTabTrips sig tab
+                                  g (t,u,v) = mkTrip t u v
+
+simplifyS sig (F "evalM" [tab]) = Just $ Hidden $ ListMat dom1 dom2 trips where
+                            (dom1,dom2) = sortDoms $ map (pr1 *** pr2) trips
+                            trips = map f $ mkTabTrips sig $ evalTab sig tab
+                            f (t,u,v) = (showTerm0 t,showTerm0 u,[showTerm0 v])
+
+-- compute all states the satisfy the Boolean function p
+
+simplifyS sig (F "valid" [p]) = Just $ mkSum $ satisfying sig p
+
+-- flowgraph initialization
+
+simplifyS sig (F "initState" [t]) | just u  = Just $ F "runState" [get u]
+                                    where u = initState sig $ mkCycles [0] t
+
+simplifyS _ (F "initPost" [t]) | just eqs = Just $ F "runPost" [initPost g]
+                                where eqs = parseEqs t
+                                      g = addToPoss [0] $ eqsToGraph0 $ get eqs
+
+simplifyS _ (F "initSubs" [t]) | just eqs = Just $ F "runSubs" [initSubs g]
+                                where eqs = parseEqs t
+                                      g = addToPoss [0] $ eqsToGraph0 $ get eqs
 
 -- flowgraph transformation
 
-simplifyS sig t | just flow = do guard changed; Just $ mkFlow True sig ft id
-                    where flow = parseFlow True sig t $ parseVal sig
-                          (ft,changed) = evalStates sig t $ get flow
+simplifyS sig (F x@"runState" [t]) | changed  = Just $ F x [u]
+                                   | isList u = Just u
+                                     where (u,changed) = evalStep sig t
 
-simplifyS sig t | just flow = do guard changed; Just $ mkFlow False sig ft id
-                    where flow = parseFlow False sig t $ parseVal sig
-                          (ft,changed) = evalStates sig t $ get flow
+simplifyS sig (F x@"runPost" [t]) =
+                 Just $ if changed then F x [mkFlowTerm sig mkBool flow] else t
+                 where (flow,changed) = evalPost (simplifyIter sig) $
+                                                 mkFlow sig (head . subterms) t
 
-simplifyS sig t | just flow = do guard changed
-                                 Just $ mkFlow True sig ft $ F "bool" . single
-                    where flow = parseFlow True sig t mkVal
-                          (ft,changed) = evalPost (simplifyIter sig) $ get flow
-                          mkVal t = do F "bool" [t] <- Just t; Just t
-
-simplifyS sig t | just flow = do guard changed; Just $ mkFlow True sig ft
-                                                     $ mkList . concatMap mkSub
-                    where flow = parseFlow True sig t parseSubs
-                          flow' = get flow
-                          xs = vars flow'
-                          (ft,changed) = evalSubs (simplifyIter sig) flow' xs
-                          vars (In g _)         = vars g
-                          vars (Assign x _ g _) = vars g `join1` x
-                          vars (Ite _ g1 g2 _)  = vars g1 `join` vars g2
-                          vars (Fork gs _)      = joinMap vars gs
-                          vars flow             = []
-                          parseSubs t = do F "[]" ts <- Just t
-                                           mapM parseSub ts
-                          parseSub t  = do s <- parseList parseEq t
-                                           let (xs,ts) = unzip s
-                                           Just $ forL ts xs
-                          parseEq t   = do F "=" [V x,t] <- Just t; Just (x,t)
-                          mkSub f = if null ys then [] else [mkList $ map g ys]
-                                    where ys = domSub xs f
-                                          g x = mkEq (V x) $ f x
+simplifyS sig (F x@"runSubs" [t]) =
+           Just $ if changed then F x [mkFlowTerm sig toEqs flow'] else t
+           where flow = mkFlow sig subs t; xs = vars flow
+                 vars (In g _)         = vars g
+                 vars (Assign x _ g _) = vars g `join1` x
+                 vars (Ite _ g1 g2 _)  = vars g1 `join` vars g2
+                 vars (Fork gs _)      = joinMap vars gs
+                 vars flow             = []
+                 (flow',changed) = evalSubs (simplifyIter sig) flow xs
+                 subs (F "[]" ts) = map sub ts
+                 sub (F "[]" ts) = forL ts xs where (xs,ts) = unzip $ map eq ts
+                 eq (F "=" [V x,t]) = (x,t)
+                 toEqs = mkList . concatMap mkEqs
+                 mkEqs f = if null ys then [] else [mkList $ map g ys]
+                           where ys = domSub xs f; g x = mkEq (V x) $ f x
 
 -- regular expressions and acceptors
 
@@ -1747,21 +1799,11 @@ simplifyS sig (F "$" [F "unfoldBro" [t],F "[]" xs])
                    where e = parseRE sig t
                          b = unfoldBro (getRHS sig) (fst $ get e) $ map root xs
 
-simplifyS sig (F "auto" [t]) | just e = Just $ eqsToGraph [] $ fst
-                                             $ relLToEqs 0 trips
-           where e = parseRE sig t
-                 (e',labs) = get e
-                 (sts,nda) = regToAuto e'
-                 trips = [(show q,a,map show $ nda q a) | q <- sts, a <- labs]
-
-simplifyS sig (F "pauto" [t]) | just e = Just $ eqsToGraph [] $ fst
-                                              $ relLToEqs 0 trips
-           where e = parseRE sig t
-                 (e',labs) = get e
-                 (_,nda) = regToAuto e'
-                 labs' = labs `minus1` "eps"
-                 (sts,delta) = powerAuto nda labs' 
-                 trips = [(show q,a,[show $ delta q a]) | q <- sts, a <- labs']
+simplifyS sig (F "auto" [t]) | just e = Just $ relToGraph [] trips ["0"]
+            where e = parseRE sig t
+                  (e',labs) = get e
+                  (sts,nda) = regToAuto e'
+                  trips = [(show q,a,map show $ nda q a) | q <- sts, a <- labs]
 
 simplifyS _ t = simplifyT t
 
@@ -1789,11 +1831,11 @@ simplifyT (F x [F mu [F "()" ts]])
 simplifyT (F "$" [F "get" [n],t]) | just i = Just $ F ("get"++show (get i)) [t]
                                              where i = parseNat n
 
-simplifyT (F "$" [F "." [g,f],t])          = Just $ apply g $ apply f t
+simplifyT (F "$" [F "." [g,f],t])            = Just $ apply g $ apply f t
 
 simplifyT (F "$" [F "$" [F "flip" [f],t],u]) = Just $ apply (apply f u) t
 
-simplifyT (F "$" [F "map" [f@(F _ ts)],F x us]) | collector x
+simplifyT (F "$" [F "map" [f@(F _ _)],F x us]) | collector x
                                              = Just $ F x $ map (apply f) us
 
 simplifyT (F "$" [F "replicate" [t],u]) | just n = jList $ replicate (get n) u
@@ -1815,7 +1857,7 @@ simplifyT (F "$" [F "insert" [t],F x ts])
 
 simplifyT (F "$" [F "$" [F "insertL" [t],F "[]" ts],F "[]" all])
         | (t:ts) `subset` all = jList $ insert less t ts
-                                where t `less` u = getInd t all < getInd u all
+                                where t `less` u = getInd all t < getInd all u
 
 simplifyT (F "$" [F "uncurry" [f],F "()" (t:ts@(_:_))]) =
                           Just $ F "$" [F "uncurry" [apply f t],F "()" ts]
@@ -1857,39 +1899,38 @@ simplifyT (F "size" [F "{}" ts]) = jConst $ length $ mkSet ts
 
 simplifyT (F "height" [t])       = jConst $ height t
 
-simplifyT (F "string" [t])       = Just $ leaf $ showTree False t `minus1` '\"'
-
-simplifyT (F "stringNB" [t])     = Just $ leaf $ showTree False t `minus` "()"
-
-simplifyT (F "noBrackets" [t])   = Just $ leaf $ minus (showTree False t) "()"
+simplifyT (F "string" [t])       = Just $ leaf $ showTerm0 t
 
 simplifyT (F "getCols" [F x ts]) = Just $ if null z then F x $ map f ts
                                           else F col [F (tail z) $ map f ts]
                                    where (col,z) = span (/= '$') x
                                          f t = F "erect" [t]
 
-simplifyT (F "list" [F x ts])      | collector x = Just $ mkList ts
+simplifyT (F "bag" [F x ts])     | collector x = Just $ mkBag ts
 
-simplifyT (F "bag" [F x ts])       | collector x = Just $ mkBag ts
+simplifyT (F "tup" [F x ts])     | collector x = Just $ mkTup ts
 
-simplifyT (F "tup" [F x ts])       | collector x = Just $ mkTup ts
+simplifyT (F "branch" [F x ts])  | collector x = Just $ mkSum ts
 
-simplifyT (F "branch" [F x ts])    | collector x = Just $ mkSum ts
+simplifyT (F "set" [F x ts])     | collector x = Just $ mkSetTerm ts
 
-simplifyT (F "set" [F x ts])       | collector x = Just $ mkSetTerm ts
+simplifyT (F "null" [F x ts])    | collector x = jConst $ null ts
 
-simplifyT (F "null" [F x ts])      | collector x = jConst $ null ts
+simplifyT (F "NOTnull" [F x ts]) | collector x = jConst $ not $ null ts
 
-simplifyT (F "NOTnull" [F x ts])   | collector x = jConst $ not $ null ts
+simplifyT (F "single" [F x ts])  | collector x = jConst $ length ts == 1
 
-simplifyT (F "single" [F x ts])    | collector x = jConst $ length ts == 1
+simplifyT (F "column" [F x ts])  | collector x =
+                                            Just $ leaf $ tail $ concatMap f ts
+                                            where f t = '\'':showTerm0 t
 
-simplifyT (F "prodL" [F x ts])     | all collector (x:map root ts) =
+simplifyT (F "prodL" [F x ts])   | all collector (x:map root ts) =
                                jList $ map mkTup $ accumulate $ map subterms ts
 
 simplifyT t | f == "curry" && notnull tss && length us == 1 =
-                               Just $ applyL (head us) $ concat uss
-                               where (f,tss) = unCurry t; us:uss = tss
+                                        Just $ applyL (head us) $ concat uss
+                                        where (f,tss) = unCurry t; us:uss = tss
+
 
 simplifyT (F "index" [t,F x ts])
                          | collector x = do i <- search (eqTerm t) ts; jConst i
@@ -1937,15 +1978,15 @@ simplifyT (F "`mod`" [t,u])       | just i && just j && k /= 0 =
                                      Just $ mkConst $ mod (get i) k
                            where i = parseInt t; j = parseInt u; k = get j
 
-simplifyT (F x [F "+" [t,u],n])    | isOrd x && just i && just j =
+simplifyT (F x [F "+" [t,u],n])    | isRel x && just i && just j =
                                      Just $ F x [u,mkConst $ get i-get j]
-                                   | isOrd x && just i && just k =
+                                   | isRel x && just i && just k =
                                      Just $ F x [u,mkConst $ get i-get k]
                            where i = parseInt n; j = parseInt t; k = parseInt u
 
-simplifyT (F x [n,F "+" [t,u]])   | isOrd x && just i && just j =
+simplifyT (F x [n,F "+" [t,u]])   | isRel x && just i && just j =
                                      Just $ F x [mkConst $ get i-get j,u]
-                                   | isOrd x && just i && just k =
+                                   | isRel x && just i && just k =
                                      Just $ F x [mkConst $ get i-get k,t]
                            where i = parseInt n; j = parseInt t; k = parseInt u
 
@@ -2055,16 +2096,6 @@ mergeActs (F "R" []:F "L" []:ts) = ts
 mergeActs (t:u:ts)                   = t:mergeActs (u:ts)
 mergeActs ts                         = ts
 
-pairsToInts :: [TermS] -> Pairs TermS -> [TermS] -> [[Int]]
-pairsToInts us ps = map f where
-  f t = searchAll (`elem` (get $ lookup t ps)) us
-
-tripsToInts :: [TermS] -> [TermS] -> Triples TermS TermS -> [TermS] 
-            -> [[[Int]]]
-tripsToInts us vs ps = map f
-                where f t = map (flip (g t) us) vs
-                      g t u = searchAll (`elem` (get $ lookupL t u ps))
-
 -- * __Rewriting and narrowing__
 
 data Reducts = Sum [TermS] (String -> Int) |
@@ -2099,7 +2130,7 @@ searchReds check rewrite vc ts reds b t sig xs pars = sr Stop ts [] reds []
         sr reduct _ _ _ _ = Just reduct
         h ts reds vs i =
            do guard $ i >= 0
-              case unifyList sig xs V ts (red:vs) (V"") (V"") ps ps of
+              case unifyList True sig xs V ts (red:vs) (V"") (V"") ps ps of
                    Def (f,True) -> case checkOrRewrite f sig xs vc pars of
                                         Stop -> h ts reds vs (i-1)
                                         reduct -> Just (reduct,red,rest)
@@ -2158,29 +2189,29 @@ applyLoop t m vc axs preAxs sig nar match refute simplify = f t 0 m vc
                       | nar = filtered
                       | otherwise = filter unconditional filtered
                    (axs',vc') = renameApply sig t vc rules
-                   f = if nar then modifyForm $ applyAxs axs' axs' preAxs
-                       else modifyTerm $ applyAxsToTerm axs' axs' preAxs
-       modifyForm f redex t p vc 
-               | (sig&isDefunct) sym = do
-                                        (q,at,r) <- atomPosition sig t p
-                                        Backward reds vc <- g at r
-                                        Just (replace t q $ mkDisjunct reds,vc)
-               | notnull p && isTerm sig redex
+                   f = if nar then modifyF $ applyAxs axs' axs' preAxs
+                              else modifyT $ applyAxsToTerm axs' axs' preAxs
+       modifyF f redex t p vc
+            | (sig&sig_isDefunct) sym = do
+                                       (q,at,r) <- atomPosition sig t p
+                                       Backward reds vc <- g at r
+                                       Just (replace t q $ mkDisjunct reds,vc)
+            | notnull p && isTerm sig redex
                                 = do at@(F "->" [_,_]) <- Just $ getSubterm t q
                                      0 <- Just $ last p
                                      Backward reds vc <- g at [0]
                                      Just (replace t q $ mkDisjunct reds,vc)
-               | (sig&isPred) sym = do Backward reds vc <- g redex []
+            | (sig&sig_isPred) sym    = do
+                                       Backward reds vc <- g redex []
                                        Just (replace t p $ mkDisjunct reds,vc)
-               | True           = do guard $ (sig&isCopred) sym
+            | True              = do guard $ (sig&sig_isCopred) sym
                                      Forward reds vc <- g redex []
                                      Just (replace t p $ mkConjunct reds,vc)
                             where sym = getOp redex
                                   q = init p
                                   g at r = Just $ fst $ f redex at r sig vc uni
-       modifyTerm f redex t p vc
-                            = do Sum reds vc <- Just $ fst $ f redex sig vc
-                                 Just (replace t p $ mkSum reds,vc)
+       modifyT f redex t p vc = do Sum reds vc <- Just $ fst $ f redex sig vc
+                                   Just (replace t p $ mkSum reds,vc)
 
 -- used by solveGuard and Ecom > narrowStep
 
@@ -2198,24 +2229,21 @@ applyLoopRandom rand t m vc axs preAxs sig nar match simplify = f t 0 m vc rand
              case f redex t p vc' of 
                   Just (t,vc,rand) -> Just (simpl t,vc,rand)  
                   _ -> modifyL $ succsInd p $ subterms redex
-         where redex = getSubterm t p
-               filtered = filterClauses sig redex axs
-               rules
-                    | isVarRoot sig redex = []
-                    | nar = filtered
-                    | otherwise = filter unconditional filtered
-               (axs',vc') = renameApply sig t vc rules
-               f = if nar then modifyForm $ applyAxsR axs' axs' preAxs rand
-                   else modifyTerm $ applyAxsToTermR axs' axs' preAxs rand
-               modifyL ps@(_:_) = modify t (ps!!i) vc (nextRand rand) ++ 
-                                     modifyL (context i ps)
-                                  where i = mod rand $ length ps
-               modifyL _        = Nothing
-       modifyTerm f redex t p vc =
-                  do (Sum reds vc,rand) <- Just $ (pr1***pr3) $ f redex sig vc
-                     Just (replace t p $ mkSum reds,vc,rand)
-       modifyForm f redex t p vc 
-          | (sig&isDefunct) sym = do
+             where redex = getSubterm t p
+                   filtered = filterClauses sig redex axs
+                   rules
+                        | isVarRoot sig redex = []
+                        | nar = filtered
+                        | otherwise = filter unconditional filtered
+                   (axs',vc') = renameApply sig t vc rules
+                   f = if nar then modifyF $ applyAxsR axs' axs' preAxs rand
+                       else modifyT $ applyAxsToTermR axs' axs' preAxs rand
+                   modifyL ps@(_:_) = modify t (ps!!i) vc (nextRand rand) ++
+                                         modifyL (context i ps)
+                                      where i = mod rand $ length ps
+                   modifyL _        = Nothing
+       modifyF f redex t p vc
+          | (sig&sig_isDefunct) sym = do
                                    (q,at,r) <- atomPosition sig t p
                                    (Backward reds vc,rand) <- g at r
                                    Just (replace t q $ mkDisjunct reds,vc,rand)
@@ -2224,15 +2252,18 @@ applyLoopRandom rand t m vc axs preAxs sig nar match simplify = f t 0 m vc rand
                                    0 <- Just $ last p
                                    (Backward reds vc,rand) <- g at [0]
                                    Just (replace t q $ mkDisjunct reds,vc,rand)
-          | (sig&isPred) sym    = do
+          | (sig&sig_isPred) sym    = do
                                    (Backward reds vc,rand) <- g redex []
                                    Just (replace t p $ mkDisjunct reds,vc,rand)
-          | True              = do guard $ (sig&isCopred) sym
+          | True              = do guard $ (sig&sig_isCopred) sym
                                    (Forward reds vc,rand) <- g redex []
                                    Just (replace t p $ mkConjunct reds,vc,rand)
                     where sym = getOp redex
                           q = init p
                           g at r = Just $ (pr1***pr3) $ f redex at r sig vc uni
+       modifyT f redex t p vc =
+                   do (Sum reds vc,rand) <- Just $ (pr1***pr3) $ f redex sig vc
+                      Just (replace t p $ mkSum reds,vc,rand)
 
 -- used by Ecom > narrowStep
 
@@ -2271,7 +2302,7 @@ applyAxs (cl:cls) (ax:axs) preAxs redex at p sig vc uni =
        _ -> applyAxs cls axs preAxs redex at p sig vc uni
 applyAxs _ _ _ _ _ _ _ _ _ = (Stop,[])
 
--- used by applyLoop,applyToHeadOrBody and Ecom > narrowPar
+-- used by applyLoop,applyPar and Ecom > narrowPar
 
 -- applyAxsR axs preAxs rand redex t p computes the narrowing/rewriting 
 -- reducts of the redex at position p of t that result from unifying/matching 
@@ -2348,7 +2379,7 @@ applyAx (F "==>" [guard,F "<===" [F "=" [left,right],prem]]) axs redex at p sig
                            sig vc uni redex
 
 applyAx (F "==>" [guard,F "<===" [at,prem]]) axs redex _ _ sig vc uni =
-     case unify0 sig xs at redex redex [] of
+     case unify0 True sig xs at redex redex [] of
      TotUni f
        -> genMatchFailure sig uni dom at $
                   case u of F "True" _  -> Backward [mkRed []] vc
@@ -2368,7 +2399,7 @@ applyAx (F "==>" [guard,F "<===" [at,prem]]) axs redex _ _ sig vc uni =
      where xs = frees sig redex
 
 applyAx (F "==>" [guard,F "===>" [at,conc]]) axs redex _ _ sig vc uni =
-     case unify0 sig xs at redex redex [] of
+     case unify0 True sig xs at redex redex [] of
      TotUni f
        -> genMatchFailure sig uni dom at $
                   case u of F "True" _  -> Forward [mkRed []] vc
@@ -2409,13 +2440,13 @@ checkGuard f sig xs vc (guard,_,left,_,_,uni) =
 
 genMatchFailure sig uni dom t reduct =
            if uni || null dom then reduct
-           else if any (sig&isHovar) dom then Stop
+           else if any (sig&sig_isHovar) dom then Stop
            else MatchFailure $ "Some redex does not match " ++ showTree False t
 
 -- used by applyAx,partialUnify,checkGuard,rewrite
 
 partialUnify guard axs left right prem at at' p sig vc uni redex =
-       case unify0 sig xs left redex at p of
+       case unify0 True sig xs left redex at p of
             TotUni f -> rewrite at' f sig xs vc (guard,axs,left,right,prem,uni)
             ParUni f dom -> genMatchFailure sig uni dom left $ Backward [t] vc
                             where t = quantify sig addAnys [left] $ mkConjunct
@@ -2443,23 +2474,23 @@ rewrite at f sig xs vc (guard,axs,left,right,prem,uni) =
 -- REWRITING OF TERMS
 
 applyAxsToTerm (cl:cls) (ax:axs) preAxs redex sig vc =
-  case applyAxToTerm ax preAxs redex sig vc of
-  reduct@(Sum reds vc) -> case applyAxsToTerm cls axs preAxs redex sig vc of
-                          (Sum reds' vc,cls) -> (Sum (reds++reds') vc,cl:cls)
-                          _ -> (reduct,[cl])
-  _ -> applyAxsToTerm cls axs preAxs redex sig vc
+    case applyAxToTerm ax preAxs redex sig vc of
+    reduct@(Sum reds vc) -> case applyAxsToTerm cls axs preAxs redex sig vc of
+                            (Sum reds' vc,cls) -> (Sum (reds++reds') vc,cl:cls)
+                            _ -> (reduct,[cl])
+    _ -> applyAxsToTerm cls axs preAxs redex sig vc
 applyAxsToTerm _ _ _ _ _ _ = (Stop,[])
 
 -- used by applyLoop and Ecom > rewritePar
 
 applyAxsToTermR cls [] _ rand redex _ _          = (Stop,[],rand)
 applyAxsToTermR cls axs preAxs rand redex sig vc =
-  case applyAxToTerm ax preAxs redex sig vc of
-       Stop -> applyAxsToTermR cls' axs' preAxs (nextRand rand) redex sig vc
-       reduct -> (reduct,[cl],rand)
-  where n = rand `mod` length axs
-        cl = cls!!n; cls' = removeTerm cls cl
-        ax = axs!!n; axs' = removeTerm axs ax
+    case applyAxToTerm ax preAxs redex sig vc of
+         Stop -> applyAxsToTermR cls' axs' preAxs (nextRand rand) redex sig vc
+         reduct -> (reduct,[cl],rand)
+    where n = rand `mod` length axs
+          cl = cls!!n; cls' = removeTerm cls cl
+          ax = axs!!n; axs' = removeTerm axs ax
 
 -- used by applyLoopRandom and Ecom > rewritePar
 
@@ -2512,7 +2543,7 @@ checkGuardT f sig xs vc (guard,_,left) =
 -- used by applyAxToTerm
 
 totalUnify guard axs left right sig vc redex =
-     case unify0 sig xs left redex redex [] of
+     case unify0 True sig xs left redex redex [] of
           TotUni f -> rewriteTerm right f sig xs vc (guard,axs,left)
           _ -> Stop
      where xs = frees sig redex
@@ -2542,25 +2573,17 @@ rewriteTerm right f sig xs vc (guard,axs,left) =
 -- * __Application of theorems__
 
 -- applySingle and applyMany work similarly to applyAxs, but apply only single
--- non-guarded clauses. In the case of applyMany, the redex splits into several
--- factors or summands of a conjunction resp. disjunction. 
+-- non-guarded clauses.
 
-applySingle :: TermS
-               -> TermS
-               -> TermS
-               -> [Int]
-               -> Sig
-               -> t
-               -> Maybe (TermS, t)
-applySingle (F "<===" [F "False" _,prem]) redex t p sig vc =
-       Just (replace t p $ mkImpl (mkNot sig redex) conc, vc)
+applySingle th@(F "<===" [F "False" _,prem]) redex t p sig =
+       Just $ replace t p $ mkImpl (mkNot sig redex) conc
        where conc = mkAny (frees sig prem) prem
 
-applySingle (F "===>" [F "True" _,conc]) redex t p sig vc =
-       Just (replace t p $ mkImpl prem redex, vc)
-        where prem = mkAll (frees sig conc) conc
+applySingle th@(F "===>" [F "True" _,conc]) redex t p sig =
+       Just $ replace t p $ mkImpl prem redex
+       where prem = mkAll (frees sig conc) conc
 
-applySingle (F "<===" [F "->" [left,right],prem]) redex t p sig vc
+applySingle th@(F "<===" [F "->" [left,right],prem]) redex t p sig
        | notnull p && isTerm sig redex =
                  do (F "->" [_,r],0) <- Just (getSubterm t q,last p)
                     (f,rest) <- unify left
@@ -2568,41 +2591,40 @@ applySingle (F "<===" [F "->" [left,right],prem]) redex t p sig vc
                         eqs = substToEqs f $ domSub xs f
                         reduct = mkConjunct $ eq>>>f:prem>>>f:eqs
                         reduct' = quantify sig addAnys [left,right,prem] reduct
-                    Just (replace t q reduct',vc)
+                    Just $ replace t q reduct'
                  where xs = frees sig redex; reds = mkElems redex; q = init p
                        unify (F "^" ts) = unifyAC sig xs V ts reds
                        unify t          = unifyAC sig xs V [t] reds
 
-applySingle th@(F "<===" [at,prem]) redex t p sig vc =
-    case unify0 sig xs at redex t p of
-         TotUni f -> Just (replace t p reduct',vc)
-                     where dom = domSub xs f
-                           reduct = mkConjunct $ prem>>>f:substToEqs f dom
-                           reduct' = quantify sig addAnys [at,prem] reduct
+applySingle th@(F "<===" [at,prem]) redex t p sig =
+       case unify0 True sig xs at redex t p of
+         TotUni f
+           -> Just $ replace t p $ quantify sig addAnys [at,prem] reduct
+              where reduct = mkConjunct $ prem>>>f:substToEqs f (domSub xs f)
          _ -> do F _ [F "=" [left,right], F "True" _] <- Just th
-                 TotUni f <- Just $ unify0 sig xs left redex t p
+                 TotUni f <- Just $ unify0 True sig xs left redex t p
                  let dom = domSub xs f
                      ts = prem>>>f:substToEqs f dom
                      bind = quantify sig addAnys [left,right,prem] . mkConjunct
                  (q,at,r) <- atomPosition sig t p
-                 Just (replace t q $ bind $ replace at r right>>>f:ts,vc)
-    where xs = frees sig redex
+                 Just $ replace t q $ bind $ replace at r right>>>f:ts
+       where xs = frees sig redex
 
-applySingle (F "===>" [at,conc]) redex t p sig vc =
-      do TotUni f <- Just $ unify0 sig xs at redex t p
-         let dom = domSub xs f
-             reduct = mkDisjunct $ conc>>>f:substToIneqs f dom
-             reduct' = quantify sig addAlls [at,conc] reduct
-         Just (replace t p reduct',vc)
-      where xs = frees sig redex
+applySingle th@(F "===>" [at,conc]) redex t p sig =
+       do TotUni f <- Just $ unify0 True sig xs at redex t p
+          let reduct = mkDisjunct $ conc>>>f:substToIneqs f (domSub xs f)
+          Just $ replace t p $ quantify sig addAlls [at,conc] reduct
+       where xs = frees sig redex
 
-applySingle at redex t p sig vc = 
-      applySingle (mkHorn at mkTrue) redex t p sig vc
+applySingle at redex t p sig = applySingle (mkHorn at mkTrue) redex t p sig
 
 -- used by Ecom > applyTheorem
 
-applyMany forward different left right redices t ps pred qs sig vc =
-      do Def (f,True) <- Just $ unifyList sig xs V left redices (V"") t
+-- applyMany presupposes that the redices are factors re summands of the same
+-- conjunction resp. disjunction.
+
+applyMany forward different left right redices t ps pred qs sig =
+      do Def (f,True) <- Just $ unifyList True sig xs V left redices (V"") t
                                           (replicate (length left) []) ps
          let dom = domSub xs f
              (mk1,mk2,addQuants,subst)
@@ -2616,67 +2638,60 @@ applyMany forward different left right redices t ps pred qs sig vc =
                   where f i p = replace (ts!!i) p reduct2
              vs = [ts!!i | i <- indices_ ts, i `notElem` newIndices]
              reduct3 = if different then mk2 $ mk1 us:vs else mk1 $ us++vs
-         Just (replace t pred reduct3,vc)
+         Just $ replace t pred reduct3
       where xs = joinMap (frees sig) redices
 
 -- used by Ecom > finishDisCon
 
-applyToHeadOrBody sig g head axs = f
- where f (t:cls) vc = 
-         case t of F x [h,b] | x `elem` words "<=== ===>" 
-                     -> if head then (F x [redh,b]:clsh,vch)
-                                       else (F x [h,redb]:clsb,vcb)
-                        where (redh,clsh,vch) = redvc h
-                              (redb,clsb,vcb) = redvc b
-                   _ -> (redt:clst,vct) where (redt,clst,vct) = redvc t
-         where redvc t = (reduct,cls',vc3)
-                         where (axs',vc1) = renameApply sig t vc axs
-                               (reduct,vc2) = applyPar axs' ps t vc1
-                               (cls',vc3) = f cls vc2
-                               ps = filter (g t) $ noRefPositions t
-               -- applyPar axs t ps sig applies axs in parallel at all 
-               -- positions of t that are in ps.
-               applyPar axs (p : ps) t vc
-                    | p `notElem` noRefPositions t || isVarRoot sig redex = proceed0
-                    | isDefunct sig sym =
-                      case atomPosition sig t p of
-                          Just (_, at, r) ->
-                            case apply at r of
-                                 Backward reds vc -> proceed mkDisjunct reds vc
-                                 _ -> proceed0
-                          _ -> proceed0
-                    | isPred sig sym =
-                      case apply redex [] of
-                          Backward reds vc -> proceed mkDisjunct reds vc
-                          _ -> proceed0
-                    | isCopred sig sym =
-                      case apply redex [] of
-                          Forward reds vc -> proceed mkConjunct reds vc
-                          _ -> proceed0
-                    | otherwise = proceed0
-                  where redex = getSubterm t p
-                        sym = getOp redex
-                        cls = filterClauses sig redex axs
-                        apply at r = fst $ applyAxs cls cls [] redex at r sig
-                                                     vc True
-                        proceed0 = applyPar axs ps t vc
-                        proceed mk = applyPar axs ps . replace t p . mk
-               applyPar _ _ t vc = (t,vc)
+applyToHead sig axs = f where
+       f (t:cls) vc =
+         case t of F x [h,b] | x `elem` words "<=== ===>"
+                     -> (F x [redh,b]:clsh,vch) where (redh,clsh,vch) = redvc h
+                   _ -> (redt:clst,vct)         where (redt,clst,vct) = redvc t
+         where redvc t = (reduct,cls',vc3) where
+                         (axs',vc1) = renameApply sig t vc axs
+                         (reduct,vc2) = applyPar sig axs' (noRefPoss t) t vc1
+                         (cls',vc3) = f cls vc2
        f _ vc = ([],vc)
 
 -- used by Ecom > applyInd
 
--- mkComplAxiom sig ax transforms an axiom ax for p into an axiom for NOTp. 
+-- applyPar axs t ps sig applies axs in parallel at all positions of t in ps.
 
-mkComplAxiom :: Sig -> TermS -> TermS
+applyPar sig axs (p:ps) t vc
+ | isVarRoot sig redex = proceed0
+ | (sig&sig_isDefunct) sym = case atomPosition sig t p of
+                            Just (q,at,r)
+                              -> case apply at r of
+                                 Backward reds vc -> proceed mkDisjunct reds vc
+                                 _ -> proceed0
+                            _ -> proceed0
+ | (sig&sig_isPred) sym    = case apply redex [] of
+                              Backward reds vc -> proceed mkDisjunct reds vc
+                              _ -> proceed0
+ | (sig&sig_isCopred) sym  = case apply redex [] of
+                              Forward reds vc -> proceed mkConjunct reds vc
+                              _ -> proceed0
+ | True                = proceed0
+            where redex = getSubterm t p
+                  sym = getOp redex
+                  cls = filterClauses sig redex axs
+                  apply at r = fst $ applyAxs cls cls [] redex at r sig vc True
+                  proceed0 = applyPar sig axs ps t vc
+                  proceed mk = applyPar sig axs ps . replace t p . mk
+applyPar _ _ _ t vc = (t,vc)
+
+-- used by applyToHead
+
+-- mkComplAxiom sig ax transforms an axiom ax for p into an axiom for NOTp.
+
 mkComplAxiom sig t =
-        case t of F "==>" [guard,t]        -> mkImpl guard $ mkComplAxiom sig t
+        case t of F "==>" [guard,t] -> mkImpl guard $ mkComplAxiom sig t
                   F "===>" [t,F "False" _] -> t
-                  F "===>" [t,u]           -> mkHorn (neg t) $ f $ neg u
-                  F "<===" [t,u]           -> mkCoHorn (neg t) $ f $ neg u
-                  t                        -> mkCoHorn t mkFalse
+                  F "===>" [t,u] -> mkHorn (neg t) $ simplifyIter sig $ neg u
+                  F "<===" [t,u] -> mkCoHorn (neg t) $ simplifyIter sig $ neg u
+                  t -> mkCoHorn t mkFalse
         where neg = mkNot sig
-              f = simplifyIter sig
 
 -- used by Ecom > negateAxioms
 
@@ -2741,40 +2756,42 @@ curryPositions p [ts] = succsInd p ts
 curryPositions p tss  = map (0:) (curryPositions p $ init tss) ++
                          succsInd p (last tss)
 
--- | preStretch prem f t checks whether the premises (prem = True) or
--- conclusions
--- (prem = False) of t can be stretched. If so, then preStretch returns their 
--- leading function/relation x and the noRefPositions varps of all subterms to be 
+-- preStretch conc f t checks whether the premises (conc = False) or conclusions
+-- (conc = True) of t can be stretched. If so, then preStretch returns their
+-- leading function/relation x and the positions varps of all subterms to be
 -- replaced by variables. f is a condition on x.
 
 preStretch :: Bool -> (String -> Bool) -> TermS -> Maybe (String,[Int])
-preStretch prem f t = 
-   case t of F "&" ts -> do s <- mapM g ts
+preStretch conc f t =
+   case t of F "&" ts -> do guard $ conc || all isImpl ts || all isEq ts
+                            s <- mapM g ts
                             let (xs,tss@(ts:uss)) = unzip s
                                 varps = joinMap toBeReplaced tss `join`
                                         [i | i <- indices_ ts,
                                              any (neqTerm (ts!!i) . (!!i)) uss]
                             guard $ allEqual xs && allEqual (map length tss)
                             Just (head xs,varps)
-             F "==>" [F "=" [u,_],v] -> do (x,ts) <- g $ if prem then u else v
+             F "==>" [F "=" [u,_],v] -> do (x,ts) <- g $ if conc then v else u
                                            Just (x,toBeReplaced ts)
-             F "==>" [u,v] -> do (x,ts) <- g $ if prem then u else v
+             F "==>" [u,v] -> do (x,ts) <- g $ if conc then v else u
                                  Just (x,toBeReplaced ts)
-             F "=" [u,_] -> do (x,ts) <- g $ if prem then u else t
-                               Just (x,toBeReplaced ts)
-             _ -> do guard $ not prem; (x,ts) <- g t; Just (x,toBeReplaced ts)
+             F "=" [u,_]   -> do (x,ts) <- g $ if conc then t else u
+                                 Just (x,toBeReplaced ts)
+             _ -> do guard conc; (x,ts) <- g t; Just (x,toBeReplaced ts)
    where g t = do guard $ f x; Just (x,concat tss) where (x,tss) = unCurry t
          toBeReplaced ts = [i | i <- indices_ ts, let t = ts!!i; x = root t,
-                                  isF t || not (noExcl x) ||
+                                isF t || not (noExcl x) ||
                                 any (x `isin`) (context i ts) ]
 
--- stretchConc k ns t replaces the subterms of t at noRefPositions ns by variables
--- zk,z(k+1),... and turns t into a Horn axiom to be used by a proof by fixpoint
--- coinduction.
+-- used by Ecom > applyClause,createInvariant,{co}induction,stretch
+
+-- stretchConc k ns t replaces the subterms of t at positions ns by variables
+-- zk,z(k+1),... and turns t into a Horn axiom.
+
 stretchConc,stretchPrem :: Int -> [Int] -> TermS -> (TermS,Int)
 
 stretchConc k ns (F "&" (cl:cls)) = (mkHorn conc $ mkDisjunct $ prem:map g cls,
-                                      n)
+                                     n)
         where (F "<===" [conc,prem],n) = f cl
               f (F "==>" [prem,t]) = (mkHorn conc $ mkConjunct $ prem:eqs,n)
                          where (x,tss) = unCurry t
@@ -2787,13 +2804,16 @@ stretchConc k ns (F "&" (cl:cls)) = (mkHorn conc $ mkDisjunct $ prem:map g cls,
               g t = g $ F "==>" [mkTrue,t]
 stretchConc k ns cl = stretchConc k ns $ F "&" [cl]
 
--- | stretchPrem k ns t replaces the subterms of t at noRefPositions ns by variables
+-- used by Ecom > applyClause,coinduction,stretch
+
+-- stretchPrem k ns t replaces the subterms of t at positions ns by variables
 -- zk,z(k+1),... and turns t into a co-Horn axiom to be used by a proof by
 -- fixpoint induction.
 
 stretchPrem k ns (F "&" (cl:cls)) = (mkCoHorn prem $ mkConjunct $ conc:cls',
                                      maximum $ n:ks)
  where (F "===>" [prem,conc],n) = f cl
+       (cls',ks) = unzip $ map g cls
        f (F "==>" [F "=" [t,r],conc]) = (mkCoHorn prem $ mkImpl prem' conc,m)
                    where (x,tss) = unCurry t
                          (us,eqs,n) = addEqs (concat tss) [] [] k ns 0
@@ -2815,20 +2835,21 @@ stretchPrem k ns (F "&" (cl:cls)) = (mkCoHorn prem $ mkConjunct $ conc:cls',
                                new = newVar n
                                prem = mkEq u new
                                prem' = mkConjunct eqs
-       (cls',ks) = unzip $ map g cls
        g (F "==>" [F "=" [t,r],conc]) = (mkImpl (mkConjunct eqs') conc,m)
-                      where (_,tss) = unCurry t
+                      where (x,tss) = unCurry t
                             (us,eqs,n) = addEqs (concat tss) [] [] k ns 0
                             (eqs',m) = if isV r && root r `notElem` map root us
                                        then (eqs,n)
                                        else (mkEq (newVar n) r:eqs,n+1)
        g (F "==>" [t,conc]) = (mkImpl (mkConjunct eqs) conc,n)
-                              where (_,tss) = unCurry t
+                              where (x,tss) = unCurry t
                                     eqs = addEqs0 (concat tss) [] k ns 0
-       g (F "=" [t,r]) = (mkImpl (mkConjunct eqs) $ mkEq (newVar n) r,n+1)
-                         where (_,tss) = unCurry t
-                               eqs = addEqs0 (concat tss) [] k ns 0
+       g (F "=" [t,r])      = (mkImpl (mkConjunct eqs) $ mkEq (newVar n) r,n+1)
+                              where (x,tss) = unCurry t
+                                    eqs = addEqs0 (concat tss) [] k ns 0
 stretchPrem k ns cl = stretchPrem k ns $ F "&" [cl]
+
+-- used by Ecom > applyClause,createInvariant,induction,stretch
 
 -- | For each term t of ts at a position in ns, addEqs ts [] [] k ns 0 replaces
 -- t by a new variable zn for some n >= k and creates the equation zn=t.
@@ -2963,8 +2984,8 @@ combineOne sig i ks ax axs = compressOne True sig i ks cls t
                                h t                    = t
 
 compressOne b sig i ks cls t
-        | isPred sig x = (g (updArgs t us) $ compressHorn sig eqs cls, j)
-        | isDefunct sig x =
+        | (sig&sig_isPred) x = (g (updArgs t us) $ compressHorn sig eqs cls, j)
+        | (sig&sig_isDefunct) x =
           (g (mkEq (updArgs t us) z) $ compressHornEq sig eqs' cls, j + 1)
         | otherwise = (h (updArgs t us) $ compressCoHorn sig eqs cls, j)
      where (x,ts) = getOpArgs t
@@ -3145,14 +3166,15 @@ shiftSubformulas sig t ps =
 
 -- used by Ecom > shiftSubs'
 
--- getOtherSides t p ts ps looks for in/equations eq in the premises/conclusions
--- of t such that one side of eq agrees with some u in ts. If so, u is replaced
--- by the other side of q. p and ps are the noRefPositions of t and ts, respectively.
+-- getOtherSides t p ts ps looks for in/equations eq in a formula t such that
+-- one side of eq agrees with some u in ts. u is replaced by the other side of
+-- eq if the replacement leads to to a formula that is equivalent to t.
+-- p and ps are the positions of t and ts, respectively.
 
 getOtherSides :: TermS -> [Int] -> [TermS] -> [[Int]] -> Maybe [TermS]
 getOtherSides t p ts ps =
     case t of F "==>" [F "&" prems,
-                  F "|" concs]           -> f prems (p0 prems) concs $ p1 concs
+                       F "|" concs]      -> f prems (p0 prems) concs $ p1 concs
               F "==>" [F "&" prems,conc] -> f prems (p0 prems) [conc] [p++[1]]
               F "==>" [prem,F "|" concs] -> f [prem] [p++[0]] concs $ p1 concs
               F "==>" [prem,conc]        -> f [prem] [p++[0]] [conc] [p++[1]]
@@ -3161,7 +3183,9 @@ getOtherSides t p ts ps =
               _                          -> Nothing
     where p0 = succsInd $ p++[0]
           p1 = succsInd $ p++[1]
+          b :: [[Int]] -> Int -> Int -> Bool
           b eqps i k = not (eqps!!i <<= ps!!k)
+          f :: [TermS] -> [[Int]] -> [TermS] -> [[Int]] -> Maybe [TermS]
           f prems ps1 concs ps2 = Just (g1 ts [] prems 0)
                 where g1 ts rest1 (t@(F "=" [l,r]):rest2) i =
                          case search (== l) ts of

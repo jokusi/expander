@@ -1,10 +1,10 @@
 -- trans2
 
--- Steffen, Logische Prozessspezifikationen, 1995
+-- u.a. Steffen, Logische Prozessspezifikationen, 1995
 -- Beispiele 1.48, 1.50, 1.51
 
 specs:		modal
-preds:		X Y three THREE six seven' Sat SatL
+preds:		X Y three THREE six seven'
 copreds:        NOTTHREE four five seven eight
 constructs: 	a A B
 defuncts:   	drawS
@@ -14,12 +14,14 @@ axioms:
 
 states == [1] & labels == [a,b] & atoms == [A,B] &
 
-(1,a) -> 1<+>2 & (2,a) -> 3 & (3,a) -> 1<+>4 & (4,a) -> 4 &
+(1,a) -> 1<+>2 & (2,a) -> 3 & (3,a) -> 1<+>4 & (4,a) -> 4 & 
+(4,b) -> 5 & 3 -> 5 & (1,a) -> 5 & (5,a) -> 6 & (5,b) -> 6 & (1,b) -> 5 &
 
-A -> branch[2,3,4] & (B,a) -> 3 &
+A -> branch[2,3,4] & 
+B -> branch[2,3,4] & 
 
-(Sat(at)$st <==> at `in` out$st) &
-(SatL(at,lab)$st <==> at `in` outL(st)$lab) &
+(B,a) -> 3 & 
+(B,b) -> 4 &
 
 (three    <==> MU X.(a#(A\/X))) &		
 (four     <==> NU X.(a#(A/\X))) &
@@ -28,15 +30,15 @@ A -> branch[2,3,4] & (B,a) -> 3 &
 (seven    <==> NU X.(MU Y.(a#((A/\X)\/Y)))) &
 (eight    <==> NU X.(a#X)) &
 
-(THREE(st)    <=== (a#(Sat(A)\/THREE))(st)) &			
-(NOTTHREE(st) ===> (a<>(not(Sat(A))/\NOTTHREE))(st)) &	
-(four(st)     ===> (a#(Sat(A)/\four))(st)) &
+(THREE(st)    <=== (a#(sat(A)\/THREE))(st)) &			
+(NOTTHREE(st) ===> (a<>(not(sat(A))/\NOTTHREE))(st)) &	
+(four(st)     ===> (a#(sat(A)/\four))(st)) &
 (five(st)     ===> ((a#five)/\six)(st)) &
-(six(st)      <=== (Sat(A)\/(a#six))(st)) &
+(six(st)      <=== (sat(A)\/(a#six))(st)) &
 (eight(st)    ===> (a#eight)(st)) &
 
 (seven(st)  ===> seven'(st)) &			       -- alternating fixpoints
-(seven'(st) <=== (a#((Sat(A)/\seven)\/seven'))(st)) &
+(seven'(st) <=== (a#((sat(A)/\seven)\/seven'))(st)) &
 
 drawS == wtree $ fun(dark green$x,green$text$x,
 		     red$x,text$x,
@@ -45,19 +47,18 @@ drawS == wtree $ fun(dark green$x,green$text$x,
 
 conjects: 
 
-Sat(A)(3) & Sat(B)(3) & SatL(B,a)(3) & SatL(B,a)(4) &
+sat(A)(3) & sat(B)(3) & satL(B,a)(3) & satL(B,a)(4) &
 
 map(eval)[three,not$three,four,five,six,seven,eight] &		
-   		--> [[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]			
-	
+   			--> [[2,4],[1,3],[4],[4],[2,3,4],[4],[1,2,3,4]]			
 -- stateflow$seven returns [2,4] instead of [4] because seven is alternating
 
-all(THREE)[2,4] & 		--> True   	match&narrow    
-all(NOTTHREE)[1,3] &		--> True   	match&narrow + coinduction  
+all(THREE)[2,4] & 		--> True   	narrow match
+all(NOTTHREE)[1,3] &		--> True   	coinduction + narrow match  
 (THREE(st) & st `in` states ==> st = 2 | st = 4) &   
-				--> True   	match&narrow + induction    
+				--> True   	induction + narrow match    
 (NOTTHREE(st) & st `in` states ==> st = 1 | st = 3)  
-				--> True   	match&narrow
+				--> True   	narrow match
 
 terms:
 

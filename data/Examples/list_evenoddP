@@ -1,0 +1,180 @@
+-- /Users/Padawitz/ExpanderLib/list_evenoddP
+
+0. Derivation of
+
+LIST(s) ==> zip(evens(s))(odds(s)) = s
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids pure expansion.
+
+1. The set of axioms is extended by
+
+  (LIST0(s) ===> zip(evens(s))(odds(s)) = s)
+
+Applying FIXPOINT INDUCTION wrt
+
+  LIST[]
+& (LIST(x:s) <=== LIST(s))
+
+at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+zip(evens[])(odds[]) = [] & 
+All x s:((LIST0(s) ==> zip(evens(x:s))(odds(x:s)) = x:s))
+
+The reducts have been simplified parallel.
+
+2. NARROWING the preceding trees (one step) leads to 
+
+zip[](odds[]) = [] & All x s:((LIST0(s) ==> zip(evens(x:s))(odds(x:s)) = x:s))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+odds[] = [] & All x s:((LIST0(s) ==> zip(evens(x:s))(odds(x:s)) = x:s))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+All x s:((LIST0(s) ==> zip(evens(x:s))(odds(x:s)) = x:s))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+5. The set of axioms is extended by
+
+  (LIST0(s) ===> zip(evens(x:s))(odds(x:s)) = x:s)
+
+Applying FIXPOINT INDUCTION wrt
+
+  LIST[]
+& (LIST(x:s) <=== LIST(s))
+
+at positions
+[0]
+of the preceding trees leads to a single tree,
+which is given by
+
+All x:(zip(evens[x])(odds[x]) = [x]) & 
+All s x3:((LIST0(s) ==> zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The reducts have been simplified parallel.
+
+6. NARROWING the preceding trees (one step) leads to 
+
+All x:(zip(x:odds[])(odds[x]) = [x]) & 
+All s x3:((LIST0(s) ==> zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+7. NARROWING the preceding trees (one step) leads to 
+
+All x:(zip(x:[])(odds[x]) = [x]) & 
+All s x3:((LIST0(s) ==> zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+8. NARROWING the preceding trees (one step) leads to 
+
+All x:(zip(x:[])(evens[]) = [x]) & 
+All s x3:((LIST0(s) ==> zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+9. NARROWING the preceding trees (one step) leads to 
+
+All x:(zip(x:[])[] = [x]) & 
+All s x3:((LIST0(s) ==> zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+10. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((LIST0(s) ==> zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+11. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((zip(evens(s))(odds(s)) = s & 
+           All x9:(zip(evens(x9:s))(odds(x9:s)) = x9:s) ==> 
+           zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+12. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((zip(evens(s))(odds(s)) = s & 
+           All x9:(zip(x9:odds(s))(odds(x9:s)) = x9:s) ==> 
+           zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+13. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((zip(evens(s))(odds(s)) = s & 
+           All x9:(zip(x9:odds(s))(evens(s)) = x9:s) ==> 
+           zip(evens(x3:(x:s)))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+14. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((zip(evens(s))(odds(s)) = s & 
+           All x9:(zip(x9:odds(s))(evens(s)) = x9:s) ==> 
+           zip(x3:odds(x:s))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+15. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((zip(evens(s))(odds(s)) = s & 
+           All x9:(zip(x9:odds(s))(evens(s)) = x9:s) ==> 
+           zip(x3:evens(s))(odds(x3:(x:s))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+16. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((zip(evens(s))(odds(s)) = s & 
+           All x9:(zip(x9:odds(s))(evens(s)) = x9:s) ==> 
+           zip(x3:evens(s))(evens(x:s)) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+17. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((zip(evens(s))(odds(s)) = s & 
+           All x9:(zip(x9:odds(s))(evens(s)) = x9:s) ==> 
+           zip(x3:evens(s))(x:odds(s)) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+18. NARROWING the preceding trees (one step) leads to 
+
+All x:(x:[] = [x]) & 
+All s x3:((zip(evens(s))(odds(s)) = s & 
+           All x9:(zip(x9:odds(s))(evens(s)) = x9:s) ==> 
+           x3:(x:(zip(evens(s))(odds(s)))) = x3:(x:s)))
+
+The axioms have been MATCHED against their redices.
+
+19. SIMPLIFYING parallel the preceding trees (3 steps) leads to 
+
+True
+

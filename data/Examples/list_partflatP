@@ -1,0 +1,46 @@
+-- /Users/Padawitz/ExpanderLib/list_partflatP
+
+0. Derivation of
+
+part(s,p) ==> flatten(p) = s
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids pure expansion.
+
+1. The set of axioms is extended by
+
+  (part0(s,p) ===> flatten(p) = s)
+
+Applying FIXPOINT INDUCTION wrt
+
+  part([x],[[x]])
+& (part(x:(y:s),[x]:p) <=== part(y:s,p))
+& (part(x:(y:s),(x:s'):p) <=== part(y:s,s':p))
+
+at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+All p y s:((part0(y:s,p) ==> flatten(p) = y:s)) & 
+All p y s s':
+ ((part0(y:s,s':p) ==> s'++flatten(p) = y:s))
+
+The reducts have been simplified parallel.
+
+2. NARROWING the preceding trees (one step) leads to 
+
+All p y s s':
+ ((part0(y:s,s':p) ==> s'++flatten(p) = y:s))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

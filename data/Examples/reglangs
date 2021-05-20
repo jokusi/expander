@@ -1,8 +1,8 @@
 -- reglangs
 
 constructs: 	a b c d e h aa gg pp vv final q qa qb qab q1 q2
-defuncts:	delta beta plus unfold unfoldND unfoldBro reg draw drawC
-preds:          Unfold
+defuncts:	delta beta unfold unfoldND unfoldBro reg draw drawC
+preds:          Unfold ->
 fovars: 	e st st' w k m
 
 axioms:
@@ -39,8 +39,6 @@ beta$st == ite(null$out$st,0,1) &
 unfold(st) == beta.foldl(delta)(st) & 		-- deterministic unfold
 
 -- regular expressions
-
-plus$e == e*star(e) &
 
 reg$1 == star$plus(a)+plus(b*c) & 		    --> star(a+b*c)
 

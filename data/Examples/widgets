@@ -1,8 +1,9 @@
 -- widgets
 
-defuncts: surfer
-fovars: c
-hovars: f
+constructs: R
+defuncts:   surfer
+fovars:     c
+hovars:     f
 
 axioms:	
 
@@ -42,15 +43,16 @@ axioms:
 
 terms:
 
-    red$polyR(6,111,55)
+    (red(circ(55)),green(circ(77)),blue(circ(99)))
+<+> red$polyR(6,111,55)
 <+> unturt$red$rainbow(6)$grav$HE
 <+> red$rainbow(4,0,0,0.545)$grav$HE
 <+> red$hue$concRepl(6)[SQ,J$90]
 
 <+> red$hue$concRepl(6)[shine(21)$grav$SQ,J$90]		      -- colors in lines
-<+> shelf(3)$unturt$red$hue$replicate(6)$SQ
-<+> shelf(3)$unturt$red$hue$replicate(6)$shine(21)$grav$SQ
-<+> shelfS(1)$unturt$red$hue$replicate(25)$SQ
+<+> shelf(3)$unturt$red$hue$replicateG(6)$SQ
+<+> shelf(3)$unturt$red$hue$replicateG(6)$shine(21)$grav$SQ
+<+> shelfS(1)$unturt$red$hue$replicateG(25)$SQ
 
 <+> red$turt[green$circ$88,M$222,T$45,M$55,blue$tria$77]
 <+> blue$frame(5)$red$turt[green$circ$88,M$222,T$45,M$55,blue$tria$77]
@@ -123,6 +125,8 @@ terms:
 
 <+> frame$turt[T(44),red$oval(111,55),J(222),blue$circ(44)]
 <+> turt[red$circ$88,blue$oval(44,111),green$tria(111)]
+<+> turt[red(circ(77)),T( -45),J(222),green(circ(33)),T(90),J(222),
+         blue(circ(99)),R,J(222),T(45),yellow(oval(44,22))]
 	
 <+> (load$tattooW,scale(0.5)$load$tattooW)			-- tattooW	
 			

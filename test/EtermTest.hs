@@ -47,7 +47,7 @@ deriving instance Generic ActLR
 instance Test.Arbitrary ActLR where
   shrink = Test.genericShrink
   arbitrary = Test.oneof
-    [ Rule <$> Test.arbitrary <*> Test.arbitrary <*> Test.arbitrary
+    [ Rule <$> Test.arbitrary <*> Test.arbitrary
     , return Read
     , return Error
     ]
@@ -55,13 +55,18 @@ instance Test.Arbitrary ActLR where
 deriving instance Generic Special
 
 instance Test.Arbitrary Special where
-  shrink = Test.genericShrink
+  shrink Nil = []
+  shrink (Dissect s) = Nil : [Dissect s' | s' <- Test.shrink s]
+  shrink (BoolMat a b c)
+    = Nil : [BoolMat a' b' c' | (a',b',c') <- Test.shrink (a,b,c)]
+  shrink (ListMat a b c)
+    = Nil : [ListMat a' b' c' | (a',b',c') <- Test.shrink (a,b,c)]
   arbitrary = Test.oneof
-    [ Dissect <$> Test.arbitrary
+    [ return Nil
+    , Dissect <$> Test.arbitrary
+    -- , EquivMat <$> Test.arbitrary <*> Test.arbitrary
     , BoolMat <$> Test.arbitrary <*> Test.arbitrary <*> Test.arbitrary
     , ListMat <$> Test.arbitrary <*> Test.arbitrary <*> Test.arbitrary
-    , LRarr <$> Test.arbitrary
-    , return Nil
     ]
 
 deriving instance Generic a => Generic (Term a)

@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, August 2020
-                  Jos Kusiek, August 2020
+Copyright   : (c) Peter Padawitz, May 2020
+                  Jos Kusiek, May 2020
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -40,12 +40,12 @@ defaultButton = "default_button"
 data Solver = Solver
     { addSpec         :: Bool -> FilePath -> Action
     -- ^ Adds a specification from file.
-    , backProof       :: Action
     , backWin         :: Action -- ^ Minimize solver window.
     , bigWin          :: Action
     , checkInSolver   :: Action
     , drawCurr        :: Action -- ^ Draw current tree.
-    , forwProof       :: Action
+    , proofBackward   :: Action
+    , proofForward    :: Action
     , showPicts       :: Action
     , stopRun         :: Action
     , buildSolve      :: Action
@@ -86,28 +86,28 @@ data Solver = Solver
   
   
 data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
-            ApplyTransitivity | BuildKripke Int | BuildRE | CollapseStep Bool |
-            CollapseVars | ComposePointers | CopySubtrees | CreateIndHyp |
-            CreateInvariant Bool | DecomposeAtom | DerefNodes | Distribute |
-            EvaluateTrees | ExpandTree Bool Int | FlattenImpl |
-            Generalize [TermS] | Induction Bool Int | Mark [[Int]] |
-            Matching Int | Minimize | ModifyEqs Int | MoveQuant |
+            ApplyTransitivity | BuildKripke Int | BuildRE | Coinduction |
+            CollapseStep Bool | CollapseVars | ComposePointers | CopySubtrees |
+            CreateIndHyp | CreateInvariant Bool | DecomposeAtom | DerefNodes |
+            Distribute | EvaluateTrees | ExpandTree Bool Int | FlattenImpl |
+            Generalize [TermS] | Induction | Mark [[Int]] [[Int]] |
+            Matching Int Int | Minimize | ModifyEqs Int | MoveQuant |
             Narrow Int Bool | NegateAxioms [String] [String] |
-            RefNodes | PermuteSubtrees | RandomLabels | RandomTree |
-            ReduceRE Int | Refuting Bool | ReleaseNode | ReleaseSubtree |
+            PermuteSubtrees | RandomLabels | RandomTree | ReduceRE Int |
+            RefNodes | Refuting Bool | ReleaseNode | ReleaseSubtree |
             ReleaseTree | RemoveCopies | RemoveEdges Bool | RemoveNode |
             RemoveOthers | RemovePath | RemoveSubtrees | RenameVar String |
             ReplaceNodes String | ReplaceOther |
             ReplaceSubtrees [[Int]] [TermS] | ReplaceText String |
-            ReplaceVar String TermS [Int] | ReverseSubtrees |
+            ReplaceVar String TermS [Int] | ReverseSubtrees | SafeSimpl Bool |
             SetAdmitted Bool [String] | SetCurr String Int | SetDeriveMode |
-            SetMatch | SetStrat Strategy | ShiftPattern | ShiftQuants |
-            ShiftSubs [[Int]] | Simplify Int Bool | Simplifying Bool |
-            SplitTree | StretchConclusion | StretchPremise | SubsumeSubtrees |
-            SwitchSafe | Theorem Bool TermS | Transform Int | UnifySubtrees |
-            POINTER Step deriving Show
+            ShiftPattern | ShiftQuants | ShiftSubs [[Int]] |
+            Simplify Int Bool | Simplifying Bool |
+            SimplStrat Strategy Strategy | SplitTree | StretchConclusion |
+            StretchPremise | SubsumeSubtrees | Theorem Bool TermS |
+            Transform Int | UnifySubtrees | POINTER Step deriving (Eq,Show)
 
--- Small templates
+-- small templates
 
 data Runner = Runner
     { startRun :: Int -> Action
@@ -170,7 +170,7 @@ switcher actUp actDown = do
 oscillator :: (Int -> Action) -> (Int -> Action) -> Int -> Int -> Int
               -> Template Runner
 oscillator actUp actDown lwb width upb = do -- used by
-    runRef <- newIORef undefined            -- Epaint,Ecom > labRed
+    runRef <- newIORef undefined            -- Epaint and Ecom > labRed
     valRef <- newIORef (lwb - 1)
     upRef  <- newIORef True
     
@@ -579,9 +579,9 @@ painter pheight solveRef solve2Ref = do
                   addContextClass btn defaultButton
                   writeIORef signalRef =<< (btn `on` buttonActivated $ act)
           if checking then do
-            f button1 "<---" $ do (solve&backProof)
+            f button1 "<---" $ do (solve&proofBackward)
                                   (solve&showPicts)
-            f button2 "--->" $ do (solve&forwProof)
+            f button2 "--->" $ do (solve&proofForward)
                                   (solve&showPicts)
             f button3 "stop run" (solve&stopRun)
           else do
@@ -716,7 +716,7 @@ painter pheight solveRef solve2Ref = do
             writeIORef isNewRef False
             win&windowIconify
         
-        callPaint' picts poss b n str = do
+        callPaint' picts poss b n back = do
             let graphs = map onlyNodes $ filter notnull picts
             when (notnull graphs) $ do
                 writeIORef noOfGraphsRef $ length graphs
@@ -725,7 +725,7 @@ painter pheight solveRef solve2Ref = do
                 writeIORef fontRef =<< getFont solve
                 writeIORef treeNumbersRef poss
                 writeIORef subtreesRef b
-                writeIORef bgcolorRef $ case parse color str of 
+                writeIORef bgcolorRef $ case parse color back of 
                                         Just col -> col; _ -> white
                 noOfGraphs <- readIORef noOfGraphsRef
                 modifyIORef currRef $ \curr ->
@@ -1722,9 +1722,9 @@ widg = Widg False
 wait :: TurtleAct
 wait = widg Skip
 
-getJust :: Maybe Picture -> Picture
-getJust (Just pict) = pict
-getJust _           = [Skip]
+getPict :: Maybe Picture -> Picture
+getPict (Just pict) = pict
+getPict _           = [Skip]
 
 noRepeat :: Widget_ -> Bool
 noRepeat (Repeat _) = False
@@ -2339,19 +2339,23 @@ rturtle = lift' . jturtleP
 
 loadWidget :: Color -> Sizes -> TermS -> Cmd Widget_
 loadWidget c sizes t =
-              do str <- lookupLibs file
-                 if null str then return w
-                 else return $ case parse widgString str of Just w -> w; _ -> w
-              where file = showTerm0 t
-                    w = textWidget c sizes file
+                do str <- lookupLibs file
+                   if null str then return w
+                   else return $ case parse widgString $ removeComment 0 str of 
+                                      Just w -> w
+                                      _ -> w
+                where file = showTerm0 t
+                      w = textWidget c sizes file
 
 loadTerm :: Sig -> Color -> Sizes -> TermS -> Cmd TermS
 loadTerm sig c sizes t =
-              do str <- lookupLibs file
-                 if null str then return u
-                 else return $ case parse (term sig) str of Just t -> t; _ -> u
-              where file = showTerm0 t
-                    u = leaf $ show c++'$':file
+                do str <- lookupLibs file
+                   if null str then return u
+                   else return $ case parse (term sig) $ removeComment 0 str of
+                                      Just t -> t
+                                      _ -> u
+                where file = showTerm0 t
+                      u = leaf $ show c++'$':file
 
 saveWidget :: Widget_ -> TermS -> Cmd ()
 saveWidget w t = do
@@ -2375,7 +2379,6 @@ type Interpreter = Sizes -> Pos -> TermS -> MaybeT Cmd Picture
 
 searchPic :: Interpreter -> Interpreter
 searchPic eval sizes spread t = g [] t where
- -- g p (V x) | isPos x = g p $ getSubterm t $ getPos x
  g p t = maybeT $ do pict <- runT (eval sizes spread t)
                      if just pict then return pict
                      else case t of F _ ts -> (h ts)&runT
@@ -2420,31 +2423,34 @@ linearEqs sizes _ = f where
 matrix sizes spread = f where
        f :: TermS -> MaybeT Cmd Picture
        f (Hidden (BoolMat dom1 dom2 pairs@(_:_))) 
-                           = rturtle $ boolMatrix sizes dom1 dom2 pairs
-       f (Hidden (ListMat dom1 dom2@(_:_) trips))
-                           = rturtle $ listMatrix sizes dom1 dom2 $ map g trips
-                             where g (a,b,cs) = (a,b,map leaf cs)
-       f (Hidden (ListMatL dom trips@(_:_)))
-                            = rturtle $ listMatrix sizes dom dom $ map g trips
-                             where g (a,b,cs) = (a,b,map mkStrLPair cs)
-       f t | just u         = do bins@(bin:_) <- lift' u
-                                 let (arr,k,m) = karnaugh (length bin)
-                                     g = binsToBinMat bins arr
-                                     ts = [(show i,show j,F (g i j) [])
-                                                    | i <- [1..k], j <- [1..m]]
-                                 rturtle $ termMatrix sizes ts
-                              where u = parseBins t
+                        = rturtle $ boolMatrix sizes dom1 dom2 pairs
+       f (Hidden (ListMat dom1 dom2 trips@(_:_)))
+                        = rturtle $ listMatrix sizes dom1 dom2 trips
+       f (Hidden (EquivMat sig trips@(_:_)))
+                    = rturtle $ listMatrix sizes dom dom tripsS where
+                      dom = map showTerm0 (sig&sig_states)
+                      tripsS = [(f i,f j,map g ps) | (i,j,ps) <- trips]
+                             where f = showTerm0 . ((sig&sig_states)!!)
+                                   g (is,js) = showTerm0 $ mkPair (h is) $ h js
+                                   h = mkList . map ((sig&sig_states)!!)
+       f t | just u = do bins@(bin:_) <- lift' u
+                         let (arr,k,m) = karnaugh (length bin)
+                             g = binsToBinMat bins arr
+                             ts = [(show i,show j,F (g i j) []) | i <- [1..k],
+                                                                  j <- [1..m]]
+                         rturtle $ termMatrix sizes ts
+                         where u = parseBins t
        f (F _ [])           = zero
-       f (F "pict" ts)      = do ts <- mapM (lift' . parseConsts2Term) ts
-                                 rturtle $ widgMatrix sizes spread $ deAssoc3 ts
-       f (F _ ts) | just us = rturtle $ boolMatrix sizes dom1 dom2 ps
-                              where us = mapM parseConsts2 ts
-                                    ps = deAssoc2 $ get us
-                                    (dom1,dom2) = sortDoms ps
-       f (F _ ts) | just us = rturtle $ listMatrix sizes dom1 dom2 trs
-                              where us = mapM parseConsts2Terms ts
-                                    trs = deAssoc3 $ get us
-                                    (dom1,dom2) = sortDoms2 trs
+       f (F _ ts) | just us = rturtle $ boolMatrix sizes dom1 dom2 pairs
+                              where (dom1,dom2) = sortDoms pairs
+                                    pairs = deAssoc $ get us
+                                    us = mapM parsePair ts
+       f (F "pict" ts)      = do ts <- mapM (lift' . parseTripT) ts
+                                 rturtle $ widgMatrix sizes spread ts
+       f (F _ ts) | just us = rturtle $ listMatrix sizes dom1 dom2 trips where
+                              (dom1,dom2) = sortDoms $ map (pr1 *** pr2) trips
+                              trips = get us
+                              us = mapM parseTrip ts
        f _                  = zero
 
 widgetTree :: Sig -> Interpreter       
@@ -2591,11 +2597,12 @@ widgConst c sizes@(n,width) spread = f where
    f (F "gif" [F file [],p,b,h]) = do p <- parsePnat p
                                       (b,h) <- parseReals b h
                                       Just $ Gif p True file $ Rect st0B b h
-   f (F "gif" [F file [],p,b,h,a])
-                                 = do p <- parsePnat p
-                                      (b,h) <- parseReals b h
-                                      a <- parseBool a
-                                      Just $ Gif p a file $ Rect st0B b h
+   -- GTK feature: needs Eterm.parseBool
+   -- f (F "gif" [F file [],p,b,h,a])
+   --                               = do p <- parsePnat p
+   --                                    (b,h) <- parseReals b h
+   --                                    a <- parseBool a
+   --                                    Just $ Gif p a file $ Rect st0B b h
    f (F x [n]) | z == "hilbP"    = do mode <- search (== mode) pathmodes
                                       n <- parsePnat n
                                       Just $ turtle0 c $ hilbert n East
@@ -2667,7 +2674,7 @@ widgConst c sizes@(n,width) spread = f where
    f (F "star" [n,r,r']) = do n <- parsePnat n; (r,r') <- parseReals r r'
                               jturtle $ star n c r r'
    f (F "stick" [])      = Just $ Path (p0,0,c,-16) 4
-                                             [p0,(-4,-8),(0,-150),(4,-8),p0]
+                                       [p0,(-4,-8),(0,-150),(4,-8),p0]
    f (F "taichi" s)      = jturtle $ taichi sizes s c
    f (F "text" ts)       = Just $ textWidget c (n,width) $ showTree False
                                                          $ mkHidden $ mkTup ts
@@ -2681,10 +2688,12 @@ widgConst c sizes@(n,width) spread = f where
                                       jturtle $ wave mode n d a c
                                    where (z,mode) = splitAt 4 x
    f _ = Nothing
-                      
+
 widgConstC c sizes spread = f c where   
    f _ (F x [t]) | just c = f (get c) t where c = parse color x
    f c t                  = widgConst c sizes spread t
+
+-- used by widgMatrix
 
 widgConsts :: Sizes -> Pos -> TermS -> Maybe Picture
 widgConsts sizes spread = f where
@@ -2812,7 +2821,7 @@ pictTrans c = f where
                                d <- parseReal d                -- space
                                case s of
                                  a:s -> do
-                                   a <- parseChar a            -- align
+                                   a <- parseChar a            -- align:
                                    case s of                   -- L/R/M
                                      b:s -> do                 -- center
                                        b <- parseChar b
@@ -2896,7 +2905,7 @@ wTreeToBunches mode (hor,ver) grade t = w:ws2
                         eqs = [([(minx*minx,"a"),(minx,"b"),c],xp-180),
                                ([(xp*xp,"a"),(xp,"b"),c],xp),
                                ([(maxx*maxx,"a"),(maxx,"b"),c],xp+180)]
-        grad2 v y = 360*fromInt (getInd v vs)/fromInt (length vs)
+        grad2 v y = 360*fromInt (getInd vs v)/fromInt (length vs)
                     where vs = sort rel [w | w <- ws, y == ycoord w]
                           rel v w = xcoord v > xcoord w
 
@@ -2978,9 +2987,9 @@ transWLeaves hor ts t = loop hor
                                [w1,w2] = map (midx . fst . root) [last us,t]
 
 graphToTree :: Graph -> TermS
-graphToTree graph = eqsToGraph [] eqs
-   where (eqs,_) = relToEqs 0 $ map f $ propNodes $ fst graph
+graphToTree graph = relToGraph pairs [] $ domainPT pairs [] where
          f i = (show i,[show $ last path | k:path <- buildPaths graph, k == i])
+         pairs = map f $ propNodes $ fst graph
 
 -- used by arrangeGraph,showInSolver
 
@@ -3495,10 +3504,10 @@ shelf graph@(pict,_) cols (dh,dv) align centered scaled mode =
 -- getSupport graph s t returns the red dots on a path from s to t. 
 
 getSupport :: Graph -> Int -> Int -> Maybe [Int]
-getSupport graph s t = 
-      do (_,_:path@(_:_:_)) <- searchGet f $ buildPaths graph; Just $ init path
-      where f path = s `elem` path && t `elem` path && g s <= g t
-                     where g s = getInd s path
+getSupport graph s t = do (_,_:path@(_:_:_)) <- searchGet f $ buildPaths graph
+                          Just $ init path
+                       where f path = s `elem` path && t `elem` path &&
+                                      getInd path s <= getInd path t
 
 -- used by releaseButton
 
@@ -3874,8 +3883,8 @@ convexHull ps = f $ g ps
                 lowerRight = h (minY maxR) (minY minR) right
                 (p1, q1) = upperTangent upperLeft upperRight
                 (p2, q2) = lowerTangent lowerLeft lowerRight
-       h p q ps@(_:_:_) = take (getInd q qs+1) qs 
-                          where qs = drop i ps++take i ps; i = getInd p ps
+       h p q ps@(_:_:_) = take (getInd qs q+1) qs
+                          where qs = drop i ps++take i ps; i = getInd ps p
        h _ _ ps         = ps
 
 upperTangent :: [(Double, Double)]
@@ -4302,73 +4311,79 @@ pileR h is = actsToCenter $ open:up:f h (reverse is)++[Close]
 
 -- * matrices
 
-rectMatrix :: Sizes -> (String -> String -> TurtleActs) -> [String] 
-                     -> [String] -> (String -> Double) -> (String -> Double) 
+drawMatrix :: Sizes -> (String -> String -> TurtleActs) -> [String]
+                    -> [String] -> (String -> Double) -> (String -> Double)
                     -> TurtleActs
-rectMatrix sizes@(n,width) entry dom1 dom2 btf htf =
-           actsToCenter $ down:open:up:rectC black bt ht:JumpA bt:  
-                          rectRow lineHead ht btf dom2++Close:JumpA ht:
-                          concatMap h dom3
-           where lineHead a = [widg $ textWidget blue sizes a]
-                 bt = halfmax width dom3+3
-                 ht = fromInt n/2+3
-                 h i = JumpA ht:open:up:rectC black bt ht:lineHead i++
-                       JumpA bt:rectRow (entry i) ht btf dom2++[Close,JumpA ht]
-                       where ht = htf i
-                 dom3 = [i | i <- dom1, any notnull $ map (entry i) dom2]
+drawMatrix sizes@(n,width) entry dom1 dom2 btf htf =
+             actsToCenter $ down:open:up:rectC black bt ht:JumpA bt:
+                            drawRow lineHead ht++Close:JumpA ht:concatMap h dom
+             where lineHead a = [widg $ textWidget blue sizes a]
+                   dom = [i | i <- dom1, any notnull $ map (entry i) dom2]
+                   bt = halfmax width dom+3
+                   ht = fromInt n/2+3
+                   h i = JumpA ht:open:up:rectC black bt ht:lineHead i++
+                         JumpA bt:drawRow (entry i) ht++[Close,JumpA ht]
+                         where ht = htf i
+                   drawRow entry ht = concatMap f dom2 where
+                                      f j = JumpA bt:rectC black bt ht:entry j
+                                            ++[JumpA bt] where bt = btf j
 
-rectRow :: (t -> [TurtleAct])
-           -> Double -> (t -> Double) -> [t] -> [TurtleAct]
-rectRow entry ht btf = concatMap f
-                     where f j = JumpA bt:rectC black bt ht:entry j++[JumpA bt]
-                                 where bt = btf j
+lookupT i j ts = case lookupL i j ts of Just t -> t; _ -> V ""
 
 boolMatrix :: Sizes -> [String] -> [String] -> [(String,String)] -> TurtleActs
 boolMatrix sizes@(n,width) dom1 dom2 ps =
-                      rectMatrix sizes entry dom1 dom2 btf $ const ht
-                      where entry i j = if (i,j) `elem` ps 
-                                        then [widg $ Oval (st0 red) m m] else []
-                            m = minimum (ht:map btf dom2)-1
-                            btf j = halfmax width [j]+3
-                            ht = fromInt n/2+3
+                     drawMatrix sizes entry dom1 dom2 btf $ const ht
+                     where entry i j = if (i,j) `elem` ps
+                                       then [widg $ Oval (st0 red) m m] else []
+                           m = minimum (ht:map btf dom2)-1
+                           btf j = halfmax width [j]+3
+                           ht = fromInt n/2+3
 
-listMatrix :: Sizes -> [String] -> [String] -> Triples String TermS
-                    -> TurtleActs
-listMatrix sizes@(n,width) dom1 dom2 ts = 
-            rectMatrix sizes entry dom1 dom2 btf htf
-            where entry i j = open:down:JumpA back:concatMap h (f i j)++[Close]
-                              where back = -(lg i j-1)*ht
-                  h a = [blackText sizes a,JumpA $ ht+ht]
-                  f i = map delBrackets . relLToFun ts i
-                  lg i = max 1 . fromInt . length . f i
-                  btf j = halfmax width (j:concatMap (`f` j) dom1)+3
-                  htf i = maximum (map (lg i) dom2)*ht
-                  ht = fromInt n/2+3
+listMatrix :: Sizes -> [String] -> [String] -> TriplesS -> TurtleActs
+listMatrix sizes@(n,width) dom1 dom2 ts =
+             drawMatrix sizes entry dom1 dom2 btf htf
+             where entry i j = if null s then []
+                               else open:down:JumpA back:concatMap h s++[Close]
+                               where s = f i j
+                                     back = -(lg i j-1)*ht
+                   h a = [blackText sizes a,JumpA $ ht+ht]
+                   f i = map delBrackets . tripsToFun i
+                   lg i = max 1 . fromInt . length . f i
+                   btf j = halfmax width (j:concatMap (flip f j) dom1)+3
+                   htf i = maximum (map (lg i) dom2)*ht
+                   ht = fromInt n/2+3
+                   tripsToFun i j = case lookupL i j ts of Just s -> s
+                                                           _ -> []
 
 termMatrix :: Sizes -> [(String,String,TermS)] -> TurtleActs
-termMatrix sizes@(n,width) ts = rectMatrix sizes entry dom1 dom2 btf htf
-                 where (dom1,dom2) = sortDoms2 ts
+termMatrix sizes@(n,width) ts = drawMatrix sizes entry dom1 dom2 btf htf
+                 where (dom1,dom2) = sortDoms $ map (pr1 *** pr2) ts
                        entry i j = [act str] where (act,str) = f i j
                        f i j = colTerm $ lookupT i j ts
                        btf j = halfmax width (j:map (snd . flip f j) dom1)+3
                        htf _ = fromInt n/2+3
-                       colTerm t = (widg . textWidget col sizes,delBrackets t)
-                                   where col = case parse colPre $ root t of 
+                       colTerm t = (widg . textWidget col sizes,
+                                    delBrackets $ showTerm0 t)
+                                   where col = case parse colPre $ root t of
                                                     Just (c,_) -> c; _ -> black
 
-lookupT i j ts = case lookupL i j ts of Just t -> t; _ -> V ""
+-- used by linearEqs and matrix for Karnaugh diagrams
 
 widgMatrix :: Sizes -> Pos -> [(String,String,TermS)] -> TurtleActs
-widgMatrix sizes@(n,width) spread ts = rectMatrix sizes entry dom1 dom2 btf htf
-   where (dom1,dom2) = sortDoms2 ts
-         entry i j = [widg $ f i j]
-         f i j = case widgConstC black sizes spread $ lookupT i j ts of
-                      Just w -> w; _ -> Skip
-         btf j = (x2-x1)/2+3 where (x1,_,x2,_) = pictFrame $ map (flip f j) dom1
-         htf i = (y2-y1)/2+3 where (_,y1,_,y2) = pictFrame $ map (f i) dom2
+widgMatrix sizes@(n,width) spread ts = drawMatrix sizes entry dom1 dom2 btf htf
+  where (dom1,dom2) = sortDoms $ map (pr1 *** pr2) ts
+        entry i j = if w == Skip then [] else [widg w] where w = f i j
+        f i j = case widgConstC black sizes spread $ lookupT i j ts of
+                     Just w -> w; _ -> Skip
+        btf j = (x2-x1)/2+3 where (x1,_,x2,_) = pictFrame $ map (flip f j) dom1
+        htf i = (y2-y1)/2+3 where (_,y1,_,y2) = pictFrame $ map (f i) dom2
 
-delBrackets = f . showTerm0 where f ('(':a@(_:_)) | last a == ')' = init a
-                                  f a                              = a
+-- used by matrix
+
+delBrackets ('(':a@(_:_)) | last a == ')' = init a
+delBrackets a = a
+
+-- used by listMatrix,termMatrix
 
 -- * partitions
 

@@ -1,0 +1,65 @@
+-- /Users/Padawitz/ExpanderLib/nat_evenoddP
+
+0. Derivation of
+
+Nat(x) ==> even(x) | odd(x)
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids pure expansion.
+
+1. The set of axioms is extended by
+
+  (Nat0(x) ===> even(x) | odd(x))
+
+Applying FIXPOINT INDUCTION wrt
+
+  Nat(0)
+& (Nat(suc(x)) <=== Nat(x))
+
+at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+(even(0) | odd(0)) & All x:((Nat0(x) ==> even(suc(x)) | odd(suc(x))))
+
+The reducts have been simplified parallel.
+
+2. NARROWING the preceding trees (one step) leads to 
+
+All x:((Nat0(x) ==> even(suc(x)) | odd(suc(x))))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+All x:((even(x) ==> even(suc(x)) | odd(suc(x)))) & 
+All x:((odd(x) ==> even(suc(x)) | odd(suc(x))))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+All x:((even(x) ==> odd(x) | odd(suc(x)))) & 
+All x:((odd(x) ==> even(suc(x)) | odd(suc(x))))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+5. NARROWING the preceding trees (one step) leads to 
+
+All x:((odd(x) ==> even(suc(x)) | odd(suc(x))))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+6. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

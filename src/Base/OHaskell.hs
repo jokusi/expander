@@ -6,6 +6,7 @@ module Base.OHaskell
   , module Data.Char
   , when
   , guard
+  , unless
   , MonadPlus
   , Action
   , Request
@@ -22,7 +23,7 @@ module Base.OHaskell
 
 import Paths (getDataDir)
 
-import Control.Monad (MonadPlus,when,guard)
+import Control.Monad (MonadPlus,when,guard,unless)
 import qualified Control.Monad as Haskell
 import Data.Char (chr, ord, toLower, isLower, isDigit, isAlpha)
 import Data.IORef

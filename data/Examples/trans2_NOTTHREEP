@@ -1,0 +1,23 @@
+-- /Users/Padawitz/ExpanderLib/trans2_NOTTHREEP
+
+0. Derivation of
+
+NOTTHREE(st) & st `in` states ==> st = 1 | st = 3
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids expansion.
+
+1. SHIFTING SUBFORMULAS at positions
+[0,1]
+of the preceding trees leads to 
+
+NOTTHREE(st) ==> (st `in` states ==> st = 1 | st = 3)
+
+2. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

@@ -1,0 +1,46 @@
+-- /Users/Padawitz/ExpanderLib/lr1_c*dP
+
+0. Derivation of
+
+parseLR[c,mul,d]
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids expansion.
+
+1. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+parseLR([0],[],[c,mul,d])
+
+2. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+parseLR([3,0],[],[mul,d])
+
+3. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+parseLR([2,0],[B(c)],[mul,d])
+
+4. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+parseLR([1,0],[A(B)(B(c))],[mul,d])
+
+5. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+parseLR([5,1,0],[A(B)(B(c))],[d])
+
+6. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+parseLR([4,5,1,0],[A(B)(B(c))],[])
+
+7. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+parseLR([6,5,1,0],[A(B)(B(c)),B(d)],[])
+
+8. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+parseLR([1,0],[A(A,mul,B)(A(B)(B(c)),B(d))],[])
+
+9. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+S(A)(A(A,mul,B)(A(B)(B(c)),B(d)))
+

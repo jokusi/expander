@@ -1,6 +1,7 @@
 -- auto4
 
-constructs: a b final
+constructs: 	a b c final
+preds: 		->
 
 axioms:
 

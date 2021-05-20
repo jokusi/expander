@@ -1,0 +1,37 @@
+-- /Users/Padawitz/ExpanderLib/trans2_allNOTTHREEP
+
+0. Derivation of
+
+all(NOTTHREE)[1,3]
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids expansion.
+
+1. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+NOTTHREE(1) & NOTTHREE(3)
+
+2. The set of axioms is extended by
+
+  (NOTTHREE0(z0) <=== z0 = 1)
+& (NOTTHREE0(z0) <=== z0 = 3)
+
+Applying COINDUCTION wrt
+
+  (NOTTHREE(st) ===> a<>(not(sat(A))/\NOTTHREE)(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+NOTTHREE0(1)
+
+The reducts have been simplified parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

@@ -1,7 +1,7 @@
 -- base
 
 defuncts: init last take drop <=< kfold
-preds:	P Q R
+preds:	P Q R S notS
 fovars:	x y z s s' m n i j k
 hovars:	F G P Q R
 

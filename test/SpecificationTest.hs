@@ -79,17 +79,16 @@ modifyIORef ref f = do
 -- Out: "  , $1Ref_ :: $2"
 data SolverState = SolverState
   { ctreeRef_ :: (Maybe ())
-  , iniStatesRef_ :: Maybe TermS
   , nodeRef_ :: (Maybe ())
   , penposRef_ :: (Maybe ())
   , subtreeRef_ :: (Maybe ())
   , isSubtreeRef_ :: (Maybe ())
   , suptreeRef_ :: (Maybe ())
-  -- , osciRef_ :: (Maybe ())
+  , osciRef_ :: (Maybe ())
 
   , formulaRef_ :: Bool
   , joinedRef_ :: Bool
-  , safeRef_ :: Bool
+  , safeSimplRef_ :: Bool
   , firstMoveRef_ :: Bool
   , showStateRef_ :: Bool
   , firstClickRef_ :: Bool
@@ -97,30 +96,32 @@ data SolverState = SolverState
   , fastRef_ :: Bool
   , checkingRef_ :: Bool
   , checkingPRef_ :: (Bool,Bool)
-  , simplifyingRef_ :: Bool
   , refutingRef_ :: Bool
+  , simplifyingRef_ :: Bool
   , collSimplsRef_ :: Bool
   , newTreesRef_ :: Bool
   , restoreRef_ :: Bool
+  , trsOnCanvasRef_ :: Bool
 
   , axiomsRef_ :: [TermS]
+  , theoremsRef_ :: [TermS]
   , conjectsRef_ :: [TermS]
-  , matchTermRef_ :: [()]
+  , newAxiomsRef_ :: [()]
+  , newTheoremsRef_ :: [()]
   , oldTreepossRef_ :: [()]
   , proofRef_ :: [()]
   , proofTermRef_ :: [()]
-  , refuteTermRef_ :: [()]
   , ruleStringRef_ :: [()]
   , simplRulesRef_ :: [(TermS, [TermS], TermS)]
-  , simplTermRef_ :: [()]
   , solPositionsRef_ :: [Int]
   , specfilesRef_ :: [String]
-  , stratTermRef_ :: [()]
   , termsRef_ :: [TermS]
-  , theoremsRef_ :: [TermS]
   , transRulesRef_ :: [(TermS, [TermS], TermS)]
   , treepossRef_ :: [()]
   , treesRef_ :: [()]
+  , iniStatesRef_ :: [TermS]
+  
+  , kripkeRef_ :: ([TermS],[TermS],[TermS],[[Int]],[[[Int]]],[[Int]],[[[Int]]])
 
   , canvSizeRef_ :: (Int,Int)
   , cornerRef_ :: (Int,Int)
@@ -154,26 +155,24 @@ data SolverState = SolverState
   , counterRef_ :: (Int -> Int)
   , varCounterRef_ :: VarCounter
   , permsRef_ :: (Int -> [Int])
-  , kripkeRef_ :: ([TermS],[TermS],[TermS],[[Int]],[[[Int]]],[[Int]],[[[Int]]])
 
   -- additional refs to emulate gui
   , _teditTextRef_ :: String
   }
 
 -- Attributes
--- Out: "$1Ref = IORef $1Ref_ (\a st -> st{ $1Ref_ = $1Ref_ a})"
+-- Out: "$1Ref = IORef $1Ref_ (\a st -> st{ $1Ref_ = a})"
 ctreeRef = IORef ctreeRef_ (\a st -> st{ ctreeRef_ = a})
-iniStatesRef = IORef iniStatesRef_ (\a st -> st{ iniStatesRef_ = a})
 nodeRef = IORef nodeRef_ (\a st -> st{ nodeRef_ = a})
 penposRef = IORef penposRef_ (\a st -> st{ penposRef_ = a})
 subtreeRef = IORef subtreeRef_ (\a st -> st{ subtreeRef_ = a})
 isSubtreeRef = IORef isSubtreeRef_ (\a st -> st{ isSubtreeRef_ = a})
 suptreeRef = IORef suptreeRef_ (\a st -> st{ suptreeRef_ = a})
--- osciRef = IORef osciRef_ (\a st -> st{ osciRef_ = a})
+osciRef = IORef osciRef_ (\a st -> st{ osciRef_ = a})
 
 formulaRef = IORef formulaRef_ (\a st -> st{ formulaRef_ = a})
 joinedRef = IORef joinedRef_ (\a st -> st{ joinedRef_ = a})
-safeRef = IORef safeRef_ (\a st -> st{ safeRef_ = a})
+safeSimplRef = IORef safeSimplRef_ (\a st -> st{ safeSimplRef_ = a})
 firstMoveRef = IORef firstMoveRef_ (\a st -> st{ firstMoveRef_ = a})
 showStateRef = IORef showStateRef_ (\a st -> st{ showStateRef_ = a})
 firstClickRef = IORef firstClickRef_ (\a st -> st{ firstClickRef_ = a})
@@ -181,35 +180,37 @@ firstClickRef = IORef firstClickRef_ (\a st -> st{ firstClickRef_ = a})
 fastRef = IORef fastRef_ (\a st -> st{ fastRef_ = a})
 checkingRef = IORef checkingRef_ (\a st -> st{ checkingRef_ = a})
 checkingPRef = IORef checkingPRef_ (\a st -> st{ checkingPRef_ = a})
-simplifyingRef = IORef simplifyingRef_ (\a st -> st{ simplifyingRef_ = a})
 refutingRef = IORef refutingRef_ (\a st -> st{ refutingRef_ = a})
+simplifyingRef = IORef simplifyingRef_ (\a st -> st{ simplifyingRef_ = a})
 collSimplsRef = IORef collSimplsRef_ (\a st -> st{ collSimplsRef_ = a})
 newTreesRef = IORef newTreesRef_ (\a st -> st{ newTreesRef_ = a})
 restoreRef = IORef restoreRef_ (\a st -> st{ restoreRef_ = a})
+trsOnCanvasRef = IORef trsOnCanvasRef_ (\a st -> st{ trsOnCanvasRef_ = a})
 
 axiomsRef = IORef axiomsRef_ (\a st -> st{ axiomsRef_ = a})
+theoremsRef = IORef theoremsRef_ (\a st -> st{ theoremsRef_ = a})
 conjectsRef = IORef conjectsRef_ (\a st -> st{ conjectsRef_ = a})
-matchTermRef = IORef matchTermRef_ (\a st -> st{ matchTermRef_ = a})
+newAxiomsRef = IORef newAxiomsRef_ (\a st -> st{ newAxiomsRef_ = a})
+newTheoremsRef = IORef newTheoremsRef_ (\a st -> st{ newTheoremsRef_ = a})
 oldTreepossRef = IORef oldTreepossRef_ (\a st -> st{ oldTreepossRef_ = a})
 proofRef = IORef proofRef_ (\a st -> st{ proofRef_ = a})
 proofTermRef = IORef proofTermRef_ (\a st -> st{ proofTermRef_ = a})
-refuteTermRef = IORef refuteTermRef_ (\a st -> st{ refuteTermRef_ = a})
 ruleStringRef = IORef ruleStringRef_ (\a st -> st{ ruleStringRef_ = a})
 simplRulesRef = IORef simplRulesRef_ (\a st -> st{ simplRulesRef_ = a})
-simplTermRef = IORef simplTermRef_ (\a st -> st{ simplTermRef_ = a})
 solPositionsRef = IORef solPositionsRef_ (\a st -> st{ solPositionsRef_ = a})
 specfilesRef = IORef specfilesRef_ (\a st -> st{ specfilesRef_ = a})
-stratTermRef = IORef stratTermRef_ (\a st -> st{ stratTermRef_ = a})
 termsRef = IORef termsRef_ (\a st -> st{ termsRef_ = a})
-theoremsRef = IORef theoremsRef_ (\a st -> st{ theoremsRef_ = a})
 transRulesRef = IORef transRulesRef_ (\a st -> st{ transRulesRef_ = a})
 treepossRef = IORef treepossRef_ (\a st -> st{ treepossRef_ = a})
 treesRef = IORef treesRef_ (\a st -> st{ treesRef_ = a})
+iniStatesRef = IORef iniStatesRef_ (\a st -> st{ iniStatesRef_ = a})
+
+kripkeRef = IORef kripkeRef_ (\a st -> st{ kripkeRef_ = a})
 
 canvSizeRef = IORef canvSizeRef_ (\a st -> st{ canvSizeRef_ = a})
 cornerRef = IORef cornerRef_ (\a st -> st{ cornerRef_ = a})
 currRef = IORef currRef_ (\a st -> st{ currRef_ = a})
--- curr1Ref = IORef curr1Ref_ (\a st -> st{ curr1Ref_ = a})
+-- curr1Ref = IORef -- curr1Ref_ (\a st -> st{ -- curr1Ref_ = a})
 matchingRef = IORef matchingRef_ (\a st -> st{ matchingRef_ = a})
 noProcsRef = IORef noProcsRef_ (\a st -> st{ noProcsRef_ = a})
 proofPtrRef = IORef proofPtrRef_ (\a st -> st{ proofPtrRef_ = a})
@@ -238,7 +239,6 @@ speedRef = IORef speedRef_ (\a st -> st{ speedRef_ = a})
 counterRef = IORef counterRef_ (\a st -> st{ counterRef_ = a})
 varCounterRef = IORef varCounterRef_ (\a st -> st{ varCounterRef_ = a})
 permsRef = IORef permsRef_ (\a st -> st{ permsRef_ = a})
-kripkeRef = IORef kripkeRef_ (\a st -> st{ kripkeRef_ = a})
 
 _teditTextRef = IORef _teditTextRef_ (\a st -> st{ _teditTextRef_ = a})
 
@@ -252,7 +252,6 @@ initSolverState = SolverState
   Nothing
   Nothing
   Nothing
-  -- Nothing
 
   True
   True
@@ -269,6 +268,7 @@ initSolverState = SolverState
   False
   False
   False
+  False
 
   []
   []
@@ -287,12 +287,13 @@ initSolverState = SolverState
   []
   []
   []
-  []
+
+  ([],[],[],[],[],[],[])
 
   (0,0)
   (30,20)
   0
-  -- 0
+  -- 0 -- Gtk does not need this
   0
   2
   0
@@ -321,7 +322,6 @@ initSolverState = SolverState
   (const 0)
   (const 0)
   (\n -> [0..n-1])
-  ([],[],[],[],[],[],[])
 
   ""
 
@@ -361,23 +361,15 @@ addAxioms t file = do
   let axs = if isConjunct t then subterms t else [t]
       cls = filter (not . (isAxiom sig ||| isSimpl)) axs
   if null cls
-      then do
+     then do
           writeIORef solPositionsRef []
-          modifyIORef axiomsRef $ \axioms -> joinTerms axioms axs
-          noProcs <- readIORef noProcsRef
           modifyIORef simplRulesRef
-            $ \simplRules -> simplRules `join` trips ["==","<==>"] axs
-                        `join1` (leaf "noProcs",[],mkConst noProcs)
-          simplRules <- readIORef simplRulesRef
-          let rhs = searchGet ((== "states") . root . pr1) simplRules
-          writeIORef iniStatesRef
-            $ do guard $ just rhs; Just $ pr3 $ snd $ get rhs
-          modifyIORef transRulesRef
-            $ \transRules -> transRules `join` trips ["->"] axs
+            $ \simplRules -> simplRules `join` srules ["==","<==>"] axs
+          modifyIORef axiomsRef $ \axioms -> axioms `joinTerms` axs
           labGreen' $ newCls "axioms" file
-      else do
-          enterFormulas' cls
-          labRed' $ "The clauses in " ++ tfield ++ " are not axioms."
+  else do
+       enterFormulas' cls
+       labRed' $ "The clauses in " ++ tfield ++ " are not axioms."
 
 addSpec' :: Bool -> FilePath -> Action
 addSpec' b file = do
@@ -392,10 +384,10 @@ addSpec' b file = do
                   sig <- getSignature
                   if onlySpace axs then act2 sig
                   else case parseE (implication sig) axs of
-                          Correct t -> do
-                              addAxioms t file'
-                              delay $ act2 sig
-                          p -> incorrect p axs $ illformed "formula"
+                       Correct t -> do
+                         addAxioms t file'
+                         delay $ act2 sig
+                       p -> incorrect p axs $ illformed "formula"
               act2 sig =
                   if onlySpace ths then act3 sig
                   else case parseE (implication sig) ths of
@@ -413,9 +405,9 @@ addSpec' b file = do
                   else parseTerms sig file' ts
           if onlySpace sig then act1
           else do
-                (ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
-                let syms = ps++cps++cs++ds++fs++map fst hs
-                case parseE (signature ([],ps,cps,cs,ds,fs,hs)) sig of
+               (ps,cps,cs,ds,fs,hs) <- readIORef symbolsRef
+               let syms = ps++cps++cs++ds++fs++map fst hs
+               case parseE (signature ([],ps,cps,cs,ds,fs,hs)) sig of
                     Correct (specs,ps,cps,cs,ds,fs,hs)
                       -> do
                         writeIORef symbolsRef (ps,cps,cs,ds,fs,hs)
@@ -428,27 +420,20 @@ addSpec' b file = do
                         delay finish
                     Partial (_,ps,cps,cs,ds,fs,hs) rest
                       -> do
-                          enterText' $ showSignature (ps,cps,cs,ds,fs,hs)
+                         enterText' $ showSignature (ps,cps,cs,ds,fs,hs)
                                     $ check rest
-                          labRed' $ illformed "signature"
+                         labRed' $ illformed "signature"
                     _ -> do
-                          enterText' sig
-                          labRed' $ illformed "signature"
-  where (file',get) = if null file then (tfield,getTextHere)
+                         enterText' sig
+                         labRed' $ illformed "signature"
+ where (file',get) = if null file then (tfield,getTextHere)
                                   else (file,lookupLibs file)
-        onlySpace = all (`elem` " \t\n")
+       onlySpace = all (`elem` " \t\n")
 
 addSpecWithBase :: FilePath -> Action
 addSpecWithBase spec = do
   addSpec' True "base"
-  when (spec == "base") $ do addSpec' True spec
-                             mapM_ act w
-  where act x = do
-          simplRules <- readIORef simplRulesRef
-          when (nothing $ search ((== x) . root . pr1) simplRules)
-              $ modifyIORef simplRulesRef
-              $ \simplRules -> (leaf x,[],mkList []):simplRules
-        w = words "states labels atoms"
+  unless (spec == "base") $ addSpec' True spec
 
 addTheorems :: TermS -> FilePath -> Action
 addTheorems t file = do
@@ -464,46 +449,47 @@ getSignature = do
   simplRules <- readIORef simplRulesRef
   transRules <- readIORef transRulesRef
   (block,xs) <- readIORef constraintsRef
-  safe <- readIORef safeRef
-
+  iniStates <- readIORef iniStatesRef
+  safeSimpl <- readIORef safeSimplRef
   return $ let
-    isPred'       = (`elem` ps)  ||| projection
-    isCopred'     = (`elem` cps) ||| projection
-    isConstruct'  = (`elem` cs)  ||| just . parse real |||
+    isPred       = (`elem` ps)  ||| projection
+    isCopred     = (`elem` cps) ||| projection
+    isConstruct  = (`elem` cs)  ||| just . parse real |||
                     just . parse quoted ||| just . parse (strNat "inj")
-    isDefunct'    = (`elem` ds) ||| projection
-    isFovar'      = (`elem` fs) . base
-    isHovar'      = (`elem` (map fst hs)) . base
-    hovarRel' x y = isHovar' x &&
+    isDefunct    = (`elem` ds) ||| projection
+    isFovar      = (`elem` fs) . base
+    isHovar      = (`elem` (map fst hs)) . base
+    hovarRel x y = isHovar x &&
         case lookup (base x) hs of
-            Just es@(_:_) -> isHovar' y || y `elem` es
-            _ -> not $ isFovar' y
-    blocked' x = if block then z `elem` xs else z `notElem` xs
+            Just es@(_:_) -> isHovar y || y `elem` es
+            _ -> not $ isFovar y
+    blocked x = if block then z `elem` xs else z `notElem` xs
               where z = head $ words x
-    simpls' = simplRules; transitions' = transRules
-    states' = sts; atoms' = ats; labels' = labs;
-    trans' = tr; transL' = trL; value' = va; valueL' = vaL
-    notSafe' = not safe; redexPos' = []
-    base = pr1 . splitVar
-    in Sig
-      { isPred      = isPred'
-      , isCopred    = isCopred'
-      , isConstruct = isConstruct'
-      , isDefunct   = isDefunct'
-      , isFovar     = isFovar'
-      , isHovar     = isHovar'
-      , blocked     = blocked'
-      , hovarRel    = hovarRel'
-      , simpls      = simpls'
-      , transitions = transitions'
-      , states      = states'
-      , atoms       = atoms'
-      , labels      = labels'
-      , trans       = trans'
-      , value       = value'
-      , transL      = transL'
-      , valueL      = valueL'
-      , notSafe     = notSafe'
+    simpls = simplRules; transitions = transRules
+    states = sts; labels = labs; atoms = ats; inits = iniStates
+    trans = tr; transL = trL; value = va; valueL = vaL
+    notSafe = not safeSimpl; redexPos = []
+    base x = y where (y,_,_,_) = splitVar x
+   in Sig
+      { sig_isPred      = isPred
+      , sig_isCopred    = isCopred
+      , sig_isConstruct = isConstruct
+      , sig_isDefunct   = isDefunct
+      , sig_isFovar     = isFovar
+      , sig_isHovar     = isHovar
+      , sig_blocked     = blocked
+      , sig_hovarRel    = hovarRel
+      , sig_simpls      = simpls
+      , sig_transitions = transitions
+      , sig_states      = states
+      , sig_atoms       = atoms
+      , sig_labels      = labels
+      , sig_inits       = inits
+      , sig_trans       = trans
+      , sig_value       = value
+      , sig_transL      = transL
+      , sig_valueL      = valueL
+      , sig_notSafe     = notSafe
       }
 
 

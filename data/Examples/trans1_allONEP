@@ -1,0 +1,65 @@
+-- /Users/Padawitz/ExpanderLib/trans1_allONEP
+
+0. Derivation of
+
+all(ONE)[3,4]
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids expansion.
+
+1. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+ONE(3) & ONE(4)
+
+2. The set of axioms is extended by
+
+  (ONE0(z0) <=== z0 = 3)
+& (ONE0(z0) <=== z0 = 4)
+
+Applying COINDUCTION wrt
+
+  (ONE(st) ===> TWO/\(b#ONE)(st)) at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+TWO(3) & ONE0(3) & TWO(4)
+
+The reducts have been simplified parallel.
+
+3. Applying the axioms
+
+  (ONE0(z0) <=== z0 = 3)
+& (ONE0(z0) <=== z0 = 4)
+
+at positions
+[1]
+of the preceding trees leads to 
+
+TWO(3) & TWO(4)
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+TWO(4)
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+5. NARROWING the preceding trees (one step) leads to 
+
+TWO(3)
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+6. NARROWING the preceding trees (one step) leads to 
+
+True
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+

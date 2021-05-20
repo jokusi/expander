@@ -1,0 +1,68 @@
+-- database2
+
+specs: modal
+
+constructs: Helga Ursula Melanie Christina
+
+preds: table VM
+
+axioms:
+
+labels == [Vater,Mutter,Kind,age,A,B,C,D,E,F',G'] &
+
+atoms == [0..15] &			-- all rows
+
+(table(1) <==> tab[0..6]) &
+(table(2) <==> tab[7,8]) &
+(table(3) <==> tab[9..11]) &
+(table(4) <==> tab[12,13]) &
+(table(5) <==> tab[14,15]) &
+(VM <==> proj[Vater,Mutter]) &
+
+(n `in` [0,1,2] ==> (n,Vater) -> Franz) &
+(n `in` [0,1] ==> (n,Mutter) -> Helga) & 
+
+(0,Kind) -> Harald & (0,age) -> 5 &  -- [5..7]
+(1,Kind) -> Maria & (1,age) -> 4 &
+(2,Mutter) -> Ursula & (2,Kind) -> Sabine & (2,age) -> 2 &
+
+(n `in` [3,4,5] ==> (n,Vater) -> Moritz) &
+(n `in` [3,4,5] ==> (n,Mutter) -> Melanie) &
+
+(3,Kind) -> Gertrud & (3,age) -> 7 &
+(4,Kind) -> Maria & (4,age) -> 4 &
+(5,Kind) -> Sabine & (5,age) -> 2 &
+(6,Vater) -> Peter & (6,Mutter) -> Christina &
+(6,Kind) -> Robert & (6,age) -> 9 &
+
+(7,Kind) -> Maria & (7,age) -> 4 &
+(8,Kind) -> Sabine & (8,age) -> 2 &
+
+(9,A) -> 1 & (9,B) -> 2 & (9,C) -> 3 & (9,D) -> 4 & 
+(10,A) -> 4 & (10,B) -> 5 & (10,C) -> 6 & (10,D) -> 7 & 
+(11,A) -> 7 & (11,B) -> 8 & (11,C) -> 9 & (11,D) -> 0 & 
+
+(12,A) -> 1 & (12,F') -> 2 & (12,G') -> 3 & 
+(13,A) -> 7 & (13,F') -> 8 & (13,G') -> 9 & 
+
+(14,E) -> 1 & (14,F') -> 2 & (14,G') -> 3 & 
+(15,E) -> 7 & (15,F') -> 8 & (15,G') -> 9 
+
+terms:
+
+evalT(table(1)//table$2) <+>			 	-- db2_div
+evalM(table(1)//table$2) <+>			 	-- db2_div
+evalM(VM$table$1) <+>				 	-- db2_proj
+evalM(VM(table$1)*table(2)) <+>			        -- db2_prod
+evalM(njoin(table$1,table$2)) <+>			-- db2_njoin1
+evalM(njoin(table$3,table$4)) <+>		        -- db2_njoin2
+evalM(njoin(table$3,table$5)) <+>			-- db2_njoin3
+evalM(sel(Mutter=Helga&Vater=Franz)$table$1) <+>  	-- db2_sel1
+evalM(sel(Kind=Maria&Mutter=Melanie)$table$1) <+>   	-- db2_sel2
+evalM(sel(Kind=Maria&Mutter=/=Melanie)$table$1) <+>	-- db2_sel3
+evalM(tjoin(A=E,table$3,table$5)) <+>			-- db2_ejoin
+evalM(tjoin(A=/=E,table$3,table$5)) <+>			-- db2_tjoin1
+evalM(tjoin(D<F',table$3,table$5)) <+>			-- db2_tjoin2
+evalM(sort(age)$table$1)				-- db2_sort
+
+

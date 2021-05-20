@@ -1,0 +1,102 @@
+-- /Users/Padawitz/ExpanderLib/list_lendoubP
+
+0. Derivation of
+
+LIST(s) ==> len(double(s)) = 2*len(s)
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids pure expansion.
+
+1. The set of axioms is extended by
+
+  (LIST0(s) ===> len(double(s)) = 2*len(s))
+
+Applying FIXPOINT INDUCTION wrt
+
+  LIST[]
+& (LIST(x:s) <=== LIST(s))
+
+at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+len(double[]) = 2*len[] & 
+All x s:((LIST0(s) ==> len(double(x:s)) = 2*len(x:s)))
+
+The reducts have been simplified parallel.
+
+2. NARROWING the preceding trees (one step) leads to 
+
+len[] = 2*len[] & All x s:((LIST0(s) ==> len(double(x:s)) = 2*len(x:s)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+3. NARROWING the preceding trees (one step) leads to 
+
+0 = 2*len[] & All x s:((LIST0(s) ==> len(double(x:s)) = 2*len(x:s)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+4. NARROWING the preceding trees (one step) leads to 
+
+All x s:((LIST0(s) ==> len(double(x:s)) = 2*len(x:s)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+5. NARROWING the preceding trees (one step) leads to 
+
+All x s:((len(double(s)) = 2*len(s) ==> len(double(x:s)) = 2*len(x:s)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+6. NARROWING the preceding trees (one step) leads to 
+
+All x s:((len(double(s)) = 2*len(s) ==> len(x:(x:double(s))) = 2*len(x:s)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+7. NARROWING the preceding trees (one step) leads to 
+
+All x s:((len(double(s)) = 2*len(s) ==> len(x:double(s))+1 = 2*len(x:s)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+8. NARROWING the preceding trees (one step) leads to 
+
+All x s:((len(double(s)) = 2*len(s) ==> 2+len(double(s)) = 2*len(x:s)))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+9. NARROWING the preceding trees (one step) leads to 
+
+All s:((len(double(s)) = 2*len(s) ==> 2+len(double(s)) = (2*len(s))+2))
+
+The axioms have been MATCHED against their redices.
+The reducts have been simplified parallel.
+
+10. REVERSING THE LIST OF TREES at positions
+[0,1,1,0]
+[0,1,1,1]
+of the preceding trees leads to 
+
+All s:((len(double(s)) = 2*len(s) ==> 2+len(double(s)) = 2+(2*len(s))))
+
+11. DECOMPOSING THE ATOM at positions
+[0,1]
+of the preceding trees leads to 
+
+All s:((len(double(s)) = 2*len(s) ==> len(double(s)) = 2*len(s)))
+
+12. SIMPLIFYING parallel the preceding trees (2 steps) leads to 
+
+True
+

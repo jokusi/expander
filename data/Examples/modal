@@ -1,63 +1,60 @@
 -- modal
 
-defuncts: noProcs procs states labels atoms valid
-preds:    X sat satL -> true false not \/ /\ `then` or and alloutL
-          allanytrans allanytransL EX XE <> >< EF AF FE FA `EU` `AU`
-copreds:  ~ eqstate AX XA # ## AG EG GE GA `EW` `AW` `ER` `AR`
-fovars:   s s' st st' lab at
-hovars:   X
+defuncts: states atoms labels out children parents mkfun valid
+preds:    X R sat val outL childrenL -> or and EX AX XE XA <> >< <<>> # ## ###
+	  EF AF FE FA `EU` `AU` `then` pi1 pi2 << >> child childF parent
+	  sibling descendant ancestor related inv ; plus step tab
+	  proj prod - exists forall / // sjoin njoin tjoin * lift eqstate 
+copreds:  ~ AG EG GE GA `EW` `AW` `ER` `AR`
+fovars:   st st' lab labs
+hovars:   X R
 
 axioms:
 
    procs == [0..noProcs-1]    -- used in many specifications that import modal
 
--- state equivalence relations
- 
- & (eqstate <==> NU X.rel((st,st'),out$st=out$st' & 
-			           alloutL(st,st') &
-				   allanytrans(X)(st,st') &
-				   allanytrans(X)(st',st) &
-				   allanytransL(X)(st,st') &
-				   allanytransL(X)(st',st)))
+-- simplification of state formulas
 
- & (st ~ st' ===> out$st=out$st' & 
-		  alloutL(st,st') &
-		  allanytrans(~)(st,st') & allanytrans(~)(st',st) &
-		  allanytransL(~)(st,st') & allanytransL(~)(st',st))
+ & (sat(P)$st <==> st`in`eval$P)	-- characteristic function of P
 
- & (alloutL(st,st') <==> all(rel(lab,outL(st)$lab=outL(st')$lab))$labels)
+ & mkfun(R)$st == map(get1)$filter((=st).get0)(R)
 
- & (allanytrans(P)(st,st')  <==> allany(P)(trans$st,trans$st'))
- & (allanytransL(P)(st,st') <==> all(rel(lab,allany(P)(transL(st)$lab,
-						       transL(st')$lab)))
- 				     $labels)
+ & (exists(R,P)$st <==> any(P)$mkfun(evalR$R)$st)
+ & (forall(R,P)$st <==> all(P)$mkfun(evalR$R)$st)
 
--- simplification of first-order state formulas
-
- & (sat(at)$st <==> at `in` out$st)
- & (satL(at,lab)$st <==> at `in` outL(st)$lab)
-
- & (EX(P)$st <==> any(P)$concat$trans(st):map(transL$st)$labels)
- & (AX(P)$st <==> all(P)$concat$trans(st):map(transL$st)$labels)
- & ((lab<>P)$st <==> any(P)$transL(st)$lab)
- & ((lab#P)$st <==> all(P)$transL(st)$lab)
-
- & (XE(P)$st <==> any(P)$parents$st)
- & (XA(P)$st <==> all(P)$parents$st)
- & ((lab><P)$st <==> any(P)$parentsL(st)$lab)
- & ((lab##P)$st <==> all(P)$parentsL(st)$lab)
+ & (child(labs)(st,st') <==> st'`in`children(labs)$st)
+ & (parent(labs)(st,st') <==> st'`in`parents(labs)$st)
 
  & (true$st <==> True)
  & (false$st <==> False)
  & (not(P)$st <==> Not(P$st))
  & ((P/\Q)$st <==> P$st & Q$st)
  & ((P\/Q)$st <==> P$st | Q$st)
- & ((P`then`Q)$st <==> (P$st ==> Q$st))
 
--- simplification of second-order state formulas
+-- derived modal formulas
 
+ & (P`then`Q <==> not(P)\/Q)
  & (or <==> foldl(\/)$false)
  & (and <==> foldl(/\)$true)
+
+ & (parent <==> inv.child)
+
+ & (sibling(labs) <==> child(labs);parent$labs)
+
+ & (EX$P <==> []<>P)
+ & (XE$P <==> []><P)
+ & (AX$P <==> []#P)
+ & (XA$P <==> []##P)
+
+ & (labs<>P <==> exists(child$labs,P))
+ & (labs><P <==> exists(parent$labs,P))
+ & (labs#P <==> forall(child$labs,P))
+ & (labs##P <==> forall(parent$labs,P))
+
+ & (R<<>>P <==> exists(childF$R,P))
+ & (R###P <==> forall(childF$R,P))
+ & (P<<R <==> P/\pi1$R)
+ & (R>>P <==> P/\pi2$R)
 
  & (EF$P <==> MU X.(P\/EX$X))		     -- forward finally on some path
  & (FE$P <==> MU X.(P\/XE$X))		     -- backwards finally on some path
@@ -75,7 +72,14 @@ axioms:
  & ((P`ER`Q) <==> NU X.(Q/\(P\/EX$X)))       -- release
  & ((P`AR`Q) <==> NU X.(Q/\(P\/AX$X)))
 
--- narrowing of first-order state formulas
+ & (plus(R) <==> MU X.(R\/(R;X)))	     -- transitive closure of R
+
+ & (descendant <==> plus.child)
+ & (ancestor <==> plus.parent)
+
+ & (related(labs) <==> ancestor(labs);sibling(labs);descendant$labs)
+
+-- narrowing of state formulas
 
  & (EF(P)$st <=== P$st | EX(EF$P)$st)	     -- forward finally on some path  	   
  & (AG(P)$st ===> P$st & AX(AG$P)$st)	     -- forward generally on all paths
@@ -96,3 +100,18 @@ axioms:
  & ((P`AW`Q)$st ===> Q$st | P$st & AX(P`AW`Q)$st)	
  & ((P`ER`Q)$st ===> Q$st & (P$st | EX(P`ER`Q)$st))	-- release
  & ((P`AR`Q)$st ===> Q$st & (P$st | AX(P`AR`Q)$st))
+
+-- state equivalence
+
+ & (step(R)(st,st') <==> out[]$st = out[]$st' & outL(st,st') &
+			 allany(R)(children[]$st,children[]$st') &
+			 childrenL(R)(st,st'))
+
+ & (outL(st,st') <==> all(rel(lab,out[lab]$st=out[lab]$st'))$labels)
+ & (childrenL(R)(st,st') <==> 
+     		      all(rel(lab,allany(R)(children[lab]$st,
+                                            children[lab]$st')))$labels)
+
+ & (eqstate <==> NU X.step$X)
+ & (st ~ st' ===> step(~)(st,st'))
+

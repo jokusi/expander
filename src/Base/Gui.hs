@@ -91,8 +91,8 @@ import Control.DeepSeq
 import qualified Data.Text as Text
 import Graphics.Rendering.Cairo as Cairo hiding (x, y, width, height)
 import Graphics.UI.Gtk hiding
-  (Color, Action, Font, ArrowType, Arrow, Fill
-  , ArrowClass, Image, Star , Circle, Point, Dot, get, set)
+  (Color, Action, Font, ArrowType, Arrow, Fill, Table,
+   ArrowClass, Image, Star , Circle, Point, Dot, get, set)
 import qualified Graphics.UI.Gtk as Gtk (get,set,Color(..))
 import Graphics.UI.Gtk.Gdk.PixbufAnimation
 import Graphics.UI.Gtk.General.CssProvider

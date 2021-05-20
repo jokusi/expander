@@ -1,6 +1,7 @@
 -- auto2
 
-constructs: 	a b c final
+constructs: a b c final
+preds:      ->
 
 axioms:
 

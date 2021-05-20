@@ -1,0 +1,212 @@
+-- /Users/Padawitz/ExpanderLib/list_mergesortP
+
+0. Derivation of
+
+mergesort(s) = s' ==> sorted(s') & s ~ s'
+
+All simplifications are admitted.
+Narrowing forbids refutation.
+Simplification forbids pure expansion.
+
+1. The set of axioms is extended by
+
+  (mergesort0(s,s') ===> sorted(s'))
+& (mergesort0(s,s') ===> s ~ s')
+
+Applying FIXPOINT INDUCTION wrt
+
+  mergesort[] = []
+& mergesort[x] = [x]
+& (mergesort(x:(y:s)) = merge(z3,z4) <=== 
+   split(s) = (s1,s2) & mergesort(x:s1) = z3 & mergesort(y:s2) = z4)
+
+at positions
+[]
+of the preceding trees leads to a single tree,
+which is given by
+
+All x z3 z4 y s s1 s2:
+ sorted[] & 
+All x z3 z4 y s s1 s2:
+ ([] ~ []) & 
+All x z3 z4 y s s1 s2:
+ sorted[x] & 
+All x z3 z4 y s s1 s2:
+ ([x] ~ [x]) & 
+All x z3 z4 y s s1 s2:
+ ((sorted(merge(z3,z4)) & (x:(y:s)) ~ merge(z3,z4) <=== 
+   split(s) = (s1,s2) & mergesort0(x:s1,z3) & mergesort0(y:s2,z4)))
+
+2. The tree has been split.5 factors.
+The current factor is given by
+
+All x z3 z4 y s s1 s2:
+ sorted[]
+
+3. NARROWING the preceding factors (one step) leads to 4 factors.
+The current factor is given by
+
+All x z3 z4 y s s1 s2:
+ ([] ~ [])
+
+The axioms have been MATCHED against their redices.
+
+4. SIMPLIFYING parallel the preceding factors (3 steps) leads to 3 factors.
+The current factor is given by
+
+All x z3 z4 y s s1 s2:
+ sorted[x]
+
+5. NARROWING the preceding factors (one step) leads to 2 factors.
+The current factor is given by
+
+All x z3 z4 y s s1 s2:
+ ([x] ~ [x])
+
+The axioms have been MATCHED against their redices.
+
+6. SIMPLIFYING parallel the preceding trees (3 steps) leads to a single tree,
+which is given by
+
+All x z3 z4 y s s1 s2:
+ ((sorted(merge(z3,z4)) & (x:(y:s)) ~ merge(z3,z4) <=== 
+   split(s) = (s1,s2) & mergesort0(x:s1,z3) & mergesort0(y:s2,z4)))
+
+7. Applying the axiom or theorem
+
+sorted(merge(s,s')) <=== sorted(s) & sorted(s')
+
+at positions
+[0,0,0]
+of the preceding trees leads to 
+
+All x z3 z4 y s s1 s2:
+ (((sorted(z3) & sorted(z4)) & (x:(y:s)) ~ merge(z3,z4) <=== 
+   split(s) = (s1,s2) & mergesort0(x:s1,z3) & mergesort0(y:s2,z4)))
+
+8. Applying the axiom or theorem
+
+s ~ merge(s1,s2) <=== s ~ (s1++s2)
+
+at positions
+[0,0,1]
+of the preceding trees leads to 
+
+All x z3 z4 y s s1 s2:
+ (((sorted(z3) & sorted(z4)) & (x:(y:s)) ~ (z3++z4) <=== 
+   split(s) = (s1,s2) & mergesort0(x:s1,z3) & mergesort0(y:s2,z4)))
+
+9. Applying the axiom or theorem
+
+(x:(y:s)) ~ (z3++z4) <=== s ~ (s1++s2) & (x:s1) ~ z3 & (y:s2) ~ z4
+
+at positions
+[0,0,1]
+of the preceding trees leads to 
+
+All x z3 z4 y s s1 s2:
+ (((sorted(z3) & sorted(z4)) & 
+   Any s11 s12:
+    ((s ~ (s11++s12) & (x:s11) ~ z3 & (y:s12) ~ z4)) <=== 
+   split(s) = (s1,s2) & mergesort0(x:s1,z3) & mergesort0(y:s2,z4)))
+
+10. Applying the axiom or theorem
+
+split(s) = (s1,s2) ===> s ~ (s1++s2)
+
+at positions
+[0,1,0]
+of the preceding trees leads to 
+
+All x z3 z4 y s s1 s2:
+ (((sorted(z3) & sorted(z4)) & 
+   Any s11 s12:
+    ((s ~ (s11++s12) & (x:s11) ~ z3 & (y:s12) ~ z4)) <=== 
+   s ~ (s1++s2) & mergesort0(x:s1,z3) & mergesort0(y:s2,z4)))
+
+11. Applying the axiom or theorem
+
+mergesort0(s,s') ===> sorted(s') & s ~ s'
+
+at positions
+[0,1,1]
+of the preceding trees leads to 
+
+All x z3 z4 y s s1 s2:
+ (((sorted(z3) & sorted(z4)) & 
+   Any s11 s12:
+    ((s ~ (s11++s12) & (x:s11) ~ z3 & (y:s12) ~ z4)) <=== 
+   s ~ (s1++s2) & (sorted(z3) & (x:s1) ~ z3) & mergesort0(y:s2,z4)))
+
+12. Applying the axiom or theorem
+
+mergesort0(s,s') ===> sorted(s') & s ~ s'
+
+at positions
+[0,1,2]
+of the preceding trees leads to 
+
+All x z3 z4 y s s1 s2:
+ (((sorted(z3) & sorted(z4)) & 
+   Any s11 s12:
+    ((s ~ (s11++s12) & (x:s11) ~ z3 & (y:s12) ~ z4)) <=== 
+   s ~ (s1++s2) & (sorted(z3) & (x:s1) ~ z3) & (sorted(z4) & (y:s2) ~ z4)))
+
+13. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x z3 z4 y s s1 s2:
+ ((sorted(z3) & sorted(z4) & 
+   Any s11 s12:
+    ((s ~ (s11++s12) & (x:s11) ~ z3 & (y:s12) ~ z4)) <=== 
+   s ~ (s1++s2) & sorted(z3) & (x:s1) ~ z3 & sorted(z4) & (y:s2) ~ z4))
+
+14. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x z3 z4 y s s1 s2:
+ ((s ~ (s1++s2) & sorted(z3) & (x:s1) ~ z3 & sorted(z4) & (y:s2) ~ z4 ==> 
+   sorted(z3) & sorted(z4) & 
+   Any s11 s12:
+    ((s ~ (s11++s12) & (x:s11) ~ z3 & (y:s12) ~ z4))))
+
+15. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x z3 z4 y s s1 s2:
+ (((s ~ (s1++s2) & sorted(z3) & (x:s1) ~ z3 & sorted(z4) & (y:s2) ~ z4 ==> 
+    sorted(z3)) & 
+   (s ~ (s1++s2) & sorted(z3) & (x:s1) ~ z3 & sorted(z4) & (y:s2) ~ z4 ==> 
+    sorted(z4)) & 
+   (s ~ (s1++s2) & sorted(z3) & (x:s1) ~ z3 & sorted(z4) & (y:s2) ~ z4 ==> 
+    Any s11 s12:
+     ((s ~ (s11++s12) & (x:s11) ~ z3 & (y:s12) ~ z4)))))
+
+16. SIMPLIFYING parallel the preceding factors (one step) leads to 3 factors.
+The current factor is given by
+
+All x z3 z4 y s s1 s2:
+ ((s ~ (s1++s2) & sorted(z3) & (x:s1) ~ z3 & sorted(z4) & (y:s2) ~ z4 ==> 
+   sorted(z3)))
+
+17. SIMPLIFYING parallel the preceding factors (one step) leads to 2 factors.
+The current factor is given by
+
+All x z3 z4 y s s1 s2:
+ ((s ~ (s1++s2) & sorted(z3) & (x:s1) ~ z3 & sorted(z4) & (y:s2) ~ z4 ==> 
+   sorted(z4)))
+
+18. SIMPLIFYING parallel the preceding trees (one step) leads to a single tree,
+which is given by
+
+All x z3 z4 y s s1 s2:
+ ((s ~ (s1++s2) & sorted(z3) & (x:s1) ~ z3 & sorted(z4) & (y:s2) ~ z4 ==> 
+   Any s11 s12:
+    ((s ~ (s11++s12) & (x:s11) ~ z3 & (y:s12) ~ z4))))
+
+19. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+All x z3 z4 y s s1 s2:
+ True
+
+20. SIMPLIFYING parallel the preceding trees (one step) leads to 
+
+True
+

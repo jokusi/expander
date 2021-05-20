@@ -1,9 +1,9 @@
 -- list
 
-preds:      P any zipAny sorted NOTsorted part >> ~
+preds:      P any zipAny sorted NOTsorted part >> ~ LIST
 copreds:    all zipAll
-defuncts:   F bag map flatten ext scan zip zipWith evens odds mergesort split 	
-	    merge isort insert splitAt
+defuncts:   bag map flatten ext scan zip zipWith evens odds mergesort split 	
+	    merge isort insert splitAt len double
 fovars:     x y z xs ys s s' s1 s2 z1 z2 p
 hovars:     F P
 
@@ -12,7 +12,7 @@ axioms:
   x:s >> s
 & (s >> s' <=== s >> s1 & s1 >> s')
 
-& (s ~ s' <=== bag(s) = bag(s'))
+& (s ~ s' <==> bag(s) = bag(s'))
 
 -- & bag(x:s) = x^bag(s)
 -- & bag(s++s') = bag(s)^bag(s')
@@ -28,8 +28,10 @@ axioms:
 & scan(F)(x)[] = [x]
 & scan(F)(x)(y:s) = x:scan(F)(F(x,y))(s)
 
-& zip[][] = []
-& zip(x:s)(y:s') = (x,y):zip(s)(s')
+& zip(x:s)(y:s') = x:y:zip(s)(s')
+& zip[](s) = s
+& zip(s)[] = s
+
 & zipWith(F)[][] = []
 & zipWith(F)(x:s)(y:s') = F(x,y):zipWith(F)(s)(s')
 
@@ -80,15 +82,26 @@ axioms:
 & x:s>>s
 & (s >> s' <=== s >> s1 & s1 >> s')
 
+& LIST[]
+& (LIST(x:s) <=== LIST$s)
+
+& len[] = 0
+& len(x:s) = len(s)+1
+
+& double[] = []
+& double(x:s) = x:x:double$s
+
+& x*(y+z) == x*y+x*z
+
 theorems:
 
-  (sorted(s) & sorted(s') ===> sorted(merge(s,s')))
-& (s ~ s1++s2 ===> s ~ merge(s1,s2))
-& (split(s) = (s1,s2) ===> s ~ s1++s2)
-
-& (s ~ s1++s2 & x:s1 ~ z3 & y:s2 ~ z4 ===> x:y:s ~ z3++z4)
-& (sorted(s) ===> sorted(insert(x,s)))
-& (s ~ x:s' ===> s ~ insert(x,s'))
+  (sorted(s) & sorted(s') ===> sorted(merge(s,s'))) -- used by mergesort
+& (s ~ s1++s2 ===> s ~ merge(s1,s2))                -- used by mergesort
+& (s ~ s1++s2 & x:s1 ~ z3 & y:s2 ~ z4 
+	      ===> x:y:s ~ z3++z4)		    -- used by mergesort
+& (split(s) = (s1,s2) ===> s ~ s1++s2)		    -- used by mergesort
+& (sorted(s)  ===> sorted(insert(x,s)))
+& (s ~ x:s'   ===> s ~ insert(x,s'))
 
 & s++s' ~ merge(s,s')
 & (NOTsorted(s) <=== Not(sorted$s))
@@ -103,14 +116,16 @@ theorems:
 
 conjects:
 
-(part(s,p) ==> flatten(p) = s)		        &  -- pafl1/2
+(part(s,p) ==> flatten(p)=s)			&  -- partflat
 (mergesort(s) = s' ==> sorted(s') & s ~ s')     &  -- mergesort
 (merge(s1,s2) = s & sorted(s1) & sorted(s2)
-               ==> sorted(s) & s ~ s1++s2)      &
+               ==> sorted(s) & s ~ s1++s2)  	&
 (isort(s) = s' ==> sorted(s'))			&
 (isort(s) = s' ==> s ~ s')			&
 (map(F)(s) = s' ==> lg(s) = lg(s'))		&
-zip(evens(s),odds(s)) = s			&
+
+(LIST(s) ==> zip(evens$s)(odds$s) = s)		&  -- evenodd
+(LIST(s) ==> len$double$s = 2*len(s))		&  -- lendoub
 
 -- prem subsumes conc:
 All x s z:

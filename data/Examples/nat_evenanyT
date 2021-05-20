@@ -1,0 +1,2 @@
+-- /Users/Padawitz/ExpanderLib/nat_evenanyT
+[Mark [] [], Mark [] [], Induction, Mark [] [], Mark [] [[0, 0, 0]], Induction, Mark [[0, 0, 0]] [], Narrow 1 True, Mark [] [], Mark [] [[0, 1, 1]], ReplaceVar "y0" (F "0" []) [], Mark [[0, 1, 1]] [], Mark [] [[0, 1]], Theorem False (F "=" [F "*" [F "2" [], F "1" []], F "2" []]), Mark [[0, 1]] []]
