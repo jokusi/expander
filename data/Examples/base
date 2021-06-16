@@ -1,9 +1,8 @@
 -- base
 
-defuncts: init last take drop <=< kfold
-preds:	P Q R S notS
+defuncts: init last take drop single concatMap <=<
 fovars:	x y z s s' m n i j k
-hovars:	F G P Q R
+hovars:	F G 
 
 axioms:
 
@@ -30,9 +29,11 @@ length$init$x:s == length$s &
 
 map(F)$x:s == F(x):map(F)$s &
 
-G<=<F == concat.map(G).F &       		-- Kleisli composition for [ ]
+single$x == [x] &
 
-kfold(F) == foldl$fun((s,x),concat$map(F$x)$s) &       -- Kleisli fold for [ ]
+concatMap$F == concat.(map$F) &
+
+G<=<F == concatMap(G).F &	-- Kleisli composition for [ ]
 
 x+0 == x & x+0.0 == x &
 0+x == x & 0.0+x == x &

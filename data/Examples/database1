@@ -2,11 +2,12 @@
 
 specs: modal
 
+defuncts: DBproject
+
 axioms:
 
-labels == [wife,completed,kennt,liebt,hasst,age] &
-
 states == [Robin,Inge,Markus,Fred,Sarah,Bob] & 
+labels == [wife,completed,kennt,liebt,hasst,age] &
 
 DBproject == map(Database)[1,2] &
 
@@ -31,14 +32,15 @@ atoms == [0..8]
 
 terms:
 
-eval([age]<>[72]) <+>			-->  [Robin,Markus]
-eval([wife]<>[Hilde]) <+>  		-->  [Markus]
-eval([hasst]<>[Alice]) <+>		-->  [Bob]
-eval([kennt]<>[Alice,Bob]) <+>		-->  [Alice,Carol]
-eval([hasst]<>[Alice]/\[Dave]) <+> 	-->  [Bob]
-eval(child[completed]/DBproject) <+>	-->  [Fred,Sarah]
-evalR(child[completed])	<+>		-->  db1_completed
-evalRM(child[completed]) <+>		-->  db1_completed
-evalRG(child[completed]) <+>		-->  db1_completed
-eval(sel((=2).length)$child[hasst]) <+> -->  [Bob]
-eval(sel((=1).length)$child[kennt])     -->  [Alice,Carol]
+eval([age]<>[72]) <+>			   -->  [Robin,Markus]
+eval([wife]<>[Hilde]) <+>  		   -->  [Markus]
+eval([hasst]<>[Alice]) <+>		   -->  [Bob]
+eval([kennt]<>[Alice,Bob]) <+>		   -->  [Alice,Carol]
+eval(child[hasst]/[Alice,Dave]) <+> 	   -->  [Bob]
+eval(child[completed]/DBproject) <+>	   -->  [Fred,Sarah]
+eval(select((=2).length)$child[hasst]) <+> -->  [Bob]
+eval(select((=1).length)$child[kennt]) <+> -->  [Alice,Carol]
+evalRM(child[hasst]) <+>		
+evalRM(child[liebt,hasst]) <+>		   -->  db1_liebt+hasst
+evalRM(child[completed]) <+>		   -->  db1_completed
+evalRG(child[completed]) 		   -->  db1_completed

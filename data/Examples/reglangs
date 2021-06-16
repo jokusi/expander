@@ -1,8 +1,9 @@
 -- reglangs
 
+specs: 		modal
 constructs: 	a b c d e h aa gg pp vv final q qa qb qab q1 q2
-defuncts:	delta beta unfold unfoldND unfoldBro reg draw drawC
-preds:          Unfold ->
+defuncts:       reg draw drawC
+preds:          Unfold
 fovars: 	e st st' w k m
 
 axioms:
@@ -30,13 +31,6 @@ final -> q1 &   -- A3: acceptor of reg$11
 
 (Unfold(st)[]    <=== final -> st) &		
 (Unfold(st)(x:w) <=== (st,x) -> st' & Unfold(st')$w) &
-
-unfoldND$w == out <=< kfold(flip$transL)$w &	-- nondeterministic unfold
-						-- (for kfold see base)
-delta(st,x) == head$transL(st)$x &		
-beta$st == ite(null$out$st,0,1) &
-
-unfold(st) == beta.foldl(delta)(st) & 		-- deterministic unfold
 
 -- regular expressions
 
@@ -84,30 +78,29 @@ conjects:
 
 Unfold(q)[] &			--> False	-- unify & narrow
 Unfold(q)[b] &			--> True	-- derive & simplify & refute
-Unfold(q)[b,b] &		--> False
-Unfold(q)[a,b,a,b,a,b,a] &	--> True		-- reglangs1
-Unfold(q)[a,b,a,b,b,a,b,a] &	--> False
+Unfold(q)[b,b] &		--> True
 Unfold(q)[a,b,a,a,b,a] &	--> False
-Unfold(q)[a,b,a,a,b,a,b] 	--> True
+Unfold(q)[a,b,a,b,a,b,a] &	--> True	-- reglangs1
+Unfold(q)[a,b,a,a,b,a,b] &	--> True
+Unfold(q)[a,b,a,b,b,a,b,a] 	--> False
 
 terms:
 
-unfoldND[q][] <+>			--> []		-- simplify
-unfoldND[q][b] <+>			--> [final]
-unfoldND[q][b,b] <+>			--> []
-unfoldND[q][a,b,a,b,a,b,a] <+>		--> [final]
-unfoldND[q][a,b,a,b,b,a,b,a] <+>	--> []
-unfoldND[q][a,b,a,a,b,a] <+>		--> []		-- 39 steps
-unfoldND[q][a,b,a,a,b,a,b] <+>		--> [final]	-- 45 steps
+star(a+b*c) <+>			-- RE1
 
-unfold(q)[a,b,a,a,b,a] <+>		--> 0		-- 23 steps
-unfold(q)[a,b,a,a,b,a,b] <+>		--> 1		-- 26 steps
+scan(q)[] <+>			--> []		
+scan(q)[b] <+>	       	        --> [final]
+scan(q)[b,b] <+>		--> [final]
+scan(q)[a,b,a,a,b,a] <+>	--> []		
+scan(q)[a,b,a,b,a,b,a] <+>	--> [final]
+scan(q)[a,b,a,a,b,a,b] <+>	--> [final]	
+scan(q)[a,b,a,b,b,a,b,a] <+>	--> []
 
-unfold(qgg)[a,b,a,a,b] <+>		--> 0		-- 22 steps
-unfold(qgg)[a,b,a,a,b,a] <+>		--> 1		-- 25 steps
+detScan(q)[a,b,a,a,b,a] <+>	--> []		
+detScan(q)[a,b,a,a,b,a,b] <+>	--> [final]		
 
-unfoldBro(reg$2)[a,a,a,b] <+>		--> 1
-unfoldBro(reg$2)[a,a,a,b,b] <+>		--> 0
+unfoldBro(reg$2)[a,a,a,b] <+>   --> 1
+unfoldBro(reg$2)[a,a,a,b,b] <+> --> 0
 
 auto$reg$1 <+>			--> non-deterministic acceptor of reg$1 
 pauto$reg$1 			--> deterministic acceptor of reg$1   

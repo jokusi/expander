@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: da1c95f396e6677d3055d94b3b9ff0f3166b56c43de7167eb665c5a798088752
+-- hash: 3641c2bbc0686f81dc61864b4e922d80dddb4d23d05f407fc0901b4744f4af4d
 
 name:           expander
 version:        3.0.0.0
@@ -109,6 +109,8 @@ data-files:
     Examples/cycle
     Examples/database1
     Examples/database2
+    Examples/dbC
+    Examples/dbC_njoin
     Examples/derec1P
     Examples/derec1T
     Examples/derecExp
@@ -289,8 +291,8 @@ data-files:
     Examples/logConj2
     Examples/logConj2T
     Examples/lr1
-    Examples/lr1_cdP
-    Examples/lr1_cdT
+    Examples/lr1_c_mal_dP
+    Examples/lr1_c_mal_dT
     Examples/lr3
     Examples/LRalt
     Examples/LRaltRun
@@ -323,6 +325,7 @@ data-files:
     Examples/mirrorP
     Examples/mirrorPT
     Examples/modal
+    Examples/modalP
     Examples/monad
     Examples/MONADproof
     Examples/morphs

@@ -1,8 +1,8 @@
 {-|
 Module      : Ecom
 Description : TODO
-Copyright   : (c) Peter Padawitz, May 2021
-                  Jos Kusiek, May 2021
+Copyright   : (c) Peter Padawitz, June 2021
+                  Jos Kusiek, June 2021
 License     : BSD3
 Maintainer  : (padawitz peter)@(edu udo)
 Stability   : experimental
@@ -64,7 +64,7 @@ preceding msg ps tm n = msg ++ (if take 3 msg `elem` ["BUI","MIN"] then ""
                                 else str1 ++ showPS ps ++ tm ++ 's':
                                     (str2 `onlyif` nrs)) ++ " leads to "
     where str1 = if last msg == '\n' then "" else " "
-          str2 = " (" ++ if n == 1 then "one step)" else show n++ " steps)"
+          str2 = " (" ++ if n == 1 then "arith_one step)" else show n++ " steps)"
           nrs = take 3 msg `elem` words "NAR REW SIM"
           showPS []  = ("to " `ifnot` nrs) ++ "the preceding "
           showPS ps = "at positions" ++ concatMap f ps ++ "\nof the preceding "
@@ -150,6 +150,7 @@ command = concat
            symbol "ShiftSubs" >> list (list int) >>= return . ShiftSubs,
            do symbol "Simplify"; limit <- token int
               token bool >>= return . Simplify limit,
+           symbol "ShowKripke" >> return ShowKripke,
            symbol "Simplifying" >> token bool >>= return . Simplifying,
            do symbol "SimplStrat"; s <- token strategy
               token strategy >>= return . SimplStrat s,
@@ -168,7 +169,7 @@ linearTerm = concat [do symbol "F"; x <- token quoted
 -- * __Solver__ messages
 
 start :: String
-start = "Welcome to Expander3 (May 10, 2021)"
+start = "Welcome to Expander3 (June 13, 2021)"
 
 startOther :: String -> String
 startOther solve = "Load and parse a term or formula in " ++ solve ++ "!"
@@ -216,7 +217,7 @@ circle p q = "The operation fails because the current tree contains a back " ++
              "pointer from position "++ show p ++" to position "++ show q ++"."
 
 circlesUnfolded :: (Eq a, Num a, Show a) => a -> String
-circlesUnfolded 1 = "\nCircles were unfolded one time."
+circlesUnfolded 1 = "\nCircles were unfolded arith_one time."
 circlesUnfolded n = "\nCircles were unfolded " ++ show n ++ " times."
 
 copiesRemoved :: String
@@ -262,6 +263,8 @@ emptyPicDir = "The picture directory is empty."
 
 endOfProof :: String
 endOfProof = "The end of the derivation has been reached."
+
+entered = "The canvas shows a new graph."
 
 enterNumber :: String
 enterNumber = "Enter the number of a formula shown in " ++ tfield ++ "!"
@@ -468,7 +471,7 @@ removed :: String
 removed = "The selected trees have been removed."
 
 removedOthers :: String
-removedOthers = "All trees except the one below have been removed."
+removedOthers = "All trees except the arith_one below have been removed."
 
 replacedTerm :: String
 replacedTerm = "The selected terms have been replaced by equivalent ones."
@@ -497,7 +500,7 @@ selectSub = "Select a proper non-hidden subtree!"
 shifted = "The selected subformulas have been shifted to the premise " ++
           " or conclusion."
 
-show' 1 obj = "one " ++ obj
+show' 1 obj = "arith_one " ++ obj
 show' n obj = show n ++ ' ':obj ++ "s"
 
 sigMapError :: String -> String
@@ -754,7 +757,7 @@ solver this solveRef enum paint = do
           other <- solve&getSolver
           mkButs m 
            ["here","with selected output","with state equivalence","in painter",
-            "in " ++ other] $ map showTrans xs
+            "in " ++ other] $ map showKripke xs
                          
         kripkeButs2 m cmd = mkButs m 
            ["canvas","index transitions","state transitions","atom values",
@@ -960,7 +963,7 @@ solver this solveRef enum paint = do
           
           graphMenu <- getMenu "graphMenu"
           mkBut graphMenu "expand" $ expandTree False
-          mkBut graphMenu "expand one" $ expandTree True
+          mkBut graphMenu "expand arith_one" $ expandTree True
           mkBut graphMenu "split cycles" $ removeEdges True
           mkBut graphMenu "more tree arcs" $ removeEdges False
           mkBut graphMenu "compose pointers" composePointers
@@ -978,7 +981,7 @@ solver this solveRef enum paint = do
           kripkeButs1 subMenu [5..9]
           subMenu <- mkSub graphMenu "  of atom transitions"
           mkButs subMenu ["here","in painter","in " ++ other]
-                         $ map showTrans [10..12]
+                         $ map showKripke [10..12]
           mkBut graphMenu "build iterative equations" $ transformGraph 1
           but <- mkBut graphMenu "connect equations" $ modifyEqs 0
           writeIORef eqsButRef but
@@ -1744,7 +1747,7 @@ solver this solveRef enum paint = do
             0 -> cycle free
             1 -> pointer-free
             2 -> normal
-            3 -> rebuild last one
+            3 -> rebuild last arith_one
             4 -> from current graph
             Used by 'checkForward' and multiple entries from "specification"
             menu.
@@ -3133,10 +3136,10 @@ solver this solveRef enum paint = do
                         "matrices"           -> searchPic matrix
                         "matrix solution"    -> solPic sig matrix
                         "linear equations"   -> linearEqs
-                        "level partition"    -> searchPic $ partition 0
-                        "preord partition"   -> searchPic $ partition 1
-                        "heap partition"     -> searchPic $ partition 2
-                        "hill partition"     -> searchPic $ partition 3
+                        "level partition"    -> searchPic $ planes 0
+                        "preord partition"   -> searchPic $ planes 1
+                        "heap partition"     -> searchPic $ planes 2
+                        "hill partition"     -> searchPic $ planes 3
                         "alignment"          -> searchPic alignment
                         "palindrome"         -> searchPic alignment
                         "dissection"         -> searchPic dissection
@@ -3267,7 +3270,7 @@ solver this solveRef enum paint = do
             trees <- readIORef treesRef
             setCurr newCurr $ next `mod` length trees
         
-        -- | Lower or raise a number in the entry field by one. Called by
+        -- | Lower or raise a number in the entry field by arith_one. Called by
         -- buttons /entry-1/ ('minusBut') and /entry+1/ ('plusBut').
         incrEntry :: Bool -> Action
         incrEntry b = do
@@ -4370,9 +4373,10 @@ solver this solveRef enum paint = do
                treeposs <- readIORef treepossRef
                let t = trees!!curr
                    p:ps = emptyOrAll treeposs
+                   f p = dropFromPoss p $ expand 0 t p
                if length treeposs < 2 
                   then labMag "Select at least two subterms!"
-               else if all (eqTerm $ expand0 t p) $ map (expand0 t) ps then do
+               else if all (eqTerm $ f p) $ map f ps then do
                   modifyIORef treesRef $ \trees -> updList trees curr
                     $ reference t p ps
                   extendPT RefNodes
@@ -4602,7 +4606,7 @@ solver this solveRef enum paint = do
             if null trees then labBlue' start
             else do
                 treeMode <- readIORef treeModeRef
-                if treeMode == "tree" then labGreen' "There is only one tree."
+                if treeMode == "tree" then labGreen' "There is only arith_one tree."
                 else do
                     curr <- readIORef currRef
                     modifyIORef solPositionsRef
@@ -4678,7 +4682,7 @@ solver this solveRef enum paint = do
                     lg = length trees
                     ps = if null treeposs then [[]] else minis (<<=) treeposs
                 if ps == [[]] then
-                    if lg < 2 then labRed' "There is at most one tree."
+                    if lg < 2 then labRed' "There is at most arith_one tree."
                     else do
                         modifyIORef solPositionsRef
                             $ \solPositions -> shift curr solPositions
@@ -5703,7 +5707,7 @@ solver this solveRef enum paint = do
                treeposs <- readIORef treepossRef
                let t = trees!!curr
                    p = emptyOrLast treeposs
-               drawThis "green" t $ map (p++) $ fixPositions $ getSubterm t p
+               drawThis "green" t $ map (p++) $ labPoss isFix $ getSubterm t p
 
 
         -- | Called by menu item /greatest lower bound/ from menu /nodes/.
@@ -5716,7 +5720,76 @@ solver this solveRef enum paint = do
                 trees <- readIORef treesRef
                 curr <- readIORef currRef
                 drawThis "green" (trees!!curr) [glbPos treeposs]
-        
+
+        showKripke m = do
+          sig <- getSignature
+          let [sts0,labs,ats] = showSLA sig
+          if null sts0 then labMag "The Kripke model is empty!"
+          else do
+               iniStates <- readIORef iniStatesRef
+               let sts = if m < 5 then map show $ indices_ sts0 else sts0
+                   pairs = mkPairs sts sts (sig&sig_trans)
+                   trips = mkTrips sts labs sts (sig&sig_transL)
+                   trGraph = if null iniStates then relToGraphAll pairs trips
+                             else relToGraph pairs trips $ map f iniStates
+                   f = if m < 5 then show . getInd (sig&sig_states)
+                                else showTerm0
+                   atGraph =
+                       if trGraph == emptyGraph then emptyGraph
+                       else outGraph sts labs ats (out sig) (outL sig) trGraph
+                   decorateTrGraph = do
+                       trsOnCanvas <- readIORef trsOnCanvasRef
+                       treeposs <- readIORef treepossRef
+                       if trsOnCanvas && notnull treeposs then do
+                          let f p a = if p `elem` treeposs && a `elem` sts
+                                      then label atGraph p else a
+                          curr <- readIORef currRef
+                          modifyIORef treesRef$ \trees
+                            -> updList trees curr $ mapTP f [] $ trees!!curr
+                          writeIORef trsOnCanvasRef False
+                          drawCurr'
+                       else labMag "Show state transitions first!"
+                   paintGraph t = do
+                       str <- ent `gtkGet` entryText
+                       spread <- readIORef spreadRef
+                       drawFun <- readIORef drawFunRef
+                       let mkPict sizes = widgetTree sig sizes spread $
+                                                  applyDrawFun sig drawFun str t
+                       pict <- (mkPict sizes0)&runT
+                       if nothing pict then labMag "There are no transitions."
+                       else do
+                          font <- readIORef fontRef
+                          sizes <- mkSizes canv font $ stringsInPict $ get pict
+                          spread <- readIORef spreadRef
+                          (paint&setEval) "tree" spread
+                          pict <- (mkPict sizes)&runT
+                          curr <- readIORef currRef
+                          (paint&callPaint) [get pict] [curr] False curr "white"
+                   finish t = do
+                       trees <- readIORef treesRef
+                       if null trees then enterTree' False t
+                       else do
+                            curr <- readIORef currRef
+                            modifyIORef treesRef
+                              $ \trees -> updList trees curr t
+                            extendPT ShowKripke
+                            setProof False False "SHOWING A GRAPH" [[]] entered
+                            clearAndDraw
+               solve <- readIORef solveRef
+               case m of 0 -> do finish trGraph; writeIORef trsOnCanvasRef True
+                         1 -> decorateTrGraph
+                         2 -> finish $ colorClasses sig trGraph
+                         3 -> paintGraph trGraph
+                         4 -> do (solve&bigWin); (solve&enterTree) False trGraph
+                         5 -> do finish trGraph; writeIORef trsOnCanvasRef True
+                         6 -> decorateTrGraph
+                         7 -> finish $ colorClasses sig trGraph
+                         8 -> paintGraph trGraph
+                         9 -> do (solve&bigWin); (solve&enterTree) False trGraph
+                         10 -> finish atGraph
+                         11 -> paintGraph atGraph
+                         _ -> do (solve&bigWin); (solve&enterTree) False atGraph
+
         -- | Called by all /show matrix/ menu items from menu /graph/.
         showMatrix mode = do
           trees <- readIORef treesRef
@@ -6062,65 +6135,6 @@ solver this solveRef enum paint = do
                 enterFormulas' cls
                 labGreen' $ see $ "theorems for " ++ showStrList xs
         
-        showTrans m = do
-          sig <- getSignature
-          let [sts0,labs,ats] = showSLA sig
-          if null sts0 then labMag "The Kripke model is empty!"
-          else do
-               iniStates <- readIORef iniStatesRef
-               let sts = if m < 5 then map show $ indices_ sts0 else sts0
-                   pairs = mkPairs sts sts (sig&sig_trans)
-                   trips = mkTrips sts labs sts (sig&sig_transL)
-                   trGraph = if null iniStates
-                             then relToGraph pairs trips $ sourcesPT pairs trips
-                             else relToGraph pairs trips $ map f iniStates
-                   f = if m < 5 then show . getInd (sig&sig_states) else showTerm0
-                   atGraph =
-                         if trGraph == emptyGraph then emptyGraph
-                         else outGraph sts labs ats (out sig) (outL sig) trGraph
-                   decorateTrGraph = do
-                    treeposs <- readIORef treepossRef
-                    trsOnCanvas <- readIORef trsOnCanvasRef
-                    if trsOnCanvas && notnull treeposs then do
-                       let f p a = if p `elem` treeposs && a `elem` sts
-                                   then label atGraph p else a
-                       curr <- readIORef currRef
-                       modifyIORef treesRef$ \trees
-                         -> updList trees curr $ mapTP f [] $ trees!!curr
-                       writeIORef trsOnCanvasRef False
-                       drawCurr'
-                    else labMag "Show state transitions first!"
-                   paintG t = do
-                    str <- ent `gtkGet` entryText
-                    spread <- readIORef spreadRef
-                    drawFun <- readIORef drawFunRef
-                    let mkPict sizes = widgetTree sig sizes spread $
-                                                  applyDrawFun sig drawFun str t
-                    pict <- (mkPict sizes0)&runT
-                    if nothing pict then labMag "There are no transitions."
-                    else do
-                         font <- readIORef fontRef
-                         sizes <- mkSizes canv font $ stringsInPict $ get pict
-                         pict <- (mkPict sizes)&runT
-                         spread <- readIORef spreadRef
-                         (paint&setEval) "tree" spread
-                         curr <- readIORef currRef
-                         (paint&callPaint) [get pict] [curr] False curr "white"
-               solve <- readIORef solveRef
-               case m of 0 -> do enterTree' False trGraph; writeIORef trsOnCanvasRef True
-                         1 -> decorateTrGraph
-                         2 -> enterTree' False $ colorClasses sig trGraph
-                         3 -> paintG trGraph
-                         4 -> do (solve&bigWin); (solve&enterTree) False trGraph
-                         5 -> do enterTree' False trGraph; writeIORef trsOnCanvasRef True
-                         6 -> decorateTrGraph
-                         7 -> enterTree' False $ colorClasses sig trGraph
-                         8 -> paintG trGraph
-                         9 -> do (solve&bigWin); (solve&enterTree) False trGraph
-                         10 -> enterTree' False atGraph
-                         11 -> paintG atGraph
-                         _ -> do (solve&bigWin); (solve&enterTree) False atGraph
-
         -- | Used by 'stopRun'', 'runChecker', 'setDeriveMode' and 'showPicts''.
         showTreePicts :: Action
         showTreePicts = do
@@ -6450,14 +6464,15 @@ solver this solveRef enum paint = do
                                when (mode == 3) $ setZcounter n
                                extendPT $ Transform mode
                                setProof False False "TRANSFORMING THE GRAPH" [p]
-                                        $ transformed
+                                        transformed
                                clearAndDraw
                case mode of
                     0 -> case parseColl parsePair u of
-                              Just rel@(_:_)
-                                -> act 0 p $ toGraph rel []
+                              Just pairs@(_:_)
+                                -> act 0 p $ relToGraphAll pairs []
                               _ -> case parseColl parseTrip u of
-                                   Just rel@(_:_) -> act 0 p $ toGraph [] rel
+                                   Just trips@(_:_)
+                                     -> act 0 p $ relToGraphAll [] trips
                                    _ -> case parseEqs u of
                                         Just eqs -> act 0 p $ eqsToGraphAll eqs
                                         _ -> if newRoot then act 0 [] new
@@ -6473,8 +6488,7 @@ solver this solveRef enum paint = do
                                              let (eqs,n) = relToEqs vcz [] rel
                                              act n p $ eqsTerm eqs
                                         _ -> act n p $ eqsTerm eqs
-                    b -> act 0 p $ collapse (b == 3) u
-          where toGraph rel relL = relToGraph rel relL $ sourcesPT rel relL
+                    b -> act 0 p $ collapse (b == 2) u
 
         -- | Used by 'buildUnifier' and 'unifyOther'.
         unifyAct :: TermS -> TermS -> TermS -> TermS -> [Int] -> [Int] -> Action
@@ -6600,8 +6614,8 @@ badConstraint :: String
 badConstraint = "The constraint is not well-formed."
 
 howMany :: (Eq a, Num a, Show a) => a -> String -> String -> String
-howMany 1 object ""     = "There is one " ++ object ++ "."
-howMany 1 object constr = "There is one " ++ object ++ " satisfying " ++ constr
+howMany 1 object ""     = "There is arith_one " ++ object ++ "."
+howMany 1 object constr = "There is arith_one " ++ object ++ " satisfying " ++ constr
                            ++ "."
 howMany n object ""     = "There are " ++ show n ++ " " ++ object ++ "s."
 howMany n object constr = "There are " ++ show n ++ " " ++ object ++

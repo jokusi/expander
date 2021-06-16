@@ -2,9 +2,9 @@
 
 constructs:     a b c
 defuncts: 	plus times iter iterate ^^ `mod` # ##
-preds:		-> P' odd
+preds:		-> odd P Q R S
 fovars:		x' y' z' i j n
-hovars: 	H I P'
+hovars: 	H I P Q R S
 
 axioms: 
 
@@ -27,15 +27,15 @@ axioms:
 & x#y == y
 & x##y == y##x
 
-conjects:
+conjects: -- Positions refer to the entire conjunction!
 
   (P&Q ==> P|R)		 		--> True		
 & (P&(Q|R) <==> P&Q|P&R) 		--> True
-& (P&Q&P' ==> P&R&P')	 		--> P&Q&P' ==> R		
-& (P|Q|P' ==> P|R|P')	 		--> Q ==> P|R|P'
-& (P|Q|P' ==> P&R&P')		 	--> (Q ==> P&P') & (P|P' ==> R)
+& (P&Q&S ==> P&R&S)	 		--> P&Q&S ==> R		
+& (P|Q|S ==> P|R|S)	 		--> Q ==> P|R|S
+& (P|Q|S ==> P&R&S)		 	--> (Q ==> P&S) & (P|S ==> R)
 & (P & Q & (P ==> R))    		--> P & Q & (P ==> R)
-& (P ==> P' | (Q ==> R)) 		--> P & Q ==> R | P'
+& (P ==> S | (Q ==> R)) 		--> P & Q ==> R | S
 
 & (P(1) & P(2) & P(3) & (P(4) | P(5) | P(6))) -- press selection > distribute
 & (P(1) | P(2) | P(3) | (P(4) & P(5) & P(6)))
@@ -43,7 +43,6 @@ conjects:
 & (P(1) | P(2) | P(3) ==> P(4))
 & bool(P(x)) = bool(Q(x,pos 0 0 0))     --> Q(x,y) <==> Q(x,pos 1 0)
 
-& zipWith(=)[1,x,3,4][1,2,y,5,6]      	--> [True,x = 2,3 = y,False]
 & fun((x,y),x+z+y) = fun((y,x),y+z+x) 	--> True
 & bag[4,5]=bag[5,4]			--> True
 & set[4,5]=set[5,4,5]   		--> True
@@ -98,10 +97,14 @@ conjects:
    red_5 = 5(a(pos 4),b(pos 1),c(pos 2)) &
    red_6 = 6(a(pos 4),b(pos 4),c(pos 0)))
 
-terms: 
+terms: -- Positions refer to the entire sum!
 
-    [(1,4,[3..7]),(2,[5,6],[3..5])] -- graph > graph ->
- -- 1(4(3,pos 0 0,5,6,7)) <+> 2(5(3,4,pos 1 0),6(pos 1 0 0,pos 1 0 1,pos 1 0))
+    f(f(pos 1),f(pos 0),f(pos 1))      -- expand
+
+<+> [(1,4,[3..7]),(2,[5,6],[3..5])]    
+			 -- graph > graph -> 1(4(3,pos 0 0,5,6,7)) 
+
+<+> 2(5(3,4,pos 1 0),6(pos 1 0 0,pos 1 0 1,pos 1 0))
 
 <+> 2:3:6:(7+1):[1..4*2] -- selection > evaluate -> [2,3,6,8,1,2,3,4,5,6,7,8]
 
@@ -164,15 +167,18 @@ terms:
         --         head(pos 0 0 0 0 0,s,pos 0 0 0 0 0),
         --         get0(pos 0 0 0)))
 
-<+> branch[3,(),4,5,(),7,5]   --> 3 <+> 4 <+> 5 <+> 7
-<+> set[3,(),4,5,(),7,5]      --> {3,(),4,5,7}
-<+> ((+pos 1)^^pos 1)$6	      --> 42
-<+> upd[1..9](6)(hhh)         --> [1,2,3,4,5,6,hhh,8,9]
-<+> take(4)$iter(+1)$0 	      --> [0,1,2,3]    31 steps (24.1.21)
-<+> take(4)$iterate(+1)$0     --> [0,1,2,3]
-<+> take(4)$iterate(+3*2)$0   --> [0,6,12,18]
-<+> take(4)$iterate(f.g)$0    --> [0,f(g(0)),f(g(f(g(0)))),f(g(f(g(f(g(0))))))]
-<+> take(4)$mu s.(idle:s)     --> [idle,idle,idle,idle]
+<+> zipWith(=)[1,x,3,4][1,2,y,5,6] --> [True,x = 2,3 = y,False]
+<+> branch[3,(),4,5,(),7,5]   	   --> 3 <+> 4 <+> 5 <+> 7
+<+> set[3,(),4,5,(),7,5]           --> {3,(),4,5,7}
+<+> ((+pos 1)^^pos 1)$6	      	   --> 42
+<+> upd[1..9](6)(hhh)         	   --> [1,2,3,4,5,6,hhh,8,9]
+<+> take(4)$iter(+1)$0 	           --> [0,1,2,3]    31 steps (24.1.21)
+<+> take(4)$iterate(+1)$0          --> [0,1,2,3]
+<+> take(4)$iterate(+3*2)$0        --> [0,6,12,18]
+<+> take(4)$iterate(f.g)$0         --> [0,f(g(0)),f(g(f(g(0)))),
+				   --   f(g(f(g(f(g(0))))))]
+		           --collapse-> [0,f(g(pos 0)),f(g(pos 1)),f(g(pos 2))]
+<+> take(4)$mu s.(idle:s)          --> [idle,idle,idle,idle]
 <+> f$(5:pos 0 0 1 1 1 4:8:[1,3,3,4,5,6,6])!!1	--> f(5)
 
 <+> fun(x,ite(x>0&x=/=6,x-1,88))(7-1)	         --> 88
@@ -205,7 +211,7 @@ terms:
 <+> get5$tup[1..11]				 --> 6
 
 <+> foldl(+)(0)[1..9]				 --> 45
-<+> length$kfold(fun(x,fun(y,[y,y])))[0][1..4]	 --> 2^4
+<+> length$mfold(fun(x,fun(y,[y,y])))[0][1..4]	 --> 2^4
 
 <+> 1*2*3-4*5*6+7/8*9^1*2*3-4*5*6+7*8*9		 --> -114^390
 
@@ -225,7 +231,7 @@ terms:
 <+> map(**)$zip[1..5][1..5]			     --> [1,4,27,256,3125]
 <+> map(+3)[1..5]  
 <+> map($)$prodL[[is,less],[0..3]]
-		   --> [is(0),is(1),is(2),is(3),less(0),less(1),less(2),less(3)]
+                 --> [is(0),is(1),is(2),is(3),less(0),less(1),less(2),less(3)]
 
 <+> mapG(fun(x,x+1))[1..5]       --> [2,3,4,5,6]
 <+> mapG(f(t).(+1))[1..5] 	 --> [f(t)(2),f(t)(3),f(t)(4),f(t)(5),f(t)(6)]
@@ -369,6 +375,7 @@ terms:
                               42(421,422(4221)))) 
 
 <+> subst(f(8),x,[g(x),g(x),g(x)]) --> [g(pos 2 0),g(pos 2 0),g(f(8))]
+
 {-
 <+> aaaa(ddd,
      aaaa(ddd,

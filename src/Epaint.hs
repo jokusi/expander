@@ -1,8 +1,8 @@
 {-|
 Module      : Epaint
 Description : TODO
-Copyright   : (c) Peter Padawitz, May 2020
-                  Jos Kusiek, May 2020
+Copyright   : (c) Peter Padawitz, June 2020
+                  Jos Kusiek, June 2020
 License     : BSD3
 Maintainer  : peter.padawitz@udo.edu
 Stability   : experimental
@@ -101,7 +101,7 @@ data Step = AddAxioms [TermS] | ApplySubst | ApplySubstTo String TermS |
             ReplaceSubtrees [[Int]] [TermS] | ReplaceText String |
             ReplaceVar String TermS [Int] | ReverseSubtrees | SafeSimpl Bool |
             SetAdmitted Bool [String] | SetCurr String Int | SetDeriveMode |
-            ShiftPattern | ShiftQuants | ShiftSubs [[Int]] |
+            ShiftPattern | ShiftQuants | ShiftSubs [[Int]] | ShowKripke |
             Simplify Int Bool | Simplifying Bool |
             SimplStrat Strategy Strategy | SplitTree | StretchConclusion |
             StretchPremise | SubsumeSubtrees | Theorem Bool TermS |
@@ -276,7 +276,7 @@ treesMsg k 1 solver b =
                      ("solved and " `onlyif` b) ++ "located at position " ++
                      show k ++ " of " ++ solver ++ "."
 treesMsg k n solver b = show n ++
-                  " trees have pictorial representations. The one below is " ++
+                  " trees have pictorial representations. The arith_one below is " ++
                   ("solved and " `onlyif` b) ++ "located at position " ++
                   show k ++ " of " ++ solver ++ "."
 
@@ -2375,7 +2375,7 @@ concatJust s = maybeT $ do s <- mapM runT s
 type Interpreter = Sizes -> Pos -> TermS -> MaybeT Cmd Picture
 
 -- searchPic eval ... t recognizes the maximal subtrees of t that are
--- interpretable by eval and combines the resulting pictures into a single one.
+-- interpretable by eval and combines the resulting pictures into a single arith_one.
 
 searchPic :: Interpreter -> Interpreter
 searchPic eval sizes spread t = g [] t where
@@ -2389,7 +2389,7 @@ searchPic eval sizes spread t = g [] t where
 -- used by Ecom > getInterpreter
 
 -- solPic sig eval ... t recognizes the terms of a solution t that are
--- interpretable by eval and combines the resulting pictures into a single one.
+-- interpretable by eval and combines the resulting pictures into a single arith_one.
 
 solPic :: Sig -> Interpreter -> Interpreter
 solPic sig eval sizes spread t = case parseSol (solAtom sig) t of
@@ -2399,9 +2399,9 @@ solPic sig eval sizes spread t = case parseSol (solAtom sig) t of
 
 -- used by Ecom > getInterpreter
 
-partition :: Int -> Interpreter
-partition mode sizes _ t = do guard $ not $ isSum t
-                              rturtle $ drawPartition sizes mode t
+planes :: Int -> Interpreter
+planes mode sizes _ t = do guard $ not $ isSum t
+                           rturtle $ drawPlanes sizes mode t
 
 alignment,dissection,linearEqs,matrix :: Interpreter
 
@@ -2944,7 +2944,7 @@ coordWTree (hor,ver) p = alignWLeaves hor . f p
                            h (w,(x,_)) = maximum . ((x+midx w):)
 
 -- transWTrees hor ct cts orders the trees of ct:cts with a horizontal space of 
--- hor units between adjacent trees. transTrees takes into account different 
+-- hor units between adjacent trees. transWTrees takes into account different
 -- heights of adjacent trees by shifting them to the left or to the right such 
 -- that nodes on low levels of a tree may occur below a neighbour with fewer 
 -- levels.
@@ -4385,14 +4385,12 @@ delBrackets a = a
 
 -- used by listMatrix,termMatrix
 
--- * partitions
+-- planes
 
-drawPartition :: (Eq a, Num a) =>
-                 Sizes -> a -> Term b -> [TurtleAct]
-drawPartition sizes mode = f $ case mode of 0 -> levelTerm
-                                            1 -> preordTerm 
-                                            2 -> heapTerm
-                                            _ -> hillTerm
+drawPlanes sizes mode = f $ case mode of 0 -> levelTerm
+                                         1 -> preordTerm
+                                         2 -> heapTerm
+                                         _ -> hillTerm
     where f order = split True 100 100 . fst . order blue lab 
             where lab c n = (c,n)
                   split b dx dy (F _ ts@(_:_)) = open:acts++[Close]

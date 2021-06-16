@@ -1,0 +1,68 @@
+-- modalP
+
+defuncts: states atoms labels out children parents sat satR sel selR
+preds:    X R or and `then` <> >< # % EF AF FE FA EU AU << >>  
+          -> true false not /\ \/ exists forall TWO THREE
+copreds:  AG EG GE GA EW AW ER AR ONE NOTTHREE
+fovars:   st st' pairs lab labs
+hovars:   X R
+
+axioms:
+
+ & (labs<>P <==> exists(child$labs)$P)
+ & (labs><P <==> exists(parent$labs)$P)
+ & (labs#P <==> forall(child$labs)$P)
+ & (labs%P <==> forall(parent$labs)$P)
+
+-- narrowing of state formulas
+
+ & (EF(labs)(P)$st <=== P$st | labs<>EF(labs)(P)$st)	      	   
+ & (FE(labs)(P)$st <=== P$st | labs><FE(labs)(P)$st)	      	   
+ & (AF(labs)(P)$st <=== P$st | labs#AF(labs)(P)$st & (labs<>true)$st)	
+ & (FA(labs)(P)$st <=== P$st | labs%FA(labs)(P)$st & (labs><true)$st)	
+ & (EG(labs)(P)$st ===> P$st & labs<>EG(labs)(P)$st | (labs#false)$st)	
+ & (GE(labs)(P)$st ===> P$st & labs><GE(labs)(P)$st | (labs#false)$st)	
+ & (AG(labs)(P)$st ===> P$st & labs#AG(labs)(P)$st)	      	   
+ & (GA(labs)(P)$st ===> P$st & labs%GA(labs)(P)$st)	      	   
+
+ & (EU(labs)(P,Q)$st <=== Q$st | P$st & labs<>EU(labs)(P,Q)$st)
+ & (AU(labs)(P,Q)$st <=== Q$st | P$st & labs#AU(labs)(P,Q)$st)
+ & (EW(labs)(P,Q)$st ===> Q$st | P$st & labs<>EW(labs)(P,Q)$st)
+ & (AW(labs)(P,Q)$st ===> Q$st | P$st & labs#AW(labs)(P,Q)$st)
+ & (ER(labs)(P,Q)$st ===> Q$st & (P$st | labs<>ER(labs)(P,Q)$st))
+ & (AR(labs)(P,Q)$st ===> Q$st & (P$st | labs#AR(labs)(P,Q)$st))
+
+-- from trans1:
+
+ & (ONE(st) ===> (TWO/\([b]#ONE))(st)) 
+ & (TWO(st) <=== (([a]<>true)\/([b]<>TWO))(st)) 
+
+-- from trans2:
+
+ & (THREE(st)    <=== (a#(sat(A)\/THREE))(st))			
+ & (NOTTHREE(st) ===> (a<>(not(sat(A))/\NOTTHREE))(st))	
+
+conjects: 
+
+-- from trans0:
+
+& (=14)$3		--> False
+& AG(<14)$9		--> True
+& all(EX(=4))[3,4,6]	--> True
+& x^4^y->st		--narrow&simplify--> 5^x^y = st | 4^x^y = st 
+
+-- from trans1:
+
+all(one)[1,2] &	    	--> False  	simplify
+all(two)[2,3,4] &	--> True   	simplify
+all(ONE)[3,4]   	--> True   	coinduction + narrow match	
+
+-- from trans2:
+
+all(THREE)[2,4] &	--> True   	narrow match
+all(NOTTHREE)[1,3] &	--> True   	coinduction + narrow match  
+(THREE(st) & st `in` states ==> st = 2 | st = 4) &   
+			--> True   	induction + narrow match    
+(NOTTHREE(st) & st `in` states ==> st = 1 | st = 3)  
+			--> True   	narrow match
+

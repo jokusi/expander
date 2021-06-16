@@ -1,7 +1,7 @@
 -- auto1
 
-constructs:	D E dot plus minus final
-preds: 		-> ~
+specs:      modal
+constructs: D E dot plus minus final
 
 axioms:
 
@@ -27,6 +27,8 @@ axioms:
 
 terms: 
 
-filter(5~)$states              	      -->  [2,3,5]
+evalR(~) <+>				--> [(2,3),(2,5),(3,5),(4,6)]
+filter(rel(x,(x,5)`in`evalR(~)))$states --> [2,3]
+filter(5~)$states              	        --> [2,3,5]
 
--- specification > state equivalence  -->  [(2,3),(2,5),(3,5),(4,6)]
+-- specification > state equivalence    --> [(2,3),(2,5),(3,5),(4,6)]

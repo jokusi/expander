@@ -1,7 +1,7 @@
 -- auto2
 
+specs:      modal
 constructs: a b c final
-preds:      ->
 
 axioms:
 
@@ -18,7 +18,9 @@ axioms:
 & (final,a) -> branch[2,3,5,6] & (final,b) -> branch[1..6] 
 & (final,c) -> branch[1,4]
 
--- final -> branch[3,4]
+terms:
 
--- specification > state equivalence  -->  [(1,4),(2,6)]
+evalR(~)			     --> [(1,4),(2,6)]
+
+-- specification > state equivalence --> [(1,4),(2,6)]
 

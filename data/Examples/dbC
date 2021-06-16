@@ -1,0 +1,53 @@
+-- dbC by Christian Erdmann
+
+specs: modal
+
+axioms:
+
+states == [Artikel,Verkaeufe] &    
+       -- initial states
+       -- build Kripke model extends the list by all states that are reachable
+       -- by ->-transitions
+
+labels == [Name,Gewicht,Preis,Artikelname,Menge,Gesamtpreis,Kaeufer,Datum] &
+
+-- rules that define trans : state -> [state]
+
+Artikel -> branch[0..3] &	   
+Verkaeufe -> branch[4..10] &
+
+-- rules that define transL : state x label -> [state]
+
+(0, Name) -> Kugelschreiber  & (0, Gewicht) -> 0.01   & (0, Preis) -> 1 &
+(1, Name) -> Tasse           & (1, Gewicht) -> 0.2    & (1, Preis) -> 5 &
+(2, Name) -> Bierkasten      & (2, Gewicht) -> 0.5    & (2, Preis) -> 12.5 &
+(3, Name) -> Hemd            & (3, Gewicht) -> 0.8    & (3, Preis) -> 10 & 
+
+(4, Artikelname)  -> Kugelschreiber & (4, Menge)   -> 100 & 
+(4, Gesamtpreis)  -> 100            & (4, Kaeufer) -> Stifte AG & 
+(4, Datum)        -> 20.8.2019      &
+(5, Artikelname)  -> Kugelschreiber & (5, Menge)   -> 10 & 
+(5, Gesamtpreis)  -> 10             & (5, Kaeufer) -> Klaus K & 
+(5, Datum)        -> 11.9.2020      &
+(6, Artikelname)  -> Tasse          & (6, Menge)   -> 3 & 
+(6, Gesamtpreis)  -> 15   	    & (6, Kaeufer) -> Max M & 
+(6, Datum)        -> 14.9.2020      &
+(7, Artikelname)  -> Bierkasten     & (7, Menge)   -> 2 & 
+(7, Gesamtpreis)  -> 25             & (7, Kaeufer) -> Klaus K & 
+(7, Datum)        -> 11.3.2020      &
+(8, Artikelname)  -> Hemd           & (8, Menge)   -> 5 & 
+(8, Gesamtpreis)  -> 30             & (8, Kaeufer) -> TUDo & 
+(8, Datum)        -> 10.2.2020      &
+(9, Artikelname)  -> Tasse          & (9, Menge)   -> 8 & 
+(9, Gesamtpreis)  -> 10             & (9, Kaeufer) -> TUDo & 
+(9, Datum)        -> 8.1.2021       &
+(10, Artikelname) -> Hemd           & (10, Menge) -> 12 & 
+(10, Gesamtpreis) -> 120            & (10, Kaeufer) -> LS1 & 
+(10, Datum)       -> 9.2.2021
+
+terms:
+
+evalM(project[Artikelname,Kaeufer]$Verkaeufe) <+>		
+evalM(select(Gewicht>0.4)$Artikel) <+>
+evalM(njoin(Artikel)$Verkaeufe) <+>			-- big!
+evalM(tjoin(Name=Artikelname)(Artikel)$Verkaeufe)
