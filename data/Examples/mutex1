@@ -13,8 +13,8 @@
 -}	
 
 specs:		modal
-defuncts:       start pairs diffpairs drawN drawI drawL drawK drawS drawC
-		live nonBlock noSeq critAway crits
+defuncts:       start pairs drawN drawI drawL drawK drawS drawC
+		live nonBlock noSeq critAway crits diffpairs
 preds:   	Safe Idle Wait Crit Live NonBlock NoSeq check Reachable 
 fovars:		is ws cs
 
@@ -34,6 +34,8 @@ states == [start] &
 
 atoms == safe:pairs & 
 
+pairs == map($)$prodL[[idle,wait,crit],procs] &
+
 safe   -> sat$Safe &
 idle$i -> sat$Idle$i &
 wait$i -> sat$Wait$i &
@@ -44,21 +46,19 @@ crit$i -> sat$Crit$i &
 (Wait$i <==> (i `in`).get1) &
 (Crit$i <==> (i `in`).get2) &
 
-pairs == map($)$prodL[[idle,wait,crit],procs] &
+live$i == wait(i) `then` AF$crit$i &			
 
-diffpairs == filter(=/=)$prodL$[procs,procs] &
+nonBlock$i == idle(i) `then` []<>wait$i &
 
-live$i == (wait$i) `then` AF[]$crit$i &			
-
-nonBlock$i == (idle$i) `then` []<>wait$i &
-
-noSeq$i == EF[](crit(i)/\
-                EU[](crit$i,not(crit$i)/\
-                            EU[](not(critAway$i),crit$i))) &
+noSeq$i == EF(crit(i)/\
+              (crit(i)`EU`not(crit$i)/\
+                          (not(critAway$i)`EU`crit$i))) &
 
 critAway$i == or$map(crit)$procs-[i] & 
 
 crits == map(crit)$procs &
+
+diffpairs == filter(=/=)$prodL$[procs,procs] &
 
 -- widget interpreters
 
@@ -79,31 +79,36 @@ drawK == wtree $ fun(st,mat$filter(check$st)$pairs) &
 (Reachable$st <=== Reachable(is,i:ws,[]) & st = (is,ws,[i])) &
 (Reachable$st <=== Reachable(is,ws,[i]) & st = (insert(i)$is,ws,[]))
 
+conjects:
+
+(Reachable$st ==> Safe$st) 	--> True	induction ?
+
 terms: 
 
 eval(or$crits) <+>   --> [([1],[],[0]),([],[1],[0]),([0],[],[1]),[],[0],[1])]
 eval(not$crit$1) <+> --> [([0,1],[],[]),([1],[0],[]),([0],[1],[]),([],[0,1],[])
 		     --   ([1],[],[0]),([],[1,0],[]),([],[1],[0])]
 
-eval(safe) <+>							--> states
-eval(live$1) <+>						--> states
-eval(nonBlock$1) <+>						--> states
-eval(noSeq$1) <+>						--> states
+eval$safe <+>							--> states
+eval$live$1 <+>							--> states
+eval$nonBlock$1 <+>						--> states
+eval$noSeq$1 <+>						--> states
 
-eval(EF[]$or$crits) <+>						--> states
-initState(EF[]$or$crits) <+>					--> states ?
-eval(EF[]$and$crits) <+>					--> []
-initState(EF[]$and$crits) <+>					--> []
-eval(and(EF[].crit)$procs) <+>					--> states
-eval(or$map(fun((i,j),EF[]$crit(i)/\crit$j))$diffpairs) <+>	--> []
-eval(and$map(fun((i,j),EF[]$crit(i)\/crit$j))$diffpairs) <+>	--> states
+eval$and$map(live)$procs <+>					--> states
+eval$and$map(nonBlock)$procs <+>				--> states
+eval$and$map(noSeq)$procs <+>					--> states
+eval$and$map($)$prodL[[live,nonBlock,noSeq],procs] <+>		--> states
 
-eval(and(live)$procs) <+>					--> states
-eval(and(nonBlock)$procs) <+>					--> states
-eval(and(noSeq)$procs) <+>					--> states
-eval(and($)$prodL[[live,nonBlock,noSeq],procs]) <+>		--> states
+eval$EF$or$crits <+>						--> states
+eval$EF$and$crits <+>						--> []
+initState$EF$or$crits <+>					--> states ?
+initState$EF$and$crits <+>					--> [] ?
+eval$and(EF.crit)$procs <+>					--> states
+eval$or$map(fun((i,j),EF$crit(i)/\crit$j))$diffpairs <+>	--> []
+eval$and$map(fun((i,j),EF$crit(i)\/crit$j))$diffpairs <+>	--> states
 
-eval(EU[](idle$1,wait$1)) --> [([0],[1],[]),([],[1,0],[]),([],[0,1],[]),
-			  --   ([],[1],[0]),([0,1],[],[]),([1],[0],[]),
-			  --   ([1],[],[0])]                        iEUw.eps
-
+eval$idle(1)`EU`wait$1 <+>  -->  [([0],[1],[]),([],[1,0],[]),([],[0,1],[]),
+		      	    --    ([],[1],[0]),([0,1],[],[]),([1],[0],[]),
+		  	    --    ([1],[],[0])]            
+evalG$idle(1)`EU`wait$1     -->  iEUw.eps
+ 

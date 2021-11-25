@@ -2,6 +2,8 @@
 
 specs: modal
 
+constructs: Helga Melanie Ursula Gertrud Maria Sabine
+	 -- needed for simplifying in/equations
 defuncts: VM
 
 axioms:
@@ -47,20 +49,20 @@ VM == project[Vater,Mutter] &
 (15,E) -> 7 & (15,H) -> 8 & (15,I) -> 9 
 
 terms:
-
-eval(table$1) <+>			 	
-evalT(table$1) <+>			 	
-evalM(table$1) <+>			 	
-evalM(table(1)/table$2) <+>			 	-- db2_div
-evalM(VM$table$1) <+>				 	-- db2_proj
-evalM(VM(table$1)*table(2)) <+>			        -- db2_prod
-evalM(njoin(table$1)$table$2) <+>			-- db2_njoin1
-evalM(njoin(table$3)$table$4) <+>		        -- db2_njoin2
-evalM(njoin(table$3)$table$5) <+>			-- db2_njoin3
-evalM(select(Mutter=Helga&Vater=Franz)$table$1) <+>  	-- db2_sel1
-evalM(select(Kind=Maria&Mutter=Melanie)$table$1) <+>   	-- db2_sel2
-evalM(select(Kind=Maria&Mutter=/=Melanie)$table$1) <+>	-- db2_sel3
-evalM(tjoin(A=E)(table$3)$table$5) <+>			-- db2_ejoin
-evalM(tjoin(A=/=E)(table$3)$table$5) <+>		-- db2_tjoin1
-evalM(tjoin(D<H)(table$3)$table$5) <+>			-- db2_tjoin2
-evalM(tsort(age)$table$1)				-- db2_sort
+	
+eval$table$1 <+>			 	
+evalT$table$1 <+>			 	
+evalM$table$1 <+>			 	
+evalM$table(1)/table$2 <+>			 	-- db2_div
+evalM$VM$table$1 <+>				 	-- db2_proj
+evalM$VM(table$1)*table$2 <+>			        -- db2_prod
+evalM$njoin(table$1)$table$2 <+>			-- db2_njoin1
+evalM$njoin(table$3)$table$4 <+>		        -- db2_njoin2
+evalM$njoin(table$3)$table$5 <+>			-- db2_njoin3
+evalM$select(Mutter=Helga&Vater=Franz)$table$1 <+>  	-- db2_sel1
+evalM$select(Kind=Maria&Mutter=Melanie)$table$1 <+>   	-- db2_sel2
+evalM$select(Kind=Maria&Mutter=/=Melanie)$table$1 <+>	-- db2_sel3
+evalM$tjoin(A=E)(table$3)$table$5 <+>			-- db2_ejoin
+evalM$tjoin(A=/=E)(table$3)$table$5 <+>			-- db2_tjoin1
+evalM$tjoin(D<H)(table$3)$table$5 <+>			-- db2_tjoin2
+evalM$tsort(age)$table$1				-- db2_sort

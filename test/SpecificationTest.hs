@@ -6,7 +6,7 @@ import Test.HUnit
 
 import qualified Base.System as Base
 import Base.Gui hiding
-  (Cmd,Action,Request,readIORef,writeIORef,modifyIORef,newIORef,IORef)
+  (Cmd,Action,Request,readIORef,writeIORef,modifyIORef,newIORef,IORef,done)
 import qualified Base.Gui as Base
 import Eterm
 import Esolve
@@ -333,26 +333,29 @@ lookupLibs = State.liftIO . Base.lookupLibs
 -- builtinLibDir :: Cmd FilePath
 -- builtinLibDir = State.liftIO . Base.builtinLibDir
 
+done :: Action
+done = return ()
+
 delay :: a -> a
 delay = id
 
-enterFormulas' :: [TermS] -> Action
-enterFormulas' _ = return ()
+enterFormulas :: [TermS] -> Action
+enterFormulas _ = return ()
 
-enterText' :: String -> Action
-enterText' _ = return ()
+enterText :: String -> Action
+enterText _ = return ()
 
 getTextHere :: Request String
 getTextHere = readIORef _teditTextRef
 
 incorrect :: Parse TermS -> String -> String -> Action
-incorrect _ _ error = labRed' error
+incorrect _ _ error = labRed error
 
-labGreen' :: String -> Action
-labGreen' _ = return ()
+labGreen :: String -> Action
+labGreen _ = return ()
 
-labRed' :: String -> Action
-labRed' = State.liftIO . assertFailure . ("Expander error message: "++)
+labRed :: String -> Action
+labRed = State.liftIO . assertFailure . ("Expander error message: "++)
 
 -- extracted solver functions with state
 addAxioms :: TermS -> String -> Action
@@ -360,24 +363,22 @@ addAxioms t file = do
   sig <- getSignature
   let axs = if isConjunct t then subterms t else [t]
       cls = filter (not . (isAxiom sig ||| isSimpl)) axs
-  if null cls
-     then do
-          writeIORef solPositionsRef []
+  if null cls then
+       do writeIORef solPositionsRef []
           modifyIORef simplRulesRef
-            $ \simplRules -> simplRules `join` srules ["==","<==>"] axs
+             $ \simplRules -> simplRules `join` srules ["==","<==>"] axs
           modifyIORef axiomsRef $ \axioms -> axioms `joinTerms` axs
-          labGreen' $ newCls "axioms" file
-  else do
-       enterFormulas' cls
-       labRed' $ "The clauses in " ++ tfield ++ " are not axioms."
+          labGreen $ newCls "axioms" file
+  else do enterFormulas cls
+          labRed $ "The clauses in " ++ tfield ++ " are not axioms."
 
-addSpec' :: Bool -> FilePath -> Action
-addSpec' b file = do
+addSpec :: Bool -> FilePath -> Action
+addSpec b file = do
   checking <- readIORef checkingRef
   when (not checking) $ do
       when b $ modifyIORef specfilesRef $ \specfiles -> file:specfiles
       str <- get
-      if null str then labRed' $ file ++ " is not a file name."
+      if null str then labRed $ file ++ " is not a file name."
       else do
           let (sig,axs,ths,conjs,ts) = splitSpec $ removeComment 0 str
               act1 = do
@@ -401,7 +402,7 @@ addSpec' b file = do
                       parseConjects sig file' conjs
                       delay $ act4 sig
               act4 sig =
-                  if onlySpace ts then delay $ return ()
+                  if onlySpace ts then delay $ done
                   else parseTerms sig file' ts
           if onlySpace sig then act1
           else do
@@ -413,34 +414,33 @@ addSpec' b file = do
                         writeIORef symbolsRef (ps,cps,cs,ds,fs,hs)
                         let finish = do
                               writeIORef varCounterRef $ iniVC syms
-                              labGreen' $ newSig file'
+                              labGreen $ newSig file'
                               delay act1
                         specfiles <- readIORef specfilesRef
-                        mapM_ (addSpec' False) $ specs `minus` specfiles
+                        mapM_ (addSpec False) $ specs `minus` specfiles
                         delay finish
                     Partial (_,ps,cps,cs,ds,fs,hs) rest
                       -> do
-                         enterText' $ showSignature (ps,cps,cs,ds,fs,hs)
-                                    $ check rest
-                         labRed' $ illformed "signature"
+                         enterText $ showSignature (ps,cps,cs,ds,fs,hs)
+                                   $ check rest
+                         labRed $ illformed "signature"
                     _ -> do
-                         enterText' sig
-                         labRed' $ illformed "signature"
+                         enterText sig
+                         labRed $ illformed "signature"
  where (file',get) = if null file then (tfield,getTextHere)
                                   else (file,lookupLibs file)
        onlySpace = all (`elem` " \t\n")
 
 addSpecWithBase :: FilePath -> Action
 addSpecWithBase spec = do
-  addSpec' True "base"
-  unless (spec == "base") $ addSpec' True spec
+  addSpec True "base"
+  unless (spec == "base") $ addSpec True spec
 
 addTheorems :: TermS -> FilePath -> Action
 addTheorems t file = do
-    -- sig <- getSignature
     modifyIORef theoremsRef $ \theorems ->
         theorems `join` if isConjunct t then subterms t else [t]
-    labGreen' $ newCls "theorems" file
+    labGreen $ newCls "theorems" file
 
 getSignature :: Request Sig
 getSignature = do
@@ -451,45 +451,45 @@ getSignature = do
   (block,xs) <- readIORef constraintsRef
   iniStates <- readIORef iniStatesRef
   safeSimpl <- readIORef safeSimplRef
+  let isPred       = (`elem` ps)  ||| projection
+      isCopred     = (`elem` cps) ||| projection
+      isConstruct  = (`elem` cs)  ||| just . parse real |||
+                     just . parse quoted ||| just . parse (strNat "inj")
+      isDefunct    = (`elem` ds) ||| projection
+      isFovar      = (`elem` fs) . base
+      isHovar      = (`elem` (map fst hs)) . base
+      hovarRel x y = isHovar x &&
+                     case lookup (base x) hs of
+                          Just es@(_:_) -> isHovar y || y `elem` es
+                          _ -> not $ isFovar y
+      blocked x = if block then z `elem` xs else z `notElem` xs
+                  where z = head $ words x
+      simpls = simplRules; transitions = transRules
+      states = sts; labels = labs; atoms = ats; inits = iniStates
+      trans = tr; transL = trL; value = va; valueL = vaL
+      notSafe = not safeSimpl; redexPos = []
+      base x = y where (y,_,_,_) = splitVar x
   return $ let
-    isPred       = (`elem` ps)  ||| projection
-    isCopred     = (`elem` cps) ||| projection
-    isConstruct  = (`elem` cs)  ||| just . parse real |||
-                    just . parse quoted ||| just . parse (strNat "inj")
-    isDefunct    = (`elem` ds) ||| projection
-    isFovar      = (`elem` fs) . base
-    isHovar      = (`elem` (map fst hs)) . base
-    hovarRel x y = isHovar x &&
-        case lookup (base x) hs of
-            Just es@(_:_) -> isHovar y || y `elem` es
-            _ -> not $ isFovar y
-    blocked x = if block then z `elem` xs else z `notElem` xs
-              where z = head $ words x
-    simpls = simplRules; transitions = transRules
-    states = sts; labels = labs; atoms = ats; inits = iniStates
-    trans = tr; transL = trL; value = va; valueL = vaL
-    notSafe = not safeSimpl; redexPos = []
-    base x = y where (y,_,_,_) = splitVar x
    in Sig
-      { sig_isPred      = isPred
-      , sig_isCopred    = isCopred
-      , sig_isConstruct = isConstruct
-      , sig_isDefunct   = isDefunct
-      , sig_isFovar     = isFovar
-      , sig_isHovar     = isHovar
-      , sig_blocked     = blocked
-      , sig_hovarRel    = hovarRel
-      , sig_simpls      = simpls
-      , sig_transitions = transitions
-      , sig_states      = states
-      , sig_atoms       = atoms
-      , sig_labels      = labels
-      , sig_inits       = inits
-      , sig_trans       = trans
-      , sig_value       = value
-      , sig_transL      = transL
-      , sig_valueL      = valueL
-      , sig_notSafe     = notSafe
+      { isPred      = isPred 
+      , isCopred    = isCopred
+      , isConstruct = isConstruct
+      , isDefunct   = isDefunct
+      , isFovar     = isFovar
+      , isHovar     = isHovar
+      , blocked     = blocked
+      , hovarRel    = hovarRel
+      , simpls      = simpls
+      , transitions = transitions
+      , states      = states
+      , atoms       = atoms
+      , labels      = labels
+      , inits       = inits
+      , trans       = trans
+      , value       = value
+      , transL      = transL
+      , valueL      = valueL
+      , notSafe     = notSafe
       }
 
 
@@ -499,7 +499,7 @@ parseConjects sig file conjs =
         Correct t -> do
             let ts = if isConjunct t then subterms t else [t]
             modifyIORef conjectsRef $ \conjects -> conjects `join` ts
-            labGreen' $ newCls "conjectures" file
+            labGreen $ newCls "conjectures" file
         p -> incorrect p conjs $ illformed "formula"
 
 parseTerms :: Sig -> FilePath -> String -> Action
@@ -507,7 +507,7 @@ parseTerms sig file ts =  case parseE (term sig) ts of
     Correct t -> do
         let ts = if isSum t then subterms t else [t]
         modifyIORef termsRef $ \terms -> ts `join` terms
-        labGreen' $ newCls "terms" file
+        labGreen $ newCls "terms" file
     p -> incorrect p ts $ illformed "term"
 
 

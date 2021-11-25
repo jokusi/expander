@@ -8,7 +8,7 @@ In Expander3, the special O'Haskell constructs are replaced by more or less equi
 
 ## Dependencies ##
 
-Before compiling and installing *Expander* the following tools are needed:
+For compiling and installing *Expander* the following tools are needed:
 * stack
 * Gtk+3
 
@@ -18,16 +18,18 @@ Follow the installation guide [here](http://docs.haskellstack.org/en/stable/inst
 
 ### Gtk+3 ###
 
-Official download page: [www.gtk.org/download](http://www.gtk.org/download/index.php)
+Download with Homebrew [here](https://formulae.brew.sh/formula/gtk+3).
 
 **Linux**
+
 Most Linux distributions already have Gtk+ installed. Often development packages are needed. Visit official download page for more information. For Debian/Ubuntu:
 ```
 $ apt install libgtk-3-dev
 ```
 
 **Mac**
-The [official download page](https://wiki.gnome.org/Projects/GTK+/OSX/Building) recommends to use jhbuild. [Homebrew](http://brew.sh/) is also known as a good alternative.
+
+The [official download page](https://wiki.gnome.org/Projects/GTK+/OSX/Building) recommends to use [jhbuild](https://wiki.gnome.org/Projects/Jhbuild/Mac_OS) (see also [GTK for Mac OS](https://www.gtk.org/docs/installations/macos)). [Homebrew](https://formulae.brew.sh/formula/gtk+3) is a good alternative.
 ```
 $ brew install gtk+3
 $ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
@@ -42,6 +44,7 @@ stack exec -- pacman -Syuu
 stack exec -- pacman -S pkg-config mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolchain base-devel git
 ```
 ## Installation ##
+
 Install expander with:
 ```
 git clone https://github.com/jokusi/expander.git
@@ -60,15 +63,20 @@ git pull
 stack build
 ```
 
-## Important Folder ##
+## Important folders ##
 
-### src ###
-Contains the source code.
+**src**
 
-### app ###
-Main function for expander and hilbs executable.
+source code
 
-### data/style ###
-Files for layout and design.
+**app**
 
+main function for expander and hilbs executables
 
+**data/style**
+
+files for layout and design
+
+## Documents, pictures and videos ##
+
+https://padawitz.de/expander3.html

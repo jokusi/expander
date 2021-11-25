@@ -3,8 +3,6 @@ cabal-version: 1.12
 -- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 3641c2bbc0686f81dc61864b4e922d80dddb4d23d05f407fc0901b4744f4af4d
 
 name:           expander
 version:        3.0.0.0
@@ -165,6 +163,9 @@ data-files:
     Examples/EVproof
     Examples/evterm
     Examples/EXPproof
+    Examples/exproG
+    Examples/exproG2
+    Examples/exproW
     Examples/fact
     Examples/factflow
     Examples/factor3-4-6-2
@@ -386,12 +387,15 @@ data-files:
     Examples/NOTthreeP
     Examples/NOTthreePT
     Examples/ntnC
+    Examples/numberTrees
     Examples/obdd
     Examples/obst
     Examples/oddszip
     Examples/oddszipT
     Examples/one2P
     Examples/one2T
+    Examples/ovaltest
+    Examples/ovaltestG
     Examples/overlaps
     Examples/pal11P
     Examples/pal1P

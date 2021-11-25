@@ -31,7 +31,6 @@ import System.IO.Error (catchIOError)
 
 infixl 6 &=
 
-
 -- | Program folder.
 home :: IO FilePath
 home = getAppUserDataDirectory "expander"
@@ -61,7 +60,6 @@ userLib :: FilePath -> IO FilePath
 userLib file = do
   dir <- userLibDir
   return $ dir </> file
-
 
 pixpath :: FilePath -> IO FilePath
 pixpath file = do
@@ -115,19 +113,15 @@ loadPhoto pos alpha file = do
             return $ Just $ Image alpha image
           str path  = path </> (file++'_':show pos) <.> "gif"
 
-
 savePic :: String -> Canvas -> String -> Cmd String
 savePic _ = canvasSave
 
-
 lookupLibs :: FilePath -> IO String
-lookupLibs file = do
-        path <- userLib file
-        readFile path
-    `catchIOError` \_ -> do
-        path <- builtinLib file
-        readFile path
-    `catchIOError` \_ -> return ""
+lookupLibs file = do path <- userLib file
+                     readFile path `catchIOError` 
+                                   \_ -> do path <- builtinLib file
+                                            readFile path `catchIOError` 
+                                                          \_ -> return ""
 
 (&=) :: String -> String -> String
 x &= val = x ++ "=\"" ++ val ++ "\""
@@ -171,8 +165,6 @@ mkHtml canv dir dirPath n = do
                             file <- files, let lg = length file, lg > 4,
                             drop (lg-4) file
                                    `elem` words ".eps .gif .jpg .pdf .png .svg"]
-
-
 
 mkSecs :: Integral a => a -> a -> a
 mkSecs t1 t2 = (t2-t1)`div`1001500

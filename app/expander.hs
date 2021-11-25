@@ -30,6 +30,6 @@ main = do
     
     buildSolve solve1
     buildSolve solve2
-    iconify solve2
+    backWin solve2
     
     mainGUI

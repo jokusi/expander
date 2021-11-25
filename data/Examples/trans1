@@ -17,16 +17,16 @@ two == mu X.(([a]<>true)\/([b]<>X))
 
 terms: 
 
-evalR(rel) <+>			--> [(2,[1,3]),(3,[4,3]),(4,[3])]
-evalRG(rel) <+>	
-evalRM(rel) <+>	
-evalR(tcl$rel) <+>		--> [(3,[4,3]),(2,[1,3,4]),(4,[3,4])]
-evalRG(tcl$rel) <+>	
-evalRM(tcl$rel) <+>	
-evalR(child[b]) <+>		--> [(2,[1,3]),(3,[3]),(4,[3])]
-eval$one <+>			--> [3,4]	
-eval$two <+>			--> [2,3,4]	
-initState$one <+>		--  [3,4]   stepwise: trans1_one.html
-initState(two) <+>	        --> [2,3,4] 
-initState([1,3]\/[4,1]) 	--> [1,3,4]
+evalR$rel <+>		--> [(2,[1,3]),(3,[4,3]),(4,[3])]
+evalRG$rel <+>	
+evalRM$rel <+>	
+evalR$tcl$rel <+>	--> [(3,[4,3]),(2,[1,3,4]),(4,[3,4])]
+evalRG$tcl$rel <+>	
+evalRM$tcl$rel <+>	
+evalR$child[b] <+>	--> [(2,[1,3]),(3,[3]),(4,[3])]
+eval$one <+>		--> [3,4]	
+eval$two <+>		--> [2,3,4]	
+initState$one <+>	--  [3,4]   stepwise: trans1_one.html
+initState$two <+>	--> [2,3,4] 
+initState$[1,3]\/[4,1] 	--> [1,3,4]
 

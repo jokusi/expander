@@ -11,22 +11,20 @@ axioms:
 -- acceptors
 
 states == [q] & labels == [a,b] & atoms == [final] &
+		
 {-
 (q,a) -> qa     & (q,b) -> qb	& 		
 (qa,a) -> q     & (qa,b) -> qab	&
 (qb,a) -> qab   & (qb,b) -> q	&
 (qab,a) -> qb   & (qab,b) -> qa & 
--}
-(q,a) -> q      & (q,b) -> q1	& 		
-(q1,a) -> q2    & (q1,b) -> q1	& 		
-(q2,a) -> q1    & (q2,b) -> q1	& 		
-{-
 final -> q &	-- A1 acceptor of words with an even number of a's and an even 
 		-- number of b's if started in q
-
 final -> qb &   -- A2: acceptor of words with an even number of a's and an odd 
-		-- number of b's if started in q
--}
+		-- number of b's if started in q -}
+
+(q,a) -> q      & (q,b) -> q1	& 		
+(q1,a) -> q2    & (q1,b) -> q1	& 		
+(q2,a) -> q1    & (q2,b) -> q1	& 
 final -> q1 &   -- A3: acceptor of reg$11
 
 (Unfold(st)[]    <=== final -> st) &		
@@ -34,9 +32,9 @@ final -> q1 &   -- A3: acceptor of reg$11
 
 -- regular expressions
 
-reg$1 == star$plus(a)+plus(b*c) & 		    --> star(a+b*c)
+reg$1 == star$plus(a)+plus(b*c) & 		    --> reg$12
 
-reg$2 == a+a*a*star(a)*b+a*b*star(b)+b &	    --> star(a)*b+a*star(b)	
+reg$2 == a+a*a*star(a)*b+a*b*star(b)+b &	    --> reg$13	
  
 reg$3 == a+star(a)+eps+a & 			    --> star(a) 
  
@@ -65,6 +63,12 @@ reg$9 == a+c+eps+((a+c+eps)*star(a+c+eps)*(a+c+eps))+
 reg$10 == star(a)+star(a)*b*star(c*star(a)*b)*c*star(a) &
 
 reg$11 == star(a)*b*star(a*(a+b)+b) &
+
+reg$12 == star(a+b*c) & 		            -- reglangsRE1.html
+
+reg$13 == star(a)*b+a*star(b) & 
+
+reg$14 == star(b)*a*star(a+b) &
 	
 -- widget interpreters
 
@@ -80,27 +84,31 @@ Unfold(q)[] &			--> False	-- unify & narrow
 Unfold(q)[b] &			--> True	-- derive & simplify & refute
 Unfold(q)[b,b] &		--> True
 Unfold(q)[a,b,a,a,b,a] &	--> False
-Unfold(q)[a,b,a,b,a,b,a] &	--> True	-- reglangs1
+Unfold(q)[a,b,a,b,a,b,a] &	--> True	-- reglangs1P
 Unfold(q)[a,b,a,a,b,a,b] &	--> True
 Unfold(q)[a,b,a,b,b,a,b,a] 	--> False
 
 terms:
 
-star(a+b*c) <+>			-- RE1
+scanND(q)[] <+>			--> []		
+scanND(q)[b] <+>	        --> [final]
+scanND(q)[b,b] <+>		--> [final]
+scanND(q)[a,b,a,a,b,a] <+>	--> []		
+scanND(q)[a,b,a,a,b,a,b] <+>	--> [final]	
+scanND(q)[a,b,a,b,a,b,a] <+>	--> []
+scanND(q)[a,b,a,b,b,a,b,a] <+>	--> []
 
-scan(q)[] <+>			--> []		
-scan(q)[b] <+>	       	        --> [final]
-scan(q)[b,b] <+>		--> [final]
-scan(q)[a,b,a,a,b,a] <+>	--> []		
-scan(q)[a,b,a,b,a,b,a] <+>	--> [final]
-scan(q)[a,b,a,a,b,a,b] <+>	--> [final]	
-scan(q)[a,b,a,b,b,a,b,a] <+>	--> []
-
-detScan(q)[a,b,a,a,b,a] <+>	--> []		
-detScan(q)[a,b,a,a,b,a,b] <+>	--> [final]		
+scanD(q)[a,b,a,a,b,a] <+>	--> []		
+scanD(q)[a,b,a,a,b,a,b] <+>	--> [final]		
 
 unfoldBro(reg$2)[a,a,a,b] <+>   --> 1
 unfoldBro(reg$2)[a,a,a,b,b] <+> --> 0
 
-auto$reg$1 <+>			--> non-deterministic acceptor of reg$1 
-pauto$reg$1 			--> deterministic acceptor of reg$1   
+auto$reg$12 <+>	        -- auto = build Kripke model from regular expression
+auto$reg$13 <+>	 
+auto$reg$14 <+>
+
+-- (deterministic) powerAuto of the Kripke model of reg$14 yields:
+
+traces(3)(2)  --> 3-b-0-a-1-b-2 <+> 3-b-0-a-1-a-2 <+> 
+              --  3-a-1-b-2 <+> 3-a-1-a-2

@@ -1,10 +1,14 @@
 -- base
 
 defuncts: init last take drop single concatMap <=<
-fovars:	x y z s s' m n i j k
-hovars:	F G 
+preds:    even odd 
+fovars:	  x y z s s' m n i j k
+hovars:	  F G 
 
 axioms:
+
+(even(n) <==> n`mod`2 = 0) &
+(odd(n) <==> n`mod`2 = 1) &
 
 [x]++s == x:s &
 []++s == s &
@@ -31,9 +35,9 @@ map(F)$x:s == F(x):map(F)$s &
 
 single$x == [x] &
 
-concatMap$F == concat.(map$F) &
+concatMap$F == concat.(map$F) &		-- monadic extension (=<<) = flip (>>=)
 
-G<=<F == concatMap(G).F &	-- Kleisli composition for [ ]
+G<=<F == concatMap(G).F &		-- monadic composition for [ ]
 
 x+0 == x & x+0.0 == x &
 0+x == x & 0.0+x == x &

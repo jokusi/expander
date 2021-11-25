@@ -22,7 +22,7 @@ axioms:
 			     color(index(x,states),length$states)$circ$10,
 			     frame(3)$blue$text$x))
 
-& drawS$F == wtree $ fun(x,ite(F$x,blue$frame(5)$F$text$x,text$x))
+& drawS$F == wtree $ fun(x,ite(F$x,blue$frame(5)$text$x,text$x))
 
 conjects:  
 
@@ -31,30 +31,31 @@ conjects:
 terms:   
 
     eval(=4)				--> [4]
-<+> eval(is$4)				--> [4]
-<+> eval(less$4)			--> [0,1,2,3]
+<+> eval$is$4				--> [4]
+<+> eval$less$4				--> [0,1,2,3]
 <+> eval[0..3]				--> [0,1,2,3]
-<+> eval((<4).(+2))                     --> [0,1]
-<+> eval([]<>(<4))			--> [0,1,2,6]
-<+> eval(EF[]$less$4)			--> [0..6]	
-<+> eval(AF[]$less$4)			--> [0..3]	
-<+> eval(EG[]$less$4)			--> [0..2]	
-<+> eval(AG[]$less$4)			--> []
-<+> eval(AG[]$less$14)  		--> [8,9,10]
-<+> eval((=4)`then`EF[](<2))	        --> states
-<+> eval((=4)`then`EF[](=0))		--> states-[4]
-<+> eval(AG[]$(=4)`then`EF[](=0))	--> [7..10,14,22,33,44]
-<+> evalR(child[])
-<+> evalRG(child[])			
-<+> evalRM(child[])
-<+> evalRM(parent[])
-<+> evalR(descendant[])
-<+> evalRG(descendant[])		-- slow
-<+> evalRM(descendant[])
-<+> evalRM(ancestor[])
-<+> eval(trans$0)			--> [0,1]
-<+> eval(trans(6)/\less$2)		--> [1]
-<+> rel2fun(evalR(descendant[]))(6)	--> [1..10,14]		
+<+> eval$(<4).(+2)                      --> [0,1]
+<+> eval$[]<>(<4)			--> [0,1,2,6]
+<+> eval$EF$less$4			--> [0..6]
+<+> eval$FE[0,22]			--> states	
+<+> eval$AF$less$4			--> [0..3]	
+<+> eval$EG$less$4			--> [0..2]	
+<+> eval$AG$less$4			--> []
+<+> eval$AG$less$14  			--> [8,9,10]
+<+> eval$(=4)`then`EF(<2)	        --> states
+<+> eval$(=4)`then`EF(=0)		--> states-[4]
+<+> eval$AG$(=4)`then`EF(=0)		--> [7..10,14,22,33,44]
+<+> evalR$child[]
+<+> evalRG$child[]			
+<+> evalRM$child[]
+<+> evalRM$parent[]
+<+> evalR$descendant[]
+<+> evalRG$descendant[]			-- slow
+<+> evalRM$descendant[]
+<+> evalRM$ancestor[]
+<+> eval$trans$0			--> [0,1]
+<+> eval$trans(6)/\less$2		--> [1]
+<+> rel2fun(evalR$descendant[])$6	--> [1..10,14]		
 
 <+> f(x^4^y)	--> f((5 <+> 4)^x^y)    rewrite and simplify
 

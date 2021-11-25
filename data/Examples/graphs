@@ -1,28 +1,25 @@
 -- graphs
 
-defuncts:   graph
+defuncts:   graph draw drawC drawO drawLD drawLA drawLC
 constructs: assign /\
-fovars:     k m
 
 axioms:
 
-  drawF == wtree$frameS(5).text
+  draw$0 == wtree$circ
 
-& drawI == wtree$fun(x,ite(Int$x,red$circ$11,text$x))
+-- m=1 -> levelTerm, m=2 -> preordTerm, m=3 -> heapTerm, m=4 -> hillTerm
 
-& drawA == wtree$fun(assign,red$text$assign,x,text$x)
+& (m `in` [1..4] ==> draw$m == wtree(n) $ fun((x,0,n),text$(0,n),(x,k,n),text$k))
 
-& drawC$m == wtree(m)$fun((x,k,n),color(k,n)$circ$5)		-- m in [1..4]
+& draw$5 == wtree$frameS(5).text
 
-& drawC1$m == wtree(m)$fun((x,k,n),color(k,n)$circ$k+1)	
+& draw$6 == wtree$fun(x,ite(Int$x,red$circ$11,text$x))
 
-& drawC2$m == wtree(m)$fun((x,k,n),color(k,n)$circ$k*2+2)	
+& draw$7 == wtree$fun(assign,red$text$assign,x,text$x)
 
-& drawO$m == wtree(m)$fun((x,k,n),color(k,n)$oval(5,15))	
+& drawC(F)$m == wtree(m)$fun((x,k,n),color(k,n)$circ$F$k)	
 
-& drawO1$m == wtree(m)$fun((x,k,n),color(k,n)$oval(k+1,15))
-
-& drawO2$m == wtree(m)$fun((x,k,n),color(k,n)$oval(k*2+2,15))
+& drawO(F)$m == wtree(m)$fun((x,k,n),color(k,n)$oval(F$k,10))	
 
 & drawLD$m == wtree(m)$fun((x,k,n),turt[R,color(k,n)$leafD(15,15)])
 
@@ -53,8 +50,11 @@ axioms:
 & graph$11 == 0(1(2,2,2(3(4,4,4,4,4,4,4,4,4,4,4)),2,2,2,2,2,2,2,2,2,2,                        2(3(4,4,4,4,4,4,4,4,4,4,4)),2,2))
 & graph$12 == 0(1(2,                  2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                      4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),                  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,                  2(3(4,4(5(6,6,6,6,6,6,6,6,6,6,6)),4,4,4,4,4,4,4,4,4,4,                      4(5(6,6,6,6,6,6,6,6,6,6,6)),4)),                  2))
 
-terms:   
-
+terms:  
+ 
+widg(f(g(h,widg(t,z,gif(goat,28,25))),
+       widg(widg(t,z,gif(nemo,63,49)),z,light green(oval(44,22)))),
+     gif(skater,98,105)) <+>
 widg(a,b,grav$turt[circ$22,M$111,circ$44]) <+>
 widg(f(g(h,widg(t,z,gif(goat,28,25))),
        widg(widg(t,z,gif(nemo,63,49)),z,light green(oval(44,22)))),
@@ -98,3 +98,6 @@ widg(f(g(h,widg(t,z,gif(goat,28,25))),
           78(80(82(84(86),88(pos 1 0 0 0))),91(pos 1 1 0 0 0 0))),
        94(96,98(100(102),104(pos 1))),107(pos 1 1 1 0,pos 1 1 1 1))),
   111(pos 1 0,pos 1 1))
+<+> 55(55(55(55(44))),
+    55(55(55(44),55(55(55(44),55(44),55(44),55(44))),55(44),55(44))),
+    55(55(55(44))))

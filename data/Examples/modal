@@ -1,11 +1,11 @@
 -- modal
 
 defuncts: procs noProcs rel2fun states atoms labels
-          `then` or and scan detScan actL parent sibling << >>
+          `then` or and scanD scanND scanNDS actL parent sibling << >>
           tjoin <> >< # % tcl descendant ancestor related 
-	  EF AF FE FA EU AU AG EG GE GA EW AW ER AR
-          -- defined in Esolve.hs or imports of modal:
-	  trans transL preds predsL value valueL out outL unfold detUnfold
+	  EF AF FE FA AG EG GE GA `EU` `AU` `EW` `AW` `ER` `AR`
+          -- defined in Esolve.hs or modal importing specifications:
+	  trans transL preds predsL value valueL out outL unfoldD unfoldND
           true false not /\ \/ exists forall / pi1 pi2 valL child inv ; 
 	  sat satR proj njoin * select tsort 
 preds:    ->  exists2 forall2 
@@ -27,8 +27,9 @@ axioms:
  & or == foldl(\/)$false
  & and == foldl(/\)$true
 
- & scan$st == evalA.unfold$st
- & detScan$st == evalA.detUnfold$st
+ & scanD$st == evalO.unfoldD$st     -- deterministic-LTS unfold
+ & scanND$st == evalO.unfoldND$st   -- nondeterministic-LTS unfold
+ & scanNDS$st == evalO.unfoldNDS$st -- nondeterministic-LTS unfold with silent transitions
 
  & actL == flip$transL
 
@@ -41,7 +42,7 @@ axioms:
  & tjoin(P)(T) == select(P).njoin$T
 
  & labs<>P == exists(child$labs)$P
- & labs><P == exists(parent$labs)$P
+ & labs><P == exists(parent$labs)$P        -- []><P == concatMap(trans)$P
  & labs#P == forall(child$labs)$P
  & labs%P == forall(parent$labs)$P
 
@@ -51,24 +52,21 @@ axioms:
  & ancestor == tcl.parent
  & related(labs) == ancestor(labs);sibling(labs);descendant$labs
 
- & EF(labs)$P == mu X.(P\/labs<>X)         -- forward finally on some path
- & FE(labs)$P == mu X.(P\/labs><X)         -- backwards finally on some path
- & AF(labs)$P == mu X.(P\/(labs#X)/\labs<>true)
-					   -- forward finally on all paths 	
- & FA(labs)$P == mu X.(P\/(labs%X)/\labs><true)    
-					   -- backwards finally on all paths 	
- & EG(labs)$P == nu X.(P/\(labs<>X)\/labs#false)  
-					   -- forward generally on some path
- & GE(labs)$P == nu X.(P/\(labs><X)\/labs%false)  
-					   -- backwards generally on some path
- & AG(labs)$P == nu X.(P/\labs#X)          -- forward generally on all paths
- & GA(labs)$P == nu X.(P/\labs%X)          -- backwards generally on all paths
+ & EF$P == mu X.(P\/[]<>X)                 -- forward finally on some path
+ & FE$P == mu X.(P\/[]><X)         	   -- backwards finally on some path
+           				   -- = successors(P)
+ & AF$P == mu X.(P\/([]#X)/\[]<>true)      -- forward finally on all paths 	
+ & FA$P == mu X.(P\/([]%X)/\[]><true)      -- backwards finally on all paths 	
+ & EG$P == nu X.(P/\([]<>X)\/[]#false)     -- forward generally on some path
+ & GE$P == nu X.(P/\([]><X)\/[]%false)     -- backwards generally on some path
+ & AG$P == nu X.(P/\[]#X)        	   -- forward generally on all paths
+ & GA$P == nu X.(P/\[]%X)                  -- backwards generally on all paths
 
- & EU(labs)(P,Q) == mu X.(Q\/P/\labs<>X)   -- until
- & AU(labs)(P,Q) == mu X.(Q\/P/\labs#X) 	    
- & EW(labs)(P,Q) == nu X.(Q\/P/\labs<>X)   -- weak until
- & AW(labs)(P,Q) == nu X.(Q\/P/\labs#X)  
- & ER(labs)(P,Q) == nu X.(Q/\P\/labs<>X)   -- release
- & AR(labs)(P,Q) == nu X.(Q/\P\/labs#X)
+ & P`EU`Q == mu X.(Q\/P/\[]<>X)   	   -- until
+ & P`AU`Q == mu X.(Q\/P/\[]#X) 	    
+ & P`EW`Q == nu X.(Q\/P/\[]<>X)   	   -- weak until
+ & P`AW`Q == nu X.(Q\/P/\[]#X)  
+ & P`ER`Q == nu X.(Q/\P\/[]<>X)            -- release
+ & P`AR`Q == nu X.(Q/\P\/[]#X)
 
 

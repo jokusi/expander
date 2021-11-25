@@ -1,6 +1,7 @@
 -- dbC by Christian Erdmann
 
 specs: modal
+defuncts: drawM
 
 axioms:
 
@@ -43,11 +44,16 @@ Verkaeufe -> branch[4..10] &
 (9, Datum)        -> 8.1.2021       &
 (10, Artikelname) -> Hemd           & (10, Menge) -> 12 & 
 (10, Gesamtpreis) -> 120            & (10, Kaeufer) -> LS1 & 
-(10, Datum)       -> 9.2.2021
+(10, Datum)       -> 9.2.2021       &
+
+term1 == project[Artikelname,Kaeufer]$Verkaeufe &
+term2 == select(Gewicht>0.4)$Artikel &
+term3 == njoin(Artikel)$Verkaeufe &
+term4 == tjoin(Name=Artikelname)(Artikel)$Verkaeufe
 
 terms:
 
-evalM(project[Artikelname,Kaeufer]$Verkaeufe) <+>		
-evalM(select(Gewicht>0.4)$Artikel) <+>
-evalM(njoin(Artikel)$Verkaeufe) <+>			-- big!
-evalM(tjoin(Name=Artikelname)(Artikel)$Verkaeufe)
+string(term1)$evalM$term1 <+>		
+string(term2)$evalM$term2 <+>		
+string(term3)$evalM$term3 <+>		
+string(term4)$evalM$term4 

@@ -32,9 +32,13 @@
     <property name="visible">True</property>
     <property name="can-focus">False</property>
   </object>
+  <object class="GtkMenu" id="relMenu">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+  </object>
   <object class="GtkAdjustment" id="horButRange">
     <property name="upper">100</property>
-    <property name="value">35</property>
+    <property name="value">15</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
@@ -89,7 +93,7 @@
     <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="verButRange">
-    <property name="upper">60</property>
+    <property name="upper">50</property>
     <property name="value">35</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
@@ -167,9 +171,6 @@
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="shadow-type">in</property>
-                    <child>
-                      <placeholder/>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -314,7 +315,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">font size</property>
                         <style>
-                          <class name="font12i"/>
+                          <class name="font16i"/>
                         </style>
                       </object>
                       <packing>
@@ -328,7 +329,7 @@
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
-                        <property name="font">Sans 12</property>
+                        <property name="font">Sans 16</property>
                         <property name="preview-text"/>
                         <property name="show-style">False</property>
                         <property name="show-size">False</property>
@@ -372,7 +373,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">?</property>
                         <style>
-                          <class name="font12"/>
+                          <class name="font16"/>
                         </style>
                       </object>
                     </child>
@@ -413,7 +414,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">tree</property>
                         <style>
-                          <class name="font12"/>
+                          <class name="font16"/>
                         </style>
                       </object>
                     </child>
@@ -467,7 +468,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">selection</property>
                         <style>
-                          <class name="font12"/>
+                          <class name="font16"/>
                         </style>
                       </object>
                     </child>
@@ -740,7 +741,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">specification</property>
                         <style>
-                          <class name="font12b"/>
+                          <class name="font16b"/>
                         </style>
                       </object>
                     </child>
@@ -763,7 +764,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">signature</property>
                         <style>
-                          <class name="font12b"/>
+                          <class name="font16b"/>
                         </style>
                       </object>
                     </child>
@@ -817,7 +818,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">axioms</property>
                         <style>
-                          <class name="font12b"/>
+                          <class name="font16b"/>
                         </style>
                       </object>
                     </child>
@@ -839,12 +840,12 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">apply to</property>
                         <style>
-                          <class name="font12"/>
+                          <class name="font16"/>
                         </style>
                       </object>
                     </child>
                     <style>
-                      <class name="font12"/>
+                      <class name="font16"/>
                       <class name="test_blue"/>
                     </style>
                   </object>
@@ -865,7 +866,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">theorems</property>
                         <style>
-                          <class name="font12b"/>
+                          <class name="font16b"/>
                         </style>
                       </object>
                     </child>
@@ -887,13 +888,35 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">graph</property>
                         <style>
-                          <class name="font12"/>
+                          <class name="font16"/>
                         </style>
                       </object>
                     </child>
                   </object>
                   <packing>
                     <property name="left-attach">0</property>
+                    <property name="top-attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkMenuButton" id="relBut">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="popup">relMenu</property>
+                    <child>
+                      <object class="GtkLabel" id="relLabel">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">relation</property>
+                        <style>
+                          <class name="font16"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="left-attach">1</property>
                     <property name="top-attach">1</property>
                   </packing>
                 </child>
@@ -909,7 +932,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">nodes</property>
                         <style>
-                          <class name="font12"/>
+                          <class name="font16"/>
                         </style>
                       </object>
                     </child>
@@ -931,7 +954,7 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">substitution</property>
                         <style>
-                          <class name="font12"/>
+                          <class name="font16"/>
                         </style>
                       </object>
                     </child>
@@ -956,33 +979,6 @@
                     <property name="top-attach">2</property>
                   </packing>
                 </child>
-                <child>
-                  <object class="GtkButton" id="saveBut">
-                    <property name="label" translatable="yes">save pic</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="receives-default">True</property>
-                    <style>
-                      <class name="default_button"/>
-                    </style>
-                  </object>
-                  <packing>
-                    <property name="left-attach">1</property>
-                    <property name="top-attach">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -999,10 +995,10 @@
                 <property name="homogeneous">True</property>
                 <child>
                   <object class="GtkButton" id="backBut">
+                    <property name="label" translatable="yes">&#8592;</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <property name="image">backImg</property>
                     <property name="always-show-image">True</property>
                     <style>
                       <class name="default_button"/>
@@ -1017,10 +1013,10 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="forwBut">
+                    <property name="label" translatable="yes">&#8594;</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <property name="image">forwImg</property>
                     <property name="always-show-image">True</property>
                     <style>
                       <class name="default_button"/>

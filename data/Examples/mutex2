@@ -1,74 +1,95 @@
 -- mutex2
 
 specs:   	modal
-constructs:	safe
-defuncts:       start searchP filterP maxwait updAll enter decrWait updCrit
-preds:		anyP allP Safe Reachable
+defuncts:       start pairs searchP filterP maxticket wait decr 
+		enter leave live nonBlock noSeq critAway
+preds:		anyP allP Safe Idle Wait Crit Reachable
 
 -- procs = indices$st, st = [x0,...,x(noProcs-1)]
--- i = -1  ==> i is in the critical section
--- xi = 0  ==> i is idle
--- xi > 0  ==>  xi is ticket of process i 
+-- xi = 0   ==>  i is idle
+-- xi > 0   ==>  xi is ticket of process i 
+-- xi = -1  ==>  i is in the critical section
 
 axioms:
 
-(anyP(P)$st <==> any(P.(st!!))$procs) &	  
+(anyP(P)$s <==> any(P.(s!!))$procs) &	  
 
-(allP(P)$st <==> all(P.(st!!))$procs) &	  
+(allP(P)$s <==> all(P.(s!!))$procs) &	  
 
-searchP(P)$st == search(P.(st!!))$procs &
+searchP(P)$s == search(P.(s!!))$procs &
 
-filterP(P)$st == filter(P.(st!!))$procs &
+filterP(P)$s == filter(P.(s!!))$procs &
 
-maxwait$st == max$0:filter(>0)$st &
+wait(st)$x == branch$map(flip(upd$st)$x)$filterP(=0)$st &
 
-updAll(st)(i)$x == map(flip(upd$st)$x)$filterP(=i)$st &
+enter$st == map(decr)$upd(st)(searchP(=1)$st)(-1) &
 
-enter(st) == upd(st)(searchP(=1)$st)$(-1) &
+leave(st) == upd(st)(searchP(= -1)$st)$0 &
 
-decrWait == map$fun(x,ite(x>0,x-1,x)) &
+decr$x == ite(x>0,x-1,x) &
 
-updCrit(st) == upd(st)$searchP(<0)$st &
+maxticket == max.filter(=/= -1) &
 
-start == replicate(noProcs)$0 &                 -- = take(noProcs)$mu s.(0:s)
+start == replicate(noProcs)$0 &                    -- = take(noProcs)$mu s.(0:s)
 
 states == [start] &
 
 -- state transitions
 	 
-(maxwait$st = i & i < noProcs
-    ==> st -> branch$updAll(st)(0)$i+1) &	-- some idle waits	
-	 
-(anyP(>0)$st & allP(>=0)$st 
-    ==> st -> decrWait$enter$st) &              -- first wait enters 
-
-(anyP(<0)$st ==> st -> updCrit(st)$0) &		-- first crit leaves	
+(maxticket$st = m & m < noProcs ==> st -> wait(st)$m+1) & -- some idle waits	
+(anyP(>0)$st & allP(>=0)$st ==> st -> enter$st) &         -- first wait enters 
+(anyP(= -1)$st ==> st -> leave$st) &		          -- first crit leaves	
 
 -- 2 processes yield 9 states
 -- 3 processes yield 31 states
 
-atoms == [safe] &
+atoms == safe:pairs & 
 
-(Safe$st <==> length$filterP(<0)$st <= 1) &
+pairs == map($)$prodL[[idle,wait,crit],procs] &
 
-safe -> valid$Safe &
+safe -> sat$Safe &
+idle$i -> sat$Idle$i &
+wait$i -> sat$Wait$i &
+crit$i -> sat$Crit$i &
+
+(Safe <==> (<=1).length.filterP(= -1)) &
+(Idle(i)$st <==> st!!i = 0) &
+(Wait(i)$st <==> st!!i > 0) &
+(Crit(i)$st <==> st!!i = -1) &
+
+live$i == wait(i) `then` AF$crit$i &			
+
+nonBlock$i == idle(i) `then` []<>wait$i &
+
+noSeq$i == EF(crit(i)/\
+              (crit(i)`EU`not(crit$i)/\
+                          (not(critAway$i)`EU`crit$i))) &
+
+critAway$i == or$map(crit)$procs-[i] & 
 
 (Reachable$st <=== all(=0)$st) &
-(Reachable$upd(st)(x)$i+1
-   <=== Reachable$st & maxwait$st = i & i < noProcs & x `in` filterP(=0)$st) & 
-(Reachable$decrWait$enter$st 
-   <=== Reachable$st & anyP(>0)$st & allP(>=0)$st) &
-(Reachable$updCrit(st)$0
-   <=== Reachable$st & anyP(>0)$st & allP(>=0)$st) 
+(Reachable$st'
+    <=== Reachable$st & maxticket$st = m & m < noProcs & i `in` filterP(=0)$st &
+         st' = upd(st)(i)$m+1) &
+(Reachable$st'
+    <=== Reachable$st & anyP(>0)$st & allP(>=0)$st & st' = enter$st) &
+(Reachable$st'
+    <=== Reachable$st & anyP(=crit)$st & allP(>=0)$st & st' = leave$st) 
 
 conjects:
 
-EX(true)$start & 		--> True        1 simplification steps
-states = eval$EX$true & 	--> True
-AG(Safe)$start &	        --> True	coinduction + narrow match
-(Reachable$st ==> Safe$st)	--> True ?	induction
+states = eval$[]<>true & 	--> True
+(Reachable$st ==> Safe$st) 	--> True	induction ?
 
 terms:
 
-eval$EX$true <+>	--> states 
-eval$AG$safe		--> states
+eval$[]<>true <+>					--> states 
+
+eval$safe <+>						--> states
+eval$live$1 <+>						--> states
+eval$nonBlock$1 <+>					--> states
+eval$noSeq$1 <+>					--> states
+eval$and$map($)$prodL[[live,nonBlock,noSeq],procs] <+>	--> states
+
+evalG$idle(1)`EU`wait$1 				--> iEUw2.eps
+

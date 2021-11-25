@@ -1,7 +1,8 @@
 -- eosum
 
+specs: 		modal
 constructs: 	esum osum elab olab final 
-defuncts:	parity delta beta deltaEO betaEO deltaBeh betaBeh unfold h
+defuncts:	parity deltaEO betaEO deltaBeh betaBeh unfold h
 preds: 		even odd Nat State List ->
 fovars:		st w
 hovars:		f
@@ -19,12 +20,9 @@ states == [esum] & labels == [elab,olab] & atoms == [final] &
 
 final -> esum &
 
-delta(st,x) == head$transL(st)$x &		
-beta$st == ite(null$out$st,0,1) &
-
 parity$n == ite(even$n,elab,olab) &
 
-unfold(st) == beta.foldl(delta)(st).map(parity) &
+unfold(st) == scanD(st).map(parity) &
 
 State$esum &
 State$osum &
@@ -63,14 +61,14 @@ conjects:
 
 terms:
 
-unfold(esum)[1..4] <+>	--> 1
-h(esum)[1..4]	   <+>	--> 1
-unfold(esum)[1..5] <+>	--> 0
-h(esum)[1..5]	   <+>	--> 0
-unfold(osum)[1..4] <+>	--> 0
-unfold(osum)[1..5] <+>	--> 1
+unfold(esum)[1..4] <+>	--> [final]
+unfold(esum)[1..5] <+>	--> []
+unfold(osum)[1..4] <+>	--> []
+unfold(osum)[1..5] <+>	--> [final]
 
 sum[1..4] <+> 		--> 10
-sum[1..5]		--> 15
+sum[1..5] <+>		--> 15
+
+traces(esum)(esum)      --> esum-elab-esum <+> esum-olab-osum-olab-esum
 
 

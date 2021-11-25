@@ -32,15 +32,15 @@ atoms == [0..8]
 
 terms:
 
-eval([age]<>[72]) <+>			   -->  [Robin,Markus]
-eval([wife]<>[Hilde]) <+>  		   -->  [Markus]
-eval([hasst]<>[Alice]) <+>		   -->  [Bob]
-eval([kennt]<>[Alice,Bob]) <+>		   -->  [Alice,Carol]
-eval(child[hasst]/[Alice,Dave]) <+> 	   -->  [Bob]
-eval(child[completed]/DBproject) <+>	   -->  [Fred,Sarah]
-eval(select((=2).length)$child[hasst]) <+> -->  [Bob]
-eval(select((=1).length)$child[kennt]) <+> -->  [Alice,Carol]
-evalRM(child[hasst]) <+>		
-evalRM(child[liebt,hasst]) <+>		   -->  db1_liebt+hasst
-evalRM(child[completed]) <+>		   -->  db1_completed
-evalRG(child[completed]) 		   -->  db1_completed
+eval$[age]<>[72] <+>			   -->  [Robin,Markus]
+eval$[wife]<>[Hilde] <+>  		   -->  [Markus]
+eval$[hasst]<>[Alice] <+>		   -->  [Bob]
+eval$[kennt]<>[Alice,Bob] <+>		   -->  [Alice,Carol]
+eval$child[hasst]/[Alice,Dave] <+> 	   -->  [Bob]
+eval$child[completed]/DBproject <+>	   -->  [Fred,Sarah]
+eval$select((=2).length)$child[hasst] <+>  -->  [Bob]
+eval$select((=1).length)$child[kennt] <+>  -->  [Alice,Carol]
+evalRM$child[hasst] <+>		
+evalRM$child[liebt,hasst] <+>		   -->  db1_liebt+hasst
+evalRM$child[completed] <+>		   -->  db1_completed
+evalRG$child[completed] 		   -->  db1_completed
