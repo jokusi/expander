@@ -3530,7 +3530,7 @@ solver this solveRef enum paint = do
                setProof True False msg [p] quantifierMoved
                clearAndDraw
 
-       {- |
+       {-
             Moves a subtree of a tree on the canvas. Click and hold the left
             mouse button over a subtree. Move the subtree to its new
             destination. When the mouse button is released the subtree will be
@@ -3762,7 +3762,7 @@ solver this solveRef enum paint = do
                   -> (String -> Int)
                   -> Action
         narrowPar t sig k cls saveRedex used (p:ps) qs vc =
-            if p `notElem` noRefPoss t -- || isVarRoot sig redex
+            if p `notElem` noRefPoss t -- (||) isVarRoot sig redex
             then narrowPar t sig k cls saveRedex used ps qs vc
             else do
                 matching <- readIORef matchingRef
@@ -4772,7 +4772,7 @@ solver this solveRef enum paint = do
         
         -- | Used by 'narrowOrRewritePar'.
         rewritePar t sig k cls saveRedex used (p:ps) qs vc =
-            if p `notElem` noRefPoss t -- || isVarRoot sig redex
+            if p `notElem` noRefPoss t -- (||) isVarRoot sig redex
             then rewritePar t sig k cls saveRedex used ps qs vc
             else do
                 matching <- readIORef matchingRef
