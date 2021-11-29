@@ -621,7 +621,6 @@ data-files:
     style/icon.png
     style/Painter.glade
     style/Solver.glade
-    style/Solver.glade~
     style/style.css
 data-dir:       data
 
